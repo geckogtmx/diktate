@@ -5,6 +5,7 @@
 
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
+import { logger } from '../utils/logger';
 
 interface Command {
   id: string;
@@ -43,7 +44,7 @@ export class PythonManager extends EventEmitter {
   async start(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        console.log(`[PythonManager] Starting Python process: ${this.pythonScriptPath}`);
+        logger.info('PythonManager', 'Starting Python process', { scriptPath: this.pythonScriptPath });
 
         this.process = spawn(this.pythonExePath, [this.pythonScriptPath], {
           stdio: ['pipe', 'pipe', 'pipe'],
@@ -61,17 +62,17 @@ export class PythonManager extends EventEmitter {
         });
 
         this.process.stderr?.on('data', (data) => {
-          console.error(`[Python] ${data.toString()}`);
+          logger.error('Python', data.toString().trim());
         });
 
         this.process.on('error', (error) => {
-          console.error(`[PythonManager] Process error:`, error);
+          logger.error('PythonManager', 'Process error occurred', error);
           this.emit('error', error);
           this.handleProcessError();
         });
 
         this.process.on('exit', (code) => {
-          console.log(`[PythonManager] Python process exited with code ${code}`);
+          logger.warn('PythonManager', 'Python process exited', { exitCode: code });
           this.isRunning = false;
           this.process = null;
           this.emit('disconnected');
@@ -84,7 +85,7 @@ export class PythonManager extends EventEmitter {
 
         resolve();
       } catch (error) {
-        console.error('[PythonManager] Failed to start:', error);
+        logger.error('PythonManager', 'Failed to start process', error);
         reject(error);
       }
     });
@@ -100,7 +101,7 @@ export class PythonManager extends EventEmitter {
         return;
       }
 
-      console.log('[PythonManager] Stopping Python process...');
+      logger.info('PythonManager', 'Stopping Python process');
 
       this.isRunning = false;
 
@@ -169,7 +170,7 @@ export class PythonManager extends EventEmitter {
    */
   private sendRawCommand(command: Command): void {
     if (!this.process || !this.process.stdin) {
-      console.error('[PythonManager] No stdin available');
+      logger.error('PythonManager', 'No stdin available for process');
       return;
     }
 
@@ -177,7 +178,7 @@ export class PythonManager extends EventEmitter {
       const json = JSON.stringify(command) + '\n';
       this.process.stdin.write(json);
     } catch (error) {
-      console.error('[PythonManager] Failed to send command:', error);
+      logger.error('PythonManager', 'Failed to send command', error);
     }
   }
 
@@ -205,7 +206,7 @@ export class PythonManager extends EventEmitter {
         }
       } catch {
         // Not JSON, just log it
-        console.log(`[Python] ${line}`);
+        logger.debug('Python', line);
       }
     }
   }
@@ -214,13 +215,15 @@ export class PythonManager extends EventEmitter {
    * Handle events from Python process
    */
   private handlePythonEvent(event: any): void {
-    console.log(`[PythonManager] Event from Python:`, event.event);
+    logger.debug('PythonManager', 'Event from Python', { eventType: event.event });
 
     if (event.event === 'state-change') {
       this.currentState = event.state;
       this.emit('state-change', event.state);
     } else if (event.event === 'error') {
       this.emit('error', new Error(event.message));
+    } else if (event.event === 'performance-metrics') {
+      this.emit('performance-metrics', event);
     }
   }
 
@@ -244,17 +247,23 @@ export class PythonManager extends EventEmitter {
    */
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('[PythonManager] Max reconnection attempts reached');
+      logger.error('PythonManager', 'Max reconnection attempts reached', {
+        attempts: this.reconnectAttempts,
+        maxAttempts: this.maxReconnectAttempts
+      });
       this.emit('fatal-error', new Error('Python process connection lost'));
       return;
     }
 
     this.reconnectAttempts++;
-    console.log(`[PythonManager] Reconnecting (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+    logger.info('PythonManager', 'Attempting to reconnect', {
+      attempt: this.reconnectAttempts,
+      maxAttempts: this.maxReconnectAttempts
+    });
 
     setTimeout(() => {
       this.start().catch((error) => {
-        console.error('[PythonManager] Reconnection failed:', error);
+        logger.error('PythonManager', 'Reconnection attempt failed', error);
       });
     }, this.reconnectDelay);
   }

@@ -2,10 +2,9 @@
   "name": "diktate",
   "version": "0.1.0-mvp",
   "description": "Privacy-first voice dictation for Windows",
-  "main": "src/main.ts",
-  "type": "module",
+  "main": "dist/main.js",
   "scripts": {
-    "dev": "electron . --dev",
+    "dev": "tsc && electron . --dev",
     "start": "electron .",
     "build": "tsc && electron .",
     "dist": "electron-builder"

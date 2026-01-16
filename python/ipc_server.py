@@ -7,9 +7,10 @@ import sys
 import json
 import threading
 import logging
+import time
 from enum import Enum
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict
 
 # Add core module to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -40,6 +41,40 @@ class State(Enum):
     ERROR = "error"
 
 
+class PerformanceMetrics:
+    """Track performance metrics for the pipeline"""
+
+    def __init__(self):
+        self.metrics: Dict[str, float] = {}
+        self.start_times: Dict[str, float] = {}
+
+    def start(self, metric_name: str) -> None:
+        """Start timing a metric"""
+        self.start_times[metric_name] = time.time()
+
+    def end(self, metric_name: str) -> float:
+        """End timing a metric and return duration"""
+        if metric_name not in self.start_times:
+            logger.warning(f"Attempted to end non-existent metric: {metric_name}")
+            return 0.0
+
+        duration = (time.time() - self.start_times[metric_name]) * 1000  # Convert to ms
+        self.metrics[metric_name] = duration
+        del self.start_times[metric_name]
+
+        logger.info(f"[PERF] {metric_name}: {duration:.0f}ms")
+        return duration
+
+    def get_metrics(self) -> Dict[str, float]:
+        """Get all recorded metrics"""
+        return self.metrics.copy()
+
+    def reset(self) -> None:
+        """Reset all metrics"""
+        self.metrics.clear()
+        self.start_times.clear()
+
+
 class IpcServer:
     """Server for handling IPC commands from Electron"""
 
@@ -52,6 +87,7 @@ class IpcServer:
         self.injector: Optional[Injector] = None
         self.recording = False
         self.audio_file = None
+        self.perf = PerformanceMetrics()
 
         logger.info("Initializing IPC Server...")
         self._initialize_components()
@@ -101,6 +137,11 @@ class IpcServer:
             return {"success": False, "error": error_msg}
 
         try:
+            # Reset metrics for new session
+            self.perf.reset()
+            self.perf.start("total")
+            self.perf.start("recording")
+
             self._set_state(State.RECORDING)
             self.recorder.start()
             self.recording = True
@@ -121,6 +162,7 @@ class IpcServer:
         self.recording = False
         try:
             self.recorder.stop()
+            self.perf.end("recording")
             logger.info("[STOP] Recording stopped")
 
             # Save audio to temporary file
@@ -146,22 +188,34 @@ class IpcServer:
 
             # Transcribe
             logger.info("[TRANSCRIBE] Transcribing audio...")
+            self.perf.start("transcription")
             raw_text = self.transcriber.transcribe(self.audio_file)
+            self.perf.end("transcription")
             logger.info(f"[RESULT] Transcribed: {raw_text}")
 
             # Process (clean up text)
             logger.info("[PROCESS] Processing text...")
+            self.perf.start("processing")
             if self.processor:
                 processed_text = self.processor.process(raw_text)
             else:
                 processed_text = raw_text
+            self.perf.end("processing")
             logger.info(f"[RESULT] Processed: {processed_text}")
 
             # Inject text
             self._set_state(State.INJECTING)
             logger.info("[INJECT] Injecting text...")
+            self.perf.start("injection")
             self.injector.type_text(processed_text)
+            self.perf.end("injection")
             logger.info("[SUCCESS] Text injected successfully")
+
+            # End total timing and log all metrics
+            self.perf.end("total")
+            metrics = self.perf.get_metrics()
+            logger.info(f"[PERF] Session complete - Total: {metrics.get('total', 0):.0f}ms")
+            self._emit_event("performance-metrics", metrics)
 
             # Cleanup
             if self.audio_file:
