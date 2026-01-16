@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version:*)",
+      "Bash(python -m venv:*)",
+      "Bash(venvScriptspip install --upgrade pip setuptools wheel)",
+      "Bash(venvScriptspip install -r requirements.txt)",
+      "Bash(source venv/Scripts/activate)",
+      "Bash(pip install:*)",
+      "Bash(python -m pip install:*)",
+      "Bash(python:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(npm --version)",
+      "Bash(npm install)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

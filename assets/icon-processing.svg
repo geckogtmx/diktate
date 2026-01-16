@@ -1,0 +1,7 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="32" cy="32" r="30" fill="#2196F3" stroke="#333" stroke-width="2"/>
+  <circle cx="32" cy="32" r="12" fill="none" stroke="white" stroke-width="2">
+    <animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="1s" repeatCount="indefinite"/>
+  </circle>
+  <text x="32" y="40" font-size="32" fill="white" text-anchor="middle" font-weight="bold">D</text>
+</svg>
