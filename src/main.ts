@@ -3,18 +3,43 @@
  * Handles system tray, Python subprocess, and global hotkey
  */
 
-import { app, Tray, Menu, ipcMain, globalShortcut, BrowserWindow, Notification, nativeImage, NativeImage } from 'electron';
+import { app, Tray, Menu, ipcMain, globalShortcut, BrowserWindow, Notification, nativeImage, NativeImage, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { PythonManager } from './services/pythonManager';
 import { logger } from './utils/logger';
 import { performanceMetrics } from './utils/performanceMetrics';
 
+import Store from 'electron-store';
+
 const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
+
+// Types for Settings
+interface UserSettings {
+  processingMode: string;
+  autoStart: boolean;
+  soundFeedback: boolean;
+  defaultMode: string;
+  transMode: string;
+  hotkey: string;
+}
+
+// Initialize Store with defaults
+const store = new Store<UserSettings>({
+  defaults: {
+    processingMode: 'local',
+    autoStart: false,
+    soundFeedback: true,
+    defaultMode: 'standard',
+    transMode: 'none',
+    hotkey: 'Ctrl+Alt+D'
+  }
+});
 
 let tray: Tray | null = null;
 let pythonManager: PythonManager | null = null;
 let isRecording: boolean = false;
+let settingsWindow: BrowserWindow | null = null;
 
 /**
  * Create a simple colored icon programmatically
@@ -117,6 +142,35 @@ function createDebugWindow(): void {
 }
 
 /**
+ * Create Settings Window
+ */
+function createSettingsWindow(): void {
+  if (settingsWindow) {
+    settingsWindow.show();
+    return;
+  }
+
+  settingsWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    show: true,
+    title: 'dIKtate Settings',
+    icon: getIcon('idle'),
+    autoHideMenuBar: true,
+    webPreferences: {
+      nodeIntegration: true, // Needed for simple settings.js
+      contextIsolation: false // Needed for simple settings.js logic
+    }
+  });
+
+  settingsWindow.loadFile(path.join(__dirname, 'settings.html'));
+
+  settingsWindow.on('closed', () => {
+    settingsWindow = null;
+  });
+}
+
+/**
  * Initialize system tray icon
  */
 function initializeTray(): void {
@@ -129,6 +183,11 @@ function initializeTray(): void {
       label: 'Status: Idle',
       enabled: false,
       id: 'status'
+    },
+    { type: 'separator' },
+    {
+      label: 'Settings...',
+      click: () => createSettingsWindow()
     },
     { type: 'separator' },
     {
@@ -175,6 +234,11 @@ function updateTrayState(state: string): void {
       label: `Status: ${state}`,
       enabled: false,
       id: 'status'
+    },
+    { type: 'separator' },
+    {
+      label: 'Settings...',
+      click: () => createSettingsWindow()
     },
     { type: 'separator' },
     {
@@ -353,6 +417,20 @@ function setupIpcHandlers(): void {
     if (!pythonManager) return { status: 'disconnected' };
     return { status: pythonManager.getStatus() };
   });
+
+  // Settings IPC
+  ipcMain.handle('settings:get-all', () => {
+    return store.store;
+  });
+
+  ipcMain.handle('settings:set', (event, key: keyof UserSettings, value: any) => {
+    store.set(key, value);
+    // If hotkey changed, re-register
+    if (key === 'hotkey') {
+      setupGlobalHotkey(); // Re-register with new key
+    }
+    // If processing mode changed, notify Python? (Future)
+  });
 }
 
 /**
@@ -362,8 +440,12 @@ function setupGlobalHotkey(): void {
   try {
     let lastHotkeyPress = 0;
     const HOTKEY_DEBOUNCE_MS = 500;
+    const currentHotkey = store.get('hotkey') || 'Control+Alt+D';
 
-    const ret = globalShortcut.register('Control+Alt+D', async () => {
+    // Unregister old if exists
+    globalShortcut.unregisterAll();
+
+    const ret = globalShortcut.register(currentHotkey, async () => {
       const now = Date.now();
       if (now - lastHotkeyPress < HOTKEY_DEBOUNCE_MS) {
         logger.debug('HOTKEY', 'Ignoring debounce hotkey press');
@@ -418,7 +500,7 @@ function setupGlobalHotkey(): void {
         true
       );
     } else {
-      logger.info('HOTKEY', 'Global hotkey registered successfully', { hotkey: 'Ctrl+Alt+D' });
+      logger.info('HOTKEY', 'Global hotkey registered successfully', { hotkey: currentHotkey });
     }
   } catch (error) {
     logger.error('HOTKEY', 'Error registering global hotkey', error);

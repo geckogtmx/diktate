@@ -19,6 +19,7 @@ def verify_imports():
         ("pynput", "pynput"),
         ("fastapi", "fastapi"),
         ("uvicorn", "uvicorn"),
+        ("pyperclip", "pyperclip"),
     ]
 
     for module_name, package_name in packages:

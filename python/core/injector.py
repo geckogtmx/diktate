@@ -1,44 +1,74 @@
-"""Text injector module using pynput."""
+"""Text injector module using pynput and pyperclip."""
 
 from pynput.keyboard import Controller, Key
 import logging
 import time
+import pyperclip
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
 class Injector:
-    """Injects text into active application using keyboard simulation."""
+    """Injects text into active application using clipboard paste."""
 
-    def __init__(self, delay_per_char: float = 0.01):
-        """
-        Initialize the injector.
-
-        Args:
-            delay_per_char: Delay between characters in seconds
-        """
+    def __init__(self):
+        """Initialize the injector."""
         self.keyboard = Controller()
-        self.delay_per_char = delay_per_char
 
     def type_text(self, text: str, delay: Optional[float] = None) -> None:
         """
-        Type text character by character.
-
-        Args:
-            text: Text to type
-            delay: Optional custom delay per character
+        Legacy method for backward compatibility. 
+        Forwards to paste_text for better performance.
         """
-        char_delay = delay or self.delay_per_char
+        self.paste_text(text)
 
+    def paste_text(self, text: str) -> None:
+        """
+        Inject text using clipboard paste (Ctrl+V).
+        
+        Preserves the user's original clipboard content.
+        
+        Args:
+            text: Text to paste
+        """
         try:
-            logger.info(f"Typing {len(text)} characters...")
-            for char in text:
-                self.keyboard.type(char)
-                time.sleep(char_delay)
-            logger.info("Text typed successfully")
+            logger.info(f"Pasting {len(text)} characters...")
+            
+            # 1. Save original clipboard
+            try:
+                original_clipboard = pyperclip.paste()
+            except Exception:
+                original_clipboard = ""
+
+            # 2. Copy new text to clipboard
+            pyperclip.copy(text)
+            
+            # 3. Simulate Ctrl+V
+            # Small delay to ensure clipboard is ready
+            time.sleep(0.05)
+            
+            with self.keyboard.pressed(Key.ctrl):
+                self.keyboard.press('v')
+                self.keyboard.release('v')
+                
+            # 4. Wait for paste to complete before restoring clipboard
+            # This is critical - too fast and we restore before the app pastes
+            time.sleep(0.1) 
+            
+            # 5. Restore original clipboard
+            # Note: Some apps might be slow to paste, so this restores 
+            # might technically happen "too fast" for extremely laggy apps,
+            # but 100ms is usually safe for modern OS.
+            if original_clipboard:
+                pyperclip.copy(original_clipboard)
+                
+            logger.info("Text pasted successfully")
+            
         except Exception as e:
-            logger.error(f"Error typing text: {e}")
+            logger.error(f"Error pasting text: {e}")
+            # Fallback to typing if paste fails?
+            # self._type_fallback(text)
             raise
 
     def press_keys(self, *keys) -> None:

@@ -9,17 +9,17 @@
 ## Sprint 1: Core UX (Week 1)
 
 ### P0 - Settings Window
-- [ ] Create settings window component (React)
-- [ ] Add hotkey configuration UI
-- [ ] Add audio device selector
-- [ ] Add processing mode selector (Cloud/Local toggle)
-- [ ] Wire up IPC for settings persistence
-- [ ] Store settings in electron-store
+- [x] Create settings window component (Vanilla JS/HTML)
+- [x] Add hotkey configuration UI
+- [x] Add audio device selector (UI only)
+- [x] Add processing mode selector (Cloud/Local toggle UI)
+- [x] Wire up IPC for settings persistence
+- [x] Store settings in electron-store
 
 ### P0 - Instant Text Injection
-- [ ] Implement clipboard paste in `injector.py`
-- [ ] Replace character-by-character with Ctrl+V
-- [ ] Restore original clipboard after paste
+- [x] Implement clipboard paste in `injector.py`
+- [x] Replace character-by-character with Ctrl+V (Wrapper implemented)
+- [x] Restore original clipboard after paste
 - [ ] Test in 5+ applications
 
 ### P0 - Cloud/Local Toggle
@@ -117,9 +117,9 @@
 
 ## 🔥 Today's Focus (Immediate)
 
-1. [ ] **Clipboard paste injection** - biggest UX win
-2. [ ] **Settings window skeleton** - foundation for all config
-3. [ ] **Mode selector** - ready for prompt mode
+1. [x] **Clipboard paste injection** - biggest UX win
+2. [x] **Settings window skeleton** - foundation for all config
+3. [x] **Mode selector** - ready for prompt mode
 
 ---
 

@@ -1,107 +1,69 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-17T09:31:00
-> **Last Model:** Gemini
-> **Session Focus:** Commercial Launch Strategy & Sprint Planning
+> **Last Updated:** 2026-01-17
+> **Last Model:** Gemini (Antigravity)
+> **Session Focus:** V1.0 Sprint 1 - Core UX
 
 ---
 
 ## ✅ Completed This Session
 
-### Commercial Launch Strategy
-- Created comprehensive `docs/COMMERCIAL_LAUNCH_STRATEGY.md` (1,250+ lines)
-  - Competitive analysis (WisprFlow, AquaVoice, Glaido)
-  - Lifetime-first pricing model ($29 one-time)
-  - $20/month reality check vs Gemini Pro
-  - Ko-fi governance structure
-  - Bilingual (ES/EN) strategy
-  - Indigenous language opportunity (Náhuatl, Maya, Zapotec)
-  - Accessibility market positioning
-  - Prompt Helper Mode (origin story)
-  - Translation mode as killer feature
+### 1. Instant Text Injection (Fixed Slow Typing)
+- **Implemented:** `pyperclip`-based injection in `python/core/injector.py`.
+- **Logic:** Saves clipboard → Copies text → Sends Ctrl+V → Restores clipboard.
+- **Why:** Character-by-character typing was too slow (100ms/char). Now it's instant.
+- **Dependency:** Added `pyperclip` to `requirements.txt`.
 
-### Research & Validation
-- **Confirmed:** Google OAuth login works for Gemini subscription quotas
-- **Confirmed:** Llama 3 officially supports Spanish
-- **Confirmed:** Whisper ~87% accuracy for Spanish
+### 2. Settings Window (UI & Foundation)
+- **Implemented:** Full Settings UI in Vanilla JS/HTML (`src/settings.html`, `src/settings.js`).
+- **Features:** 
+  - Tabs: General, Audio, Modes, About.
+  - Hotkey recording UI.
+  - Mode switching UI.
+- **Persistence:** Configured `electron-store` in `main.ts` to save settings.
+- **Access:** Available via System Tray -> "Settings...".
+- **Fix:** Updated `package.json` to copy `settings.*` to `dist/` on build.
 
-### Sprint Planning
-- Created `docs/V1_LAUNCH_SPRINT.md` with 4-week commercial launch plan
-  - Sprint 1: Settings window, Clipboard paste, Cloud/Local toggle
-  - Sprint 2: Modes (6 types), Translation, Google OAuth
-  - Sprint 3: Spanish UI (i18n), Polish, Snippets
-  - Sprint 4: Installer, Website, Ko-fi, Launch
+### 3. Syntax Fixes
+- Fixed duplicate variable declarations in `main.ts`.
+- Fixed strict Python environmental warnings.
 
-## ⚠️ Known Issues / Broken
+---
 
-- **SEC-002 (Deferred)**: npm vulnerabilities in electron-builder (build-time only)
-- **Whisper censorship**: V3 Turbo censors profanity with asterisks
+## ⚠️ Known Issues / Testing Needed
 
-## 🔄 In Progress / Pending
+- **Settings Logic:** The settings UI saves values to `electron-store`, but the **backend (Python) does not yet read them**. changing "Cloud/Local" in the UI won't actually switch the engine yet.
+- **Audio Devices:** The dropdown is mapped in UI but empty. Needs `navigator.mediaDevices.enumerateDevices()` logic in `settings.js`.
+- **Restart Required:** User must restart `pnpm dev` to see `main.ts` changes.
 
-### P0 (This Week)
-- [ ] **Clipboard paste injection** — Instant Ctrl+V in `python/core/injector.py`
-- [ ] **Settings window** — React component with hotkey/mode/audio config
-- [ ] **Cloud/Local toggle** — UI switch + config persistence
-
-### P1 (Next Week)
-- [ ] **Modes implementation** — Standard, Developer, Email, Prompt, Raw, Casual
-- [ ] **Translation modes** — ES↔EN
-- [ ] **Google OAuth integration** — Use existing Gemini subscription quota
-
-### P2 (Week 3-4)
-- [ ] **Spanish UI translation** — react-i18next
-- [ ] **One-click installer** — electron-builder + PyInstaller
-- [ ] **Website** — Parallax landing page on dikta.me
+---
 
 ## 📋 Instructions for Next Model
 
-### Priority Order
-1. **Read first:** `docs/COMMERCIAL_LAUNCH_STRATEGY.md` (commercial context)
-2. **Read second:** `docs/V1_LAUNCH_SPRINT.md` (sprint tasks)
-3. **Start with:** Clipboard paste injection in `python/core/injector.py`
+> **Context:** V1.0 Launch Sprint. We are building the **Cloud/Local Toggle** logic.
 
-### Context Needed
-- `docs/COMMERCIAL_LAUNCH_STRATEGY.md` — Full commercial strategy
-- `docs/V1_LAUNCH_SPRINT.md` — Sprint breakdown with checkboxes
-- `python/core/processor.py` — Multi-provider implementation (already done)
-- `docs/BENCHMARKS.md` — Performance data (transcription is bottleneck)
+### Priority Queue:
 
-### Do NOT
-- Do not change pricing structure without user confirmation
-- Do not remove multi-provider support from processor.py
-- Do not use `gemini-3-flash` (without `-preview`) — returns 404
-- Do not refactor core pipeline — it works, focus on UI/UX
+1.  **Backend Config Bridge (P0):**
+    -   Modify `services/pythonManager.ts` to listen for config changes from `electron-store`.
+    -   Implement `configure()` handler in `python/ipc_server.py` to accept mode switches (Cloud/Local).
+    -   Update `python/core/processor.py` to respect the mode.
 
----
+2.  **Audio Device Enumeration (P1):**
+    -   Update `src/settings.js` to list input devices.
+    -   Send selected device ID to Python recorder.
 
-## Session Log (Last 3 Sessions)
+3.  **Mode Prompts (P1):**
+    -   The UI has modes (Standard, Developer, etc.).
+    -   Need to implement the actual system prompts in `python/core/processor.py` mapping to these keys.
 
-### 2026-01-17 09:31 - Gemini
-- Commercial launch strategy (1,250+ lines)
-- Validated Google OAuth for Gemini subscription quotas
-- Created 4-week sprint plan
-- Key decisions: $29 lifetime, translation mode, prompt mode, accessibility focus
-
-### 2026-01-16 22:44 - Gemini
-- QA Security Audit: 5 findings, 3 fixed
-- LLM Benchmarking: Llama3 (~7s), Claude Haiku (~0.8s), Gemini Flash (~2.5s)
-- Multi-provider cloud processing: 4 modes (local/gemini/anthropic/openai)
-- Created docs/BENCHMARKS.md
-- Key insight: Transcription is bottleneck, not LLM
-
-### 2026-01-16 ~21:00 - Gemini
-- Fixed Electron install.js issue
-- UAT on pnpm dev mode
+### Key Files
+- `src/main.ts` (Store & IPC)
+- `src/settings.js` (UI Logic)
+- `python/ipc_server.py` (Command handling)
+- `services/pythonManager.ts` (Bridge)
 
 ---
 
-## Key Documents Reference
-
-| Document | Purpose |
-|----------|---------|
-| `docs/COMMERCIAL_LAUNCH_STRATEGY.md` | Full commercial strategy |
-| `docs/V1_LAUNCH_SPRINT.md` | Sprint task breakdown |
-| `AI_CODEX.md` | Project governance |
-| `GEMINI.md` / `CLAUDE.md` | Model-specific instructions |
-| `docs/BENCHMARKS.md` | Performance data |
+## 💡 Developer Note
+The "Big Box" UI is still the primary interaction point. The Settings Window is a secondary view for configuration. Do not replace the Big Box.

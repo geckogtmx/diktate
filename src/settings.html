@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --sidebar-color: #252526;
+            --text-color: #e0e0e0;
+            --accent-color: #0078d7;
+            --border-color: #333;
+            --input-bg: #3c3c3c;
+            --hover-color: #2a2d2e;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR */
+        #sidebar {
+            width: 150px;
+            background-color: var(--sidebar-color);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding-top: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: #888;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tab-btn:hover {
+            color: white;
+            background-color: var(--hover-color);
+        }
+
+        .tab-btn.active {
+            color: white;
+            background-color: #37373d;
+            border-left: 3px solid var(--accent-color);
+            padding-left: 17px;
+        }
+
+        /* CONTENT */
+        #content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .setting-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .sub-label {
+            font-size: 0.8em;
+            color: #888;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* CONTROLS */
+        input[type="text"], select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus, select:focus {
+            outline: 2px solid var(--accent-color);
+            border-color: transparent;
+        }
+
+        /* TOGGLE SWITCH */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--accent-color); }
+        input:focus + .slider { box-shadow: 0 0 1px var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* BUTTONS */
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-secondary {
+            background-color: #333;
+        }
+
+        /* HOTKEY INPUT */
+        #hotkey-display {
+            background: #111;
+            padding: 10px;
+            text-align: center;
+            border: 1px dashed #555;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 1.2em;
+        }
+
+        #hotkey-display.recording {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            background: #1e1e2e;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div class="tab-btn active" onclick="switchTab('general')">⚙️ General</div>
+        <div class="tab-btn" onclick="switchTab('audio')">🎤 Audio</div>
+        <div class="tab-btn" onclick="switchTab('modes')">🧠 Modes</div>
+        <div class="tab-btn" onclick="switchTab('about')">ℹ️ About</div>
+    </div>
+
+    <div id="content">
+        <!-- GENERAL TAB -->
+        <div id="general" class="tab-content active">
+            <h2>General Settings</h2>
+            
+            <div class="setting-group">
+                <div class="setting-row">
+                    <div>
+                        <label>Processing Mode</label>
+                        <span class="sub-label">Choose how your voice is processed</span>
+                    </div>
+                    <select id="processing-mode" onchange="saveSetting('processingMode', this.value)">
+                        <option value="local">🏠 Local (Offline, Confidential)</option>
+                        <option value="cloud">☁️ Cloud (Faster, Paid)</option>
+                        <option value="google">🔐 Google Login (Your Account)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label>Global Hotkey</label>
+                <span class="sub-label">Press to start/stop dictation</span>
+                <div id="hotkey-display" onclick="recordHotkey()">Ctrl + Alt + D</div>
+                <div style="text-align: right; margin-top: 5px;">
+                    <button class="btn btn-secondary" onclick="resetHotkey()">Reset Default</button>
+                </div>
+            </div>
+            
+            <div class="setting-group">
+                <div class="setting-row">
+                    <div>
+                        <label>Start at Login</label>
+                        <span class="sub-label">Launch dIKtate when Windows starts</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="auto-start" onchange="saveSetting('autoStart', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- AUDIO TAB -->
+        <div id="audio" class="tab-content">
+            <h2>Audio Settings</h2>
+            
+            <div class="setting-group">
+                <label>Input Device</label>
+                <select id="audio-device">
+                    <option>Default Microphone</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label>Feedback Sound</label>
+                <div class="setting-row">
+                    <span class="sub-label">Play sound on start/stop</span>
+                    <label class="switch">
+                        <input type="checkbox" id="sound-feedback" checked onchange="saveSetting('soundFeedback', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODES TAB -->
+        <div id="modes" class="tab-content">
+            <h2>Personality Modes</h2>
+            
+            <div class="setting-group">
+                <label>Default Mode</label>
+                <select id="default-mode" onchange="saveSetting('defaultMode', this.value)">
+                    <option value="standard">Standard (Professional)</option>
+                    <option value="developer">Developer (Technical)</option>
+                    <option value="email">Email (Formal)</option>
+                    <option value="prompt">Prompt Helper (For LLMs)</option>
+                    <option value="creative">Creative (Flowing)</option>
+                    <option value="raw">Raw (Literal)</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label>Translation Mode</label>
+                <select id="trans-mode" onchange="saveSetting('transMode', this.value)">
+                    <option value="none">Disabled</option>
+                    <option value="es-en">Spanish → English</option>
+                    <option value="en-es">English → Spanish</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- ABOUT TAB -->
+        <div id="about" class="tab-content">
+            <h2>About dIKtate</h2>
+            <p><strong>Version:</strong> <span id="app-version">0.1.0-mvp</span></p>
+            <p>dIKtate is a privacy-first, local voice dictation tool designed for professionals.</p>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #252526; border-radius: 5px;">
+                <p><strong>License:</strong> MIT</p>
+                <p><strong>Copyright:</strong> © 2026 dIKtate Contributors</p>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn" onclick="require('electron').shell.openExternal('https://dikta.me')">Visit Website</button>
+                <button class="btn btn-secondary" onclick="require('electron').shell.openExternal('https://github.com/diktate/diktate')">GitHub</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./settings.js"></script>
+</body>
+</html>
