@@ -1,69 +1,59 @@
 # DEV_HANDOFF.md
 
 > **Last Updated:** 2026-01-17
-> **Last Model:** Gemini (Antigravity)
-> **Session Focus:** V1.0 Sprint 1 - Core UX
+> **Last Model:** Gemini
+> **Session Focus:** Status Window Models, GPU Fixes, Performance Investigation
 
 ---
 
 ## ✅ Completed This Session
 
-### 1. Instant Text Injection (Fixed Slow Typing)
-- **Implemented:** `pyperclip`-based injection in `python/core/injector.py`.
-- **Logic:** Saves clipboard → Copies text → Sends Ctrl+V → Restores clipboard.
-- **Why:** Character-by-character typing was too slow (100ms/char). Now it's instant.
-- **Dependency:** Added `pyperclip` to `requirements.txt`.
+-   **Status Window UI:** Now displays active Transcriber and Processor models (e.g., `T: TURBO | P: LLAMA3`).
+    -   Files: `src/main.ts` (state handling), `src/renderer.ts` (UI update), `python/ipc_server.py` (status command).
+-   **Whisper GPU Fix:** Fixed `cublas64_12.dll` error by injecting NVIDIA DLL paths in `ipc_server.py`.
+    -   Files: `python/ipc_server.py`, `python/requirements.txt` (added `nvidia-cublas-cu12`, `nvidia-cudnn-cu12`).
+-   **Configurable Processor:** Backend now supports switching processor model via `ipc_server.py` configuration.
+    -   Files: `python/core/processor.py` (`set_model`), `python/ipc_server.py`.
+-   **Crash Fix:** Resolved `ImportError` by aliasing `DEFAULT_CLEANUP_PROMPT` in `python/config/prompts.py`.
 
-### 2. Settings Window (UI & Foundation)
-- **Implemented:** Full Settings UI in Vanilla JS/HTML (`src/settings.html`, `src/settings.js`).
-- **Features:** 
-  - Tabs: General, Audio, Modes, About.
-  - Hotkey recording UI.
-  - Mode switching UI.
-- **Persistence:** Configured `electron-store` in `main.ts` to save settings.
-- **Access:** Available via System Tray -> "Settings...".
-- **Fix:** Updated `package.json` to copy `settings.*` to `dist/` on build.
+## ⚠️ Known Issues / Broken
 
-### 3. Syntax Fixes
-- Fixed duplicate variable declarations in `main.ts`.
-- Fixed strict Python environmental warnings.
+-   **Performance/VRAM Contention:** Transcription + Processing takes ~40s when using `llama3:latest` (4.7GB) + Whisper Large (2GB) on an 8GB VRAM GPU (system swaps to RAM).
+    -   User declined switching to a smaller model (e.g., `qwen2.5:1.5b`) for now.
+    -   **Performance is fast** if VRAM isn't exceeded (e.g. if one component is on CPU or smaller model).
+-   **Missing Audio Devices:** Settings dropdown for audio devices is empty (mocked or unimplemented).
 
----
+## 🔄 In Progress / Pending
 
-## ⚠️ Known Issues / Testing Needed
-
-- **Settings Logic:** The settings UI saves values to `electron-store`, but the **backend (Python) does not yet read them**. changing "Cloud/Local" in the UI won't actually switch the engine yet.
-- **Audio Devices:** The dropdown is mapped in UI but empty. Needs `navigator.mediaDevices.enumerateDevices()` logic in `settings.js`.
-- **Restart Required:** User must restart `pnpm dev` to see `main.ts` changes.
-
----
+-   [ ] **Audio Device Enumeration** (Next Priority)
+-   [ ] **Performance Tuning:** Re-evaluating model choices or quantization vs speed trade-offs.
 
 ## 📋 Instructions for Next Model
 
-> **Context:** V1.0 Launch Sprint. We are building the **Cloud/Local Toggle** logic.
+1.  **Audio Device Enumeration (P1):**
+    -   Implement `navigator.mediaDevices.enumerateDevices()` in Electron.
+    -   Send list to settings UI.
+    -   Pass selected device ID to Python `Recorder`.
+2.  **Respect User Preference:** Do **NOT** change the model from Llama3 without explicit permission.
+3.  **Performance:** If user complains about speed again, explain the VRAM limit clearly or suggest **Quantized** versions of Llama3 (e.g., `llama3:q4_0`) instead of a different model family.
 
-### Priority Queue:
-
-1.  **Backend Config Bridge (P0):**
-    -   Modify `services/pythonManager.ts` to listen for config changes from `electron-store`.
-    -   Implement `configure()` handler in `python/ipc_server.py` to accept mode switches (Cloud/Local).
-    -   Update `python/core/processor.py` to respect the mode.
-
-2.  **Audio Device Enumeration (P1):**
-    -   Update `src/settings.js` to list input devices.
-    -   Send selected device ID to Python recorder.
-
-3.  **Mode Prompts (P1):**
-    -   The UI has modes (Standard, Developer, etc.).
-    -   Need to implement the actual system prompts in `python/core/processor.py` mapping to these keys.
-
-### Key Files
-- `src/main.ts` (Store & IPC)
-- `src/settings.js` (UI Logic)
-- `python/ipc_server.py` (Command handling)
-- `services/pythonManager.ts` (Bridge)
+### Context Needed
+-   `python/ipc_server.py`: Note the DLL injection block.
+-   `src/main.ts`: Note the `models` object extraction in `get-initial-state`.
 
 ---
 
-## 💡 Developer Note
-The "Big Box" UI is still the primary interaction point. The Settings Window is a secondary view for configuration. Do not replace the Big Box.
+## Session Log (Last 3 Sessions)
+
+### 2026-01-17 - Gemini
+-   Implemented Status Window Model Display.
+-   Fixed critical Whisper GPU crash (missing DLLs).
+-   Diagnosed VRAM contention causing 40s slowdown.
+
+### 2026-01-17 - Gemini
+-   Fixed blank Settings window (build process).
+-   Updated launch strategy.
+
+### 2026-01-17 - Gemini
+-   Implemented Mode Prompts (Standard/Pro/Literal).
+-   Fixed `transcriber.py` CPU/GPU detection.

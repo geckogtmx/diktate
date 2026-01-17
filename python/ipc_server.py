@@ -13,6 +13,36 @@ from pathlib import Path
 from typing import Optional, Dict
 from pynput import keyboard
 
+# --- FIX: Inject NVIDIA DLL paths for ctranslate2/faster-whisper ---
+import os
+import sys
+from pathlib import Path
+
+def _add_nvidia_paths():
+    """Add NVIDIA library paths from site-packages to PATH."""
+    try:
+        # Standard venv site-packages location on Windows
+        site_packages = Path(sys.prefix) / "Lib" / "site-packages"
+        nvidia_path = site_packages / "nvidia"
+        
+        if nvidia_path.exists():
+            # Add cublas and cudnn bin directories
+            dll_paths = [
+                nvidia_path / "cublas" / "bin",
+                nvidia_path / "cudnn" / "bin"
+            ]
+            
+            for p in dll_paths:
+                if p.exists():
+                    os.add_dll_directory(str(p)) # Python 3.8+ Windows safety
+                    os.environ["PATH"] = str(p) + os.pathsep + os.environ["PATH"]
+                    
+    except Exception as e:
+        print(f"Warning: Failed to inject NVIDIA paths: {e}")
+
+_add_nvidia_paths()
+# -------------------------------------------------------------------
+
 # Add core module to path
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -244,14 +274,29 @@ class IpcServer:
             self._set_state(State.ERROR)
 
     def configure(self, config: dict) -> dict:
-        """Configure the pipeline (switch models, etc)"""
+        """Configure the pipeline (switch models, modes, etc)"""
         try:
+            updates = []
+            
+            # 1. Transcriber Model
             model_size = config.get("model")
             if model_size:
-                logger.info(f"[CONFIG] Switching model to: {model_size}")
-                # Re-initialize transcriber
+                logger.info(f"[CONFIG] Switching transcription model to: {model_size}")
                 self.transcriber = Transcriber(model_size=model_size, device="auto")
-                return {"success": True, "message": f"Switched to {model_size}"}
+                updates.append(f"Model: {model_size}")
+
+            # 2. Processor Mode (Standard, Professional, Literal)
+            mode = config.get("mode")
+            if mode and self.processor:
+                logger.info(f"[CONFIG] Switching processing mode to: {mode}")
+                if hasattr(self.processor, "set_mode"):
+                    self.processor.set_mode(mode)
+                    updates.append(f"Mode: {mode}")
+                else:
+                    logger.warning(f"Processor {type(self.processor)} does not support mode switching")
+
+            if updates:
+                return {"success": True, "message": f"Updated: {', '.join(updates)}"}
             return {"success": False, "error": "No valid configuration found"}
         except Exception as e:
             logger.error(f"Configuration failed: {e}")
@@ -270,7 +315,28 @@ class IpcServer:
             elif cmd_name == "stop_recording":
                 return self.stop_recording()
             elif cmd_name == "status":
-                return {"success": True, "state": self.state.value}
+                data = {
+                    "state": self.state.value,
+                    "transcriber": "Unknown",
+                    "processor": "Unknown"
+                }
+                
+                if self.transcriber:
+                    data["transcriber"] = self.transcriber.model_size.upper()
+                
+                if self.processor:
+                    if hasattr(self.processor, "model"):
+                        data["processor"] = self.processor.model.upper()
+                    elif hasattr(self.processor, "api_url") and "google" in self.processor.api_url:
+                        data["processor"] = "GEMINI FLASH"
+                    elif hasattr(self.processor, "api_url") and "anthropic" in self.processor.api_url:
+                        data["processor"] = "CLAUDE HAIKU"
+                    elif hasattr(self.processor, "api_url") and "openai" in self.processor.api_url:
+                        data["processor"] = "GPT-4o-MINI"
+                    else:
+                        data["processor"] = "LOCAL LLM"
+                        
+                return {"success": True, "data": data}
             elif cmd_name == "configure":
                 return self.configure(command.get("config", {}))
             elif cmd_name == "shutdown":

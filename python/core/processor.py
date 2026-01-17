@@ -14,21 +14,7 @@ load_dotenv(env_path)
 logger = logging.getLogger(__name__)
 
 
-# Default cleanup prompt - same for both local and cloud
-DEFAULT_CLEANUP_PROMPT = """You are a text cleanup tool. Your ONLY job is to output the cleaned text. Do NOT add any commentary, explanations, or phrases like "Here's the cleaned text".
-
-Rules:
-1. Remove filler words (um, uh, like, you know) only if they are used as hesitations.
-2. Fix punctuation and capitalization.
-3. PRESERVE colloquialisms, slang, and emphasis (e.g., "freaking", "gonna", "wanna").
-4. DO NOT change the tone or vocabulary.
-5. If the input is short or unclear, return it exactly as is (with punctuation).
-6. Return ONLY the cleaned text with NO preamble, NO explanation, NO commentary.
-
-Input: {text}
-
-Cleaned text:"""
-
+from config.prompts import get_prompt, DEFAULT_CLEANUP_PROMPT
 
 class LocalProcessor:
     """Processes transcribed text using local Ollama LLM."""
@@ -37,12 +23,19 @@ class LocalProcessor:
         self,
         ollama_url: str = "http://localhost:11434",
         model: str = "llama3:latest",
-        prompt: Optional[str] = None
+        mode: str = "standard"
     ):
         self.ollama_url = ollama_url
         self.model = model
-        self.prompt = prompt or DEFAULT_CLEANUP_PROMPT
+        self.mode = mode
+        self.prompt = get_prompt(mode)
         self._verify_ollama()
+
+    def set_mode(self, mode: str) -> None:
+        """Update processing mode (standard, professional, literal)."""
+        self.mode = mode
+        self.prompt = get_prompt(mode)
+        logger.info(f"Processor mode switched to: {mode}")
 
     def _verify_ollama(self) -> None:
         """Verify Ollama server is running."""

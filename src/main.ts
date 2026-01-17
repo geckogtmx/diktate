@@ -369,6 +369,16 @@ function setupPythonEventHandlers(): void {
       logger.info('MAIN', 'Average performance', stats.averages);
     }
   });
+
+  // Listen for explicit status responses if we implement polling
+  pythonManager.on('status-check', (statusData: any) => {
+    if (debugWindow && !debugWindow.isDestroyed()) {
+      debugWindow.webContents.send('model-info', {
+        transcriber: statusData.transcriber,
+        processor: statusData.processor
+      });
+    }
+  });
 }
 
 /**
@@ -425,11 +435,24 @@ function setupIpcHandlers(): void {
 
   ipcMain.handle('settings:set', (event, key: keyof UserSettings, value: any) => {
     store.set(key, value);
+
     // If hotkey changed, re-register
     if (key === 'hotkey') {
       setupGlobalHotkey(); // Re-register with new key
     }
-    // If processing mode changed, notify Python? (Future)
+
+    // If processing mode changed (Standard/Professional/Literal)
+    if (key === 'defaultMode' && pythonManager) {
+      logger.info('IPC', `Default mode changed to ${value}, updating Python`);
+      pythonManager.setConfig({ mode: value }).catch(err => {
+        logger.error('IPC', 'Failed to update Python config', err);
+      });
+
+      // Update Debug Window UI
+      if (debugWindow && !debugWindow.isDestroyed()) {
+        debugWindow.webContents.send('mode-update', value);
+      }
+    }
   });
 }
 
@@ -543,10 +566,32 @@ async function initialize(): Promise<void> {
     });
 
     // Handle get-initial-state
-    ipcMain.handle('get-initial-state', () => {
+    ipcMain.handle('get-initial-state', async () => {
+      const currentMode = store.get('defaultMode') || 'standard';
+
+      let models = { transcriber: 'Unknown', processor: 'Unknown' };
+      if (pythonManager && pythonManager.isProcessRunning()) {
+        try {
+          const result = await pythonManager.sendCommand('status');
+          // sendCommand returns the content of 'data' directly if success=True (see PythonManager.ts:156)
+          // Wait, PythonManager.ts:156 says: resolve(response.data);
+          // And ipc_server.py returns { success: true, data: { transcriber: ..., processor: ... } }
+          // So 'result' here IS the inner data object.
+
+          if (result) {
+            if (result.transcriber) models.transcriber = result.transcriber;
+            if (result.processor) models.processor = result.processor;
+          }
+        } catch (e) {
+          logger.warn('MAIN', 'Failed to fetch python status for initial state', e);
+        }
+      }
+
       return {
         status: pythonManager?.getStatus() || 'disconnected',
-        isRecording
+        isRecording,
+        mode: currentMode,
+        models
       };
     });
 

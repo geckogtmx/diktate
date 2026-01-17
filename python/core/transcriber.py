@@ -37,9 +37,21 @@ class Transcriber:
     def _load_model(self) -> None:
         """Load the Whisper model."""
         try:
-            # Force CPU device if auto-detection picks up incompatible CUDA
-            device = "cpu" if self.device == "auto" else self.device
-            
+            # Resolve device: "auto" -> "cuda" (if available) else "cpu"
+            device = self.device
+            if device == "auto":
+                try:
+                    import ctranslate2
+                    if ctranslate2.get_cuda_device_count() > 0:
+                        device = "cuda"
+                        logger.info(f"CUDA detected: Using GPU (Count: {ctranslate2.get_cuda_device_count()})")
+                    else:
+                        device = "cpu"
+                        logger.info("CUDA not detected: Using CPU")
+                except ImportError:
+                    device = "cpu"
+                    logger.warning("ctranslate2 not found during device check: Defaulting to CPU")
+
             # Resolve model path from mapping if it exists, otherwise use size name
             model_name = self.MODEL_MAPPING.get(self.model_size, self.model_size)
 
@@ -47,7 +59,7 @@ class Transcriber:
             self.model = WhisperModel(
                 model_name,
                 device=device,
-                compute_type="int8"  # Use int8 quantized for CPU efficiency
+                compute_type="int8" if device == "cpu" else "float16"  # int8 for CPU, float16 for GPU
             )
             logger.info("Model loaded successfully")
         except Exception as e:

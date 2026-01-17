@@ -31,6 +31,9 @@ const electronAPI = {
   onStatusChange: (callback: (status: string) => void) => {
     ipcRenderer.on('status-update', (_, status) => callback(status));
   },
+  onModeChange: (callback: (mode: string) => void) => {
+    ipcRenderer.on('mode-update', (_, mode) => callback(mode));
+  },
   getInitialState: () => ipcRenderer.invoke('get-initial-state'),
   clearLogs: () => { }, // Handled in renderer for now
   testNotification: () => { } // Handled in renderer for now

@@ -81,11 +81,40 @@ if (window.electronAPI) {
 
     window.electronAPI.onStatusChange((status) => setStatus(status));
 
+    // Listen for mode updates (we'll add this event in main.ts)
+    if ((window.electronAPI as any).onModeChange) {
+        (window.electronAPI as any).onModeChange((mode: string) => setMode(mode));
+    }
+
     window.electronAPI.getInitialState().then((state) => {
         if (state) {
             // Determine state from complicated object if needed, or just string
             if (state.isRecording) setStatus('recording');
             else setStatus(state.status || 'idle');
+
+            // Initial set
+            updateStatusText(state.mode, state.models);
         }
     }).catch(err => addLogEntry('ERROR', 'Init failed', err));
+}
+
+let currentMode = 'STANDARD';
+let currentModels = { transcriber: 'TURBO', processor: 'LOCAL' };
+
+function updateStatusText(mode?: string, models?: any) {
+    if (mode) currentMode = mode.toUpperCase();
+    if (models) {
+        if (models.transcriber) currentModels.transcriber = models.transcriber;
+        if (models.processor) currentModels.processor = models.processor;
+    }
+
+    const modeEl = document.getElementById('status-mode');
+    if (modeEl) {
+        // Format: T: TURBO | P: LOCAL (STANDARD)
+        modeEl.textContent = `T: ${currentModels.transcriber} | P: ${currentModels.processor} (${currentMode})`;
+    }
+}
+
+function setMode(mode: string) {
+    updateStatusText(mode);
 }
