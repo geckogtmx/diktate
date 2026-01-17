@@ -1,242 +1,124 @@
-# MVP Task List
+# Master Task List
 
-**Quick Reference:** Actionable checklist for MVP development. See `mvp_development_plan.md` (in artifacts) for full details.
-
----
-
-## Phase 1: Python Backend Core (Days 1-5)
-
-### ✅ Task 1.1: Environment Setup (2h)
-- [ ] Create project structure (`python/`, `tests/`)
-- [ ] Create Python venv
-- [ ] Install dependencies (faster-whisper, pyaudio, requests, pynput)
-- [ ] Verify CUDA availability
-- [ ] Create `.gitignore`
-
-### ✅ Task 1.2: Recorder Module (4h)
-- [ ] Implement `Recorder` class (start/stop)
-- [ ] Audio capture from default mic (16kHz mono)
-- [ ] Save to temporary WAV file
-- [ ] Add error handling
-
-### ✅ Task 1.3: Transcriber Module (4h)
-- [ ] Implement `Transcriber` class
-- [ ] Load Whisper medium model on GPU
-- [ ] Transcribe WAV → text
-- [ ] Add model download on first run
-
-### 🧪 TEST CHECKPOINT 1
-- [ ] Integration test: Record 3 seconds → Transcribe → Verify output
-
-### ✅ Task 1.4: Processor Module (4h)
-- [ ] Implement `Processor` class (Ollama client)
-- [ ] Create default cleanup prompt
-- [ ] Handle API errors and timeouts
-- [ ] Add retry logic
-
-### ✅ Task 1.5: Injector Module (3h)
-- [ ] Implement `Injector` class (pynput)
-- [ ] Type text character by character
-- [ ] Handle special characters
-- [ ] Test in Notepad, VS Code, Chrome
-
-### ✅ Task 1.6: Main Pipeline (4h)
-- [ ] Create `main.py` with state machine
-- [ ] Implement hotkey listener (Ctrl+Shift+Space)
-- [ ] Orchestrate full pipeline
-- [ ] Add error handling and logging
-
-### 🧪 TEST CHECKPOINT 2
-- [ ] E2E test: Hotkey → Speak → Text appears in Notepad
+> **Status:** ACTIVE
+> **Focus:** V1.0 Commercial Launch Sprint
+> **Context:** Single Source of Truth for all development activities.
 
 ---
 
-## Phase 2: Electron Shell (Days 6-8)
+## ⚡ Current Sprint: Core UX & Settings (Week 1)
 
-### ✅ Task 2.1: Electron Setup (3h)
-- [ ] Initialize Node.js project
-- [ ] Install Electron and dependencies
-- [ ] Create basic project structure
-- [ ] Configure `package.json` scripts
+**Goal:** Ship settings window, cloud/local toggle, and ensure core stability.
+### P0: Interactive Status Circle
+- [x] **UI/UX Enhancement**
+    - [x] Style `#status-icon` as a premium clickable circle (button)
+    - [x] Implement toggle logic in `renderer.ts`
+    - [x] Sync recording state between UI click and global hotkey
+    - [x] Visuals: Ready (Teal/Green) -> Recording (Red Pulse) -> Processing (Pulsing Teal)
+    - [ ] **BUG**: Click handler disabled (focus-stealing issue). Needs `setSkipTaskbar` / `focusable: false` fix.
+- [x] **Bug Fix**: Normalize Python log levels (INFO vs ERROR categorization)
 
-### ✅ Task 2.2: System Tray (4h)
-- [ ] Create tray icon assets (idle/recording/processing)
-- [ ] Implement tray icon creation
-- [ ] Add tray menu (Quit)
-- [ ] Hide main window, show only tray
+### P0: Security Hardening ✅ COMPLETE
+- [x] **Critical: Settings Window** - Migrated to secure preload bridge (`preloadSettings.ts`)
+- [x] **Critical: XSS Prevention** - Replaced `innerHTML` with safe `textContent` in `renderer.ts`
+- [ ] **High: IPC Validation** - Add Zod schemas (Deferred to Phase 3)
+- [ ] **High: Log Redaction** - Mask sensitive transcripts in logs (Deferred)
 
-### ✅ Task 2.3: Python Process Management (5h)
-- [ ] Spawn Python subprocess
-- [ ] Implement stdin/stdout communication (JSON)
-- [ ] Add process lifecycle management
-- [ ] Add error handling (crash, restart)
+### P0: Cloud/Local Toggle (Immediate Focus)
+- [ ] **Backend (Python)**
+    - [ ] Implement `configure(provider)` logic in `ipc_server.py`
+    - [x] Cloud Provider classes exist (`processor.py`: Gemini, Anthropic, OpenAI)
+    - [ ] Hot-swap processor on settings change
+- [ ] **Frontend (Electron)**
+    - [x] Wire `settings.ts` to send `processingMode` via IPC
+    - [ ] Verify `main.ts` passes settings to Python
+    - [ ] Show current mode in system tray tooltip
 
-### ✅ Task 2.4: Global Hotkey (3h)
-- [ ] Register Ctrl+Shift+Space
-- [ ] Send start/stop commands to Python
-- [ ] Update tray icon state
-- [ ] Handle hotkey conflicts
+### P0: Settings Persistence & UI
+- [x] Create settings window component (Vanilla JS/HTML)
+- [x] Add hotkey configuration UI
+- [x] Add audio device selector (UI only)
+- [x] Add processing mode selector (Cloud/Local toggle UI)
+- [x] Wire up IPC for settings persistence
+- [x] Store settings in electron-store
+- [ ] **Verify**: Check if settings persist across restarts
 
-### 🧪 TEST CHECKPOINT 3
-- [ ] Integration test: Electron → Python → Text injection works
-
----
-
-## Phase 3: Integration & Testing (Days 9-11)
-
-### ✅ Task 3.1: Error Handling (4h)
-- [ ] Add Python logging (file + console)
-- [ ] Add Electron logging
-- [ ] Implement error notifications (tray balloon)
-- [ ] Add error recovery (retry logic)
-
-### ✅ Task 3.2: Performance Optimization (6h)
-- [ ] Profile pipeline latency
-- [ ] Optimize Whisper model loading
-- [ ] Optimize Ollama prompt
-- [ ] Add performance metrics logging
-
-### ✅ Task 3.3: Multi-App Testing (4h)
-- [ ] Test in VS Code, Notepad, Chrome, Slack, Word
-- [ ] Document any application-specific issues
-- [ ] Verify no character loss
-
-### 🧪 TEST CHECKPOINT 4
-- [ ] Comprehensive test suite (functional, performance, reliability)
+### P0: Instant Text Injection
+- [x] Implement clipboard paste in `injector.py`
+- [x] Replace character-by-character with Ctrl+V (Wrapper implemented)
+- [x] Restore original clipboard after paste
+- [ ] **Verify**: Test in 5+ applications (Notepad, Chrome, Slack, etc.)
 
 ---
 
-## Phase 4: Validation & Polish (Days 12-14)
+## 📋 Sprint 2: Modes & Intelligence (Week 2)
 
-### ✅ Task 4.1: User Acceptance Testing (6h)
-- [x] Create user test script
-- [x] Recruit 3-5 beta testers (Department of One - This is you!)
-- [x] Conduct supervised testing
-- [x] Collect feedback
+**Goal:** Differentiate the product with "Personality" and "Translation".
 
-### ✅ Task 4.2: Bug Fixes (8h)
-- [x] Fix critical bugs from UAT
-- [ ] Improve error messages
-- [x] Add tooltips to tray menu
-- [ ] Improve transcription accuracy
+### P1: Personality Modes
+- [ ] **Backend Implementation** (`processor.py`)
+    - [ ] Standard (Clean, professional - Done)
+    - [ ] Developer (Technical, precise)
+    - [ ] Email (Formal, polished)
+    - [ ] Raw (Literal transcription)
+- [ ] **UI Integration**
+    - [ ] Add mode selector in Settings
+    - [ ] Add mode indicator in Status Window
+    - [ ] Persist mode preference
 
-### ✅ Task 4.3: Prerequisites Validation (4h)
-- [ ] Create startup validation script
-- [ ] Add friendly error messages
-- [ ] Create setup guide (README)
+### P1: Translation Modes
+- [ ] Research & Spec: ES → EN Translation prompt
+- [ ] Research & Spec: EN → ES Translation prompt
+- [ ] Add language selector in Settings
 
----
-
-## Phase 5: Documentation (Days 15-16)
-
-### ✅ Task 5.1: User Documentation (6h)
-- [ ] Create `README.md` (installation, usage)
-- [ ] Create `INSTALLATION.md`
-- [ ] Create `TROUBLESHOOTING.md`
-- [ ] Add screenshots/GIFs
-
-### ✅ Task 5.2: Developer Documentation (4h)
-- [ ] Update `ARCHITECTURE.md` (MVP version)
-- [ ] Create `CONTRIBUTING.md`
-- [ ] Document code structure
-### ✅ Task 4.2: Bug Fixes (8h)
-- [x] Fix critical bugs from UAT
-- [x] Improve error messages
-- [x] Add tooltips to tray menu
-- [x] Improve transcription accuracy (Tuned prompt, side-by-side logging)
-
-### ✅ Task 4.3: Prerequisites Validation (4h)
-- [ ] Create startup validation script
-- [ ] Add friendly error messages
-- [ ] Create setup guide (README)
+### P1: Google OAuth (Gemini Integration)
+- [ ] Research Gemini CLI OAuth flow
+- [ ] Implement Google login button
+- [ ] Store OAuth tokens securely (safeStorage)
 
 ---
 
-## Phase 5: Documentation (Days 15-16)
+## 🚀 Launch Preparation (Weeks 3-4)
 
-### ✅ Task 5.1: User Documentation (6h)
-- [ ] Create `README.md` (installation, usage)
-- [ ] Create `INSTALLATION.md`
-- [ ] Create `TROUBLESHOOTING.md`
-- [ ] Add screenshots/GIFs
+### Polish & Internationalization
+- [ ] Set up `react-i18next` (or lightweight alternative)
+- [ ] Extract UI strings for ES/EN localization
+- [ ] Refine Status Window design (animations)
 
-### ✅ Task 5.2: Developer Documentation (4h)
-- [ ] Update `ARCHITECTURE.md` (MVP version)
-- [ ] Create `CONTRIBUTING.md`
-- [ ] Document code structure
-- [/] Create `DEV_HANDOFF.md` for Phase 2
+### Packaging & Distribution
+- [ ] Configure `electron-builder` for Windows NSIS
+- [ ] Bundle Python backend (PyInstaller)
+- [ ] **Validate**: Install on clean Windows machine
 
----
-
-## Phase 6: Release Preparation (Days 17-18)
-
-### ✅ Task 6.1: Packaging (6h)
-- [x] Configure electron-builder
-- [x] Create Windows installer (.exe)
-- [x] Bundle Python environment (PyInstaller + extraResources)
-- [/] Test installer on clean machine
-
-### ✅ Task 6.2: Final Validation (4h)
-- [ ] Test installer on 3 different machines
-- [ ] Verify all success criteria met
-- [ ] Run full test suite
-- [ ] Create release notes
-- [ ] Tag release (v0.1.0-mvp)
-
-### 🧪 TEST CHECKPOINT 6 (Final)
-- [ ] All MVP features working
-- [ ] No critical bugs
-- [ ] Documentation complete
-- [ ] Installer tested
-- [ ] Performance targets met
+### Commercial & Marketing
+- [ ] Set up `dikta.me` domain (Purchase pending)
+- [ ] Create simple landing page (Tailwind)
+- [ ] Set up Ko-fi page (Tiers: Starter, Pro)
+- [ ] Prepare demo video/GIF
 
 ---
 
-## MVP Success Criteria
+## 🛣️ Roadmap Reference
 
-- [ ] End-to-end latency < 15 seconds for 5-second utterance
-- [ ] Transcription accuracy > 90% (English)
-- [ ] Works in 5+ applications
-- [ ] Runs 100% offline
-- [ ] Zero crashes in 30-minute session
-- [ ] Filler words removed
-- [ ] Grammar and punctuation corrected
-- [ ] End-to-end latency < 15 seconds for 5-second utterance
-- [ ] Transcription accuracy > 90% (English)
-- [ ] Works in 5+ applications
-- [x] Runs 100% offline
-- [ ] Zero crashes in 30-minute session
-- [x] Filler words removed
-- [x] Grammar and punctuation corrected
-- [x] CUDA/GPU acceleration working (or quantized CPU)
+*High-level phases from `PHASE_ROADMAP.md`.*
+
+*   **Phase 1 (MVP)**: Core Dictation & Offline functionality. (In Progress/Polishing)
+*   **Phase 2 (v0.2)**: User Experience (Settings, Modes). (Current Sprint)
+*   **Phase 3 (v0.3)**: Advanced Architecture (WebSocket, Zod, State Management).
+*   **Phase 4 (v0.4)**: Premium UI/UX (Floating Pill, Design System).
+*   **Phase 5 (v1.0)**: Power Features (Custom Prompts, History).
+
+> For detailed specs, see `docs/L3_MEMORY/PHASE_ROADMAP.md`.
+> For deferred ideas, see `docs/L3_MEMORY/DEFERRED_FEATURES.md`.
 
 ---
 
-## Quick Start Commands
+## 🧪 Verification & Success Criteria
 
-```bash
-# Setup
-cd python
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-
-# Test Python backend
-python main.py
-
-# Setup Electron
-npm install
-
-# Run Electron
-npm start
-
-# Build installer
-npm run build
-```
-
----
-
-**Total:** 47 tasks, 6 test checkpoints, 18 days  
-**Detailed Plan:** See `mvp_development_plan.md` in artifacts  
-**Deferred Features:** See `docs/L3_MEMORY/DEFERRED_FEATURES.md`  
-**Phase Roadmap:** See `docs/L3_MEMORY/PHASE_ROADMAP.md`
+**V1.0 Launch Criteria:**
+- [ ] Works on clean Windows install
+- [ ] Cloud mode works out of box (no setup)
+- [ ] Local mode works with Ollama guide
+- [ ] Settings persist across restarts
+- [ ] 5+ modes available
+- [ ] No crashes in 1-hour session

@@ -1,4 +1,23 @@
-const { ipcRenderer } = require('electron');
+/**
+ * Settings window renderer script
+ * Uses secure settingsAPI bridge (no direct Node access)
+ */
+
+export { }; // Make this a module
+
+// Type declaration for the secure bridge
+interface SettingsAPI {
+    getAll: () => Promise<any>;
+    set: (key: string, value: any) => Promise<void>;
+    saveAudioDevice: (deviceId: string, deviceLabel: string) => void;
+    openExternal: (url: string) => void;
+}
+
+declare global {
+    interface Window {
+        settingsAPI: SettingsAPI;
+    }
+}
 
 // State
 let isRecordingHotkey = false;
@@ -7,7 +26,7 @@ let isRecordingHotkey = false;
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Settings window loaded');
     try {
-        const settings = await ipcRenderer.invoke('settings:get-all');
+        const settings = await window.settingsAPI.getAll();
         loadSettings(settings);
         // Refresh devices initially
         await refreshAudioDevices(settings.audioDeviceId);
@@ -17,14 +36,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Audio Device Handling
-async function refreshAudioDevices(selectedId) {
-    const select = document.getElementById('audio-device');
+async function refreshAudioDevices(selectedId: string | undefined) {
+    const select = document.getElementById('audio-device') as HTMLSelectElement | null;
     if (!select) return;
 
     select.innerHTML = '<option>Loading...</option>';
 
     try {
-        // Request permission if needed (usually cached in Electron)
+        // Request permission if needed (uses Web API, works in sandbox)
         await navigator.mediaDevices.getUserMedia({ audio: true });
 
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -52,8 +71,7 @@ async function refreshAudioDevices(selectedId) {
 
         // Handle change
         select.onchange = () => {
-            saveSetting('audioDeviceId', select.value);
-            saveSetting('audioDeviceLabel', select.options[select.selectedIndex].text);
+            window.settingsAPI.saveAudioDevice(select.value, select.options[select.selectedIndex].text);
         };
 
     } catch (err) {
@@ -63,18 +81,18 @@ async function refreshAudioDevices(selectedId) {
 }
 
 // Tab Switching
-function switchTab(tabId) {
+function switchTab(tabId: string) {
     // Buttons
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    (event?.target as HTMLElement)?.classList.add('active');
 
     // Content
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
+    document.getElementById(tabId)?.classList.add('active');
 }
 
 // Load Settings into UI
-function loadSettings(settings) {
+function loadSettings(settings: any) {
     if (!settings) return;
 
     // General
@@ -90,45 +108,46 @@ function loadSettings(settings) {
 
     // Hotkey
     if (settings.hotkey) {
-        document.getElementById('hotkey-display').textContent = settings.hotkey;
+        const hotkeyDisplay = document.getElementById('hotkey-display');
+        if (hotkeyDisplay) hotkeyDisplay.textContent = settings.hotkey;
     }
 }
 
 // Helpers
-function setVal(id, val) {
-    const el = document.getElementById(id);
+function setVal(id: string, val: string) {
+    const el = document.getElementById(id) as HTMLSelectElement | null;
     if (el) el.value = val;
 }
 
-function setCheck(id, val) {
-    const el = document.getElementById(id);
+function setCheck(id: string, val: boolean) {
+    const el = document.getElementById(id) as HTMLInputElement | null;
     if (el) el.checked = val;
 }
 
 // Save Setting
-function saveSetting(key, value) {
+function saveSetting(key: string, value: any) {
     console.log(`Saving ${key}:`, value);
-    ipcRenderer.invoke('settings:set', key, value);
+    window.settingsAPI.set(key, value);
 }
 
 // Hotkey Recording
 function recordHotkey() {
     const display = document.getElementById('hotkey-display');
-    if (isRecordingHotkey) return;
+    if (isRecordingHotkey || !display) return;
 
     isRecordingHotkey = true;
     display.textContent = 'Press new hotkey...';
     display.classList.add('recording');
 
     // Global keydown listener
-    const handler = (e) => {
+    const handler = (e: KeyboardEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
         // Ignore modifier-only presses
         if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return;
 
-        const modifiers = [];
+        const modifiers: string[] = [];
         if (e.ctrlKey) modifiers.push('Ctrl');
         if (e.altKey) modifiers.push('Alt');
         if (e.shiftKey) modifiers.push('Shift');
@@ -142,7 +161,7 @@ function recordHotkey() {
         isRecordingHotkey = false;
 
         // Save
-        saveSetting('hotkey', shortcut.replace(/\+/g, '+')); // Format for Electron
+        saveSetting('hotkey', shortcut);
 
         // Remove listener
         document.removeEventListener('keydown', handler);
@@ -153,6 +172,19 @@ function recordHotkey() {
 
 function resetHotkey() {
     const defaultHotkey = 'Ctrl+Alt+D';
-    document.getElementById('hotkey-display').textContent = defaultHotkey;
+    const display = document.getElementById('hotkey-display');
+    if (display) display.textContent = defaultHotkey;
     saveSetting('hotkey', defaultHotkey);
 }
+
+// External links handler (called from onclick in HTML)
+function openExternalLink(url: string) {
+    window.settingsAPI.openExternal(url);
+}
+
+// Expose functions to global scope for onclick handlers
+(window as any).switchTab = switchTab;
+(window as any).saveSetting = saveSetting;
+(window as any).recordHotkey = recordHotkey;
+(window as any).resetHotkey = resetHotkey;
+(window as any).openExternalLink = openExternalLink;

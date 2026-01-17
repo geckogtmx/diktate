@@ -158,8 +158,11 @@ function createSettingsWindow(): void {
     icon: getIcon('idle'),
     autoHideMenuBar: true,
     webPreferences: {
-      nodeIntegration: true, // Needed for simple settings.js
-      contextIsolation: false // Needed for simple settings.js logic
+      preload: path.join(__dirname, 'preloadSettings.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true
     }
   });
 
@@ -386,49 +389,18 @@ function setupPythonEventHandlers(): void {
  */
 function setupIpcHandlers(): void {
   ipcMain.handle('python:start-recording', async () => {
-    if (!pythonManager) {
-      logger.error('IPC', 'Start recording failed - Python manager not ready');
-      return { success: false, error: 'Python manager not ready' };
-    }
-    try {
-      logger.info('IPC', 'Starting recording');
-      // Get preferred device ID
-      // Get preferred device ID and Label
-      const audioDeviceId = store.get('audioDeviceId');
-      const audioDeviceLabel = store.get('audioDeviceLabel');
-
-      const result = await pythonManager.sendCommand('start_recording', {
-        deviceId: audioDeviceId,
-        deviceLabel: audioDeviceLabel
-      });
-      isRecording = true;
-      updateTrayState('Recording');
-      updateTrayIcon('recording');
-      return { success: true, data: result };
-    } catch (error) {
-      logger.error('IPC', 'Failed to start recording', error);
-      showNotification('Recording Error', 'Failed to start recording. Please try again.', true);
-      return { success: false, error: (error as Error).message };
-    }
+    if (!isRecording) await toggleRecording();
+    return { success: true };
   });
 
   ipcMain.handle('python:stop-recording', async () => {
-    if (!pythonManager) {
-      logger.error('IPC', 'Stop recording failed - Python manager not ready');
-      return { success: false, error: 'Python manager not ready' };
-    }
-    try {
-      logger.info('IPC', 'Stopping recording');
-      const result = await pythonManager.sendCommand('stop_recording');
-      isRecording = false;
-      updateTrayState('Idle');
-      updateTrayIcon('idle');
-      return { success: true, data: result };
-    } catch (error) {
-      logger.error('IPC', 'Failed to stop recording', error);
-      showNotification('Processing Error', 'Failed to process recording. Please try again.', true);
-      return { success: false, error: (error as Error).message };
-    }
+    if (isRecording) await toggleRecording();
+    return { success: true };
+  });
+
+  ipcMain.handle('python:toggle-recording', async () => {
+    await toggleRecording();
+    return { success: true };
   });
 
   ipcMain.handle('python:status', async () => {
@@ -465,7 +437,56 @@ function setupIpcHandlers(): void {
 }
 
 /**
- * Setup global hotkey listener for Ctrl+Shift+Space
+ * Toggle recording state
+ */
+async function toggleRecording(): Promise<void> {
+  if (!pythonManager) {
+    logger.warn('MAIN', 'Python manager not initialized');
+    return;
+  }
+
+  if (isRecording) {
+    // Stop recording
+    logger.info('MAIN', 'Stopping recording');
+    isRecording = false;
+    updateTrayIcon('processing');
+    updateTrayState('Processing');
+
+    try {
+      await pythonManager.sendCommand('stop_recording');
+    } catch (error) {
+      logger.error('MAIN', 'Failed to stop recording', error);
+      updateTrayIcon('idle');
+      updateTrayState('Idle');
+    }
+  } else {
+    // Start recording
+    logger.info('MAIN', 'Starting recording');
+    isRecording = true;
+    updateTrayIcon('recording');
+    updateTrayState('Recording');
+
+    try {
+      // Get preferred device ID and Label
+      const audioDeviceId = store.get('audioDeviceId');
+      const audioDeviceLabel = store.get('audioDeviceLabel');
+
+      await pythonManager.sendCommand('start_recording', {
+        deviceId: audioDeviceId,
+        deviceLabel: audioDeviceLabel
+      });
+    } catch (error) {
+      logger.error('MAIN', 'Failed to start recording', error);
+      isRecording = false;
+      updateTrayIcon('idle');
+      updateTrayState('Idle');
+      showNotification('Recording Error', 'Failed to start recording. Please try again.', true);
+    }
+  }
+}
+
+/**
+ * Setup global hotkey listener
  */
 function setupGlobalHotkey(): void {
   try {
@@ -484,43 +505,8 @@ function setupGlobalHotkey(): void {
       }
       lastHotkeyPress = now;
 
-      logger.debug('HOTKEY', 'Hotkey pressed: Ctrl+Alt+D', { isRecording });
-
-      if (!pythonManager) {
-        logger.warn('HOTKEY', 'Python manager not initialized');
-        return;
-      }
-
-      if (isRecording) {
-        // Stop recording
-        logger.info('HOTKEY', 'Stopping recording');
-        isRecording = false;
-        updateTrayIcon('processing');
-        updateTrayState('Processing');
-
-        try {
-          await pythonManager.sendCommand('stop_recording');
-        } catch (error) {
-          logger.error('HOTKEY', 'Failed to stop recording', error);
-          updateTrayIcon('idle');
-          updateTrayState('Idle');
-        }
-      } else {
-        // Start recording
-        logger.info('HOTKEY', 'Starting recording');
-        isRecording = true;
-        updateTrayIcon('recording');
-        updateTrayState('Recording');
-
-        try {
-          await pythonManager.sendCommand('start_recording');
-        } catch (error) {
-          logger.error('HOTKEY', 'Failed to start recording', error);
-          isRecording = false;
-          updateTrayIcon('idle');
-          updateTrayState('Idle');
-        }
-      }
+      logger.debug('HOTKEY', 'Hotkey pressed', { isRecording });
+      await toggleRecording();
     });
 
     if (!ret) {

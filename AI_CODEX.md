@@ -35,7 +35,7 @@ This project utilizes a multi-model collaboration strategy. Each agent has disti
 - **Handoffs:** Never end a session without updating `DEV_HANDOFF.md`.
 
 ### B. Task Management
-- **Task Lists:** Every session must generate or update a 10-20 item task list in `TASKS.md` or the active task tracking file.
+- **Task Lists:** `TASKS.md` is the SINGLE SOURCE OF TRUTH. Do not create competing task lists.
 - **Granularity:** Tasks should be small, verifiable steps.
 
 ### C. Coding Standards

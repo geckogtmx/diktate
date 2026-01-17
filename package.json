@@ -4,7 +4,7 @@
   "description": "Privacy-first voice dictation for Windows",
   "main": "dist/main.js",
   "scripts": {
-    "dev": "tsc && copy src\\*.html dist\\ && copy src\\settings.js dist\\ && electron . --dev",
+    "dev": "tsc && copy src\\*.html dist\\ && electron . --dev",
     "start": "electron .",
     "build": "tsc && electron .",
     "dist": "pnpm run package-python && electron-builder",

@@ -9,6 +9,13 @@ declare global {
             onLog: (callback: (level: string, message: string, data?: any) => void) => void;
             onStatusChange: (callback: (status: string) => void) => void;
             getInitialState: () => Promise<any>;
+            toggleRecording: () => Promise<any>;
+        };
+        api: {
+            python: {
+                startRecording: () => Promise<any>;
+                stopRecording: () => Promise<any>;
+            }
         };
     }
 }
@@ -18,6 +25,25 @@ const statusIcon = document.getElementById('status-icon');
 const statusText = document.getElementById('status-text');
 const statusSubtext = document.getElementById('status-subtext');
 const logContainer = document.getElementById('log-container');
+
+let isRecording = false;
+let isProcessing = false;
+
+// DISABLED: Clicking the button steals focus from target app, breaking text injection.
+// TODO: Fix by making the window non-focusable or using a different approach (e.g., tray click).
+// if (statusIcon) {
+//     statusIcon.addEventListener('click', async () => {
+//         if (isProcessing) return; // Ignore while busy
+//
+//         if (isRecording) {
+//             addLogEntry('INFO', 'Stopping recording via UI click...');
+//             await window.api.python.stopRecording();
+//         } else {
+//             addLogEntry('INFO', 'Starting recording via UI click...');
+//             await window.api.python.startRecording();
+//         }
+//     });
+// }
 
 function setStatus(state: string) {
     if (!statusPanel || !statusText || !statusIcon || !statusSubtext) return;
@@ -51,9 +77,13 @@ function setStatus(state: string) {
 
     // Apply
     statusPanel.className = className;
-    statusIcon.textContent = icon;
+    // statusIcon.textContent = icon; // No longer text
     statusText.textContent = text;
     statusSubtext.textContent = sub;
+
+    // Sync local state
+    isRecording = s.includes('recording');
+    isProcessing = s.includes('processing');
 }
 
 function addLogEntry(level: string, message: string, data?: any) {
@@ -64,12 +94,23 @@ function addLogEntry(level: string, message: string, data?: any) {
 
     const timeStr = new Date().toLocaleTimeString().split(' ')[0];
 
-    // Minimal log format
-    entry.innerHTML = `
-        <span class="log-time">${timeStr}</span>
-        <span class="log-level ${level}">${level}</span>
-        <span>${message}</span>
-    `;
+    // Safe DOM manipulation (no innerHTML with user data)
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'log-time';
+    timeSpan.textContent = timeStr;
+
+    const levelSpan = document.createElement('span');
+    levelSpan.className = `log-level ${level}`;
+    levelSpan.textContent = level;
+
+    const msgSpan = document.createElement('span');
+    msgSpan.textContent = message;
+
+    entry.appendChild(timeSpan);
+    entry.appendChild(document.createTextNode(' '));
+    entry.appendChild(levelSpan);
+    entry.appendChild(document.createTextNode(' '));
+    entry.appendChild(msgSpan);
 
     logContainer.appendChild(entry);
     logContainer.scrollTop = logContainer.scrollHeight;

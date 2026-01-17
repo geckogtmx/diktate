@@ -62,7 +62,20 @@ export class PythonManager extends EventEmitter {
         });
 
         this.process.stderr?.on('data', (data) => {
-          logger.error('Python', data.toString().trim());
+          const line = data.toString().trim();
+          if (!line) return;
+
+          // Smart log level detection for Python standard logging
+          if (line.includes(' - INFO - ')) {
+            logger.info('Python', line);
+          } else if (line.includes(' - WARNING - ')) {
+            logger.warn('Python', line);
+          } else if (line.includes(' - DEBUG - ')) {
+            logger.debug('Python', line);
+          } else {
+            // Default to error for stderr if no clear level is found
+            logger.error('Python', line);
+          }
         });
 
         this.process.on('error', (error) => {

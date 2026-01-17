@@ -7,12 +7,19 @@
     <title>dIKtate Status</title>
     <style>
         :root {
-            --bg-color: #1e1e1e;
+            --ink-black: #002029ff;
+            --jet-black: #00303dff;
+            --dark-teal: #004052ff;
+            --dark-teal-2: #005066ff;
+            --dark-teal-3: #00607aff;
+
+            --bg-color: var(--ink-black);
             --text-color: #e0e0e0;
-            --idle-color: #3e3e42;
-            --recording-color: #e51400;
-            --processing-color: #0078d7;
-            --border-color: #2d2d30;
+            --idle-color: var(--jet-black);
+            --recording-color: #ff3e3e;
+            /* Adjusted for better teal contrast */
+            --processing-color: var(--dark-teal-3);
+            --border-color: var(--dark-teal);
         }
 
         body {
@@ -39,17 +46,41 @@
         }
 
         #status-icon {
-            font-size: 4rem;
-            margin-bottom: 0px;
-            line-height: 1;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: white;
+            margin-bottom: 20px;
+            /* cursor: pointer; -- DISABLED: Focus stealing issue */
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 2px 5px rgba(255, 255, 255, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border: 4px solid var(--dark-teal);
         }
 
+        /* DISABLED: Hover effects removed due to focus-stealing issue
+        #status-icon:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 2px 5px rgba(255, 255, 255, 0.6);
+            border-color: var(--dark-teal-2);
+        }
+
+        #status-icon:active {
+            transform: scale(0.95);
+        }
+        */
+
         #status-text {
-            font-size: 2.5rem;
-            font-weight: 700;
+            font-size: 2.2rem;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 4px;
             margin-top: 10px;
+            color: var(--text-color);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
         }
 
         #status-subtext {
@@ -59,27 +90,56 @@
         }
 
         /* STATES */
-        .state-idle {
-            background-color: var(--bg-color);
-            color: #666;
+        .state-idle #status-icon {
+            background-color: var(--dark-teal-3);
+            border-color: var(--dark-teal);
+            box-shadow: 0 0 20px var(--dark-teal);
         }
 
-        .state-recording {
+        .state-recording #status-icon {
             background-color: var(--recording-color);
-            color: white;
-            animation: pulse-red 2s infinite;
+            border-color: #fff;
+            animation: pulse-ring 1.5s infinite;
         }
 
-        .state-processing {
-            background-color: var(--processing-color);
-            color: white;
-            animation: pulse-blue 2s infinite;
+        .state-processing #status-icon {
+            background-color: var(--dark-teal-2);
+            border-color: var(--dark-teal-3);
+            animation: spin-glow 2s infinite linear;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 62, 62, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 20px rgba(255, 62, 62, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 62, 62, 0);
+            }
+        }
+
+        @keyframes spin-glow {
+            0% {
+                box-shadow: 0 0 10px var(--dark-teal-3);
+            }
+
+            50% {
+                box-shadow: 0 0 25px var(--dark-teal-3);
+            }
+
+            100% {
+                box-shadow: 0 0 10px var(--dark-teal-3);
+            }
         }
 
         .state-error {
-            background-color: #333;
-            color: #e51400;
-            border: 2px solid #e51400;
+            background-color: var(--jet-black);
+            color: #ff3e3e;
+            border: 2px solid #ff3e3e;
         }
 
         @keyframes pulse-red {
@@ -96,24 +156,24 @@
             }
         }
 
-        @keyframes pulse-blue {
+        @keyframes pulse-teal {
             0% {
-                background-color: #0078d7;
+                background-color: var(--dark-teal-3);
             }
 
             50% {
-                background-color: #005a9e;
+                background-color: var(--dark-teal-2);
             }
 
             100% {
-                background-color: #0078d7;
+                background-color: var(--dark-teal-3);
             }
         }
 
         /* SMALL LOG AREA */
         #log-panel {
             height: 150px;
-            background-color: #111;
+            background-color: var(--ink-black);
             border-top: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
@@ -123,7 +183,7 @@
 
         #log-header {
             padding: 5px 10px;
-            background-color: #252526;
+            background-color: var(--jet-black);
             cursor: pointer;
             user-select: none;
             display: flex;
@@ -162,10 +222,10 @@
 
         /* FOOTER */
         footer {
-            background-color: #252526;
+            background-color: var(--jet-black);
             padding: 5px 10px;
             font-size: 0.75rem;
-            color: #888;
+            color: var(--dark-teal-2);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -173,9 +233,9 @@
 
         #hotkey-hint {
             font-weight: bold;
-            color: #ccc;
+            color: var(--text-color);
             padding: 2px 6px;
-            background: #333;
+            background: var(--dark-teal);
             border-radius: 3px;
         }
 
@@ -188,7 +248,7 @@
 <body>
     <!-- TRAFFIC LIGHT STATUS -->
     <div id="status-panel" class="state-idle">
-        <div id="status-icon">⚪</div>
+        <div id="status-icon" title="Click to Toggle Recording"></div>
         <div id="status-text">READY</div>
         <div id="status-subtext">Waiting for input...</div>
         <div id="status-mode"

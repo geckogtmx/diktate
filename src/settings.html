@@ -1,18 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings</title>
     <style>
         :root {
-            --bg-color: #1e1e1e;
-            --sidebar-color: #252526;
+            --ink-black: #002029ff;
+            --jet-black: #00303dff;
+            --dark-teal: #004052ff;
+            --dark-teal-2: #005066ff;
+            --dark-teal-3: #00607aff;
+
+            --bg-color: var(--ink-black);
+            --sidebar-color: var(--jet-black);
             --text-color: #e0e0e0;
-            --accent-color: #0078d7;
-            --border-color: #333;
-            --input-bg: #3c3c3c;
-            --hover-color: #2a2d2e;
+            --accent-color: var(--dark-teal-3);
+            --border-color: var(--dark-teal);
+            --input-bg: var(--jet-black);
+            --hover-color: var(--dark-teal);
         }
 
         body {
@@ -53,7 +60,7 @@
 
         .tab-btn.active {
             color: white;
-            background-color: #37373d;
+            background-color: var(--ink-black);
             border-left: 3px solid var(--accent-color);
             padding-left: 17px;
         }
@@ -75,8 +82,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         h2 {
@@ -104,7 +118,8 @@
         }
 
         /* CONTROLS */
-        input[type="text"], select {
+        input[type="text"],
+        select {
             background-color: var(--input-bg);
             border: 1px solid var(--border-color);
             color: white;
@@ -114,7 +129,8 @@
             box-sizing: border-box;
         }
 
-        input[type="text"]:focus, select:focus {
+        input[type="text"]:focus,
+        select:focus {
             outline: 2px solid var(--accent-color);
             border-color: transparent;
         }
@@ -127,12 +143,19 @@
             height: 24px;
         }
 
-        .switch input { opacity: 0; width: 0; height: 0; }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
 
         .slider {
             position: absolute;
             cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background-color: #ccc;
             transition: .4s;
             border-radius: 24px;
@@ -150,9 +173,17 @@
             border-radius: 50%;
         }
 
-        input:checked + .slider { background-color: var(--accent-color); }
-        input:focus + .slider { box-shadow: 0 0 1px var(--accent-color); }
-        input:checked + .slider:before { transform: translateX(26px); }
+        input:checked+.slider {
+            background-color: var(--accent-color);
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px var(--accent-color);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
 
         .setting-row {
             display: flex;
@@ -170,13 +201,13 @@
             cursor: pointer;
             font-size: 0.9em;
         }
-        
+
         .btn:hover {
             filter: brightness(1.1);
         }
 
         .btn-secondary {
-            background-color: #333;
+            background-color: var(--dark-teal);
         }
 
         /* HOTKEY INPUT */
@@ -194,10 +225,11 @@
         #hotkey-display.recording {
             border-color: var(--accent-color);
             color: var(--accent-color);
-            background: #1e1e2e;
+            background: var(--dark-teal);
         }
     </style>
 </head>
+
 <body>
     <div id="sidebar">
         <div class="tab-btn active" onclick="switchTab('general')">⚙️ General</div>
@@ -210,7 +242,7 @@
         <!-- GENERAL TAB -->
         <div id="general" class="tab-content active">
             <h2>General Settings</h2>
-            
+
             <div class="setting-group">
                 <div class="setting-row">
                     <div>
@@ -233,7 +265,7 @@
                     <button class="btn btn-secondary" onclick="resetHotkey()">Reset Default</button>
                 </div>
             </div>
-            
+
             <div class="setting-group">
                 <div class="setting-row">
                     <div>
@@ -251,7 +283,7 @@
         <!-- AUDIO TAB -->
         <div id="audio" class="tab-content">
             <h2>Audio Settings</h2>
-            
+
             <div class="setting-group">
                 <label>Input Device</label>
                 <select id="audio-device">
@@ -264,7 +296,8 @@
                 <div class="setting-row">
                     <span class="sub-label">Play sound on start/stop</span>
                     <label class="switch">
-                        <input type="checkbox" id="sound-feedback" checked onchange="saveSetting('soundFeedback', this.checked)">
+                        <input type="checkbox" id="sound-feedback" checked
+                            onchange="saveSetting('soundFeedback', this.checked)">
                         <span class="slider"></span>
                     </label>
                 </div>
@@ -274,7 +307,7 @@
         <!-- MODES TAB -->
         <div id="modes" class="tab-content">
             <h2>Personality Modes</h2>
-            
+
             <div class="setting-group">
                 <label>Default Mode</label>
                 <select id="default-mode" onchange="saveSetting('defaultMode', this.value)">
@@ -302,19 +335,22 @@
             <h2>About dIKtate</h2>
             <p><strong>Version:</strong> <span id="app-version">0.1.0-mvp</span></p>
             <p>dIKtate is a privacy-first, local voice dictation tool designed for professionals.</p>
-            
+
             <div style="margin-top: 20px; padding: 15px; background: #252526; border-radius: 5px;">
                 <p><strong>License:</strong> MIT</p>
                 <p><strong>Copyright:</strong> © 2026 dIKtate Contributors</p>
             </div>
 
             <div style="margin-top: 20px;">
-                <button class="btn" onclick="require('electron').shell.openExternal('https://dikta.me')">Visit Website</button>
-                <button class="btn btn-secondary" onclick="require('electron').shell.openExternal('https://github.com/diktate/diktate')">GitHub</button>
+                <button class="btn" onclick="openExternalLink('https://dikta.me')">Visit
+                    Website</button>
+                <button class="btn btn-secondary"
+                    onclick="openExternalLink('https://github.com/diktate/diktate')">GitHub</button>
             </div>
         </div>
     </div>
 
     <script src="./settings.js"></script>
 </body>
+
 </html>

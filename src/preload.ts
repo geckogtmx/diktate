@@ -34,6 +34,7 @@ const electronAPI = {
   onModeChange: (callback: (mode: string) => void) => {
     ipcRenderer.on('mode-update', (_, mode) => callback(mode));
   },
+  toggleRecording: () => ipcRenderer.invoke('python:toggle-recording'), // Add toggle helper
   getInitialState: () => ipcRenderer.invoke('get-initial-state'),
   clearLogs: () => { }, // Handled in renderer for now
   testNotification: () => { } // Handled in renderer for now

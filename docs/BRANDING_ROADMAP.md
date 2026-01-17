@@ -103,11 +103,16 @@ The project will launch as **diktate** (MVP v0.1.0 - v0.9.x) and rebrand to **Wa
 
 **Recommended:** "Smooth your speech" (simple, memorable, functional)
 
-### Color Palette (TBD)
+### Color Palette (Finalized)
 
 **Concept:** Protective, smooth, flowing
-- Consider: Blues (trust, privacy), greens (natural, smooth), grays (barrier, wall)
-- Avoid: Harsh reds, aggressive oranges
+- `--ink-black`: `#002029ff` (Primary BG)
+- `--jet-black`: `#00303dff` (Secondary BG)
+- `--dark-teal`: `#004052ff` (Borders)
+- `--dark-teal-2`: `#005066ff` (Hover/Secondary)
+- `--dark-teal-3`: `#00607aff` (Accent/Lightest)
+
+*See [docs/DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for full implementation details.*
 
 ### Logo Concept (TBD)
 
