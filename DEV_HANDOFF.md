@@ -1,83 +1,83 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-16T22:21:00
+> **Last Updated:** 2026-01-16T22:44:00
 > **Last Model:** Gemini
-> **Session Focus:** QA Audit, Security Fixes, LLM Benchmarking, Cloud Processing Mode
+> **Session Focus:** QA Audit, Security Fixes, LLM Benchmarking, Multi-Provider Cloud Processing
 
 ---
 
 ## ✅ Completed This Session
 
 ### Security Audit & Fixes
-- **SEC-001 FIXED**: Added `sandbox: true`, `webSecurity: true`, `allowRunningInsecureContent: false` to `BrowserWindow` in `src/main.ts`
-- **SEC-003 FIXED**: Changed `.format(text=text)` to `.replace("{text}", text)` in `processor.py` to prevent prompt injection
-- **SEC-004 FIXED**: Gated `StreamHandler()` behind `DEBUG=1` env var in `ipc_server.py` to prevent transcript leaks
-- **Created** `docs/SECURITY_AUDIT.md` — permanent audit log with 5 findings
-- **Updated** `AI_CODEX.md` — added Section 4D (Security governance rules)
+- **SEC-001 FIXED**: Electron hardening (`sandbox: true`, `webSecurity: true`)
+- **SEC-003 FIXED**: Prompt injection prevention (`.format` → `.replace`)
+- **SEC-004 FIXED**: Gated StreamHandler behind `DEBUG=1`
+- **Created** `docs/SECURITY_AUDIT.md`
 
-### LLM Benchmarking (Local Mode)
-- Tested **Mistral** (~9s), **Llama3** (~7s), **Gemma3:4b** (~7s less accurate), **Qwen3:30b** (60s+ too slow)
-- **Selected Llama3:latest** as default local model
-- Updated prompt to prevent meta-commentary ("Here's the cleaned text:")
+### LLM Benchmarking
+- Tested: Llama3, Mistral, Gemma3:4b, Qwen3:30b (local)
+- Tested: Gemini 3 Flash, Claude 3 Haiku (cloud)
+- **Selected Llama3** as default local model (~7s, good accuracy)
+- **Created** `docs/BENCHMARKS.md` with all timing data
 
-### Cloud Processing Mode (NEW)
-- Created **dual-mode processor** (`python/core/processor.py`) with `LocalProcessor` and `CloudProcessor` classes
-- Added `create_processor()` factory function that selects based on `PROCESSING_MODE` env var
-- Created `.env` and `.env.example` for API configuration
-- **Gemini 3 Flash Preview** working at ~2.5s processing (vs ~7s local)
-- Model URL: `gemini-3-flash-preview:generateContent`
+### Multi-Provider Cloud Processing
+- Created `LocalProcessor`, `CloudProcessor`, `AnthropicProcessor`, `OpenAIProcessor`
+- Factory function `create_processor()` selects based on `PROCESSING_MODE`
+- Created `.env` and `.env.example` with all API key fields
+- **Modes:** `local`, `gemini`, `anthropic`, `openai`
 
-### UAT Results
-- **Local mode**: ~7s processing, high accuracy, all criteria pass
-- **Cloud mode**: ~2.5s processing, corrections removed, profanity preserved
-- Long-form dictation (41s audio): ~20s total pipeline
+### Key Findings
+- **Transcription is the bottleneck** (~5.6s, 60-70% of total)
+- Cloud LLMs (0.7-2.5s) don't feel faster because transcription dominates
+- Claude 3 Haiku censors profanity (bad for dictation)
+- Gemini 3 Flash handles corrections well
 
 ## ⚠️ Known Issues / Broken
 
-- **SEC-002 (Deferred)**: 2 npm vulnerabilities in `electron-builder` chain. Build-time only, no runtime impact.
-- **Whisper censorship**: Whisper V3 Turbo censors profanity with asterisks (`f***ing`) — this is Whisper behavior, not LLM
+- **SEC-002 (Deferred)**: npm vulnerabilities in electron-builder (build-time only)
+- **Whisper censorship**: V3 Turbo censors profanity with asterisks
 
 ## 🔄 In Progress / Pending
 
-- [ ] **Clipboard paste injection** — Replace character-by-character typing with clipboard paste for ~500ms speedup
-- [ ] **UI Polish**: Remove Status Window frame (`frame: false`)
-- [ ] **README Update**: pnpm, V3 Turbo, packaging, cloud mode instructions
-- [ ] **Package and Test**: Rebuild packaged exe with final config
-- [ ] **Streaming transcription** — Transcribe while recording for perceived speed boost
+- [ ] **Clipboard paste injection** — Instant Ctrl+V instead of character-by-character
+- [ ] **Distil-Whisper** — Faster transcription model
+- [ ] **GPU acceleration** — CUDA for Whisper
+- [ ] **Streaming transcription** — Real-time during recording
+- [ ] **UI Polish**: Frameless status window
+- [ ] **README Update**: Full documentation
 
 ## 📋 Instructions for Next Model
 
 ### Priority Order
-1. **Quick win**: Implement clipboard paste in `python/core/injector.py` — use `pyperclip` with Ctrl+V
-2. **UI Polish**: Set `frame: false` on Status Window in `src/main.ts`
-3. **Documentation**: Update `README.md` with current state
+1. **Clipboard paste** in `python/core/injector.py` — use `pyperclip` with Ctrl+V
+2. Evaluate Distil-Whisper for faster transcription
+3. UI polish (frameless window)
 
 ### Context Needed
-- `docs/SECURITY_AUDIT.md`: Full audit findings and status
-- `python/core/processor.py`: Dual-mode processor implementation
-- `.env`: Config for local vs cloud mode (`PROCESSING_MODE=local|cloud`)
+- `docs/BENCHMARKS.md` — Full performance data and optimization roadmap
+- `docs/SECURITY_AUDIT.md` — Security findings
+- `python/core/processor.py` — Multi-provider implementation
 
 ### Do NOT
-- Do not revert to `npm`. Stick to `pnpm`.
-- Do not remove `sandbox: true` — critical Electron security
 - Do not use `gemini-3-flash` (without `-preview`) — returns 404
-- Do not change the strict prompt in `processor.py` — it prevents Llama3 meta-commentary
+- Do not use `claude-3-5-haiku-latest` — use dated version
+- Do not remove Electron sandbox settings
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
-### 2026-01-16 22:21 - Gemini
+### 2026-01-16 22:44 - Gemini
 - QA Security Audit: 5 findings, 3 fixed
-- LLM Benchmarking: Llama3 selected (~7s)
-- Cloud Mode: Gemini 3 Flash Preview (~2.5s)
-- UAT: All criteria pass (local + cloud)
+- LLM Benchmarking: Llama3 (~7s), Claude Haiku (~0.8s), Gemini Flash (~2.5s)
+- Multi-provider cloud processing: 4 modes (local/gemini/anthropic/openai)
+- Created docs/BENCHMARKS.md
+- Key insight: Transcription is bottleneck, not LLM
 
 ### 2026-01-16 ~21:00 - Gemini (Previous)
-- Resumed from pnpm migration, V3 Turbo, packaging
 - Fixed Electron install.js issue
+- UAT on pnpm dev mode
 
 ### 2026-01-15 - Claude
 - Packaging with electron-builder
 - Whisper V3 Turbo integration
-- Model tuning for speed
