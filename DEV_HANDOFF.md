@@ -1,36 +1,36 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-16T22:44:00
+> **Last Updated:** 2026-01-17T09:31:00
 > **Last Model:** Gemini
-> **Session Focus:** QA Audit, Security Fixes, LLM Benchmarking, Multi-Provider Cloud Processing
+> **Session Focus:** Commercial Launch Strategy & Sprint Planning
 
 ---
 
 ## ✅ Completed This Session
 
-### Security Audit & Fixes
-- **SEC-001 FIXED**: Electron hardening (`sandbox: true`, `webSecurity: true`)
-- **SEC-003 FIXED**: Prompt injection prevention (`.format` → `.replace`)
-- **SEC-004 FIXED**: Gated StreamHandler behind `DEBUG=1`
-- **Created** `docs/SECURITY_AUDIT.md`
+### Commercial Launch Strategy
+- Created comprehensive `docs/COMMERCIAL_LAUNCH_STRATEGY.md` (1,250+ lines)
+  - Competitive analysis (WisprFlow, AquaVoice, Glaido)
+  - Lifetime-first pricing model ($29 one-time)
+  - $20/month reality check vs Gemini Pro
+  - Ko-fi governance structure
+  - Bilingual (ES/EN) strategy
+  - Indigenous language opportunity (Náhuatl, Maya, Zapotec)
+  - Accessibility market positioning
+  - Prompt Helper Mode (origin story)
+  - Translation mode as killer feature
 
-### LLM Benchmarking
-- Tested: Llama3, Mistral, Gemma3:4b, Qwen3:30b (local)
-- Tested: Gemini 3 Flash, Claude 3 Haiku (cloud)
-- **Selected Llama3** as default local model (~7s, good accuracy)
-- **Created** `docs/BENCHMARKS.md` with all timing data
+### Research & Validation
+- **Confirmed:** Google OAuth login works for Gemini subscription quotas
+- **Confirmed:** Llama 3 officially supports Spanish
+- **Confirmed:** Whisper ~87% accuracy for Spanish
 
-### Multi-Provider Cloud Processing
-- Created `LocalProcessor`, `CloudProcessor`, `AnthropicProcessor`, `OpenAIProcessor`
-- Factory function `create_processor()` selects based on `PROCESSING_MODE`
-- Created `.env` and `.env.example` with all API key fields
-- **Modes:** `local`, `gemini`, `anthropic`, `openai`
-
-### Key Findings
-- **Transcription is the bottleneck** (~5.6s, 60-70% of total)
-- Cloud LLMs (0.7-2.5s) don't feel faster because transcription dominates
-- Claude 3 Haiku censors profanity (bad for dictation)
-- Gemini 3 Flash handles corrections well
+### Sprint Planning
+- Created `docs/V1_LAUNCH_SPRINT.md` with 4-week commercial launch plan
+  - Sprint 1: Settings window, Clipboard paste, Cloud/Local toggle
+  - Sprint 2: Modes (6 types), Translation, Google OAuth
+  - Sprint 3: Spanish UI (i18n), Polish, Snippets
+  - Sprint 4: Installer, Website, Ko-fi, Launch
 
 ## ⚠️ Known Issues / Broken
 
@@ -39,33 +39,49 @@
 
 ## 🔄 In Progress / Pending
 
-- [ ] **Clipboard paste injection** — Instant Ctrl+V instead of character-by-character
-- [ ] **Distil-Whisper** — Faster transcription model
-- [ ] **GPU acceleration** — CUDA for Whisper
-- [ ] **Streaming transcription** — Real-time during recording
-- [ ] **UI Polish**: Frameless status window
-- [ ] **README Update**: Full documentation
+### P0 (This Week)
+- [ ] **Clipboard paste injection** — Instant Ctrl+V in `python/core/injector.py`
+- [ ] **Settings window** — React component with hotkey/mode/audio config
+- [ ] **Cloud/Local toggle** — UI switch + config persistence
+
+### P1 (Next Week)
+- [ ] **Modes implementation** — Standard, Developer, Email, Prompt, Raw, Casual
+- [ ] **Translation modes** — ES↔EN
+- [ ] **Google OAuth integration** — Use existing Gemini subscription quota
+
+### P2 (Week 3-4)
+- [ ] **Spanish UI translation** — react-i18next
+- [ ] **One-click installer** — electron-builder + PyInstaller
+- [ ] **Website** — Parallax landing page on dikta.me
 
 ## 📋 Instructions for Next Model
 
 ### Priority Order
-1. **Clipboard paste** in `python/core/injector.py` — use `pyperclip` with Ctrl+V
-2. Evaluate Distil-Whisper for faster transcription
-3. UI polish (frameless window)
+1. **Read first:** `docs/COMMERCIAL_LAUNCH_STRATEGY.md` (commercial context)
+2. **Read second:** `docs/V1_LAUNCH_SPRINT.md` (sprint tasks)
+3. **Start with:** Clipboard paste injection in `python/core/injector.py`
 
 ### Context Needed
-- `docs/BENCHMARKS.md` — Full performance data and optimization roadmap
-- `docs/SECURITY_AUDIT.md` — Security findings
-- `python/core/processor.py` — Multi-provider implementation
+- `docs/COMMERCIAL_LAUNCH_STRATEGY.md` — Full commercial strategy
+- `docs/V1_LAUNCH_SPRINT.md` — Sprint breakdown with checkboxes
+- `python/core/processor.py` — Multi-provider implementation (already done)
+- `docs/BENCHMARKS.md` — Performance data (transcription is bottleneck)
 
 ### Do NOT
+- Do not change pricing structure without user confirmation
+- Do not remove multi-provider support from processor.py
 - Do not use `gemini-3-flash` (without `-preview`) — returns 404
-- Do not use `claude-3-5-haiku-latest` — use dated version
-- Do not remove Electron sandbox settings
+- Do not refactor core pipeline — it works, focus on UI/UX
 
 ---
 
 ## Session Log (Last 3 Sessions)
+
+### 2026-01-17 09:31 - Gemini
+- Commercial launch strategy (1,250+ lines)
+- Validated Google OAuth for Gemini subscription quotas
+- Created 4-week sprint plan
+- Key decisions: $29 lifetime, translation mode, prompt mode, accessibility focus
 
 ### 2026-01-16 22:44 - Gemini
 - QA Security Audit: 5 findings, 3 fixed
@@ -74,10 +90,18 @@
 - Created docs/BENCHMARKS.md
 - Key insight: Transcription is bottleneck, not LLM
 
-### 2026-01-16 ~21:00 - Gemini (Previous)
+### 2026-01-16 ~21:00 - Gemini
 - Fixed Electron install.js issue
 - UAT on pnpm dev mode
 
-### 2026-01-15 - Claude
-- Packaging with electron-builder
-- Whisper V3 Turbo integration
+---
+
+## Key Documents Reference
+
+| Document | Purpose |
+|----------|---------|
+| `docs/COMMERCIAL_LAUNCH_STRATEGY.md` | Full commercial strategy |
+| `docs/V1_LAUNCH_SPRINT.md` | Sprint task breakdown |
+| `AI_CODEX.md` | Project governance |
+| `GEMINI.md` / `CLAUDE.md` | Model-specific instructions |
+| `docs/BENCHMARKS.md` | Performance data |

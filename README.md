@@ -113,6 +113,10 @@ Commercial voice tools send your audio to the cloud. dIKtate runs entirely on yo
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** — Current technical design
 - **[DEV_HANDOFF.md](./DEV_HANDOFF.md)** — Development status and next steps
 
+### Commercial Launch (V1.0)
+- **[docs/COMMERCIAL_LAUNCH_STRATEGY.md](./docs/COMMERCIAL_LAUNCH_STRATEGY.md)** — Full commercial strategy
+- **[docs/V1_LAUNCH_SPRINT.md](./docs/V1_LAUNCH_SPRINT.md)** — 4-week sprint plan
+
 ### Knowledge Base (L3 Memory)
 - **[docs/L3_MEMORY/PHASE_ROADMAP.md](./docs/L3_MEMORY/PHASE_ROADMAP.md)** — MVP → v1.0 evolution
 - **[docs/L3_MEMORY/DEFERRED_FEATURES.md](./docs/L3_MEMORY/DEFERRED_FEATURES.md)** — Features not in MVP
