@@ -43,6 +43,11 @@ This project utilizes a multi-model collaboration strategy. Each agent has disti
 - **Types:** Strict TypeScript. No `any`.
 - **Comments:** Explain *why*, not just *what*.
 
+### D. Security
+- **Audit Log:** All security findings MUST be documented in [docs/SECURITY_AUDIT.md](./docs/SECURITY_AUDIT.md).
+- **Electron Hardening:** All `BrowserWindow` instances require `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false`.
+- **Pre-Release:** Run `pnpm audit` and resolve HIGH/CRITICAL before any release.
+
 ## 5. Cross-Reference
 - For model-specific instructions, consult:
     - [GEMINI.md](./GEMINI.md)

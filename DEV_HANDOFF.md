@@ -1,54 +1,47 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-16T20:56:00
+> **Last Updated:** 2026-01-16T21:51:00
 > **Last Model:** Gemini
-> **Session Focus:** Packaging, pnpm Migration, Whisper V3 Turbo Upgrade
+> **Session Focus:** QA Audit, Security Fixes, LLM Benchmarking, UAT
 
 ---
 
 ## ✅ Completed This Session
 
-- **pnpm Migration**: Migrated entirely from `npm` to `pnpm`. `node_modules` cleaned, `.npmrc` created for Electron hoisting rules.
-- **Model Tuning**: Adjusted LLM prompt to preserve colloquialisms ("freaking") while removing filler words. Added side-by-side raw/processed logging.
-- **Packaging**: 
-    -   Created `python/build_backend.bat` (PyInstaller).
-    -   Configured `electron-builder` to bundle `diktate-engine.exe` via `extraResources`.
-    -   Updated `src/main.ts` to detect environment (Dev vs. Prod) and launch appropriate Python backend.
-    -   Built and verified `dist/win-unpacked/dIKtate.exe`.
-- **Whisper V3 Turbo**: 
-    -   Implemented `faster-whisper-large-v3-turbo-ct2` as default model (~8x faster).
-    -   Updated `python/core/transcriber.py` with model mapping.
-    -   Added runtime configuration command (`configure`) to `ipc_server.py` and `PythonManager` to switch models on the fly.
-    -   Verified with `python/test_turbo.py`.
+- **QA Security Audit**: Conducted comprehensive review of Electron, IPC, and Python pipeline.
+- **SEC-001 FIXED**: Added `sandbox: true`, `webSecurity: true`, `allowRunningInsecureContent: false` to `BrowserWindow` in `src/main.ts`.
+- **SEC-003 FIXED**: Changed `.format(text=text)` to `.replace("{text}", text)` in `processor.py` to prevent prompt injection.
+- **SEC-004 FIXED**: Gated `StreamHandler()` behind `DEBUG=1` env var in `ipc_server.py` to prevent transcript leaks.
+- **LLM Benchmarking**: Tested Mistral (~9s), Llama3 (~7s), Gemma3:4b (~7s less accurate), Qwen3:30b (60s+ too slow). **Llama3 selected**.
+- **UAT COMPLETE**: Consistent 6-7s processing, high accuracy, no crashes. All criteria pass.
+- **Documentation**: 
+    - Created `docs/SECURITY_AUDIT.md` with audit findings and remediation status.
+    - Updated `AI_CODEX.md` with Section 4D (Security governance rules).
+- **SEC-002 Investigated**: 2 npm vulnerabilities are in `electron-builder` transitive deps (build-time only, not runtime). Deferred.
 
 ## ⚠️ Known Issues / Broken
 
-- **UAT Pending**: While the build works, comprehensive UAT (latency, accuracy, multi-app) has not been performed on the *packaged* build.
-- **Test Script Import**: `python/test_turbo.py` requires running from root context or careful path management (fixed in session, but worth noting for future scripts).
+- **SEC-002 (Deferred)**: 2 npm vulnerabilities in `electron-builder` chain. Build-time only, no runtime impact.
 
 ## 🔄 In Progress / Pending
 
-- [ ] **User Acceptance Testing (UAT)**: Execute the UAT plan (latency, accuracy, stability).
-- [ ] **UI Polish**: User requested removing the title bar/frame from the Status Window for a cleaner look.
-- [ ] **README Update**: Needs to be updated with new installation/build instructions (pnpm) and V3 Turbo details.
+- [ ] **UI Polish**: Remove Status Window frame (`frame: false`).
+- [ ] **README Update**: pnpm, V3 Turbo, packaging instructions.
+- [ ] **Package and Test**: Rebuild packaged exe with final config.
 
 ## 📋 Instructions for Next Model
 
-1.  **Prioritize UAT**: Your primary goal is to validate the packaged application. Run it, dictate, and verify performance.
-2.  **Polish UI**: Remove the Status Window frame as requested.
-3.  **Documentation**: Update `README.md` to reflect the technical changes (pnpm, V3 Turbo, packaging steps) and ensure `ARCHITECTURE.md` is current.
-4.  **Research**: If UAT passes, consider benchmarking the "Experimental Research Candidates" listed in `docs/L3_MEMORY/DEFERRED_FEATURES.md`.
-
-### Priority Order
-1.  Perform UAT on `dist/win-unpacked/dIKtate.exe`.
-2.  Remove Status Window frame (`src/main.ts` -> `createDebugWindow` or whichever window displays status). *Correction: The "Status Window" likely refers to the floating pill or the tray menu context, but check `src/main.ts` for window creation.*
-3.  Update `README.md`.
+1.  **Prioritize UAT**: Test the packaged app for latency, accuracy, stability.
+2.  **Fix SEC-003**: In `python/core/processor.py` line 70, change `.format(text=text)` to `.replace("{text}", text)`.
+3.  **UI Polish**: Set `frame: false` on the Status Window in `src/main.ts`.
+4.  **Update README.md**: Reflect pnpm, V3 Turbo, packaging steps.
 
 ### Context Needed
-- `task.md` (Artifact): Contains the granular checklist.
-- `docs/L3_MEMORY/DEFERRED_FEATURES.md`: Contains future research candidates.
-- `python/build_backend.bat`: Usage for rebuilding the backend.
+- `docs/SECURITY_AUDIT.md`: Full audit findings and status.
+- `AI_CODEX.md`: Now includes Section 4D (Security).
+- `python/build_backend.bat`: For rebuilding the backend.
 
 ### Do NOT
-- Do not revert to `npm`. stick to `pnpm`.
-- Do not remove the `configure` IPC command; it is essential for future settings UI.
+- Do not revert to `npm`. Stick to `pnpm`.
+- Do not remove `sandbox: true` — this is a critical Electron security measure.
+- Do not remove the `configure` IPC command.

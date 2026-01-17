@@ -11,7 +11,7 @@ class Processor:
     """Processes transcribed text using Ollama LLM."""
 
     # Default cleanup prompt for standard mode
-    DEFAULT_CLEANUP_PROMPT = """You are a text cleanup tool. Fix grammar and remove filler words, but PRESERVE the user's style and intent.
+    DEFAULT_CLEANUP_PROMPT = """You are a text cleanup tool. Your ONLY job is to output the cleaned text. Do NOT add any commentary, explanations, or phrases like "Here's the cleaned text".
 
 Rules:
 1. Remove filler words (um, uh, like, you know) only if they are used as hesitations.
@@ -19,16 +19,16 @@ Rules:
 3. PRESERVE colloquialisms, slang, and emphasis (e.g., "freaking", "gonna", "wanna").
 4. DO NOT change the tone or vocabulary.
 5. If the input is short or unclear, return it exactly as is (with punctuation).
-6. Return ONLY the cleaned text.
+6. Return ONLY the cleaned text with NO preamble, NO explanation, NO commentary.
 
 Input: {text}
 
-Output:"""
+Cleaned text:"""
 
     def __init__(
         self,
         ollama_url: str = "http://localhost:11434",
-        model: str = "mistral:latest",
+        model: str = "llama3:latest",
         prompt: Optional[str] = None
     ):
         """
@@ -67,7 +67,7 @@ Output:"""
         Returns:
             Processed text
         """
-        prompt = self.prompt.format(text=text)
+        prompt = self.prompt.replace("{text}", text)
 
         for attempt in range(max_retries):
             try:

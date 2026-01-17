@@ -22,13 +22,16 @@ from core import Recorder, Transcriber, Processor, Injector
 log_dir = Path(Path.home()) / ".diktate" / "logs"
 log_dir.mkdir(parents=True, exist_ok=True)
 
+# Build handlers list - StreamHandler only in debug mode to avoid leaking transcripts
+import os
+log_handlers = [logging.FileHandler(log_dir / "diktate.log")]
+if os.environ.get("DEBUG") == "1":
+    log_handlers.append(logging.StreamHandler())
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_dir / "diktate.log"),
-        logging.StreamHandler()
-    ]
+    handlers=log_handlers
 )
 logger = logging.getLogger(__name__)
 
