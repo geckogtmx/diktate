@@ -47,6 +47,12 @@ This project utilizes a multi-model collaboration strategy. Each agent has disti
 - **Audit Log:** All security findings MUST be documented in [docs/SECURITY_AUDIT.md](./docs/SECURITY_AUDIT.md).
 - **Electron Hardening:** All `BrowserWindow` instances require `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false`.
 - **Pre-Release:** Run `pnpm audit` and resolve HIGH/CRITICAL before any release.
+    
+### E. Quality Assurance
+- **Manual Testing:** All core changes (processor/transcriber) REQUIRE a run of the [Standard Manual Test](./docs/qa/TEST_PROCEDURE.md).
+- **Performance:** Latency must remain < 7s for standard hardware.
+- **Verification:** Use the `/test-diktate` workflow to verify logs.
+
 
 ## 5. Cross-Reference
 - For model-specific instructions, consult:

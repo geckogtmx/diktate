@@ -166,7 +166,7 @@ class IpcServer:
         self.state = new_state
         self._emit_event("state-change", {"state": new_state.value})
 
-    def start_recording(self) -> dict:
+    def start_recording(self, device_id: Optional[str] = None, device_label: Optional[str] = None) -> dict:
         """Start recording audio"""
         if self.state != State.IDLE:
             error_msg = f"Cannot start recording in {self.state.value} state"
@@ -180,7 +180,7 @@ class IpcServer:
             self.perf.start("recording")
 
             self._set_state(State.RECORDING)
-            self.recorder.start()
+            self.recorder.start(device_id=device_id, device_label=device_label)
             self.recording = True
             logger.info("[REC] Recording started")
             return {"success": True}
@@ -311,7 +311,10 @@ class IpcServer:
             logger.info(f"[CMD] Received command: {cmd_name} (id: {cmd_id})")
 
             if cmd_name == "start_recording":
-                return self.start_recording()
+                return self.start_recording(
+                    device_id=command.get("deviceId"),
+                    device_label=command.get("deviceLabel")
+                )
             elif cmd_name == "stop_recording":
                 return self.stop_recording()
             elif cmd_name == "status":

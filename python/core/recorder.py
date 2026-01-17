@@ -40,15 +40,47 @@ class Recorder:
         # Create temp directory if it doesn't exist
         os.makedirs(temp_dir, exist_ok=True)
 
-    def start(self) -> None:
+    def start(self, device_id: Optional[str] = None, device_label: Optional[str] = None) -> None:
         """Start recording from microphone."""
         try:
             self.p = pyaudio.PyAudio()
+            
+            # Resolve device index
+            input_device_index = None
+            
+            if (device_id and device_id != 'default') or device_label:
+                logger.info(f"Looking for audio device: ID={device_id}, Label={device_label}")
+                try:
+                    info = self.p.get_host_api_info_by_index(0)
+                    numdevices = info.get('deviceCount')
+                    
+                    found_device = None
+                    
+                    for i in range(0, numdevices):
+                        device_info = self.p.get_device_info_by_host_api_device_index(0, i)
+                        if device_info.get('maxInputChannels') > 0:
+                            dev_name = device_info.get('name')
+                            # Match against label if provided (fuzzy match)
+                            if device_label and device_label.lower() in dev_name.lower():
+                                found_device = i
+                                logger.info(f"Found matching device by label: '{dev_name}' (Index: {i})")
+                                break
+                            # Fallback: check if mapped ID could work (unlikely with browser hashes)
+                            
+                    if found_device is not None:
+                        input_device_index = found_device
+                    else:
+                        logger.warning(f"Device not found, falling back to default. Available devices checked: {numdevices}")
+                        
+                except Exception as e:
+                    logger.error(f"Error enumerating devices: {e}")
+
             self.stream = self.p.open(
                 format=pyaudio.paInt16,
                 channels=self.channels,
                 rate=self.sample_rate,
                 input=True,
+                input_device_index=input_device_index,
                 frames_per_buffer=self.chunk_size
             )
             self.is_recording = True
@@ -59,7 +91,7 @@ class Recorder:
             self.record_thread = threading.Thread(target=self._record_loop)
             self.record_thread.start()
             
-            logger.info("Recording started")
+            logger.info(f"Recording started (Device: {input_device_index if input_device_index is not None else 'Default'})")
         except Exception as e:
             logger.error(f"Failed to start recording: {e}")
             raise

@@ -4,7 +4,7 @@ System prompts for different processing modes.
 
 # STANDARD: Preserves casual tone, fixes grammar, keeps slang/emphasis.
 # STANDARD: Preserves casual tone, fixes grammar, keeps slang/emphasis.
-PROMPT_STANDARD = """You are a text cleanup tool. Fix punctuation and capitalization. Remove filler words (um, uh) only if hesitations. PRESERVE slang/emphasis. Return ONLY cleaned text.
+PROMPT_STANDARD = """You are a text cleanup tool. Fix punctuation and capitalization. Remove filler words (um, uh) only if hesitations. PRESERVE slang/emphasis. Return ONLY cleaned text. Do not include introductory text.
 
 Input: {text}
 Cleaned text:"""

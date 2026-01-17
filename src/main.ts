@@ -392,7 +392,15 @@ function setupIpcHandlers(): void {
     }
     try {
       logger.info('IPC', 'Starting recording');
-      const result = await pythonManager.sendCommand('start_recording');
+      // Get preferred device ID
+      // Get preferred device ID and Label
+      const audioDeviceId = store.get('audioDeviceId');
+      const audioDeviceLabel = store.get('audioDeviceLabel');
+
+      const result = await pythonManager.sendCommand('start_recording', {
+        deviceId: audioDeviceId,
+        deviceLabel: audioDeviceLabel
+      });
       isRecording = true;
       updateTrayState('Recording');
       updateTrayIcon('recording');

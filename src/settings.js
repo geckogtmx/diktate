@@ -9,10 +9,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const settings = await ipcRenderer.invoke('settings:get-all');
         loadSettings(settings);
+        // Refresh devices initially
+        await refreshAudioDevices(settings.audioDeviceId);
     } catch (e) {
         console.error('Failed to load settings:', e);
     }
 });
+
+// Audio Device Handling
+async function refreshAudioDevices(selectedId) {
+    const select = document.getElementById('audio-device');
+    if (!select) return;
+
+    select.innerHTML = '<option>Loading...</option>';
+
+    try {
+        // Request permission if needed (usually cached in Electron)
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputs = devices.filter(device => device.kind === 'audioinput');
+
+        select.innerHTML = '';
+
+        // Add Default option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = 'default';
+        defaultOption.text = 'Default Microphone';
+        select.appendChild(defaultOption);
+
+        audioInputs.forEach(device => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.text = device.label || `Microphone ${select.length + 1}`;
+            select.appendChild(option);
+        });
+
+        // Restore selection
+        if (selectedId) {
+            select.value = selectedId;
+        }
+
+        // Handle change
+        select.onchange = () => {
+            saveSetting('audioDeviceId', select.value);
+            saveSetting('audioDeviceLabel', select.options[select.selectedIndex].text);
+        };
+
+    } catch (err) {
+        console.error('Error listing devices:', err);
+        select.innerHTML = '<option>Error loading devices</option>';
+    }
+}
 
 // Tab Switching
 function switchTab(tabId) {
