@@ -31,13 +31,15 @@ const electronAPI = {
   onStatusChange: (callback: (status: string) => void) => {
     ipcRenderer.on('status-update', (_, status) => callback(status));
   },
+  onPerformanceMetrics: (callback: (metrics: any) => void) => {
+    ipcRenderer.on('performance-metrics', (_, metrics) => callback(metrics));
+  },
   onModeChange: (callback: (mode: string) => void) => {
     ipcRenderer.on('mode-update', (_, mode) => callback(mode));
   },
-  toggleRecording: () => ipcRenderer.invoke('python:toggle-recording'), // Add toggle helper
+  toggleRecording: () => ipcRenderer.invoke('python:toggle-recording'),
   getInitialState: () => ipcRenderer.invoke('get-initial-state'),
-  clearLogs: () => { }, // Handled in renderer for now
-  testNotification: () => { } // Handled in renderer for now
+  setSetting: (key: string, value: any) => ipcRenderer.invoke('settings:set', key, value),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

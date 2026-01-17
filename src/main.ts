@@ -366,6 +366,12 @@ function setupPythonEventHandlers(): void {
 
   pythonManager.on('performance-metrics', (metrics: any) => {
     logger.info('MAIN', 'Performance metrics received from Python', metrics);
+
+    // Forward to renderer for dashboard display
+    if (debugWindow && !debugWindow.isDestroyed()) {
+      debugWindow.webContents.send('performance-metrics', metrics);
+    }
+
     // Log average performance statistics
     const stats = performanceMetrics.getStatistics();
     if (stats.averages) {
@@ -585,7 +591,9 @@ async function initialize(): Promise<void> {
         status: pythonManager?.getStatus() || 'disconnected',
         isRecording,
         mode: currentMode,
-        models
+        models,
+        soundFeedback: store.get('soundFeedback', true),
+        processingMode: store.get('processingMode', 'local')
       };
     });
 

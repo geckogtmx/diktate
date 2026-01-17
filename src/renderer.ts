@@ -1,5 +1,6 @@
 /**
- * Renderer process for dIKtate Status Window
+ * Renderer process for dIKtate Status Dashboard
+ * Tracks session statistics and handles live status updates
  */
 export { };
 
@@ -8,85 +9,163 @@ declare global {
         electronAPI: {
             onLog: (callback: (level: string, message: string, data?: any) => void) => void;
             onStatusChange: (callback: (status: string) => void) => void;
+            onPerformanceMetrics: (callback: (metrics: PerformanceMetrics) => void) => void;
             getInitialState: () => Promise<any>;
-            toggleRecording: () => Promise<any>;
-        };
-        api: {
-            python: {
-                startRecording: () => Promise<any>;
-                stopRecording: () => Promise<any>;
-            }
+            setSetting: (key: string, value: any) => Promise<void>;
         };
     }
 }
 
+interface PerformanceMetrics {
+    recording?: number;
+    transcription?: number;
+    processing?: number;
+    injection?: number;
+    total?: number;
+    charCount?: number;
+}
+
+// DOM Elements
 const statusPanel = document.getElementById('status-panel');
-const statusIcon = document.getElementById('status-icon');
 const statusText = document.getElementById('status-text');
-const statusSubtext = document.getElementById('status-subtext');
+const liveMessage = document.getElementById('live-message');
 const logContainer = document.getElementById('log-container');
 
-let isRecording = false;
-let isProcessing = false;
+// Stats elements
+const statSessions = document.getElementById('stat-sessions');
+const statChars = document.getElementById('stat-chars');
+const statSpeed = document.getElementById('stat-speed');
+const statLast = document.getElementById('stat-last');
+const statTokens = document.getElementById('stat-tokens');
+const statCost = document.getElementById('stat-cost');
 
-// DISABLED: Clicking the button steals focus from target app, breaking text injection.
-// TODO: Fix by making the window non-focusable or using a different approach (e.g., tray click).
-// if (statusIcon) {
-//     statusIcon.addEventListener('click', async () => {
-//         if (isProcessing) return; // Ignore while busy
-//
-//         if (isRecording) {
-//             addLogEntry('INFO', 'Stopping recording via UI click...');
-//             await window.api.python.stopRecording();
-//         } else {
-//             addLogEntry('INFO', 'Starting recording via UI click...');
-//             await window.api.python.startRecording();
-//         }
-//     });
-// }
+// Badge elements
+const badgeTranscriber = document.getElementById('badge-transcriber');
+const badgeProcessor = document.getElementById('badge-processor');
+
+// Perf timeline elements
+const perfRec = document.getElementById('perf-rec');
+const perfTrans = document.getElementById('perf-trans');
+const perfProc = document.getElementById('perf-proc');
+const perfInject = document.getElementById('perf-inject');
+
+// Toggle elements
+const toggleSound = document.getElementById('toggle-sound') as HTMLInputElement | null;
+const toggleCloud = document.getElementById('toggle-cloud') as HTMLInputElement | null;
+
+// Session statistics
+let sessionCount = 0;
+let totalChars = 0;
+let totalTime = 0;
+let totalTokensSaved = 0;
+
+// Rough token estimation: ~4 chars per token (like OpenAI's tokenizer)
+// Cost estimate: ~$0.002 per 1K tokens (GPT-4o-mini pricing)
+const CHARS_PER_TOKEN = 4;
+const COST_PER_1K_TOKENS = 0.002;
+
+// Live status messages for each state
+const STATUS_MESSAGES: Record<string, { text: string; message: string; typing?: boolean }> = {
+    idle: { text: 'READY', message: 'Waiting for input...' },
+    recording: { text: 'LISTENING', message: 'Speak clearly', typing: true },
+    transcribing: { text: 'TRANSCRIBING', message: 'Converting speech to text', typing: true },
+    processing: { text: 'THINKING', message: 'Polishing your text', typing: true },
+    injecting: { text: 'TYPING', message: 'Inserting text', typing: true },
+    error: { text: 'ERROR', message: 'Something went wrong' }
+};
 
 function setStatus(state: string) {
-    if (!statusPanel || !statusText || !statusIcon || !statusSubtext) return;
+    if (!statusPanel || !statusText || !liveMessage) return;
 
-    // Normalize state
     const s = state.toLowerCase();
+    let stateKey = 'idle';
 
-    // Default
-    let className = 'state-idle';
-    let icon = '⚪';
-    let text = 'READY';
-    let sub = 'Waiting for input...';
+    if (s.includes('recording')) stateKey = 'recording';
+    else if (s.includes('transcrib')) stateKey = 'transcribing';
+    else if (s.includes('processing') || s.includes('thinking')) stateKey = 'processing';
+    else if (s.includes('inject') || s.includes('typing')) stateKey = 'injecting';
+    else if (s.includes('error')) stateKey = 'error';
 
-    if (s.includes('recording')) {
-        className = 'state-recording';
-        icon = '🔴';
-        text = 'LISTENING';
-        sub = 'Release hotkey to finish'; // Note: It's actually a toggle now, but user wants PTT feeling
-        sub = 'Speak clearly...';
-    } else if (s.includes('processing')) {
-        className = 'state-processing';
-        icon = '🔵';
-        text = 'THINKING';
-        sub = 'Transcribing & fixing text...';
-    } else if (s.includes('error') || s.includes('disconnect')) {
-        className = 'state-error';
-        icon = '⚠️';
-        text = 'ERROR';
-        sub = state;
-    }
+    const statusInfo = STATUS_MESSAGES[stateKey] || STATUS_MESSAGES.idle;
 
-    // Apply
-    statusPanel.className = className;
-    // statusIcon.textContent = icon; // No longer text
-    statusText.textContent = text;
-    statusSubtext.textContent = sub;
+    // Update panel class
+    statusPanel.className = `state-${stateKey}`;
 
-    // Sync local state
-    isRecording = s.includes('recording');
-    isProcessing = s.includes('processing');
+    // Update text
+    statusText.textContent = statusInfo.text;
+
+    // Update live message (with typing dots effect)
+    liveMessage.textContent = statusInfo.message;
+    liveMessage.className = statusInfo.typing ? 'typing-dots' : '';
+
+    // Highlight active step in timeline
+    updateTimelineActive(stateKey);
 }
 
-function addLogEntry(level: string, message: string, data?: any) {
+function updateTimelineActive(stateKey: string) {
+    perfRec?.classList.toggle('active', stateKey === 'recording');
+    perfTrans?.classList.toggle('active', stateKey === 'transcribing');
+    perfProc?.classList.toggle('active', stateKey === 'processing');
+    perfInject?.classList.toggle('active', stateKey === 'injecting');
+}
+
+function updatePerformanceMetrics(metrics: PerformanceMetrics) {
+    // Update timeline display
+    if (metrics.recording !== undefined && perfRec) {
+        perfRec.textContent = `Rec: ${(metrics.recording / 1000).toFixed(1)}s`;
+    }
+    if (metrics.transcription !== undefined && perfTrans) {
+        perfTrans.textContent = `Trans: ${Math.round(metrics.transcription)}ms`;
+    }
+    if (metrics.processing !== undefined && perfProc) {
+        perfProc.textContent = `Proc: ${Math.round(metrics.processing)}ms`;
+    }
+    if (metrics.injection !== undefined && perfInject) {
+        perfInject.textContent = `Inject: ${Math.round(metrics.injection)}ms`;
+    }
+
+    // Update session stats
+    if (metrics.total !== undefined) {
+        sessionCount++;
+        totalTime += metrics.total;
+
+        if (statSessions) statSessions.textContent = String(sessionCount);
+        if (statLast) statLast.textContent = `${(metrics.total / 1000).toFixed(1)}s`;
+
+        // Calculate speed (chars per second) - need charCount from this session
+        if (metrics.charCount && metrics.total > 0) {
+            const charsPerSec = metrics.charCount / (metrics.total / 1000);
+            if (statSpeed) statSpeed.textContent = `${charsPerSec.toFixed(0)}/s`;
+        }
+    }
+
+    // Update char count and token savings
+    if (metrics.charCount !== undefined) {
+        totalChars += metrics.charCount;
+        if (statChars) statChars.textContent = totalChars.toLocaleString();
+
+        // Calculate tokens saved (only counts when on Local mode)
+        const tokensThisSession = Math.ceil(metrics.charCount / CHARS_PER_TOKEN);
+        totalTokensSaved += tokensThisSession;
+
+        if (statTokens) statTokens.textContent = totalTokensSaved.toLocaleString();
+
+        // Calculate estimated cost savings
+        const costSaved = (totalTokensSaved / 1000) * COST_PER_1K_TOKENS;
+        if (statCost) statCost.textContent = `$${costSaved.toFixed(3)}`;
+    }
+}
+
+function updateBadges(models?: { transcriber?: string; processor?: string }) {
+    if (models?.transcriber && badgeTranscriber) {
+        badgeTranscriber.textContent = models.transcriber;
+    }
+    if (models?.processor && badgeProcessor) {
+        badgeProcessor.textContent = models.processor;
+    }
+}
+
+function addLogEntry(level: string, message: string, _data?: any) {
     if (!logContainer) return;
 
     const entry = document.createElement('div');
@@ -94,7 +173,6 @@ function addLogEntry(level: string, message: string, data?: any) {
 
     const timeStr = new Date().toLocaleTimeString().split(' ')[0];
 
-    // Safe DOM manipulation (no innerHTML with user data)
     const timeSpan = document.createElement('span');
     timeSpan.className = 'log-time';
     timeSpan.textContent = timeStr;
@@ -104,7 +182,8 @@ function addLogEntry(level: string, message: string, data?: any) {
     levelSpan.textContent = level;
 
     const msgSpan = document.createElement('span');
-    msgSpan.textContent = message;
+    // Truncate long messages for cleaner logs
+    msgSpan.textContent = message.length > 80 ? message.substring(0, 77) + '...' : message;
 
     entry.appendChild(timeSpan);
     entry.appendChild(document.createTextNode(' '));
@@ -113,49 +192,60 @@ function addLogEntry(level: string, message: string, data?: any) {
     entry.appendChild(msgSpan);
 
     logContainer.appendChild(entry);
+
+    // Keep only last 50 entries
+    while (logContainer.children.length > 50) {
+        logContainer.removeChild(logContainer.children[0]);
+    }
+
     logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+// Setup toggle handlers
+function setupToggles() {
+    if (toggleSound) {
+        toggleSound.addEventListener('change', () => {
+            window.electronAPI?.setSetting?.('soundFeedback', toggleSound.checked);
+            addLogEntry('INFO', `Sound feedback: ${toggleSound.checked ? 'ON' : 'OFF'}`);
+        });
+    }
+
+    if (toggleCloud) {
+        toggleCloud.addEventListener('change', () => {
+            const mode = toggleCloud.checked ? 'cloud' : 'local';
+            window.electronAPI?.setSetting?.('processingMode', mode);
+            addLogEntry('INFO', `Processing mode: ${mode.toUpperCase()}`);
+        });
+    }
 }
 
 // Initialize
 if (window.electronAPI) {
     window.electronAPI.onLog((level, message, data) => addLogEntry(level, message, data));
-
     window.electronAPI.onStatusChange((status) => setStatus(status));
 
-    // Listen for mode updates (we'll add this event in main.ts)
-    if ((window.electronAPI as any).onModeChange) {
-        (window.electronAPI as any).onModeChange((mode: string) => setMode(mode));
+    // Performance metrics handler
+    if (window.electronAPI.onPerformanceMetrics) {
+        window.electronAPI.onPerformanceMetrics((metrics) => updatePerformanceMetrics(metrics));
     }
 
+    // Get initial state
     window.electronAPI.getInitialState().then((state) => {
         if (state) {
-            // Determine state from complicated object if needed, or just string
-            if (state.isRecording) setStatus('recording');
-            else setStatus(state.status || 'idle');
+            setStatus(state.status || 'idle');
+            updateBadges(state.models);
 
-            // Initial set
-            updateStatusText(state.mode, state.models);
+            // Restore toggle states
+            if (toggleSound && state.soundFeedback !== undefined) {
+                toggleSound.checked = state.soundFeedback;
+            }
+            if (toggleCloud && state.processingMode) {
+                toggleCloud.checked = state.processingMode === 'cloud';
+            }
         }
-    }).catch(err => addLogEntry('ERROR', 'Init failed', err));
+    }).catch(err => addLogEntry('ERROR', 'Init failed'));
+
+    setupToggles();
 }
 
-let currentMode = 'STANDARD';
-let currentModels = { transcriber: 'TURBO', processor: 'LOCAL' };
-
-function updateStatusText(mode?: string, models?: any) {
-    if (mode) currentMode = mode.toUpperCase();
-    if (models) {
-        if (models.transcriber) currentModels.transcriber = models.transcriber;
-        if (models.processor) currentModels.processor = models.processor;
-    }
-
-    const modeEl = document.getElementById('status-mode');
-    if (modeEl) {
-        // Format: T: TURBO | P: LOCAL (STANDARD)
-        modeEl.textContent = `T: ${currentModels.transcriber} | P: ${currentModels.processor} (${currentMode})`;
-    }
-}
-
-function setMode(mode: string) {
-    updateStatusText(mode);
-}
+addLogEntry('INFO', 'Dashboard initialized');

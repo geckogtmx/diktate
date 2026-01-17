@@ -15,9 +15,7 @@
 
             --bg-color: var(--ink-black);
             --text-color: #e0e0e0;
-            --idle-color: var(--jet-black);
             --recording-color: #ff3e3e;
-            /* Adjusted for better teal contrast */
             --processing-color: var(--dark-teal-3);
             --border-color: var(--dark-teal);
         }
@@ -33,183 +31,318 @@
             overflow: hidden;
         }
 
-        /* BIG STATUS AREA */
+        /* MAIN STATUS PANEL */
         #status-panel {
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: background-color 0.3s ease;
-            text-align: center;
-            padding: 20px;
+            transition: background-color 0.4s ease, border-color 0.4s ease;
+            border-left: 4px solid var(--dark-teal);
         }
 
-        #status-icon {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background-color: white;
-            margin-bottom: 20px;
-            /* cursor: pointer; -- DISABLED: Focus stealing issue */
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 2px 5px rgba(255, 255, 255, 0.5);
+        /* STATE BACKGROUNDS */
+        .state-idle {
+            background-color: var(--ink-black);
+            border-left-color: var(--dark-teal);
+        }
+
+        .state-recording {
+            background-color: rgba(255, 62, 62, 0.15);
+            border-left-color: var(--recording-color);
+            animation: recording-pulse 1.5s infinite;
+        }
+
+        .state-processing {
+            background-color: rgba(0, 96, 122, 0.2);
+            border-left-color: var(--dark-teal-3);
+        }
+
+        .state-transcribing {
+            background-color: rgba(0, 96, 122, 0.15);
+            border-left-color: var(--dark-teal-2);
+        }
+
+        .state-injecting {
+            background-color: rgba(0, 80, 102, 0.2);
+            border-left-color: var(--dark-teal-3);
+        }
+
+        @keyframes recording-pulse {
+
+            0%,
+            100% {
+                background-color: rgba(255, 62, 62, 0.1);
+            }
+
+            50% {
+                background-color: rgba(255, 62, 62, 0.25);
+            }
+        }
+
+        /* HEADER BAR */
+        #header-bar {
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
-            position: relative;
-            border: 4px solid var(--dark-teal);
+            padding: 8px 12px;
+            background: var(--jet-black);
+            border-bottom: 1px solid var(--border-color);
         }
 
-        /* DISABLED: Hover effects removed due to focus-stealing issue
-        #status-icon:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 2px 5px rgba(255, 255, 255, 0.6);
-            border-color: var(--dark-teal-2);
-        }
-
-        #status-icon:active {
-            transform: scale(0.95);
-        }
-        */
-
-        #status-text {
-            font-size: 2.2rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-top: 10px;
-            color: var(--text-color);
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-        }
-
-        #status-subtext {
+        #status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
             font-size: 1rem;
-            opacity: 0.7;
-            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
-        /* STATES */
-        .state-idle #status-icon {
+        #status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
             background-color: var(--dark-teal-3);
-            border-color: var(--dark-teal);
-            box-shadow: 0 0 20px var(--dark-teal);
+            transition: background-color 0.3s;
         }
 
-        .state-recording #status-icon {
+        .state-recording #status-dot {
             background-color: var(--recording-color);
-            border-color: #fff;
-            animation: pulse-ring 1.5s infinite;
+            animation: dot-pulse 1s infinite;
         }
 
-        .state-processing #status-icon {
-            background-color: var(--dark-teal-2);
-            border-color: var(--dark-teal-3);
-            animation: spin-glow 2s infinite linear;
+        .state-processing #status-dot {
+            background-color: var(--dark-teal-3);
+            animation: dot-spin 1s linear infinite;
         }
 
-        @keyframes pulse-ring {
-            0% {
-                box-shadow: 0 0 0 0 rgba(255, 62, 62, 0.7);
-            }
+        @keyframes dot-pulse {
 
-            70% {
-                box-shadow: 0 0 0 20px rgba(255, 62, 62, 0);
-            }
-
+            0%,
             100% {
-                box-shadow: 0 0 0 0 rgba(255, 62, 62, 0);
-            }
-        }
-
-        @keyframes spin-glow {
-            0% {
-                box-shadow: 0 0 10px var(--dark-teal-3);
+                opacity: 1;
+                transform: scale(1);
             }
 
             50% {
-                box-shadow: 0 0 25px var(--dark-teal-3);
-            }
-
-            100% {
-                box-shadow: 0 0 10px var(--dark-teal-3);
+                opacity: 0.5;
+                transform: scale(1.3);
             }
         }
 
-        .state-error {
-            background-color: var(--jet-black);
-            color: #ff3e3e;
-            border: 2px solid #ff3e3e;
+        @keyframes dot-spin {
+            from {
+                box-shadow: 0 0 0 0 var(--dark-teal-3);
+            }
+
+            to {
+                box-shadow: 0 0 10px 3px transparent;
+            }
         }
 
-        @keyframes pulse-red {
+        .badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            background: var(--dark-teal);
+            border-radius: 3px;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        #badges {
+            display: flex;
+            gap: 5px;
+        }
+
+        /* LIVE STATUS MESSAGE */
+        #live-status {
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 20px;
+        }
+
+        .typing-dots::after {
+            content: '';
+            animation: typing 1.5s infinite;
+        }
+
+        @keyframes typing {
             0% {
-                box-shadow: inset 0 0 0 0 rgba(255, 255, 255, 0.4);
+                content: '';
             }
 
-            70% {
-                box-shadow: inset 0 0 50px 10px rgba(255, 255, 255, 0);
-            }
-
-            100% {
-                box-shadow: inset 0 0 0 0 rgba(255, 255, 255, 0);
-            }
-        }
-
-        @keyframes pulse-teal {
-            0% {
-                background-color: var(--dark-teal-3);
+            25% {
+                content: '.';
             }
 
             50% {
-                background-color: var(--dark-teal-2);
+                content: '..';
             }
 
-            100% {
-                background-color: var(--dark-teal-3);
+            75% {
+                content: '...';
             }
         }
 
-        /* SMALL LOG AREA */
+        /* STATS GRID */
+        #stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1px;
+            background: var(--border-color);
+            margin: 0 12px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .stat-cell {
+            background: var(--jet-black);
+            padding: 6px;
+            text-align: center;
+        }
+
+        .stat-cell.stat-highlight {
+            background: rgba(0, 96, 122, 0.3);
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.55rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* TOGGLES */
+        #toggles-bar {
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 12px;
+            gap: 10px;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: #aaa;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 32px;
+            height: 18px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            border-radius: 18px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            content: "";
+            position: absolute;
+            height: 12px;
+            width: 12px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        input:checked+.toggle-slider {
+            background-color: var(--dark-teal-3);
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(14px);
+        }
+
+        /* PERFORMANCE TIMELINE */
+        #perf-timeline {
+            padding: 8px 12px;
+            font-size: 0.7rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .perf-step {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .perf-step.active {
+            color: var(--dark-teal-3);
+            font-weight: 600;
+        }
+
+        /* LOG PANEL */
         #log-panel {
-            height: 150px;
+            height: 120px;
             background-color: var(--ink-black);
             border-top: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             font-family: 'Consolas', monospace;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
 
         #log-header {
-            padding: 5px 10px;
+            padding: 4px 10px;
             background-color: var(--jet-black);
             cursor: pointer;
-            user-select: none;
             display: flex;
             justify-content: space-between;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #888;
         }
 
         #log-container {
             flex: 1;
             overflow-y: auto;
-            padding: 5px;
+            padding: 4px 8px;
         }
 
         .log-entry {
-            margin-bottom: 2px;
-            border-bottom: 1px solid #222;
+            margin-bottom: 1px;
         }
 
         .log-time {
-            color: #555;
-            margin-right: 5px;
+            color: #444;
+            margin-right: 4px;
         }
 
         .log-level.INFO {
-            color: #ccc;
+            color: #888;
         }
 
         .log-level.WARN {
@@ -223,57 +356,112 @@
         /* FOOTER */
         footer {
             background-color: var(--jet-black);
-            padding: 5px 10px;
-            font-size: 0.75rem;
-            color: var(--dark-teal-2);
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            color: #666;
             display: flex;
             justify-content: space-between;
-            align-items: center;
         }
 
         #hotkey-hint {
             font-weight: bold;
             color: var(--text-color);
-            padding: 2px 6px;
+            padding: 1px 5px;
             background: var(--dark-teal);
-            border-radius: 3px;
-        }
-
-        .hidden {
-            display: none !important;
+            border-radius: 2px;
         }
     </style>
 </head>
 
 <body>
-    <!-- TRAFFIC LIGHT STATUS -->
     <div id="status-panel" class="state-idle">
-        <div id="status-icon" title="Click to Toggle Recording"></div>
-        <div id="status-text">READY</div>
-        <div id="status-subtext">Waiting for input...</div>
-        <div id="status-mode"
-            style="font-size: 0.8rem; opacity: 0.5; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;">
-            MODE: STANDARD</div>
-        <div style="font-size: 0.6em; opacity: 0.3; margin-top: 10px;">v0.1.0-UI-FIXED</div>
+        <!-- HEADER -->
+        <div id="header-bar">
+            <div id="status-indicator">
+                <span id="status-dot"></span>
+                <span id="status-text">READY</span>
+            </div>
+            <div id="badges">
+                <span class="badge" id="badge-transcriber">Turbo</span>
+                <span class="badge" id="badge-processor">Local</span>
+            </div>
+        </div>
+
+        <!-- LIVE STATUS -->
+        <div id="live-status">
+            <span id="live-message">Waiting for input...</span>
+        </div>
+
+        <!-- STATS GRID -->
+        <div id="stats-grid">
+            <div class="stat-cell">
+                <div class="stat-value" id="stat-sessions">0</div>
+                <div class="stat-label">Sessions</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-value" id="stat-chars">0</div>
+                <div class="stat-label">Characters</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-value" id="stat-speed">--</div>
+                <div class="stat-label">⚡ Speed</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-value" id="stat-last">--</div>
+                <div class="stat-label">Last Total</div>
+            </div>
+            <div class="stat-cell stat-highlight" id="tokens-cell">
+                <div class="stat-value" id="stat-tokens">0</div>
+                <div class="stat-label">🪙 Tokens Saved</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-value" id="stat-cost">$0.00</div>
+                <div class="stat-label">💰 Est. Savings</div>
+            </div>
+        </div>
+
+        <!-- TOGGLES -->
+        <div id="toggles-bar">
+            <label class="toggle-item">
+                <span>Sound</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="toggle-sound" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </label>
+            <label class="toggle-item">
+                <span>Cloud</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="toggle-cloud">
+                    <span class="toggle-slider"></span>
+                </label>
+            </label>
+        </div>
+
+        <!-- PERFORMANCE TIMELINE -->
+        <div id="perf-timeline">
+            <span class="perf-step" id="perf-rec">Rec: --</span>
+            <span>▸</span>
+            <span class="perf-step" id="perf-trans">Trans: --</span>
+            <span>▸</span>
+            <span class="perf-step" id="perf-proc">Proc: --</span>
+            <span>▸</span>
+            <span class="perf-step" id="perf-inject">Inject: --</span>
+        </div>
     </div>
 
     <!-- LOGS -->
     <div id="log-panel">
         <div id="log-header" onclick="toggleLogs()">
-            <span>DEBUG LOGS</span>
+            <span>LOGS</span>
             <span id="toggle-icon">▼</span>
         </div>
-        <div id="log-container">
-            <!-- Logs injected here -->
-        </div>
+        <div id="log-container"></div>
     </div>
 
     <footer>
         <div>Hotkey: <span id="hotkey-hint">Ctrl+Alt+D</span></div>
-        <div>
-            <button onclick="document.getElementById('log-container').innerHTML=''"
-                style="font-size:0.7em; background:none; border:none; color:#555; cursor:pointer">Clear</button>
-        </div>
+        <div style="font-size: 0.6rem; opacity: 0.5;">v0.2.0-DASH</div>
     </footer>
 
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
@@ -281,15 +469,13 @@
     <script src="./renderer.js"></script>
     <script>
         function toggleLogs() {
-            const container = document.getElementById('log-container');
             const panel = document.getElementById('log-panel');
             const icon = document.getElementById('toggle-icon');
-
-            if (panel.style.height === '30px') {
-                panel.style.height = '150px';
+            if (panel.style.height === '25px') {
+                panel.style.height = '120px';
                 icon.textContent = '▼';
             } else {
-                panel.style.height = '30px';
+                panel.style.height = '25px';
                 icon.textContent = '▲';
             }
         }

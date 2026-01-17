@@ -1,68 +1,83 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-17
+> **Last Updated:** 2026-01-17 17:55
 > **Last Model:** Gemini (Antigravity)
-> **Session Focus:** Performance Regression Fix, Settings UI, Clean Session
+> **Session Focus:** Status Dashboard Redesign, Security Hardening, Design System
 
 ---
 
 ## ✅ Completed This Session
 
--   **Performance Regression FIXED:**
-    -   Reduced processing time from ~35s to **~2-4s** (Confirmed via Manual UAT).
-    -   **Benchmarks (Llama3 + Whisper Turbo):**
-        -   Short phrase: ~4.1s Total (Processing: 0.5s)
-        -   Long phrase: ~14.5s Total (Processing: 2s)
-        -   Intelligent Editing: Correctly removed false starts ("pineapples... no sorry").
-    -   Fix: Optimized `python/config/prompts.py` to be concise.
--   **QA Standardized:**
-    -   Created `docs/qa/MANUAL_TEST_SCRIPT.txt` and `docs/qa/TEST_PROCEDURE.md`.
-    -   Created `.agent/workflows/test-diktate.md` for AI verification.
-    -   Updated `AI_CODEX.md` to mandate manual testing.
--   **Features Committed:**
-    -   **Settings UI:** `src/settings.html` skeleton, IPC wiring, Audio Device dropdown (UI only).
+### Security Hardening (Critical)
+- Created `src/preloadSettings.ts` with secure IPC bridge and URL whitelisting
+- Migrated `src/settings.js` → `src/settings.ts` with `contextIsolation: true`, `sandbox: true`
+- Replaced `innerHTML` XSS vulnerability with safe `textContent` in `renderer.ts`
+- Updated `main.ts` Settings window to use secure webPreferences
 
-    -   **Modes:** `python/config/prompts.py` implements Standard/Professional/Literal modes.
-    -   **Frontend:** `renderer.ts` and `main.ts` updated for Settings IPC.
+### Design System
+- Established teal color palette (#002029 → #00607a) in `docs/DESIGN_SYSTEM.md`
+- Applied palette to `index.html`, `settings.html`, and all tray icons
+- Created consistent premium dark aesthetic
 
+### Status Dashboard (Complete Redesign)
+- Removed large interactive circle (had focus-stealing bug)
+- New compact data-rich dashboard with:
+  - **Background state colors**: Idle (dark) / Recording (red pulse) / Processing (teal)
+  - **6-cell stats grid**: Sessions, Characters, Speed (chars/s), Last Total, Tokens Saved, Est. Savings
+  - **Quick toggles**: Sound, Cloud
+  - **Performance timeline**: Rec → Trans → Proc → Inject with active highlighting
+  - **Live status messages**: Typing dots animation
 
-## ⚠️ Known Issues / Broken
-
--   **Audio Device Enumeration:**
-    -   Implemented `navigator.mediaDevices` in Settings UI.
-    -   Backend (`ipc_server.py`, `recorder.py`) now accepts Device ID and Label.
-    -   Implemented fuzzy matching for PyAudio device selection.
--   **Prompt Tuning:**
-    -   Removed meta-commentary ("Here is the cleaned text") from `PROMPT_STANDARD`.
-    -   Verified clean output via manual test.
+### Bug Fixes
+- Python log normalization: INFO/WARN/DEBUG now correctly categorized (not all ERROR)
 
 ## ⚠️ Known Issues / Broken
 
--   **VRAM Margin:** Llama3 + Whisper Large is tight on 8GB VRAM. Keep prompts concise.
+- [ ] `charCount` not being sent from Python (`ipc_server.py`) - stats show 0 chars/tokens
+  - File: `python/ipc_server.py:257-260`
+  - Need to add `charCount: len(processed_text)` to performance metrics
+
+- [ ] Dashboard toggles (Sound/Cloud) are wired but **not tested** end-to-end
 
 ## 🔄 In Progress / Pending
 
--   [ ] **Cloud/Local Toggle** - UI exists, need to test wiring.
+- [ ] **Cloud/Local Toggle** - Hot-swap processor in `ipc_server.py` on settings change
+- [ ] **Wire charCount** - Add to Python performance metrics for token tracking
+- [ ] **Test settings persistence** - Verify settings.html values persist across restarts
 
 ## 📋 Instructions for Next Model
 
-1.  **Cloud/Local Toggle:**
-    -   Implement the logic to switch between Local (Ollama) and Cloud (OpenAI/Anthropic) in `ipc_server.py`.
-    -   Wire the Settings UI toggle to this logic.
-2.  **Verify UI:**
-    -   Check if the Settings window opens and saves preferences correctly.
-3.  **Mode Testing:**
-    -   Test "Professional" vs "Standard" modes to ensure they actually differ in output style.
+### Priority Order
+1. **Quick Win: Add charCount to Python metrics** (~5 min)
+   - File: `python/ipc_server.py`
+   - Add `'charCount': len(processed_text)` to the performance-metrics event
+2. **Cloud/Local Toggle** - Implement hot-swap in Python
+3. **Test Dashboard Stats** - Verify all 6 cells populate correctly
+
+### Context Needed
+- `TASKS.md` - Current sprint status
+- `src/renderer.ts` - Dashboard logic (expects `charCount` in metrics)
+- `python/ipc_server.py:221-260` - `_process_recording()` method
+
+### Do NOT
+- Refactor the Status Dashboard UI - it's finalized for MVP
+- Touch the Settings window security - it's properly hardened now
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
+### 2026-01-17 17:55 - Gemini (Antigravity)
+- Status Dashboard complete redesign (circle → compact data grid)
+- Security hardening (preloadSettings.ts, XSS fix)
+- Design system established (teal palette)
+- Token stats and speed metrics added
+
 ### 2026-01-17 - Gemini (Antigravity)
--   **CRITICAL FIX:** Debugged and fixed 35s latency regression.
--   Committed pending UI/Frontend changes into a "Clean Session".
+- Performance regression fixed (35s → 2-4s)
+- Settings UI skeleton and IPC wiring
+- Audio device selection implemented
 
 ### 2026-01-17 - Gemini
--   Implemented Status Window Model Display.
--   Fixed critical Whisper GPU crash.
-
+- Status Window Model Display
+- Fixed Whisper GPU crash

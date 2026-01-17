@@ -9,13 +9,15 @@
 ## ⚡ Current Sprint: Core UX & Settings (Week 1)
 
 **Goal:** Ship settings window, cloud/local toggle, and ensure core stability.
-### P0: Interactive Status Circle
-- [x] **UI/UX Enhancement**
-    - [x] Style `#status-icon` as a premium clickable circle (button)
-    - [x] Implement toggle logic in `renderer.ts`
-    - [x] Sync recording state between UI click and global hotkey
-    - [x] Visuals: Ready (Teal/Green) -> Recording (Red Pulse) -> Processing (Pulsing Teal)
-    - [ ] **BUG**: Click handler disabled (focus-stealing issue). Needs `setSkipTaskbar` / `focusable: false` fix.
+### P0: Status Dashboard ✅ COMPLETE
+- [x] **UI/UX Redesign**
+    - [x] Removed large circle, replaced with compact data-rich dashboard
+    - [x] Background color changes for state (idle/recording/processing)
+    - [x] Stats grid: Sessions, Characters, Avg Time, Last Total
+    - [x] Token stats: Tokens Saved, Est. Savings (with highlight)
+    - [x] Quick toggles: Sound, Cloud
+    - [x] Performance timeline with active step highlighting
+    - [x] Live status messages with typing dots animation
 - [x] **Bug Fix**: Normalize Python log levels (INFO vs ERROR categorization)
 
 ### P0: Security Hardening ✅ COMPLETE
