@@ -79,6 +79,47 @@
  dikta.me: Unlimited. Always. No catch."
 ```
 
+### 💸 The $20/Month Reality Check
+
+> **Glaido Pro: $20/month**
+> **Google Gemini Pro: $20/month**
+> 
+> For the same price as a dictation tool, you get an ENTIRE AI platform.
+
+| $20/month buys you... | What you get |
+|-----------------------|--------------|
+| **Glaido Pro** | Voice dictation only |
+| **Gemini Pro** | Full AI platform + 60 req/min + 1M context |
+| **dikta.me + Google Login** | FREE dictation + YOUR Gemini quota |
+
+**The pitch:**
+> "Why pay $20/month for dictation when you can use dikta.me FREE 
+> and log in with your existing Google account?"
+
+> "Already paying for Gemini Pro? Use it in dikta.me. 
+> Zero extra cost. We just connect to your quota."
+
+### 🔥 The Ultimate Value Stack
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  GLAIDO PRO: $20/month = $240/year                      │
+│  → Just dictation. Nothing else.                        │
+├─────────────────────────────────────────────────────────┤
+│  GOOGLE AI PRO ($20/mo) + DIKTA.ME LIFETIME ($29)       │
+│  Year 1: $240 + $29 = $269                              │
+│  → Full AI platform (Gemini 3 Pro, 1M context, etc.)    │
+│  → PLUS unlimited dictation forever                     │
+│  → PLUS translation modes                               │
+│  → PLUS prompt helper                                   │
+│                                                         │
+│  Year 2+: Just $240/year (dikta.me already paid!)       │
+└─────────────────────────────────────────────────────────┘
+```
+
+**The pitch:**
+> "$29 once + your existing Google subscription = everything Glaido does, plus an entire AI platform. No contest."
+
 ---
 
 ## 💰 Monetization Strategy: Lifetime-First
@@ -470,11 +511,46 @@ Snippets:
 | **Creative** | Expressive, flowing | "The sunset painted the sky in brilliant oranges..." |
 | **Raw** | Literal transcription | "um please review the um document" |
 | **Casual** | Friendly, informal | "Hey! Can you check this out when you get a sec?" |
+| **🤖 Prompt** | LLM prompt formatting | Structured, clear instructions for AI |
 | **🌐 ES→EN** | Translate Spanish to English | Speak Spanish → Output English |
 | **🌐 EN→ES** | Translate English to Spanish | Speak English → Output Spanish |
 
 > **🔥 KILLER FEATURE DISCOVERED:** During testing, dictating in Spanish auto-translated to English! 
 > This is a major differentiator - **real-time translation mode**!
+
+---
+
+### 🤖 Prompt Helper Mode (Origin Feature)
+
+> **Origin Story:** dikta.me was built for one purpose—dictating prompts to LLMs faster than typing them.
+
+**The Problem:**
+- Typing long, detailed prompts is tedious
+- Copy-pasting context is slow
+- Hands get tired prompt-engineering all day
+
+**Prompt Mode Does:**
+1. **Structures output** for LLM consumption
+2. **Preserves technical terms** (API names, code references)
+3. **Formats as instructions** (clear, actionable)
+4. **No "fluff"** - removes filler while keeping intent
+
+**Example:**
+```
+🎤 Dictated: "okay so I need you to um write a Python function 
+             that takes a list of numbers and returns the 
+             average but handle empty lists gracefully"
+
+🤖 Prompt Mode Output:
+   "Write a Python function that:
+   - Takes a list of numbers as input
+   - Returns the average
+   - Handles empty lists gracefully (no division by zero)"
+```
+
+**Marketing Angle:**
+> "Built by a prompt engineer, for prompt engineers."
+> "Speak your prompt. Let AI format it for AI."
 
 ### Settings Panel
 
@@ -790,14 +866,105 @@ What makes dIKtate special beyond the competitors:
 
 ## 💎 Strategic Gems (Unexplored Opportunities)
 
-### 1. Accessibility Market 🦽
-Dictation is CRITICAL for people with:
-- RSI (Repetitive Strain Injury) - huge developer community
-- Carpal tunnel syndrome
-- Motor disabilities
-- Visual impairments (pair with screen reader)
+### 1. ♿ Accessibility & Disability Market
 
-**Action:** Partner with accessibility communities, subreddits (r/RSI, r/disability), get featured on assistive tech blogs.
+> **Strategic Pillar:** dikta.me isn't just convenient—it's **life-changing** for millions.
+
+#### The Numbers (Global)
+
+| Condition | Affected Population | Why Dictation Helps |
+|-----------|---------------------|---------------------|
+| **RSI (Repetitive Strain Injury)** | 8-10M in US alone | Can't type without pain |
+| **Carpal Tunnel Syndrome** | 3-6% of adults | Typing triggers symptoms |
+| **Arthritis** | 54M in US | Hand/wrist pain from typing |
+| **Motor Disabilities** | 75M globally | Limited fine motor control |
+| **Visual Impairments** | 253M globally | Pairs with screen readers |
+| **Dyslexia** | 15-20% of population | Speaking easier than writing |
+| **ALS/MS/Parkinson's** | 1M+ in US | Progressive motor decline |
+
+> **Total addressable market:** Hundreds of millions who NEED voice input, not just prefer it.
+
+#### Developer RSI Epidemic 🖥️
+
+Developers are a HUGE underserved accessibility market:
+- **50% of devs** report hand/wrist pain (Stack Overflow surveys)
+- RSI ends careers prematurely
+- Current solutions: expensive ergonomic keyboards, voice coding tools
+- dikta.me fills gap: dictate docs, emails, Slack, comments
+
+**Reddit communities:**
+- r/RSI (40K+ members)
+- r/ergonomics
+- r/disability
+- r/blind
+- r/Dyslexia
+
+#### Accessibility Marketing Angles
+
+**Messaging that resonates:**
+```
+"Dictation isn't a luxury. For millions, it's the only way to work."
+
+"Your hands deserve a break. Your voice is ready."
+
+"When typing hurts, speaking heals."
+
+"Free, private, unlimited—because accessibility shouldn't have a paywall."
+```
+
+**Competitor weakness:**
+| Tool | Accessibility Focus | Word Limits | Price |
+|------|---------------------|-------------|-------|
+| WisprFlow | ❌ Not mentioned | 2K/week | $144/yr |
+| AquaVoice | ❌ Not mentioned | 1K total | $96/yr |
+| Dragon | ⚠️ Legacy | Unlimited | $500+ |
+| **dikta.me** | ✅ **Core focus** | ✅ **Unlimited** | ✅ **FREE** |
+
+#### Accessibility Partnerships to Pursue
+
+| Organization | Type | Opportunity |
+|--------------|------|-------------|
+| **AbilityNet** | UK accessibility charity | Featured tool listing |
+| **American Foundation for the Blind** | US nonprofit | Accessibility certification |
+| **RespectAbility** | Disability advocacy | Press mentions |
+| **ONCE (Spain)** | Spanish-language blindness org | Bilingual advantage! |
+| **Disability:IN** | Business disability network | Corporate visibility |
+| **W3C WAI** | Web accessibility standards | Compliance guidance |
+
+#### Accessibility Features Roadmap
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| **Unlimited free usage** | P0 | ✅ Done |
+| **High-contrast mode** | P1 | ⏳ V1.1 |
+| **Screen reader compatibility** | P1 | ⏳ V1.1 |
+| **Large UI mode** | P2 | ⏳ V1.2 |
+| **Voice-only navigation** | P2 | ⏳ V1.2 |
+| **Keyboard shortcuts** | P1 | ⏳ V1.1 |
+| **WCAG 2.1 AA compliance** | P2 | ⏳ V2.0 |
+
+#### Press & Content Strategy
+
+**Story angles for tech/health press:**
+- "Solo developer creates free dictation tool for RSI sufferers"
+- "Open-source alternative gives accessibility back to developers"
+- "When $500 Dragon is too expensive: Free AI dictation for disabilities"
+- "Dictation tool with no word limits—because accessibility isn't a premium feature"
+
+**Target publications:**
+- Ars Technica (accessibility tech coverage)
+- The Verge (consumer tech)
+- Wired (innovation)
+- HackerNoon / Dev.to (developer audience)
+- Disability-focused blogs and podcasts
+
+#### Free Positioning = Moral High Ground
+
+> "We don't limit words for people who physically cannot type."
+> 
+> This is a **powerful differentiator**. Competitors with word limits are effectively **paywalling accessibility**.
+
+**Action:** Partner with accessibility communities, subreddits, get featured on assistive tech blogs. Consider "Accessibility Ambassador" program for users who advocate.
 
 ### 2. Referral Program 📣
 "Give $5, Get $5" - simple viral loop:
@@ -874,7 +1041,84 @@ What if Groq goes down?
 
 ---
 
-## ⚖️ Ko-fi & Open Source Governance
+## 🌎 Indigenous Language Opportunity (Mexico)
+
+> **Strategic Angle:** Government grants, social impact positioning, UNESCO alignment.
+
+### Largest Indigenous Languages in Mexico
+
+| Language | Speakers | Region | AI Support |
+|----------|----------|--------|------------|
+| **Náhuatl** | 1.7M+ | Central Mexico | ✅ Google Translate, NMT research |
+| **Maya Yucateco** | 850K+ | Yucatán Peninsula | ✅ Google, Microsoft Translator |
+| **Zapoteco** | 500K+ | Oaxaca | ⚠️ Limited |
+| **Mixteco** | 500K+ | Oaxaca, Guerrero | ⚠️ Limited |
+| **Otomí** | 300K+ | Central Mexico | ✅ Microsoft Translator |
+| **Tsotsil** | 400K+ | Chiapas | ⚠️ Research stage (Tec de Monterrey) |
+
+### Existing AI/ML Projects to Leverage
+
+| Project | What It Does | Status |
+|---------|--------------|--------|
+| **Google Translate** | Náhuatl, Maya Yucateco, Qʼeqchiʼ | ✅ Live |
+| **Microsoft Translator** | Maya Yucateco, Otomí | ✅ Live |
+| **Py-Elotl (UNAM)** | Náhuatl NLP/corpus tools | ✅ Open source |
+| **Tec de Monterrey** | Tsotsil-Spanish literacy AI | 🔬 Research |
+| **INALI** | Government language institute | 📋 Standards/data |
+
+### Government & Institutional Opportunities
+
+| Initiative | Organization | Potential |
+|------------|--------------|-----------|
+| **AI + Indigenous Languages Forum** | Mexico Gov + activists | Visibility, partnerships |
+| **INEA Bilingual Literacy** | Secretaría de Educación | 500K target users by 2025 |
+| **UNESCO Linguistic Diversity** | UNESCO Mexico | $10K+ project funding |
+| **Indigenous Digital Activism Summits** | Global Voices + INALI | Conference presence |
+| **National AI Initiative** | Mexico Gov (2025) | Potential integration |
+
+### dikta.me Indigenous Strategy
+
+**Phase 1: Low-Hanging Fruit (V1.x)**
+- Add Náhuatl ↔ Spanish translation mode (Google Translate API exists)
+- Add Maya ↔ Spanish translation mode
+- Marketing: "First dictation tool for indigenous languages"
+
+**Phase 2: Community Partnership (V2.x)**
+- Partner with INALI for vocabulary/prompts
+- Collaborate with Py-Elotl project (UNAM)
+- Localize UI to Náhuatl/Maya
+
+**Phase 3: Government Engagement**
+- Apply for UNESCO linguistic diversity micro-grants
+- Present at Indigenous Digital Activism Summit (March 2025)
+- Position for Mexico national AI initiative inclusion
+
+### Why This Matters
+
+1. **Zero competition** - No dictation tool targets indigenous languages
+2. **Government alignment** - Mexico actively funding digital inclusion
+3. **UNESCO backing** - International legitimacy
+4. **Social impact story** - Powerful for marketing ("Department of One helps preserve languages")
+5. **1.7M+ Náhuatl speakers** - Larger than many European language markets!
+
+### LLM Prompt Example (Náhuatl → Spanish)
+
+```
+You are a translator for Náhuatl (Mexican indigenous language).
+The user dictated in Náhuatl. Translate to Spanish while:
+- Preserving cultural context
+- Using modern Mexican Spanish
+- Noting any untranslatable concepts
+
+Dictation: {transcription}
+```
+
+### Key Contacts to Research
+
+- **INALI** (Instituto Nacional de Lenguas Indígenas) - gov language body
+- **Elotl Community** - open source Náhuatl NLP
+- **Tec de Monterrey AI Lab** - indigenous language research
+- **Global Voices** - indigenous digital activism network
 
 > **Critical:** Clear separation between open-source software and commercial services.
 
