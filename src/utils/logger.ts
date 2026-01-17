@@ -58,6 +58,15 @@ class Logger {
     return `${timestamp} [${level}] [${source}] ${message}${dataStr}`;
   }
 
+  private onLogCallback: ((level: LogLevel, message: string, data?: any) => void) | null = null;
+
+  /**
+   * Set callback for log streaming
+   */
+  setLogCallback(callback: (level: LogLevel, message: string, data?: any) => void): void {
+    this.onLogCallback = callback;
+  }
+
   /**
    * Write log to file and console
    */
@@ -65,23 +74,37 @@ class Logger {
     const formattedMessage = this.formatMessage(level, source, message, data);
 
     // Write to console
-    switch (level) {
-      case LogLevel.ERROR:
-        console.error(formattedMessage);
-        break;
-      case LogLevel.WARN:
-        console.warn(formattedMessage);
-        break;
-      case LogLevel.DEBUG:
-      case LogLevel.INFO:
-      default:
-        console.log(formattedMessage);
-        break;
+    // Write to console with safety check (ignores EPIPE if terminal is closed)
+    try {
+      switch (level) {
+        case LogLevel.ERROR:
+          console.error(formattedMessage);
+          break;
+        case LogLevel.WARN:
+          console.warn(formattedMessage);
+          break;
+        case LogLevel.DEBUG:
+        case LogLevel.INFO:
+        default:
+          console.log(formattedMessage);
+          break;
+      }
+    } catch (error: any) {
+      // Ignore EPIPE errors (broken pipe to stdout)
+      if (error.code !== 'EPIPE') {
+        // If it's something else, try to write to stderr purely as fallback, or just ignore
+        try { process.stderr.write(`Logger error: ${error.message}\n`); } catch (e) { /* ignore */ }
+      }
     }
 
     // Write to file
     if (this.logStream && this.initialized) {
       this.logStream.write(formattedMessage + '\n');
+    }
+
+    // Stream to callback
+    if (this.onLogCallback) {
+      this.onLogCallback(level, `[${source}] ${message}`, data);
     }
   }
 

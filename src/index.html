@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dIKtate - Status & Debug</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #007acc;
+            --error-color: #f48771;
+            --warn-color: #cca700;
+            --success-color: #89d185;
+            --panel-bg: #252526;
+            --border-color: #3e3e42;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        .status-badge.connected {
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .status-badge.disconnected {
+            color: var(--error-color);
+            border-color: var(--error-color);
+        }
+
+        #log-container {
+            flex: 1;
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 2px;
+        }
+
+        .log-time {
+            color: #888;
+            margin-right: 8px;
+            font-size: 0.8rem;
+        }
+
+        .log-level {
+            display: inline-block;
+            width: 50px;
+            font-weight: bold;
+        }
+
+        .log-level.INFO {
+            color: var(--text-color);
+        }
+
+        .log-level.WARN {
+            color: var(--warn-color);
+        }
+
+        .log-level.ERROR {
+            color: var(--error-color);
+        }
+
+        footer {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        button {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        button:hover {
+            background-color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div>
+            <h1>dIKtate Monitor</h1>
+            <small>Phase 4 Debug Console</small>
+        </div>
+        <div id="connection-status" class="status-badge disconnected">Python: Disconnected</div>
+    </header>
+
+    <div id="log-container">
+        <!-- Logs will be injected here -->
+        <div class="log-entry"><span class="log-time">--:--:--</span><span class="log-level INFO">INFO</span>Welcome to
+            dIKtate Debug Console</div>
+    </div>
+
+    <footer>
+        <div>Hotkey: <strong id="hotkey-display">Ctrl+Alt+D</strong></div>
+        <div>
+            <button id="clear-logs">Clear Logs</button>
+            <button id="test-notification">Test Notify</button>
+        </div>
+    </footer>
+
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+    <script>if (typeof exports === "undefined") { var exports = {}; }</script>
+    <script src="./renderer.js"></script>
+</body>
+
+</html>

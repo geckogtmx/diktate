@@ -29,7 +29,7 @@ Cleaned text:"""
     def __init__(
         self,
         ollama_url: str = "http://localhost:11434",
-        model: str = "llama3:8b",
+        model: str = "mistral:latest",
         prompt: Optional[str] = None
     ):
         """

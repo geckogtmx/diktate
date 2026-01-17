@@ -92,7 +92,7 @@ class DiktatePipeline:
 
     def _set_state(self, new_state: State) -> None:
         """Set pipeline state and log transition."""
-        logger.info(f"State transition: {self.state.value} → {new_state.value}")
+        logger.info(f"State transition: {self.state.value} -> {new_state.value}")
         self.state = new_state
 
     def start_recording(self) -> None:
@@ -189,10 +189,11 @@ class DiktatePipeline:
                 """Handle key press."""
                 try:
                     self.pressed_keys.add(key)
-                    # Check for Ctrl+Shift+Space combination
-                    if (keyboard.Key.ctrl in self.pressed_keys and
-                        keyboard.Key.shift in self.pressed_keys and
-                        key == keyboard.Key.space):
+                    # Check for Ctrl+Alt+D combination
+                    # Note: Alt is Key.alt_l or Key.alt_r
+                    if (keyboard.Key.ctrl_l in self.pressed_keys or keyboard.Key.ctrl_r in self.pressed_keys) and \
+                       (keyboard.Key.alt_l in self.pressed_keys or keyboard.Key.alt_r in self.pressed_keys) and \
+                       getattr(key, 'char', None) == 'd':
                         self.on_hotkey_pressed()
                 except AttributeError:
                     pass
@@ -200,10 +201,15 @@ class DiktatePipeline:
             def on_release(key):
                 """Handle key release."""
                 try:
-                    self.pressed_keys.discard(key)
-                    # Check if releasing space ends the hotkey
-                    if key == keyboard.Key.space:
-                        self.on_hotkey_released()
+                    # Remove key from pressed set
+                    if key in self.pressed_keys:
+                        self.pressed_keys.remove(key)
+                    
+                    # Stop recording if D is released (for PTT)
+                    # Or should we wait for modifiers? 
+                    # Simpler PTT: If we are recording, and the main trigger key (D) is released, stop.
+                    if getattr(key, 'char', None) == 'd':
+                         self.on_hotkey_released()
                 except AttributeError:
                     pass
 

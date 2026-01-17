@@ -11,6 +11,7 @@ import time
 from enum import Enum
 from pathlib import Path
 from typing import Optional, Dict
+from pynput import keyboard
 
 # Add core module to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -118,14 +119,15 @@ class IpcServer:
 
         try:
             self.injector = Injector()
-            logger.info("[OK] Injector initialized")
+            logger.info(f"[OK] Injector initialized")
         except Exception as e:
             logger.error(f"Failed to initialize Injector: {e}")
             self._send_error(f"Injector initialization failed: {e}")
 
+
     def _set_state(self, new_state: State) -> None:
         """Set pipeline state and emit event"""
-        logger.info(f"State transition: {self.state.value} → {new_state.value}")
+        logger.info(f"State transition: {self.state.value} -> {new_state.value}")
         self.state = new_state
         self._emit_event("state-change", {"state": new_state.value})
 
@@ -192,6 +194,11 @@ class IpcServer:
             raw_text = self.transcriber.transcribe(self.audio_file)
             self.perf.end("transcription")
             logger.info(f"[RESULT] Transcribed: {raw_text}")
+
+            if not raw_text or not raw_text.strip():
+                logger.info("[PROCESS] Empty transcription, skipping processing and injection")
+                self._set_state(State.IDLE)
+                return
 
             # Process (clean up text)
             logger.info("[PROCESS] Processing text...")
@@ -321,6 +328,9 @@ class IpcServer:
                 self.recorder.stop()
             except Exception as e:
                 logger.warning(f"Error stopping recorder: {e}")
+
+        if hasattr(self, 'listener') and self.listener:
+            self.listener.stop()
 
         logger.info("IPC Server shutdown complete")
         sys.exit(0)

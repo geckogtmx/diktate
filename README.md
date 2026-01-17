@@ -17,7 +17,9 @@ A high-performance, local-first voice dictation tool for Windows. Speak naturall
 
 ### What the MVP Will Do
 
-Press `Ctrl+Shift+Space`, speak naturally, release—clean text appears in any application. 100% offline, 100% private.
+3. Press **Ctrl+Shift+D** (default hotkey) to start recording.
+4. Speak your text.
+5. Press **Ctrl+Shift+D** again to stop. 100% offline, 100% private.
 
 **Example:**
 - You say: "um, so like, I think we should maybe fix the bug"

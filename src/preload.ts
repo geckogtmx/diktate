@@ -24,6 +24,20 @@ const api = {
   }
 };
 
+const electronAPI = {
+  onLog: (callback: (level: string, message: string, data?: any) => void) => {
+    ipcRenderer.on('log-message', (_, { level, message, data }) => callback(level, message, data));
+  },
+  onStatusChange: (callback: (status: string) => void) => {
+    ipcRenderer.on('status-update', (_, status) => callback(status));
+  },
+  getInitialState: () => ipcRenderer.invoke('get-initial-state'),
+  clearLogs: () => { }, // Handled in renderer for now
+  testNotification: () => { } // Handled in renderer for now
+};
+
+contextBridge.exposeInMainWorld('electronAPI', electronAPI);
+
 // Expose the API to the renderer process
 contextBridge.exposeInMainWorld('api', api);
 

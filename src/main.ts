@@ -50,8 +50,8 @@ function createSimpleIcon(color: string): NativeImage {
 function getIcon(state: string): NativeImage {
   const assetsDir = path.join(__dirname, '..', 'assets');
   const iconName = state === 'recording' ? 'icon-recording.png' :
-                   state === 'processing' ? 'icon-processing.png' :
-                   'icon-idle.png';
+    state === 'processing' ? 'icon-processing.png' :
+      'icon-idle.png';
   const iconPath = path.join(assetsDir, iconName);
 
   // Try to load PNG from file
@@ -65,11 +65,47 @@ function getIcon(state: string): NativeImage {
 
   // Fallback to programmatically created icon
   const color = state === 'recording' ? 'red' :
-                state === 'processing' ? 'blue' :
-                'gray';
+    state === 'processing' ? 'blue' :
+      'gray';
 
   logger.info('MAIN', `Using programmatic icon for state: ${state}`);
   return createSimpleIcon(color);
+}
+
+let debugWindow: BrowserWindow | null = null;
+
+/**
+ * Create debug dashboard window
+ */
+function createDebugWindow(): void {
+  if (debugWindow) {
+    debugWindow.show();
+    return;
+  }
+
+  debugWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    show: false,
+    title: 'dIKtate Debug Console',
+    icon: getIcon('idle'),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+
+  debugWindow.loadFile(path.join(__dirname, 'index.html'));
+
+  debugWindow.on('close', (e) => {
+    // Just hide instead of closing
+    e.preventDefault();
+    debugWindow?.hide();
+  });
+
+  // Open DevTools by default in Dev environment
+  // if (isDev) debugWindow.webContents.openDevTools();
 }
 
 /**
@@ -88,6 +124,15 @@ function initializeTray(): void {
     },
     { type: 'separator' },
     {
+      label: 'Show Debug Console',
+      click: () => {
+        if (!debugWindow) createDebugWindow();
+        debugWindow?.show();
+        debugWindow?.webContents.openDevTools({ mode: 'detach' });
+      }
+    },
+    { type: 'separator' },
+    {
       label: 'Open Logs',
       click: () => {
         const logsPath = path.join(app.getPath('userData'), 'logs');
@@ -99,6 +144,8 @@ function initializeTray(): void {
       label: 'Quit dIKtate',
       accelerator: 'CommandOrControl+Q',
       click: () => {
+        // Destroy window to allow quit
+        debugWindow?.destroy();
         app.quit();
       }
     }
@@ -106,7 +153,7 @@ function initializeTray(): void {
 
   tray.setContextMenu(contextMenu);
 
-  tray.setToolTip('dIKtate - Press Ctrl+Shift+Space to dictate');
+  tray.setToolTip('dIKtate - Press Ctrl+Alt+D to dictate');
 }
 
 /**
@@ -123,6 +170,14 @@ function updateTrayState(state: string): void {
     },
     { type: 'separator' },
     {
+      label: 'Show Debug Console',
+      click: () => {
+        if (!debugWindow) createDebugWindow();
+        debugWindow?.show();
+      }
+    },
+    { type: 'separator' },
+    {
       label: 'Open Logs',
       click: () => {
         const logsPath = path.join(app.getPath('userData'), 'logs');
@@ -134,12 +189,18 @@ function updateTrayState(state: string): void {
       label: 'Quit dIKtate',
       accelerator: 'CommandOrControl+Q',
       click: () => {
+        debugWindow?.destroy();
         app.quit();
       }
     }
   ]);
 
   tray.setContextMenu(contextMenu);
+
+  // Also sendstatus to renderer
+  if (debugWindow) {
+    debugWindow.webContents.send('status-update', state);
+  }
 }
 
 /**
@@ -218,7 +279,7 @@ function setupPythonEventHandlers(): void {
     logger.info('MAIN', 'Python manager ready');
     showNotification(
       'dIKtate Ready',
-      'Press Ctrl+Shift+Space to start dictating',
+      'Press Ctrl+Alt+D to start dictating',
       false
     );
   });
@@ -291,8 +352,18 @@ function setupIpcHandlers(): void {
  */
 function setupGlobalHotkey(): void {
   try {
-    const ret = globalShortcut.register('Control+Shift+Space', async () => {
-      logger.debug('HOTKEY', 'Hotkey pressed: Ctrl+Shift+Space', { isRecording });
+    let lastHotkeyPress = 0;
+    const HOTKEY_DEBOUNCE_MS = 500;
+
+    const ret = globalShortcut.register('Control+Alt+D', async () => {
+      const now = Date.now();
+      if (now - lastHotkeyPress < HOTKEY_DEBOUNCE_MS) {
+        logger.debug('HOTKEY', 'Ignoring debounce hotkey press');
+        return;
+      }
+      lastHotkeyPress = now;
+
+      logger.debug('HOTKEY', 'Hotkey pressed: Ctrl+Alt+D', { isRecording });
 
       if (!pythonManager) {
         logger.warn('HOTKEY', 'Python manager not initialized');
@@ -335,11 +406,11 @@ function setupGlobalHotkey(): void {
       logger.warn('HOTKEY', 'Failed to register global hotkey');
       showNotification(
         'Hotkey Registration Failed',
-        'Could not register Ctrl+Shift+Space. Another application may be using it.',
+        'Could not register Ctrl+Alt+D. Another application may be using it.',
         true
       );
     } else {
-      logger.info('HOTKEY', 'Global hotkey registered successfully', { hotkey: 'Ctrl+Shift+Space' });
+      logger.info('HOTKEY', 'Global hotkey registered successfully', { hotkey: 'Ctrl+Alt+D' });
     }
   } catch (error) {
     logger.error('HOTKEY', 'Error registering global hotkey', error);
@@ -370,6 +441,24 @@ async function initialize(): Promise<void> {
     // Initialize tray
     initializeTray();
     logger.info('MAIN', 'System tray initialized');
+
+    // Create debug window hidden
+    createDebugWindow();
+
+    // Hook up logger to window
+    logger.setLogCallback((level, message, data) => {
+      if (debugWindow && !debugWindow.isDestroyed()) {
+        debugWindow.webContents.send('log-message', { level, message, data });
+      }
+    });
+
+    // Handle get-initial-state
+    ipcMain.handle('get-initial-state', () => {
+      return {
+        status: pythonManager?.getStatus() || 'disconnected',
+        isRecording
+      };
+    });
 
     // Setup IPC handlers
     setupIpcHandlers();
