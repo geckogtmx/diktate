@@ -16,7 +16,8 @@ from pynput import keyboard
 # Add core module to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from core import Recorder, Transcriber, Processor, Injector
+from core import Recorder, Transcriber, Injector
+from core.processor import create_processor
 
 # Configure logging
 log_dir = Path(Path.home()) / ".diktate" / "logs"
@@ -115,11 +116,11 @@ class IpcServer:
             self._send_error(f"Transcriber initialization failed: {e}")
 
         try:
-            self.processor = Processor()
-            logger.info("[OK] Processor initialized (Ollama connected)")
+            self.processor = create_processor()
+            logger.info("[OK] Processor initialized")
         except Exception as e:
             logger.error(f"Failed to initialize Processor: {e}")
-            logger.warning("Text processing will skip Ollama if unavailable")
+            logger.warning("Text processing will be skipped if unavailable")
 
         try:
             self.injector = Injector()
