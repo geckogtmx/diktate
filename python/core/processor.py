@@ -11,20 +11,19 @@ class Processor:
     """Processes transcribed text using Ollama LLM."""
 
     # Default cleanup prompt for standard mode
-    DEFAULT_CLEANUP_PROMPT = """You are a professional text editor. Your task is to clean up transcribed text.
+    DEFAULT_CLEANUP_PROMPT = """You are a text cleanup tool. Fix grammar and remove filler words, but PRESERVE the user's style and intent.
 
 Rules:
-1. Remove filler words (um, uh, like, you know, basically, actually)
-2. Fix grammar and punctuation
-3. Capitalize properly
-4. Maintain the original meaning
-5. Keep the text concise
-6. Do NOT add anything that wasn't in the original text
-7. Return ONLY the cleaned text, no explanations
+1. Remove filler words (um, uh, like, you know) only if they are used as hesitations.
+2. Fix punctuation and capitalization.
+3. PRESERVE colloquialisms, slang, and emphasis (e.g., "freaking", "gonna", "wanna").
+4. DO NOT change the tone or vocabulary.
+5. If the input is short or unclear, return it exactly as is (with punctuation).
+6. Return ONLY the cleaned text.
 
-Transcribed text: {text}
+Input: {text}
 
-Cleaned text:"""
+Output:"""
 
     def __init__(
         self,
@@ -79,7 +78,7 @@ Cleaned text:"""
                         "model": self.model,
                         "prompt": prompt,
                         "stream": False,
-                        "temperature": 0.3  # Lower temperature for more consistent results
+                        "temperature": 0.1  # Near-zero temperature for strict adherence
                     },
                     timeout=60
                 )

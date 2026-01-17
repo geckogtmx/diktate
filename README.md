@@ -17,9 +17,9 @@ A high-performance, local-first voice dictation tool for Windows. Speak naturall
 
 ### What the MVP Will Do
 
-3. Press **Ctrl+Shift+D** (default hotkey) to start recording.
+3. Press **Ctrl+Alt+D** (default hotkey) to start recording.
 4. Speak your text.
-5. Press **Ctrl+Shift+D** again to stop. 100% offline, 100% private.
+5. Press **Ctrl+Alt+D** again to stop. 100% offline, 100% private.
 
 **Example:**
 - You say: "um, so like, I think we should maybe fix the bug"
@@ -40,11 +40,11 @@ Commercial voice tools send your audio to the cloud. dIKtate runs entirely on yo
 
 ## MVP Features (v0.1.0) - Implementation Status
 
-✅ **Recording:** Push-to-talk activation (hardcoded `Ctrl+Shift+Space`) - **Complete**
+✅ **Recording:** Toggle activation (hardcoded `Ctrl+Alt+D`) - **Complete**
 ✅ **Transcription:** Whisper medium model (CPU mode) - **Complete**
-✅ **Processing:** Ollama local LLM (llama3:8b, Standard cleanup mode) - **Complete**
+✅ **Processing:** Ollama local LLM (mistral:latest, Strict cleanup mode) - **Complete**
 ✅ **Injection:** Types into any application via pynput - **Complete**
-✅ **UI:** System tray icon with state indicators (idle/recording/processing) - **Complete**
+✅ **UI:** Status Window (Traffic Light) + System tray icon - **Complete**
 ✅ **Error Handling:** Comprehensive logging + native notifications - **Complete**
 ✅ **Performance Tracking:** Full pipeline metrics tracking - **Complete**
 ✅ **Offline:** 100% local operation - **Complete**

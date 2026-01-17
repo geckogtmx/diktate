@@ -148,7 +148,12 @@ class DiktatePipeline:
                 processed_text = self.processor.process(raw_text)
             else:
                 processed_text = raw_text
-            logger.info(f"[RESULT] Processed: {processed_text}")
+
+            # Log side-by-side comparison for tuning
+            logger.info("\n" + "="*40 + "\n[COMPARISON]\n" + 
+                       f"RAW:      {raw_text}\n" + 
+                       f"CLEANED:  {processed_text}\n" + 
+                       "="*40)
 
             # Inject text
             self._set_state(State.INJECTING)

@@ -4,154 +4,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>dIKtate - Status & Debug</title>
+    <title>dIKtate Status</title>
     <style>
         :root {
             --bg-color: #1e1e1e;
             --text-color: #e0e0e0;
-            --accent-color: #007acc;
-            --error-color: #f48771;
-            --warn-color: #cca700;
-            --success-color: #89d185;
-            --panel-bg: #252526;
-            --border-color: #3e3e42;
+            --idle-color: #3e3e42;
+            --recording-color: #e51400;
+            --processing-color: #0078d7;
+            --border-color: #2d2d30;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
             height: 100vh;
-            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        header {
+        /* BIG STATUS AREA */
+        #status-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s ease;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #status-icon {
+            font-size: 4rem;
+            margin-bottom: 0px;
+            line-height: 1;
+        }
+
+        #status-text {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 10px;
+        }
+
+        #status-subtext {
+            font-size: 1rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        /* STATES */
+        .state-idle {
+            background-color: var(--bg-color);
+            color: #666;
+        }
+
+        .state-recording {
+            background-color: var(--recording-color);
+            color: white;
+            animation: pulse-red 2s infinite;
+        }
+
+        .state-processing {
+            background-color: var(--processing-color);
+            color: white;
+            animation: pulse-blue 2s infinite;
+        }
+
+        .state-error {
+            background-color: #333;
+            color: #e51400;
+            border: 2px solid #e51400;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: inset 0 0 0 0 rgba(255, 255, 255, 0.4);
+            }
+
+            70% {
+                box-shadow: inset 0 0 50px 10px rgba(255, 255, 255, 0);
+            }
+
+            100% {
+                box-shadow: inset 0 0 0 0 rgba(255, 255, 255, 0);
+            }
+        }
+
+        @keyframes pulse-blue {
+            0% {
+                background-color: #0078d7;
+            }
+
+            50% {
+                background-color: #005a9e;
+            }
+
+            100% {
+                background-color: #0078d7;
+            }
+        }
+
+        /* SMALL LOG AREA */
+        #log-panel {
+            height: 150px;
+            background-color: #111;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+        }
+
+        #log-header {
+            padding: 5px 10px;
+            background-color: #252526;
+            cursor: pointer;
+            user-select: none;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.2rem;
-        }
-
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            background-color: var(--panel-bg);
-            border: 1px solid var(--border-color);
-        }
-
-        .status-badge.connected {
-            color: var(--success-color);
-            border-color: var(--success-color);
-        }
-
-        .status-badge.disconnected {
-            color: var(--error-color);
-            border-color: var(--error-color);
+            font-size: 0.75rem;
+            color: #888;
         }
 
         #log-container {
             flex: 1;
-            background-color: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 10px;
             overflow-y: auto;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 0.9rem;
+            padding: 5px;
         }
 
         .log-entry {
-            margin-bottom: 4px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 2px;
+            margin-bottom: 2px;
+            border-bottom: 1px solid #222;
         }
 
         .log-time {
-            color: #888;
-            margin-right: 8px;
-            font-size: 0.8rem;
-        }
-
-        .log-level {
-            display: inline-block;
-            width: 50px;
-            font-weight: bold;
+            color: #555;
+            margin-right: 5px;
         }
 
         .log-level.INFO {
-            color: var(--text-color);
+            color: #ccc;
         }
 
         .log-level.WARN {
-            color: var(--warn-color);
+            color: #cca700;
         }
 
         .log-level.ERROR {
-            color: var(--error-color);
+            color: #f48771;
         }
 
+        /* FOOTER */
         footer {
-            margin-top: 10px;
-            font-size: 0.8rem;
+            background-color: #252526;
+            padding: 5px 10px;
+            font-size: 0.75rem;
             color: #888;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
 
-        button {
-            background-color: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 5px 10px;
-            cursor: pointer;
+        #hotkey-hint {
+            font-weight: bold;
+            color: #ccc;
+            padding: 2px 6px;
+            background: #333;
             border-radius: 3px;
         }
 
-        button:hover {
-            background-color: #333;
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 
 <body>
-    <header>
-        <div>
-            <h1>dIKtate Monitor</h1>
-            <small>Phase 4 Debug Console</small>
-        </div>
-        <div id="connection-status" class="status-badge disconnected">Python: Disconnected</div>
-    </header>
+    <!-- TRAFFIC LIGHT STATUS -->
+    <div id="status-panel" class="state-idle">
+        <div id="status-icon">⚪</div>
+        <div id="status-text">READY</div>
+        <div id="status-subtext">Waiting for input...</div>
+        <div style="font-size: 0.6em; opacity: 0.3; margin-top: 10px;">v0.1.0-UI-FIXED</div>
+    </div>
 
-    <div id="log-container">
-        <!-- Logs will be injected here -->
-        <div class="log-entry"><span class="log-time">--:--:--</span><span class="log-level INFO">INFO</span>Welcome to
-            dIKtate Debug Console</div>
+    <!-- LOGS -->
+    <div id="log-panel">
+        <div id="log-header" onclick="toggleLogs()">
+            <span>DEBUG LOGS</span>
+            <span id="toggle-icon">▼</span>
+        </div>
+        <div id="log-container">
+            <!-- Logs injected here -->
+        </div>
     </div>
 
     <footer>
-        <div>Hotkey: <strong id="hotkey-display">Ctrl+Alt+D</strong></div>
+        <div>Hotkey: <span id="hotkey-hint">Ctrl+Alt+D</span></div>
         <div>
-            <button id="clear-logs">Clear Logs</button>
-            <button id="test-notification">Test Notify</button>
+            <button onclick="document.getElementById('log-container').innerHTML=''"
+                style="font-size:0.7em; background:none; border:none; color:#555; cursor:pointer">Clear</button>
         </div>
     </footer>
 
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
     <script>if (typeof exports === "undefined") { var exports = {}; }</script>
     <script src="./renderer.js"></script>
+    <script>
+        function toggleLogs() {
+            const container = document.getElementById('log-container');
+            const panel = document.getElementById('log-panel');
+            const icon = document.getElementById('toggle-icon');
+
+            if (panel.style.height === '30px') {
+                panel.style.height = '150px';
+                icon.textContent = '▼';
+            } else {
+                panel.style.height = '30px';
+                icon.textContent = '▲';
+            }
+        }
+    </script>
 </body>
 
 </html>

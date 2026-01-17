@@ -1,65 +1,54 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-16T19:25:00-06:00
+> **Last Updated:** 2026-01-16T20:56:00
 > **Last Model:** Gemini
-> **Session Focus:** Phase 4 Validation, Unicode Fixes, Hallucination Resolution, PTT Experiment
+> **Session Focus:** Packaging, pnpm Migration, Whisper V3 Turbo Upgrade
 
 ---
 
 ## ✅ Completed This Session
 
-- **UnicodeEncodeError Resolved:** Replaced unicode arrow `→` with `->` in `python/ipc_server.py` and `python/main.py`. Logs now clean on Windows.
-- **Hallucination Fixed:** Updated `python/core/processor.py` to use `mistral:latest` (was `llama3:8b`) and added logic to **block empty transcriptions** in `ipc_server.py`. This prevents the "He's actually going to the store..." loop.
-- **Global Hotkey (Toggle) Working:** Verified `Ctrl+Alt+D` works reliably in **Toggle Mode** (Electron-based).
-- **Debug UI:** Verified connection status and log streaming are functional.
-- **Updated Tasks:** Marked Phase 4.1 (UAT) and 4.2 (Bug Fixes) items as complete in `TASKS.md`.
+- **pnpm Migration**: Migrated entirely from `npm` to `pnpm`. `node_modules` cleaned, `.npmrc` created for Electron hoisting rules.
+- **Model Tuning**: Adjusted LLM prompt to preserve colloquialisms ("freaking") while removing filler words. Added side-by-side raw/processed logging.
+- **Packaging**: 
+    -   Created `python/build_backend.bat` (PyInstaller).
+    -   Configured `electron-builder` to bundle `diktate-engine.exe` via `extraResources`.
+    -   Updated `src/main.ts` to detect environment (Dev vs. Prod) and launch appropriate Python backend.
+    -   Built and verified `dist/win-unpacked/dIKtate.exe`.
+- **Whisper V3 Turbo**: 
+    -   Implemented `faster-whisper-large-v3-turbo-ct2` as default model (~8x faster).
+    -   Updated `python/core/transcriber.py` with model mapping.
+    -   Added runtime configuration command (`configure`) to `ipc_server.py` and `PythonManager` to switch models on the fly.
+    -   Verified with `python/test_turbo.py`.
 
 ## ⚠️ Known Issues / Broken
 
-- [ ] **Push-to-Talk (PTT) Failed:** Attempted to migrate hotkey logic to Python (`pynput`) to enable "Hold-to-Talk". Failed because keys were not registering on the user's system. **Reverted** to Electron Toggle mode.
-- [ ] **Hotkey Toggle Confusion:** Current toggle mode works but can be confusing (user forgets if they are recording). PTT is still the desired UX.
+- **UAT Pending**: While the build works, comprehensive UAT (latency, accuracy, multi-app) has not been performed on the *packaged* build.
+- **Test Script Import**: `python/test_turbo.py` requires running from root context or careful path management (fixed in session, but worth noting for future scripts).
 
 ## 🔄 In Progress / Pending
 
-- [ ] **Phase 5 (Documentation):** Next scheduled phase.
-- [ ] **PTT Re-attempt:** Needs a different approach (maybe Electron `globalShortcut` with a "key released" check, or troubleshooting `pynput` permissions/context).
+- [ ] **User Acceptance Testing (UAT)**: Execute the UAT plan (latency, accuracy, stability).
+- [ ] **UI Polish**: User requested removing the title bar/frame from the Status Window for a cleaner look.
+- [ ] **README Update**: Needs to be updated with new installation/build instructions (pnpm) and V3 Turbo details.
 
 ## 📋 Instructions for Next Model
 
-1.  **Read `walkthrough.md`** to understand the verification steps just performed.
-2.  **Verify Stability:** Start the app (`npm run dev`) and confirm the Toggle hotkey (`Ctrl+Alt+D`) works and injects text.
-3.  **Choose Path:**
-    *   **Path A (Feature Polish):** Re-investigate Push-to-Talk. Consider using `iohook` or a native node module instead of Python `pynput` if `pynput` is unreliable in this context.
-    *   **Path B (Documentation):** Proceed immediately to Phase 5 (README, INSTALLATION.md) as per `TASKS.md`.
+1.  **Prioritize UAT**: Your primary goal is to validate the packaged application. Run it, dictate, and verify performance.
+2.  **Polish UI**: Remove the Status Window frame as requested.
+3.  **Documentation**: Update `README.md` to reflect the technical changes (pnpm, V3 Turbo, packaging steps) and ensure `ARCHITECTURE.md` is current.
+4.  **Research**: If UAT passes, consider benchmarking the "Experimental Research Candidates" listed in `docs/L3_MEMORY/DEFERRED_FEATURES.md`.
 
 ### Priority Order
-1.  Ensure stability of current "Toggle" mode.
-2.  Update internal docs (`README.md` is slightly out of date regarding model usage).
-3.  Decide on PTT vs Toggle for MVP v1.0.
+1.  Perform UAT on `dist/win-unpacked/dIKtate.exe`.
+2.  Remove Status Window frame (`src/main.ts` -> `createDebugWindow` or whichever window displays status). *Correction: The "Status Window" likely refers to the floating pill or the tray menu context, but check `src/main.ts` for window creation.*
+3.  Update `README.md`.
 
 ### Context Needed
-- `TASKS.md` (Check Phase 5)
-- `python/ipc_server.py` (Logic for handling commands)
-- `src/main.ts` (Electron hotkey handling)
+- `task.md` (Artifact): Contains the granular checklist.
+- `docs/L3_MEMORY/DEFERRED_FEATURES.md`: Contains future research candidates.
+- `python/build_backend.bat`: Usage for rebuilding the backend.
 
 ### Do NOT
-- Do NOT re-enable `pynput` listener in `ipc_server.py` without a specific hypothesis on why it failed (requires admin? requires window focus?).
-- Do NOT change the Ollama model back to `llama3` without checking user availability.
-
----
-
-## Session Log (Last 3 Sessions)
-
-### 2026-01-16 19:25 - Gemini
-- Fixed Unicode crash in logs.
-- Fixed Ollama 404 and hallucinations (switched to Mistral, blocked empty inputs).
-- Attempted PTT migration (Failed, Reverted).
-- Validated text injection works.
-
-### 2026-01-16 19:00 - Gemini
-- Debugging UI hotkeys.
-- Identified Unicode error.
-
-### 2026-01-15 23:53 - previous session
-- Debugging UI & IPC.
-- UI implementation.
+- Do not revert to `npm`. stick to `pnpm`.
+- Do not remove the `configure` IPC command; it is essential for future settings UI.

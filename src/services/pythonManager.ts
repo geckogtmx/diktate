@@ -127,6 +127,13 @@ export class PythonManager extends EventEmitter {
   }
 
   /**
+   * Set configuration for the Python pipeline
+   */
+  async setConfig(config: object): Promise<any> {
+    return this.sendCommand('configure', { config });
+  }
+
+  /**
    * Send a command to Python
    */
   async sendCommand(command: string, data?: any): Promise<any> {

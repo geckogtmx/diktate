@@ -84,10 +84,12 @@ function createDebugWindow(): void {
   }
 
   debugWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    show: false,
-    title: 'dIKtate Debug Console',
+    width: 400,
+    height: 500,
+    show: true,
+    alwaysOnTop: true,
+    frame: true, // Keep frame for dragging for now, but maybe remove later
+    title: 'dIKtate Status',
     icon: getIcon('idle'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -97,6 +99,9 @@ function createDebugWindow(): void {
   });
 
   debugWindow.loadFile(path.join(__dirname, 'index.html'));
+
+  // Remove menu bar
+  debugWindow.setMenuBarVisibility(false);
 
   debugWindow.on('close', (e) => {
     // Just hide instead of closing
@@ -468,8 +473,22 @@ async function initialize(): Promise<void> {
     setupGlobalHotkey();
 
     // Initialize Python manager
-    const pythonExePath = path.join(__dirname, '..', 'python', 'venv', 'Scripts', 'python.exe');
-    const pythonScriptPath = path.join(__dirname, '..', 'python', 'ipc_server.py');
+    let pythonExePath: string;
+    let pythonScriptPath: string;
+
+    if (isDev) {
+      pythonExePath = path.join(__dirname, '..', 'python', 'venv', 'Scripts', 'python.exe');
+      pythonScriptPath = path.join(__dirname, '..', 'python', 'ipc_server.py');
+      logger.info('MAIN', 'Running in DEVELOPMENT mode');
+    } else {
+      // Production - use bundled executable
+      // In production, resources are at: app.asar/../bin/diktate-engine.exe
+      // process.resourcesPath points to the folder containing app.asar
+      pythonExePath = path.join(process.resourcesPath, 'bin', 'diktate-engine.exe');
+      // For executable, the script path argument is ignored or handled internally by the frozen app
+      pythonScriptPath = '';
+      logger.info('MAIN', 'Running in PRODUCTION mode');
+    }
 
     logger.info('MAIN', 'Initializing Python manager', { pythonExePath, pythonScriptPath });
     pythonManager = new PythonManager(pythonExePath, pythonScriptPath);

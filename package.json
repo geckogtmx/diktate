@@ -4,10 +4,11 @@
   "description": "Privacy-first voice dictation for Windows",
   "main": "dist/main.js",
   "scripts": {
-    "dev": "tsc && electron . --dev",
+    "dev": "tsc && copy src\\index.html dist\\index.html && electron . --dev",
     "start": "electron .",
     "build": "tsc && electron .",
-    "dist": "electron-builder"
+    "dist": "pnpm run package-python && electron-builder",
+    "package-python": "cd python && build_backend.bat"
   },
   "keywords": [
     "dictation",
@@ -44,6 +45,12 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "extraResources": [
+      {
+        "from": "python/dist/diktate-engine.exe",
+        "to": "bin/diktate-engine.exe"
+      }
+    ]
   }
 }

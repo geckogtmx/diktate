@@ -501,3 +501,23 @@ These features were mentioned in detailed docs but are not planned for any near-
 **Total Deferred Features:** 25+  
 **Total Preserved Documentation:** ~220KB of detailed specs  
 **Nothing Lost:** All features planned and documented for future phases
+
+---
+
+## Phase 6+: Experimental Research Candidates
+
+### Model Candidates (To Be Evaluated)
+**Status:** Research Queue
+**Reference:** User Request (2026-01-16)
+
+**Candidates:**
+1.  **NVIDIA Canary Qwen 2.5B**:
+    -   Potential high-performance audio-understanding model.
+    -   Need to evaluate: Latency vs. Accuracy on consumer hardware.
+    -   Integration path: Replacement for Whisper? Or end-to-end speech-to-intent?
+2.  **Granite Speech 3.3 (IBM)**:
+    -   Recently released open weights.
+    -   Claimed enterprise-grade performance.
+    -   Need to evaluate: License compatibility and resource usage.
+
+**Action Item:** Create a benchmarking script comparison against Whisper V3 Turbo once the MVP is stable.

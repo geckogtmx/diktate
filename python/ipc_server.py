@@ -104,8 +104,9 @@ class IpcServer:
             self._send_error(f"Recorder initialization failed: {e}")
 
         try:
-            self.transcriber = Transcriber(model_size="medium", device="auto")
-            logger.info("[OK] Transcriber initialized")
+            # Default to Turbo for speed (V3)
+            self.transcriber = Transcriber(model_size="turbo", device="auto")
+            logger.info("[OK] Transcriber initialized (Turbo V3)")
         except Exception as e:
             logger.error(f"Failed to initialize Transcriber: {e}")
             self._send_error(f"Transcriber initialization failed: {e}")
@@ -238,6 +239,20 @@ class IpcServer:
             logger.error(f"Pipeline error: {e}")
             self._set_state(State.ERROR)
 
+    def configure(self, config: dict) -> dict:
+        """Configure the pipeline (switch models, etc)"""
+        try:
+            model_size = config.get("model")
+            if model_size:
+                logger.info(f"[CONFIG] Switching model to: {model_size}")
+                # Re-initialize transcriber
+                self.transcriber = Transcriber(model_size=model_size, device="auto")
+                return {"success": True, "message": f"Switched to {model_size}"}
+            return {"success": False, "error": "No valid configuration found"}
+        except Exception as e:
+            logger.error(f"Configuration failed: {e}")
+            return {"success": False, "error": str(e)}
+
     def handle_command(self, command: dict) -> dict:
         """Handle a command from Electron"""
         try:
@@ -252,6 +267,8 @@ class IpcServer:
                 return self.stop_recording()
             elif cmd_name == "status":
                 return {"success": True, "state": self.state.value}
+            elif cmd_name == "configure":
+                return self.configure(command.get("config", {}))
             elif cmd_name == "shutdown":
                 logger.info("[CMD] Shutdown requested")
                 return {"success": True}

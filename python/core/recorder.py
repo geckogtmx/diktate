@@ -45,7 +45,7 @@ class Recorder:
         try:
             self.p = pyaudio.PyAudio()
             self.stream = self.p.open(
-                format=pyaudio.paFloat32,
+                format=pyaudio.paInt16,
                 channels=self.channels,
                 rate=self.sample_rate,
                 input=True,
@@ -53,20 +53,41 @@ class Recorder:
             )
             self.is_recording = True
             self.audio_data = []
+            
+            # Start background thread to read audio
+            import threading
+            self.record_thread = threading.Thread(target=self._record_loop)
+            self.record_thread.start()
+            
             logger.info("Recording started")
         except Exception as e:
             logger.error(f"Failed to start recording: {e}")
             raise
 
+    def _record_loop(self) -> None:
+        """Background loop to read audio chunks."""
+        while self.is_recording and self.stream:
+            try:
+                self.read_chunk()
+            except Exception as e:
+                if self.is_recording: # Only log if we expect to be recording
+                    logger.error(f"Error in record loop: {e}")
+                break
+
     def stop(self) -> None:
         """Stop recording and clean up resources."""
         try:
+            self.is_recording = False # Signal thread to stop
+            
+            if hasattr(self, 'record_thread') and self.record_thread.is_alive():
+                self.record_thread.join(timeout=1.0)
+
             if self.stream:
                 self.stream.stop_stream()
                 self.stream.close()
             if self.p:
                 self.p.terminate()
-            self.is_recording = False
+            
             logger.info("Recording stopped")
         except Exception as e:
             logger.error(f"Error stopping recording: {e}")
@@ -105,7 +126,7 @@ class Recorder:
         try:
             with wave.open(filepath, "wb") as wav_file:
                 wav_file.setnchannels(self.channels)
-                wav_file.setsampwidth(self.p.get_sample_size(pyaudio.paFloat32))
+                wav_file.setsampwidth(self.p.get_sample_size(pyaudio.paInt16))
                 wav_file.setframerate(self.sample_rate)
                 wav_file.writeframes(b"".join(self.audio_data))
             logger.info(f"Audio saved to {filepath}")

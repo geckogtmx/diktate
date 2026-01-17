@@ -10,8 +10,13 @@ logger = logging.getLogger(__name__)
 class Transcriber:
     """Transcribes audio using OpenAI Whisper."""
 
-    # Supported models: tiny, base, small, medium, large
-    SUPPORTED_MODELS = ["tiny", "base", "small", "medium", "large"]
+    # Supported models: tiny, base, small, medium, large, turbo
+    SUPPORTED_MODELS = ["tiny", "base", "small", "medium", "large", "turbo"]
+    
+    # Mapping for special model names to HF paths
+    MODEL_MAPPING = {
+        "turbo": "deepdml/faster-whisper-large-v3-turbo-ct2"
+    }
 
     def __init__(self, model_size: str = "medium", device: str = "auto"):
         """
@@ -34,10 +39,13 @@ class Transcriber:
         try:
             # Force CPU device if auto-detection picks up incompatible CUDA
             device = "cpu" if self.device == "auto" else self.device
+            
+            # Resolve model path from mapping if it exists, otherwise use size name
+            model_name = self.MODEL_MAPPING.get(self.model_size, self.model_size)
 
-            logger.info(f"Loading Whisper {self.model_size} model on {device}...")
+            logger.info(f"Loading Whisper model '{model_name}' on {device}...")
             self.model = WhisperModel(
-                self.model_size,
+                model_name,
                 device=device,
                 compute_type="int8"  # Use int8 quantized for CPU efficiency
             )

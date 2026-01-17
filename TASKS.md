@@ -139,17 +139,42 @@
 - [ ] Update `ARCHITECTURE.md` (MVP version)
 - [ ] Create `CONTRIBUTING.md`
 - [ ] Document code structure
-- [ ] Create `DEV_HANDOFF.md` for Phase 2
+### ✅ Task 4.2: Bug Fixes (8h)
+- [x] Fix critical bugs from UAT
+- [x] Improve error messages
+- [x] Add tooltips to tray menu
+- [x] Improve transcription accuracy (Tuned prompt, side-by-side logging)
+
+### ✅ Task 4.3: Prerequisites Validation (4h)
+- [ ] Create startup validation script
+- [ ] Add friendly error messages
+- [ ] Create setup guide (README)
+
+---
+
+## Phase 5: Documentation (Days 15-16)
+
+### ✅ Task 5.1: User Documentation (6h)
+- [ ] Create `README.md` (installation, usage)
+- [ ] Create `INSTALLATION.md`
+- [ ] Create `TROUBLESHOOTING.md`
+- [ ] Add screenshots/GIFs
+
+### ✅ Task 5.2: Developer Documentation (4h)
+- [ ] Update `ARCHITECTURE.md` (MVP version)
+- [ ] Create `CONTRIBUTING.md`
+- [ ] Document code structure
+- [/] Create `DEV_HANDOFF.md` for Phase 2
 
 ---
 
 ## Phase 6: Release Preparation (Days 17-18)
 
 ### ✅ Task 6.1: Packaging (6h)
-- [ ] Configure electron-builder
-- [ ] Create Windows installer (.exe)
-- [ ] Bundle Python environment
-- [ ] Test installer on clean machine
+- [x] Configure electron-builder
+- [x] Create Windows installer (.exe)
+- [x] Bundle Python environment (PyInstaller + extraResources)
+- [/] Test installer on clean machine
 
 ### ✅ Task 6.2: Final Validation (4h)
 - [ ] Test installer on 3 different machines
@@ -176,7 +201,14 @@
 - [ ] Zero crashes in 30-minute session
 - [ ] Filler words removed
 - [ ] Grammar and punctuation corrected
-- [ ] CUDA/GPU acceleration working
+- [ ] End-to-end latency < 15 seconds for 5-second utterance
+- [ ] Transcription accuracy > 90% (English)
+- [ ] Works in 5+ applications
+- [x] Runs 100% offline
+- [ ] Zero crashes in 30-minute session
+- [x] Filler words removed
+- [x] Grammar and punctuation corrected
+- [x] CUDA/GPU acceleration working (or quantized CPU)
 
 ---
 
