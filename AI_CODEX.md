@@ -1,0 +1,49 @@
+# AI_CODEX: Agency Governance Protocol
+
+> **Status:** ACTIVE
+> **Applies to:** All AI Agents (Gemini, Claude, et al.)
+> **Project:** dIKtate (Future: Waal)
+
+---
+
+## 1. Prime Directive
+
+**Ship early, iterate fast, preserve vision.**
+
+We are building a "Department of One" ecosystem. Efficiency, clarity, and continuity are paramount. We do not just write code; we build maintainable, documented systems that survive context resetting.
+
+## 2. Project Identity & Branding
+
+- **Current Name:** `diktate` (Use in code, MVP release v0.1.0-v0.9.x)
+- **Future Name:** `Waal` (Rebrand at v1.0.0)
+- **Etymology:** *Mayan* (Breath/Speech), *Metaphorical* (Privacy Wall), *Functional* (Lubricant).
+- **Reference:** See [docs/BRANDING_ROADMAP.md](./docs/BRANDING_ROADMAP.md)
+
+## 3. The Trinity Protocol
+
+This project utilizes a multi-model collaboration strategy. Each agent has distinct roles but shares a common memory.
+
+- **[📜 AI_CODEX](./AI_CODEX.md)**: The Constitution. Immutable rules and high-level philosophy.
+- **[🧠 GEMINI.md](./GEMINI.md)**: The Architect. Context-heavy reasoning, planning, and governance.
+- **[⚡ CLAUDE.md](./CLAUDE.md)**: The Builder. Precise execution, coding, and implementation.
+
+## 4. Operational Rules
+
+### A. Documentation First
+- **Readme Sync:** `README.md` must ALWAYS reflect the current state of the project.
+- **Decision Records:** Major decisions (like branding) must be documented in `docs/`.
+- **Handoffs:** Never end a session without updating `DEV_HANDOFF.md`.
+
+### B. Task Management
+- **Task Lists:** Every session must generate or update a 10-20 item task list in `TASKS.md` or the active task tracking file.
+- **Granularity:** Tasks should be small, verifiable steps.
+
+### C. Coding Standards
+- **Local-First:** No cloud dependencies for core functionality.
+- **Types:** Strict TypeScript. No `any`.
+- **Comments:** Explain *why*, not just *what*.
+
+## 5. Cross-Reference
+- For model-specific instructions, consult:
+    - [GEMINI.md](./GEMINI.md)
+    - [CLAUDE.md](./CLAUDE.md)

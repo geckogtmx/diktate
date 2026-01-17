@@ -4,6 +4,8 @@
 
 A high-performance, local-first voice dictation tool for Windows. Speak naturally, get polished text—instantly typed into any application.
 
+> **Note:** This project will rebrand to **Waal** at v1.0 launch. See [BRANDING_ROADMAP.md](./docs/BRANDING_ROADMAP.md) for details.
+
 ---
 
 ## 🎯 Project Status: MVP Development
