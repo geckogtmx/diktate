@@ -56,13 +56,36 @@ Cleaned text:"""
 DEFAULT_CLEANUP_PROMPT = PROMPT_STANDARD
 PROMPT_LITERAL = PROMPT_RAW  # Alias for backward compatibility
 
-# MAPPING
+# --- MODEL-SPECIFIC OVERRIDES ---
+# Gemma 3 (4B) needs stricter instructions due to smaller capacity.
+PROMPT_GEMMA_STANDARD = """You are a dictation cleanup tool. Your job is to fix the text so it reads cleanly.
+
+Rules:
+1. Fix punctuation, capitalization, and grammar.
+2. Remove filler words (um, uh, ah, hmm) entirely.
+3. APPLY SELF-CORRECTIONS: If the speaker says "X (no sorry Y)" or "X (I mean Y)", replace X with Y.
+4. Convert verbal punctuation: "quote unquote X" becomes "X" (with quotes around X).
+5. PRESERVE the speaker's meaning and tone.
+6. Return ONLY the cleaned text. No preamble.
+
+Input: {text}
+Cleaned text:"""
+PROMPT_LITERAL = PROMPT_RAW  # Alias for backward compatibility
+
 PROMPT_MAP = {
     "standard": PROMPT_STANDARD,
     "prompt": PROMPT_PROMPT,
     "professional": PROMPT_PROFESSIONAL,
     "raw": PROMPT_RAW,
     "literal": PROMPT_RAW,  # Alias
+}
+
+# Per-model overrides: model_name -> { mode -> prompt }
+MODEL_PROMPT_OVERRIDES = {
+    "gemma3:4b": {
+        "standard": PROMPT_GEMMA_STANDARD,
+    },
+    # Add other model-specific prompts here as needed
 }
 
 # --- TRANSLATION PROMPTS ---
@@ -95,9 +118,18 @@ TRANSLATION_MAP = {
     "none": None,
 }
 
-def get_prompt(mode_name: str) -> str:
-    """Get prompt by name, defaulting to STANDARD."""
-    return PROMPT_MAP.get(mode_name.lower(), PROMPT_STANDARD)
+def get_prompt(mode_name: str, model: str = None) -> str:
+    """Get prompt by mode and optionally model. Model overrides take priority."""
+    mode_lower = mode_name.lower()
+    
+    # Check for model-specific override first
+    if model and model in MODEL_PROMPT_OVERRIDES:
+        model_overrides = MODEL_PROMPT_OVERRIDES[model]
+        if mode_lower in model_overrides:
+            return model_overrides[mode_lower]
+    
+    # Fall back to default mode prompt
+    return PROMPT_MAP.get(mode_lower, PROMPT_STANDARD)
 
 def get_translation_prompt(trans_mode: str) -> str | None:
     """Get translation prompt by mode. Returns None if 'none' or invalid."""

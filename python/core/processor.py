@@ -28,13 +28,13 @@ class LocalProcessor:
         self.ollama_url = ollama_url
         self.model = model
         self.mode = mode
-        self.prompt = get_prompt(mode)
+        self.prompt = get_prompt(mode, model)
         self._verify_ollama()
 
     def set_mode(self, mode: str) -> None:
         """Update processing mode (standard, professional, literal)."""
         self.mode = mode
-        self.prompt = get_prompt(mode)
+        self.prompt = get_prompt(mode, self.model)
         logger.info(f"Processor mode switched to: {mode}")
 
     def _verify_ollama(self) -> None:
