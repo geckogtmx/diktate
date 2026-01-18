@@ -3,6 +3,7 @@
 import os
 import requests
 import logging
+import time
 from typing import Optional
 from pathlib import Path
 
@@ -68,7 +69,7 @@ class LocalProcessor:
             logger.warning(f"Model warmup failed (will retry on first use): {e}")
 
     def process(self, text: str, max_retries: int = 3) -> str:
-        """Process text using Ollama."""
+        """Process text using Ollama with exponential backoff retry logic."""
         prompt = self.prompt.replace("{text}", text)
 
         for attempt in range(max_retries):
@@ -104,8 +105,14 @@ class LocalProcessor:
             except Exception as e:
                 logger.error(f"Error processing text: {e}")
 
+            # Exponential backoff: 1s, 2s, 4s (only if not the last attempt)
+            if attempt < max_retries - 1:
+                backoff_delay = 2 ** attempt  # 1, 2, 4 seconds
+                logger.info(f"Retrying in {backoff_delay}s...")
+                time.sleep(backoff_delay)
+
         logger.error(f"Failed to process text after {max_retries} retries")
-        return text
+        raise Exception(f"Ollama processing failed after {max_retries} retries")
 
 
 class CloudProcessor:
@@ -127,7 +134,7 @@ class CloudProcessor:
         logger.info(f"Cloud processor mode switched to: {mode}")
 
     def process(self, text: str, max_retries: int = 3) -> str:
-        """Process text using Gemini API."""
+        """Process text using Gemini API with exponential backoff retry logic."""
         prompt = self.prompt.replace("{text}", text)
 
         for attempt in range(max_retries):
@@ -168,8 +175,14 @@ class CloudProcessor:
             except Exception as e:
                 logger.error(f"Error processing text with Gemini: {e}")
 
+            # Exponential backoff: 1s, 2s, 4s (only if not the last attempt)
+            if attempt < max_retries - 1:
+                backoff_delay = 2 ** attempt  # 1, 2, 4 seconds
+                logger.info(f"Retrying in {backoff_delay}s...")
+                time.sleep(backoff_delay)
+
         logger.error(f"Failed to process text after {max_retries} retries")
-        return text
+        raise Exception(f"Gemini API processing failed after {max_retries} retries")
 
 
 class AnthropicProcessor:
@@ -232,8 +245,14 @@ class AnthropicProcessor:
             except Exception as e:
                 logger.error(f"Error processing text with Claude: {e}")
 
+            # Exponential backoff: 1s, 2s, 4s (only if not the last attempt)
+            if attempt < max_retries - 1:
+                backoff_delay = 2 ** attempt  # 1, 2, 4 seconds
+                logger.info(f"Retrying in {backoff_delay}s...")
+                time.sleep(backoff_delay)
+
         logger.error(f"Failed to process text after {max_retries} retries")
-        return text
+        raise Exception(f"Claude API processing failed after {max_retries} retries")
 
 
 class OpenAIProcessor:
@@ -296,8 +315,14 @@ class OpenAIProcessor:
             except Exception as e:
                 logger.error(f"Error processing text with OpenAI: {e}")
 
+            # Exponential backoff: 1s, 2s, 4s (only if not the last attempt)
+            if attempt < max_retries - 1:
+                backoff_delay = 2 ** attempt  # 1, 2, 4 seconds
+                logger.info(f"Retrying in {backoff_delay}s...")
+                time.sleep(backoff_delay)
+
         logger.error(f"Failed to process text after {max_retries} retries")
-        return text
+        raise Exception(f"OpenAI API processing failed after {max_retries} retries")
 
 
 # Factory function to create the right processor based on environment

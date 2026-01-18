@@ -70,10 +70,10 @@
 - [x] **Session summary at shutdown** (total dictations, avg times, errors)
 
 ### A.3 Error Recovery
-- [ ] Verify Ollama reconnection after timeout
-- [ ] Test behavior when Ollama is restarted mid-session
-- [ ] Ensure graceful fallback to raw transcription works
-- [ ] Add retry logic with exponential backoff
+- [x] Verify Ollama reconnection after timeout
+- [x] Test behavior when Ollama is restarted mid-session
+- [x] Ensure graceful fallback to raw transcription works
+- [x] Add retry logic with exponential backoff
 
 ### A.4 Gemma 3 Baseline
 - [ ] Run standard test (`docs/qa/MANUAL_TEST_SCRIPT.txt`)
@@ -219,30 +219,30 @@ Document any app-specific issues.
 - [ ] Clean up temp audio files
 
 ### C.5 Automatic Fallback (NEW)
-- [ ] Detect Ollama failure/timeout
-- [ ] Fall back to raw transcription (skip LLM processing)
-- [ ] Notify user when fallback is active
-- [ ] Auto-retry Ollama on next recording
+- [x] Detect Ollama failure/timeout
+- [x] Fall back to raw transcription (skip LLM processing)
+- [x] Notify user when fallback is active
+- [x] Auto-retry Ollama on next recording
 - [ ] Option to prefer raw mode when Ollama unavailable
 
 ### C.6 Retry Logic (NEW)
-- [ ] Implement exponential backoff for Ollama calls
-- [ ] Max 3 retries with 1s, 2s, 4s delays
-- [ ] Log retry attempts for debugging
-- [ ] Fail gracefully after max retries
+- [x] Implement exponential backoff for Ollama calls
+- [x] Max 3 retries with 1s, 2s, 4s delays
+- [x] Log retry attempts for debugging
+- [x] Fail gracefully after max retries
 
 ### C.7 System Tray Quick Actions (NEW)
-- [ ] Add "Show Logs" menu item (opens log folder)
-- [ ] Add "Restart Python" menu item
-- [ ] Add "Open Settings" menu item
-- [ ] Add "Check for Updates" menu item
-- [ ] Show current model in tooltip
+- [x] Add "Show Logs" menu item (opens log folder)
+- [x] Add "Restart Python" menu item
+- [x] Add "Open Settings" menu item
+- [x] Add "Check for Updates" menu item
+- [x] Show current model in tooltip
 
 ### C.8 Recording Safety (NEW)
-- [ ] Add max recording duration limit (default: 60s)
-- [ ] Configurable in settings (30s, 60s, 120s, unlimited)
-- [ ] Auto-stop with notification when limit reached
-- [ ] Prevent runaway recordings
+- [x] Add max recording duration limit (default: 60s)
+- [x] Configurable in settings (30s, 60s, 120s, unlimited)
+- [x] Auto-stop with notification when limit reached
+- [x] Prevent runaway recordings
 
 **Exit Criteria:** 1-hour stability session, all target apps tested, fallback working, no critical bugs.
 

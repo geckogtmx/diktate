@@ -40,6 +40,7 @@ interface UserSettings {
   defaultOllamaModel: string;
   audioDeviceId: string;
   audioDeviceLabel: string;
+  maxRecordingDuration: number; // seconds, 0 = unlimited
 }
 
 // Initialize Store with defaults
@@ -56,7 +57,8 @@ const store = new Store<UserSettings>({
     askOutputMode: 'type',
     defaultOllamaModel: 'gemma3:4b',
     audioDeviceId: 'default',
-    audioDeviceLabel: 'Default Microphone'
+    audioDeviceLabel: 'Default Microphone',
+    maxRecordingDuration: 60 // 60 seconds default
   }
 });
 
@@ -199,23 +201,46 @@ function createSettingsWindow(): void {
 }
 
 /**
- * Initialize system tray icon
+ * Build tray menu template
  */
-function initializeTray(): void {
-  const icon = getIcon('idle');
+function buildTrayMenu(state: string = 'Idle'): Electron.MenuItemConstructorOptions[] {
+  const currentModel = store.get('defaultOllamaModel', 'gemma3:4b');
 
-  tray = new Tray(icon);
-
-  const contextMenu = Menu.buildFromTemplate([
+  return [
     {
-      label: 'Status: Idle',
-      enabled: false,
-      id: 'status'
+      label: `Status: ${state}`,
+      enabled: false
+    },
+    {
+      label: `Model: ${currentModel}`,
+      enabled: false
     },
     { type: 'separator' },
     {
-      label: 'Settings...',
+      label: 'Settings',
       click: () => createSettingsWindow()
+    },
+    {
+      label: 'Show Logs',
+      click: () => {
+        const logDir = path.join(app.getPath('home'), '.diktate', 'logs');
+        shell.openPath(logDir).catch(err => {
+          logger.error('MAIN', 'Failed to open logs folder', err);
+          showNotification('Error', 'Could not open logs folder', true);
+        });
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Restart Python',
+      click: async () => {
+        logger.info('MAIN', 'Restarting Python process from tray menu');
+        if (pythonManager) {
+          await pythonManager.stop();
+          await pythonManager.start();
+          showNotification('Python Restarted', 'Python backend has been restarted', false);
+        }
+      }
     },
     { type: 'separator' },
     {
@@ -223,15 +248,15 @@ function initializeTray(): void {
       click: () => {
         if (!debugWindow) createDebugWindow();
         debugWindow?.show();
-        debugWindow?.webContents.openDevTools({ mode: 'detach' });
       }
     },
     { type: 'separator' },
     {
-      label: 'Open Logs',
+      label: 'Check for Updates',
       click: () => {
-        const logsPath = path.join(app.getPath('userData'), 'logs');
-        require('electron').shell.openPath(logsPath);
+        shell.openExternal('https://github.com/diktate/diktate/releases').catch(err => {
+          logger.error('MAIN', 'Failed to open releases page', err);
+        });
       }
     },
     { type: 'separator' },
@@ -239,17 +264,35 @@ function initializeTray(): void {
       label: 'Quit dIKtate',
       accelerator: 'CommandOrControl+Q',
       click: () => {
-        // Destroy window to allow quit
         debugWindow?.destroy();
         app.quit();
       }
     }
-  ]);
+  ];
+}
 
+/**
+ * Initialize system tray icon
+ */
+function initializeTray(): void {
+  const icon = getIcon('idle');
+  tray = new Tray(icon);
+
+  const contextMenu = Menu.buildFromTemplate(buildTrayMenu('Idle'));
   tray.setContextMenu(contextMenu);
 
+  updateTrayTooltip();
+}
+
+/**
+ * Update tray tooltip to show current model and mode
+ */
+function updateTrayTooltip(): void {
+  if (!tray) return;
+
   const mode = store.get('processingMode', 'local').toUpperCase();
-  tray.setToolTip(`dIKtate [${mode}] - Press Ctrl+Alt+D to dictate`);
+  const model = store.get('defaultOllamaModel', 'gemma3:4b');
+  tray.setToolTip(`dIKtate [${mode}] - ${model}\nCtrl+Alt+D: Dictate | Ctrl+Alt+A: Ask`);
 }
 
 /**
@@ -258,47 +301,10 @@ function initializeTray(): void {
 function updateTrayState(state: string): void {
   if (!tray) return;
 
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: `Status: ${state}`,
-      enabled: false,
-      id: 'status'
-    },
-    { type: 'separator' },
-    {
-      label: 'Settings...',
-      click: () => createSettingsWindow()
-    },
-    { type: 'separator' },
-    {
-      label: 'Show Debug Console',
-      click: () => {
-        if (!debugWindow) createDebugWindow();
-        debugWindow?.show();
-      }
-    },
-    { type: 'separator' },
-    {
-      label: 'Open Logs',
-      click: () => {
-        const logsPath = path.join(app.getPath('userData'), 'logs');
-        require('electron').shell.openPath(logsPath);
-      }
-    },
-    { type: 'separator' },
-    {
-      label: 'Quit dIKtate',
-      accelerator: 'CommandOrControl+Q',
-      click: () => {
-        debugWindow?.destroy();
-        app.quit();
-      }
-    }
-  ]);
-
+  const contextMenu = Menu.buildFromTemplate(buildTrayMenu(state));
   tray.setContextMenu(contextMenu);
 
-  // Also sendstatus to renderer
+  // Also send status to renderer
   if (debugWindow) {
     debugWindow.webContents.send('status-update', state);
   }
@@ -469,6 +475,52 @@ function setupPythonEventHandlers(): void {
       debugWindow.webContents.send('ask-response', { question, answer });
     }
   });
+
+  // Handle processor fallback (error recovery)
+  pythonManager.on('processor-fallback', (data: any) => {
+    const { reason, consecutive_failures, using_raw } = data;
+
+    logger.warn('MAIN', 'Processor fallback triggered', { reason, consecutive_failures });
+
+    // Show notification to user
+    const title = consecutive_failures === 1 ? 'Processing Failed' : `Processing Failed (${consecutive_failures}x)`;
+    const message = using_raw
+      ? `Using raw transcription instead.\n\nReason: ${reason.split(':')[0]}`
+      : `LLM unavailable.\n\nReason: ${reason.split(':')[0]}`;
+
+    showNotification(title, message, false);
+
+    // If 3+ consecutive failures, suggest checking Ollama
+    if (consecutive_failures >= 3) {
+      showNotification(
+        'Repeated Failures Detected',
+        'Consider checking if Ollama is running or switching to Cloud mode in Settings.',
+        true
+      );
+    }
+  });
+
+  // Handle recording auto-stop (duration limit reached)
+  pythonManager.on('recording-auto-stopped', (data: any) => {
+    const { max_duration } = data;
+
+    logger.info('MAIN', 'Recording auto-stopped', { max_duration });
+
+    // Force stop recording state
+    isRecording = false;
+    updateTrayIcon('processing');
+    updateTrayState('Processing');
+
+    // Show notification
+    const durationText = max_duration === 60 ? '1 minute' :
+                        max_duration === 120 ? '2 minutes' :
+                        `${max_duration} seconds`;
+    showNotification(
+      'Recording Auto-Stopped',
+      `Maximum recording duration (${durationText}) reached.\n\nProcessing your dictation now...`,
+      false
+    );
+  });
 }
 
 /**
@@ -593,6 +645,19 @@ function setupIpcHandlers(): void {
       pythonManager.setConfig({ defaultModel: value }).catch(err => {
         logger.error('IPC', 'Failed to update Python default model', err);
       });
+      // Update tray tooltip to show new model
+      updateTrayTooltip();
+      // Update tray menu to show new model
+      if (tray) {
+        const currentState = isRecording ? (recordingMode === 'ask' ? 'Listening (Ask)' : 'Recording') : 'Idle';
+        updateTrayState(currentState);
+      }
+    }
+
+    // If processing mode changed
+    if (key === 'processingMode') {
+      // Update tray tooltip to show new mode
+      updateTrayTooltip();
     }
 
     // If auto-start setting changed
@@ -819,11 +884,13 @@ async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<voi
       // Get preferred device ID and Label
       const audioDeviceId = store.get('audioDeviceId');
       const audioDeviceLabel = store.get('audioDeviceLabel');
+      const maxDuration = store.get('maxRecordingDuration', 60); // Default: 60 seconds
 
       await pythonManager.sendCommand('start_recording', {
         deviceId: audioDeviceId,
         deviceLabel: audioDeviceLabel,
-        mode: mode  // Pass the mode to Python
+        mode: mode,  // Pass the mode to Python
+        maxDuration: maxDuration  // Pass max duration setting
       });
     } catch (error) {
       logger.error('MAIN', 'Failed to start recording', error);

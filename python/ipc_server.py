@@ -258,6 +258,7 @@ class IpcServer:
         self.perf = PerformanceMetrics()
         self.session_stats = SessionStats()  # Session-level stats (A.2)
         self.trans_mode = "none"  # Translation mode: none, es-en, en-es
+        self.consecutive_failures = 0  # Track consecutive processor failures for auto-recovery
 
         logger.info("Initializing IPC Server...")
         self._initialize_components()
@@ -301,13 +302,23 @@ class IpcServer:
         self.state = new_state
         self._emit_event("state-change", {"state": new_state.value})
 
-    def start_recording(self, device_id: Optional[str] = None, device_label: Optional[str] = None, mode: str = "dictate") -> dict:
+    def _on_recording_auto_stopped(self, max_duration: int) -> None:
+        """Callback when recording is auto-stopped due to duration limit."""
+        logger.info(f"[AUTO-STOP] Recording reached max duration ({max_duration}s)")
+        self._emit_event("recording-auto-stopped", {
+            "max_duration": max_duration,
+            "message": f"Recording auto-stopped after {max_duration} seconds"
+        })
+
+    def start_recording(self, device_id: Optional[str] = None, device_label: Optional[str] = None,
+                       mode: str = "dictate", max_duration: int = 0) -> dict:
         """Start recording audio
-        
+
         Args:
             device_id: Audio device ID
             device_label: Audio device label for matching
             mode: 'dictate' for normal dictation, 'ask' for Q&A mode
+            max_duration: Maximum recording duration in seconds (0 = unlimited)
         """
         if self.state != State.IDLE:
             error_msg = f"Cannot start recording in {self.state.value} state"
@@ -319,13 +330,19 @@ class IpcServer:
             self.perf.reset()
             self.perf.start("total")
             self.perf.start("recording")
-            
+
             # Store the mode for processing
             self.recording_mode = mode
-            logger.info(f"[REC] Recording started in {mode} mode")
+            duration_msg = f" (max: {max_duration}s)" if max_duration > 0 else " (unlimited)"
+            logger.info(f"[REC] Recording started in {mode} mode{duration_msg}")
 
             self._set_state(State.RECORDING)
-            self.recorder.start(device_id=device_id, device_label=device_label)
+            self.recorder.start(
+                device_id=device_id,
+                device_label=device_label,
+                max_duration=max_duration,
+                auto_stop_callback=self._on_recording_auto_stopped
+            )
             self.recording = True
             return {"success": True}
         except Exception as e:
@@ -399,17 +416,39 @@ class IpcServer:
                 self._set_state(State.IDLE)
                 return
 
-            # Process (clean up text)
+            # Process (clean up text) with automatic fallback on failure
             logger.info("[PROCESS] Processing text...")
             self.perf.start("processing")
+            processor_failed = False
+
             if self.processor:
-                processed_text = self.processor.process(raw_text)
+                try:
+                    processed_text = self.processor.process(raw_text)
+                    # Success - reset consecutive failures counter
+                    if self.consecutive_failures > 0:
+                        logger.info(f"[RECOVERY] Processor recovered after {self.consecutive_failures} failures")
+                    self.consecutive_failures = 0
+                except Exception as e:
+                    # Processor failed - fall back to raw transcription
+                    logger.error(f"[FALLBACK] Processor failed: {e}")
+                    logger.info("[FALLBACK] Using raw transcription (no processing)")
+                    processed_text = raw_text
+                    processor_failed = True
+                    self.consecutive_failures += 1
+
+                    # Emit fallback notification
+                    self._emit_event("processor-fallback", {
+                        "reason": str(e),
+                        "consecutive_failures": self.consecutive_failures,
+                        "using_raw": True
+                    })
             else:
                 processed_text = raw_text
+
             processing_time = self.perf.end("processing")
-            
-            # Log inference time for model monitoring (A.1)
-            if self.processor:
+
+            # Log inference time for model monitoring (A.1) - only if processing succeeded
+            if self.processor and not processor_failed:
                 processor_model = getattr(self.processor, 'model', 'unknown')
                 self.perf.log_inference_time(processor_model, processing_time, log_dir)
             logger.info(f"[RESULT] Processed: {redact_text(processed_text)}")
@@ -500,7 +539,7 @@ class IpcServer:
             if self.processor:
                 logger.info("[ASK] Asking LLM...")
                 self.perf.start("ask")
-                
+
                 # Store original prompt and use Q&A prompt
                 original_prompt = self.processor.prompt
                 self.processor.prompt = """You are a helpful AI assistant. The user has asked you a question via voice.
@@ -509,22 +548,37 @@ Answer the question concisely and helpfully. Be direct and informative.
 USER QUESTION: {text}
 
 YOUR ANSWER:"""
-                
+
                 try:
                     answer = self.processor.process(question)
+                    # Success - reset consecutive failures
+                    if self.consecutive_failures > 0:
+                        logger.info(f"[RECOVERY] Processor recovered after {self.consecutive_failures} failures")
+                    self.consecutive_failures = 0
+
+                    self.perf.end("ask")
+                    logger.info(f"[ANSWER] {redact_text(answer)}")
+
+                    # Emit the response (don't inject)
+                    self._emit_event("ask-response", {
+                        "success": True,
+                        "question": question.strip(),
+                        "answer": answer.strip()
+                    })
+                except Exception as e:
+                    # Ask mode failure - no fallback, just return error
+                    logger.error(f"[ASK] Processor failed: {e}")
+                    self.consecutive_failures += 1
+                    self.perf.end("ask")
+
+                    self._emit_event("ask-response", {
+                        "success": False,
+                        "error": f"LLM failed after retries: {str(e)}",
+                        "consecutive_failures": self.consecutive_failures
+                    })
                 finally:
-                    # Restore original prompt
+                    # Always restore original prompt
                     self.processor.prompt = original_prompt
-                
-                self.perf.end("ask")
-                logger.info(f"[ANSWER] {redact_text(answer)}")
-                
-                # Emit the response (don't inject)
-                self._emit_event("ask-response", {
-                    "success": True,
-                    "question": question.strip(),
-                    "answer": answer.strip()
-                })
             else:
                 logger.error("[ASK] No processor available")
                 self._emit_event("ask-response", {"success": False, "error": "No LLM processor available"})

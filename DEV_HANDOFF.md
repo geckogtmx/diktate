@@ -1,14 +1,56 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-18 17:15
-> **Last Model:** Gemini 2.0 Flash Thinking
-> **Session Focus:** Ask Mode Implementation (Phases 1 & 3) + Strategy
+> **Last Updated:** 2026-01-18 21:45
+> **Last Model:** Claude Sonnet 4.5
+> **Session Focus:** Reliability & UX Polish (A.3, C.7, C.8) + Ask Mode Phase 2
 > **Master Plan:** [DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md)
 > **Brand:** diktate / dikta.me (NO rebrand to Waal)
 
 ---
 
-## ✅ Completed This Session
+## ✅ Completed This Session (Session 6)
+
+### Phase A.3: Error Recovery & Retry Logic ✅
+**Files:** `python/core/processor.py`, `python/ipc_server.py`, `src/main.ts`, `src/services/pythonManager.ts`
+
+- **Exponential Backoff:** All processors (Local/Cloud/Anthropic/OpenAI) now retry 3x with 1s, 2s, 4s delays
+- **Automatic Fallback:** If Ollama fails after retries → uses raw Whisper transcription (user always gets their text)
+- **Consecutive Failure Tracking:** Tracks failures, shows recovery message on success
+- **User Notifications:**
+  - First failure: "Processing Failed - Using raw transcription"
+  - 3+ failures: "Repeated Failures Detected - Check Ollama or switch to Cloud mode"
+
+### Phase C.8: Recording Safety (Max Duration) ✅
+**Files:** `python/core/recorder.py`, `python/ipc_server.py`, `src/main.ts`, `src/settings.html`, `src/settings.ts`
+
+- **Configurable Duration:** Settings UI with 4 options (30s / 60s / 120s / Unlimited)
+- **Auto-Stop Logic:** Background thread checks elapsed time, stops at limit
+- **User Notification:** "Recording Auto-Stopped - Maximum duration (X) reached"
+- **Default:** 60 seconds (prevents runaway recordings)
+
+### Phase C.7: System Tray Quick Actions ✅
+**Files:** `src/main.ts`
+
+- **New Menu Items:**
+  - "Show Logs" → Opens `~/.diktate/logs` folder
+  - "Restart Python" → Restarts Python backend with notification
+  - "Check for Updates" → Opens GitHub releases page
+  - "Model: gemma3:4b" → Shows current model in menu
+- **Enhanced Tooltip:** Shows mode, model, and both hotkeys (Dictate + Ask)
+- **Dynamic Updates:** Tooltip/menu update when model or mode changes
+- **Refactored:** Single `buildTrayMenu()` function (eliminated code duplication)
+
+### Ask Mode Phase 2: Status Window UI ✅
+**Files:** `src/index.html`, `src/renderer.ts`, `src/main.ts`
+
+- **Mode Toggle UI:** Added visual toggle in Status Window (⌨️ Dictate / ❓ Ask buttons)
+- **Active State:** Highlights current mode with teal glow
+- **IPC Integration:** Mode syncs when hotkeys are pressed
+- **Hotkey Display:** Shows Ctrl+Alt+D and Ctrl+Alt+A on buttons
+
+---
+
+## ✅ Previously Completed (Session 5)
 
 ### Ask Mode Feature (Phases 1 & 3) ✅
 **Files:** `src/main.ts`, `python/ipc_server.py`, `src/services/pythonManager.ts`, `src/settings.html`, `src/settings.ts`
@@ -30,6 +72,11 @@
 ### Settings Enhancements ✅
 - **Defaults:** `askOutputMode` defaults to 'type' (injection) for seamless workflow.
 - **Auto-Load:** Settings page correctly loads saved `askOutputMode`.
+- **Max Recording Duration:** Added setting (30s, 60s, 120s, Unlimited) to auto-stop recording.
+
+### Reliability ✅
+- **Processor Auto-Recovery:** Implemented fallback to raw transcription if LLM fails.
+- **Bug Fix:** Fixed `UnboundLocalError: os` in `_process_recording` by removing redundant local import.
 
 ---
 

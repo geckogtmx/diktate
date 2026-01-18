@@ -247,6 +247,12 @@ export class PythonManager extends EventEmitter {
     } else if (event.event === 'ask-response') {
       // Forward ask-response event for Q&A mode
       this.emit('ask-response', event);
+    } else if (event.event === 'processor-fallback') {
+      // Forward processor fallback event for error recovery
+      this.emit('processor-fallback', event);
+    } else if (event.event === 'recording-auto-stopped') {
+      // Forward recording auto-stop event
+      this.emit('recording-auto-stopped', event);
     } else if (event.event === 'status-check') {
       this.emit('status-check', event);
     }

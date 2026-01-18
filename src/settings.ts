@@ -135,6 +135,13 @@ function loadSettings(settings: any) {
     // Audio - new feedback sound selector
     setVal('feedback-sound', settings.feedbackSound || 'click');
 
+    // Audio - max recording duration (radio buttons)
+    const maxDuration = settings.maxRecordingDuration !== undefined ? settings.maxRecordingDuration : 60;
+    const durationRadios = document.querySelectorAll<HTMLInputElement>('input[name="max-duration"]');
+    durationRadios.forEach(radio => {
+        radio.checked = parseInt(radio.value) === maxDuration;
+    });
+
     // Models
     setVal('default-model', settings.defaultOllamaModel || 'gemma3:4b');
     updateModeModelDisplay(settings.defaultOllamaModel || 'gemma3:4b');

@@ -3,7 +3,8 @@
 import pyaudio
 import wave
 import os
-from typing import Optional
+import time
+from typing import Optional, Callable
 import logging
 
 logger = logging.getLogger(__name__)
@@ -36,13 +37,28 @@ class Recorder:
         self.audio_data = []
         self.p: Optional[pyaudio.PyAudio] = None
         self.stream: Optional[pyaudio.Stream] = None
+        self.max_duration = 0  # seconds, 0 = unlimited
+        self.start_time = 0
+        self.auto_stop_callback: Optional[Callable] = None
 
         # Create temp directory if it doesn't exist
         os.makedirs(temp_dir, exist_ok=True)
 
-    def start(self, device_id: Optional[str] = None, device_label: Optional[str] = None) -> None:
-        """Start recording from microphone."""
+    def start(self, device_id: Optional[str] = None, device_label: Optional[str] = None,
+              max_duration: int = 0, auto_stop_callback: Optional[Callable] = None) -> None:
+        """
+        Start recording from microphone.
+
+        Args:
+            device_id: Audio device ID (or 'default')
+            device_label: Audio device label for matching
+            max_duration: Maximum recording duration in seconds (0 = unlimited)
+            auto_stop_callback: Function to call when auto-stopped due to duration limit
+        """
         try:
+            self.max_duration = max_duration
+            self.auto_stop_callback = auto_stop_callback
+            self.start_time = time.time()
             self.p = pyaudio.PyAudio()
             
             # Resolve device index
@@ -100,6 +116,17 @@ class Recorder:
         """Background loop to read audio chunks."""
         while self.is_recording and self.stream:
             try:
+                # Check if max duration exceeded
+                if self.max_duration > 0:
+                    elapsed = time.time() - self.start_time
+                    if elapsed >= self.max_duration:
+                        logger.warning(f"Recording auto-stopped: max duration ({self.max_duration}s) reached")
+                        self.is_recording = False
+                        # Call callback if provided
+                        if self.auto_stop_callback:
+                            self.auto_stop_callback(self.max_duration)
+                        break
+
                 self.read_chunk()
             except Exception as e:
                 if self.is_recording: # Only log if we expect to be recording

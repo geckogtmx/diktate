@@ -330,6 +330,29 @@
                     </label>
                 </div>
             </div>
+
+            <div class="setting-group">
+                <label>Maximum Recording Duration</label>
+                <span class="sub-label">Auto-stop recording after this duration (prevents runaway recordings)</span>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <label style="flex: 1;">
+                        <input type="radio" name="max-duration" value="30" onchange="saveSetting('maxRecordingDuration', 30)">
+                        <span style="margin-left: 5px;">30 seconds</span>
+                    </label>
+                    <label style="flex: 1;">
+                        <input type="radio" name="max-duration" value="60" onchange="saveSetting('maxRecordingDuration', 60)" checked>
+                        <span style="margin-left: 5px;">1 minute</span>
+                    </label>
+                    <label style="flex: 1;">
+                        <input type="radio" name="max-duration" value="120" onchange="saveSetting('maxRecordingDuration', 120)">
+                        <span style="margin-left: 5px;">2 minutes</span>
+                    </label>
+                    <label style="flex: 1;">
+                        <input type="radio" name="max-duration" value="0" onchange="saveSetting('maxRecordingDuration', 0)">
+                        <span style="margin-left: 5px;">⚠️ Unlimited</span>
+                    </label>
+                </div>
+            </div>
         </div>
 
         <!-- MODELS TAB -->
