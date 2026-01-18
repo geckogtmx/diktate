@@ -54,13 +54,13 @@
 **Goal:** Ensure the dictation pipeline is rock-solid with gemma3:4b before adding anything new.
 
 ### A.1 Model Monitoring
-- [ ] Add model health check endpoint (is Ollama responding?)
+- [x] Add model health check endpoint (is Ollama responding?)
 - [ ] Log model inference times to file (not just console)
 - [ ] Alert when processing exceeds 2s threshold
 - [ ] Track consecutive failures and auto-recover
 
 ### A.2 Pipeline Observability
-- [ ] Persist performance metrics to JSON file
+- [x] Persist performance metrics to JSON file
 - [x] Add session-level stats (success rate, avg time, error count)
 - [ ] Create simple metrics viewer in status window
 - [ ] Log transcription confidence scores (if available from Whisper)

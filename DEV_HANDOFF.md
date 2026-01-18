@@ -25,6 +25,8 @@
 - **Audio metadata logging:** Duration (seconds), file size (bytes) logged per dictation
 - **Model version logging:** Logs transcriber and processor model per dictation
 - **Session summary at shutdown:** Comprehensive stats (dictations, chars, avg time, session duration)
+- **JSON Metrics Persistence:** Saves performance metrics to `logs/metrics.json`
+- **Model Health Check:** Added endpoint to verify Ollama/Cloud provider availability
 
 **Log Output Examples:**
 ```

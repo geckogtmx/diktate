@@ -168,6 +168,39 @@ class PerformanceMetrics:
         """Reset all metrics"""
         self.metrics.clear()
         self.start_times.clear()
+    
+    def save_to_json(self, session_id: str, log_dir: Path) -> None:
+        """Append metrics to a JSON file (A.2)"""
+        try:
+            metrics_file = log_dir / "metrics.json"
+            entry = {
+                "timestamp": time.time(),
+                "session_id": session_id,
+                **self.metrics
+            }
+            
+            # Read existing or create new
+            data = []
+            if metrics_file.exists():
+                try:
+                    with open(metrics_file, 'r') as f:
+                        data = json.load(f)
+                        if not isinstance(data, list):
+                            data = []
+                except:
+                    data = []
+            
+            data.append(entry)
+            
+            # Keep only last 1000 entries
+            if len(data) > 1000:
+                data = data[-1000:]
+                
+            with open(metrics_file, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+        except Exception as e:
+            logger.warning(f"Failed to save metrics to JSON: {e}")
 
 
 class IpcServer:
@@ -353,6 +386,9 @@ class IpcServer:
             logger.info(f"[PERF] Session complete - Total: {metrics.get('total', 0):.0f}ms, Chars: {metrics['charCount']}")
             self._emit_event("performance-metrics", metrics)
 
+            # Persist metrics to JSON (A.2)
+            self.perf.save_to_json(session_timestamp, log_dir)
+
             # Record session stats (A.2)
             self.session_stats.record_success(len(processed_text), metrics.get('total', 0))
 
@@ -370,6 +406,37 @@ class IpcServer:
             logger.error(sanitize_log_message(f"Pipeline error: {e}"))
             self.session_stats.record_error()  # Track errors (A.2)
             self._set_state(State.ERROR)
+
+    def check_health(self) -> dict:
+        """Check health of the current processor/model (A.1)"""
+        if not self.processor:
+            return {"status": "error", "message": "No processor initialized"}
+
+        try:
+            # Check if processor has a health check or verification method
+            if hasattr(self.processor, "_verify_ollama"):
+                # Local processor (Ollama)
+                try:
+                    import requests
+                    response = requests.get(f"{self.processor.ollama_url}/api/tags", timeout=2)
+                    if response.status_code == 200:
+                        return {"status": "ok", "model": getattr(self.processor, "model", "local"), "provider": "ollama"}
+                    else:
+                        return {"status": "error", "message": f"Ollama status {response.status_code}"}
+                except Exception as e:
+                    return {"status": "error", "message": f"Ollama unreachable: {e}"}
+            
+            elif hasattr(self.processor, "api_key"):
+                # Cloud processor - check if API key is present
+                if self.processor.api_key:
+                    return {"status": "ok", "message": "Cloud provider configured", "provider": "cloud"}
+                else:
+                    return {"status": "error", "message": "Missing API key"}
+            
+            return {"status": "ok", "message": "Processor ready (no health check available)"}
+            
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
 
     def configure(self, config: dict) -> dict:
         """Configure the pipeline (switch models, modes, providers, etc)"""
@@ -477,6 +544,8 @@ class IpcServer:
                 return {"success": True, "data": data}
             elif cmd_name == "configure":
                 return self.configure(command.get("config", {}))
+            elif cmd_name == "health_check":
+                return self.check_health()
             elif cmd_name == "shutdown":
                 logger.info("[CMD] Shutdown requested")
                 return {"success": True}
