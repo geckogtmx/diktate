@@ -232,14 +232,19 @@ function buildTrayMenu(state: string = 'Idle'): Electron.MenuItemConstructorOpti
     },
     { type: 'separator' },
     {
-      label: 'Restart Python',
-      click: async () => {
-        logger.info('MAIN', 'Restarting Python process from tray menu');
-        if (pythonManager) {
-          await pythonManager.stop();
-          await pythonManager.start();
-          showNotification('Python Restarted', 'Python backend has been restarted', false);
-        }
+      label: 'Force Restart',
+      click: () => {
+        logger.info('MAIN', 'Force restart initiated from tray menu');
+        showNotification(
+          'Restarting dIKtate',
+          'The app will restart for a clean startup. This may take a few seconds...',
+          false
+        );
+        // Give notification time to show, then restart
+        setTimeout(() => {
+          app.relaunch();
+          app.exit(0);
+        }, 500);
       }
     },
     { type: 'separator' },
