@@ -166,7 +166,7 @@
 | Tier | Price | What They Get | Our Cost | Margin |
 |------|-------|---------------|----------|--------|
 | **Libre** | $0 | OSS, Ollama DIY | $0 | - |
-| **⭐ Lifetime** | $29 | Bundled local, forever | $0 | **100%** |
+| **⭐ Lifetime** | $29 | Bundled local, 1 yr updates | $0 | **100%** |
 | **Lifetime+** | $49 | + Priority support, beta | $0 | **100%** |
 
 ### Why This Works

@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dikta.me | Stop Typing. Start Thinking.</title>
+</head>
+
+<body class="antialiased">
+
+  <!-- Navigation -->
+  <nav class="fixed w-full z-50 top-0 left-0 p-6 mix-blend-difference text-white">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <div class="font-display font-bold text-2xl tracking-tighter">dikta.me</div>
+      <div class="space-x-8 hidden md:block opacity-60">
+        <a href="#why" class="hover:text-brand-neon hover:opacity-100 transition-all">Why</a>
+        <a href="#features" class="hover:text-brand-neon hover:opacity-100 transition-all">Features</a>
+        <a href="#pricing" class="hover:text-brand-neon hover:opacity-100 transition-all">Pricing</a>
+      </div>
+      <a href="#download"
+        class="border border-white/20 px-4 py-2 rounded-full hover:bg-white hover:text-black transition-all font-medium text-sm">Download
+        v0.1</a>
+    </div>
+  </nav>
+
+  <div id="app">
+
+    <!-- HERO SECTION -->
+    <section class="min-h-screen flex items-center justify-center relative overflow-hidden">
+      <div
+        class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-brand-purple/10 via-black to-black opacity-50">
+      </div>
+
+      <div class="z-10 text-center px-4 max-w-7xl mx-auto mt-20">
+        <div
+          class="inline-block mb-4 px-3 py-1 border border-brand-neon/30 rounded-full text-brand-neon text-xs font-mono tracking-widest uppercase animate-pulse">
+          Local. Private. Unlimited.
+        </div>
+        <h1 class="font-display font-bold text-5xl md:text-8xl tracking-tighter mb-8 leading-[0.9]">
+          STOP <span class="text-transparent bg-clip-text bg-gradient-to-r from-gray-500 to-white">TYPING.</span><br>
+          START
+          <div class="inline-grid h-[1em] overflow-hidden align-bottom translate-y-[0.15em]">
+            <div id="hero-verb-container" class="text-brand-neon drop-shadow-[0_0_15px_rgba(0,255,157,0.5)]">
+              <div class="pb-[1.5em] tracking-[0.2em]">TALKING.</div>
+              <div class="pb-[1.5em] tracking-widest">WORKING.</div>
+              <div class="pb-[1.5em] tracking-normal">PRODUCING.</div>
+              <div class="pb-[1.5em] tracking-[0.2em]">WINNING.</div>
+            </div>
+          </div>
+        </h1>
+        <p class="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+          The only open-source, local-first voice engine for Windows. <br>
+          <span class="text-white">Your voice never leaves your GPU.</span>
+        </p>
+
+        <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+          <button
+            class="bg-white text-black px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+            Download for Windows
+            <span class="block text-xs font-normal opacity-60 mt-1">v0.1.0 • Free • Open Source</span>
+          </button>
+          <button
+            class="px-8 py-4 rounded-full font-bold text-lg text-white border border-white/20 hover:bg-white/5 transition-colors">
+            Download for MacOS
+            <span class="block text-xs font-normal opacity-60 mt-1">Soon™</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPARISON TABLE (We Do, They Don't) -->
+    <section id="why" class="py-32 px-4 bg-black relative border-t border-white/5">
+      <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-20">
+          <h2 class="font-display font-bold text-5xl mb-6">The "Standard" vs. The Wall.</h2>
+          <p class="text-xl text-gray-400">See exactly what you're paying for.</p>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-white/10 text-gray-500 text-sm uppercase tracking-wider">
+                <th class="py-6 px-4 font-normal">Feature</th>
+                <th class="py-6 px-4 font-normal text-red-500/80">Cloud Apps (Wispr/Glaido)</th>
+                <th class="py-6 px-4 font-bold text-brand-neon">dikta.me</th>
+              </tr>
+            </thead>
+            <tbody class="text-lg">
+              <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <td class="py-6 px-4 text-gray-300">Privacy</td>
+                <td class="py-6 px-4 text-gray-500">❌ Your audio is sent to their servers</td>
+                <td class="py-6 px-4 text-white">✅ <span class="text-brand-neon">100% Local</span> (Air-Gapped)</td>
+              </tr>
+              <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <td class="py-6 px-4 text-gray-300">Subscription</td>
+                <td class="py-6 px-4 text-gray-500">💸 $144 - $240 / year (Recurring)</td>
+                <td class="py-6 px-4 text-white">✅ <span class="text-brand-neon">$29 Once</span> (Lifetime)</td>
+              </tr>
+              <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <td class="py-6 px-4 text-gray-300">Word Limits</td>
+                <td class="py-6 px-4 text-gray-500">⚠️ Capped (2k/week or similar)</td>
+                <td class="py-6 px-4 text-white">✅ <span class="text-brand-neon">Unlimited</span> (It's your GPU)</td>
+              </tr>
+              <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <td class="py-6 px-4 text-gray-300">Latency</td>
+                <td class="py-6 px-4 text-gray-500">🐢 Network dependent (Queue times)</td>
+                <td class="py-6 px-4 text-white">✅ <span class="text-brand-neon">Real-time</span> (Native speed)</td>
+              </tr>
+              <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <td class="py-6 px-4 text-gray-300">Offline Use</td>
+                <td class="py-6 px-4 text-gray-500">❌ Impossible (Dead without WiFi)</td>
+                <td class="py-6 px-4 text-white">✅ <span class="text-brand-neon">Always</span> (Plane/Train/Bunker)</td>
+              </tr>
+              <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <td class="py-6 px-4 text-gray-300">Open Source</td>
+                <td class="py-6 px-4 text-gray-500">❌ Closed (Trust us, bro)</td>
+                <td class="py-6 px-4 text-white">✅ <span class="text-brand-neon">MIT License</span> (Audit code)</td>
+              </tr>
+              <tr class="hover:bg-white/5 transition-colors">
+                <td class="py-6 px-4 text-gray-300">Bilingual</td>
+                <td class="py-6 px-4 text-gray-500">⚠️ Transcription only</td>
+                <td class="py-6 px-4 text-white">✅ <span class="text-brand-neon">Start Talking</span> (Auto-Translate)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES GRID (The Wall) -->
+    <section id="features" class="py-32 px-4 border-t border-white/10 bg-[#050505]">
+      <div class="max-w-7xl mx-auto text-center mb-20">
+        <h2 class="font-display font-bold text-5xl mb-6">The Specs.</h2>
+        <p class="text-xl text-gray-400">Everything you need to make your voice heard. Nothing you don't.</p>
+      </div>
+
+      <div id="specs-grid" class="grid md:grid-cols-4 gap-6 max-w-7xl mx-auto mb-20">
+        <!-- Feature Card 1 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Core</div>
+          <h3 class="text-lg font-bold text-white mb-2">Whisper V3 Turbo</h3>
+          <p class="text-sm text-gray-400">State-of-the-art accuracy running locally.</p>
+        </div>
+
+        <!-- Feature Card 2 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Intelligence</div>
+          <h3 class="text-lg font-bold text-white mb-2">Llama 3 Cleanup</h3>
+          <p class="text-sm text-gray-400">Intelligent formatting and filler removal.</p>
+        </div>
+
+        <!-- Feature Card 3 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Speed</div>
+          <h3 class="text-lg font-bold text-white mb-2">Global Hotkey</h3>
+          <p class="text-sm text-gray-400">Ctrl+Alt+D anywhere. Instant recording.</p>
+        </div>
+
+        <!-- Feature Card 4 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Integration</div>
+          <h3 class="text-lg font-bold text-white mb-2">Auto-Injection</h3>
+          <p class="text-sm text-gray-400">Pastes text directly into active window.</p>
+        </div>
+
+        <!-- Feature Card 5 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Workflow</div>
+          <h3 class="text-lg font-bold text-white mb-2">Intelligent Modes</h3>
+          <p class="text-sm text-gray-400">Context-aware presets for Coding, Writing, and Email.</p>
+        </div>
+
+        <!-- Feature Card 6 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Cloud</div>
+          <h3 class="text-lg font-bold text-white mb-2">Google Login</h3>
+          <p class="text-sm text-gray-400">One-click OAuth for Gemini 2.0 Flash & Pro.</p>
+        </div>
+
+        <!-- Feature Card 7 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Power User</div>
+          <h3 class="text-lg font-bold text-white mb-2">BYO Keys</h3>
+          <p class="text-sm text-gray-400">Plug in your own OpenAI, Anthropic, or DeepSeek keys.</p>
+        </div>
+
+        <!-- Feature Card 8 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Translation</div>
+          <h3 class="text-lg font-bold text-white mb-2">ES ↔ EN Bridge</h3>
+          <p class="text-sm text-gray-400">Bilingual support at the model level.</p>
+        </div>
+
+        <!-- Feature Card 9 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Privacy</div>
+          <h3 class="text-lg font-bold text-white mb-2">Log Redaction</h3>
+          <p class="text-sm text-gray-400">PII and Keys are scrubbed. Paranoia enabled.</p>
+        </div>
+
+        <!-- Feature Card 10 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Security</div>
+          <h3 class="text-lg font-bold text-white mb-2">SafeStorage</h3>
+          <p class="text-sm text-gray-400">Platform-encrytped secrets management.</p>
+        </div>
+
+        <!-- Feature Card 11 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">UI</div>
+          <h3 class="text-lg font-bold text-white mb-2">Floating Pill</h3>
+          <p class="text-sm text-gray-400">Unobtrusive overlay. Out of your way.</p>
+        </div>
+
+        <!-- Feature Card 12 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Deploy</div>
+          <h3 class="text-lg font-bold text-white mb-2">Single Binary</h3>
+          <p class="text-sm text-gray-400">One .exe file. Includes Python environment.</p>
+        </div>
+      </div>
+
+      <!-- BILINGUAL SECTION -->
+      <section class="py-32 px-4 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-brand-purple/10 to-blue-500/10 opacity-30"></div>
+        <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10">
+          <div>
+            <div class="inline-block mb-4 px-3 py-1 bg-white/10 rounded-full text-white text-xs font-mono">NEW FEATURE
+            </div>
+            <h2 class="font-display font-bold text-5xl mb-6">Speak Español.<br>Write English.</h2>
+            <p class="text-xl text-gray-300 mb-8">
+              Real-time translation at the edge. Dictate freely in your native tongue and let the engine bridge the gap
+              instantly.
+            </p>
+            <ul class="space-y-4 text-gray-400">
+              <li class="flex items-center gap-3">
+                <span class="text-green-400">✓</span> No API keys required
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="text-green-400">✓</span> English → Spanish supported
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="text-green-400">✓</span> Context-aware translation
+              </li>
+            </ul>
+          </div>
+          <div class="bg-black/80 rounded-2xl border border-white/20 p-8 font-mono text-sm leading-loose shadow-2xl">
+            <div class="text-gray-500 mb-4 border-b border-white/10 pb-2">Input (Microphone)</div>
+            <div class="text-brand-purple mb-8">"Hola, necesito enviar el reporte financiero antes del mediodía, ¿puedes
+              revisarlo?"</div>
+
+            <div class="text-gray-500 mb-4 border-b border-white/10 pb-2">Output (Application)</div>
+            <div class="text-brand-neon typing-effect">"Hi, I need to send the financial report before noon, can you
+              review it?"</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Technical Deep Dive (Smart Control Panel) -->
+      <div class="max-w-4xl mx-auto border-t border-white/10 pt-20">
+        <h3 class="font-display font-bold text-2xl mb-8 text-center text-gray-500">Smart Control Panel</h3>
+        <div id="tech-grid"
+          class="grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-4 text-sm font-mono text-center md:text-left">
+          <div>
+            <div class="text-gray-600 mb-1 tracking-widest text-xs uppercase">Device Status</div>
+            <div class="text-brand-neon">● Online</div>
+          </div>
+          <div>
+            <div class="text-gray-600 mb-1 tracking-widest text-xs uppercase">Active Model</div>
+            <div class="text-white">Whisper V3 Turbo</div>
+          </div>
+          <div>
+            <div class="text-gray-600 mb-1 tracking-widest text-xs uppercase">Processing</div>
+            <div class="text-white">Llama 3 (8B)</div>
+          </div>
+          <div>
+            <div class="text-gray-600 mb-1 tracking-widest text-xs uppercase">Speed</div>
+            <div class="text-white">~850 chars/sec</div>
+          </div>
+          <div>
+            <div class="text-gray-600 mb-1 tracking-widest text-xs uppercase">Input Stream</div>
+            <div class="text-white">PyAudio (16kHz)</div>
+          </div>
+          <div>
+            <div class="text-gray-600 mb-1 tracking-widest text-xs uppercase">VRAM Usage</div>
+            <div class="text-white">1.8 GB (Safe)</div>
+          </div>
+          <div>
+            <div class="text-gray-600 mb-1 tracking-widest text-xs uppercase">Encryption</div>
+            <div class="text-white">AES-256 (At rest)</div>
+          </div>
+          <div>
+            <div class="text-gray-600 mb-1 tracking-widest text-xs uppercase">Engine Ver</div>
+            <div class="text-white">v0.1.0-alpha</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRICING SECTION -->
+      <section id="pricing" class="py-32 px-4 text-center">
+        <h2 class="font-display font-bold text-5xl mb-20">Simple Pricing.</h2>
+
+        <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
+
+          <!-- Cloud Tier -->
+          <div class="p-8 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+            <h3 class="text-xl font-bold mb-2">Cloud Starter</h3>
+            <div class="text-4xl font-bold mb-6 text-gray-400">$2<span class="text-sm font-normal">/mo</span></div>
+            <p class="text-sm text-gray-400 mb-8">For weaker hardware.</p>
+            <ul class="text-left space-y-3 text-sm text-gray-300 mb-8 px-4">
+              <li class="flex gap-2"><span>☁️</span> Hosted Whisper</li>
+              <li class="flex gap-2"><span>🔒</span> Private API</li>
+              <li class="flex gap-2"><span>⏱️</span> 50k words / mo</li>
+            </ul>
+            <button
+              class="w-full py-3 rounded-xl border border-white/20 hover:bg-white hover:text-black transition-all">Subscribe</button>
+          </div>
+
+          <!-- LIFETIME TIER (Featured) -->
+          <div
+            class="p-8 rounded-2xl border-2 border-brand-neon bg-[#05150a] relative transform md:-translate-y-8 shadow-[0_0_50px_rgba(0,255,157,0.1)]">
+            <div
+              class="absolute -top-6 left-1/2 -translate-x-1/2 bg-black text-brand-neon border border-brand-neon px-6 py-2 rounded-full text-sm font-medium uppercase tracking-widest shadow-[0_0_20px_rgba(0,255,157,0.4)] z-10 whitespace-nowrap">
+              Most Popular</div>
+            <h3 class="text-xl font-bold mb-2 text-white">Lifetime Local</h3>
+            <div class="text-5xl font-bold mb-6 text-white">$29</div>
+            <p class="text-sm text-gray-400 mb-8">Pay once. Own it forever.</p>
+            <ul class="text-left space-y-3 text-sm text-white mb-8 px-4">
+              <li class="flex gap-2"><span class="text-brand-neon">✓</span> <strong>Unlimited</strong> Dictation</li>
+              <li class="flex gap-2"><span class="text-brand-neon">✓</span> <strong>100% Offline</strong> Model</li>
+              <li class="flex gap-2"><span class="text-brand-neon">✓</span> 1 Year of Updates</li>
+              <li class="flex gap-2"><span class="text-brand-neon">✓</span> Priority Support</li>
+            </ul>
+            <button
+              class="w-full py-4 rounded-xl bg-brand-neon text-black font-bold hover:scale-105 transition-transform shadow-lg">Buy
+              License</button>
+            <p class="text-xs text-gray-500 mt-4">Includes 30-day refund guarantee</p>
+          </div>
+
+          <!-- Libre Tier -->
+          <div class="p-8 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+            <h3 class="text-xl font-bold mb-2">Libre</h3>
+            <div class="text-4xl font-bold mb-6 text-gray-400">$0</div>
+            <p class="text-sm text-gray-400 mb-8">For hackers.</p>
+            <ul class="text-left space-y-3 text-sm text-gray-300 mb-8 px-4">
+              <li class="flex gap-2"><span>🔧</span> DIY Setup</li>
+              <li class="flex gap-2"><span>📦</span> BYO Models</li>
+              <li class="flex gap-2"><span>💻</span> Community Support</li>
+            </ul>
+            <button
+              class="w-full py-3 rounded-xl border border-white/20 hover:bg-white hover:text-black transition-all">View
+              GitHub</button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- FOOTER -->
+      <footer class="py-20 border-t border-white/10 text-center text-gray-500 text-sm">
+        <div class="flex justify-center gap-8 mb-8">
+          <a href="#" class="hover:text-white transition-colors">GitHub</a>
+          <a href="#" class="hover:text-white transition-colors">Twitter</a>
+          <a href="#" class="hover:text-white transition-colors">Discord</a>
+        </div>
+        <p>&copy; 2026 dIKtate. Built by a Department of One.</p>
+      </footer>
+
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>
