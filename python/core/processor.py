@@ -95,7 +95,14 @@ class CloudProcessor:
             raise ValueError("GEMINI_API_KEY not found in environment")
         self.prompt = prompt or DEFAULT_CLEANUP_PROMPT
         self.api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+        self.mode = "standard"
         logger.info("Cloud processor initialized (Gemini Flash)")
+
+    def set_mode(self, mode: str) -> None:
+        """Update processing mode (standard, prompt, professional, raw)."""
+        self.mode = mode
+        self.prompt = get_prompt(mode)
+        logger.info(f"Cloud processor mode switched to: {mode}")
 
     def process(self, text: str, max_retries: int = 3) -> str:
         """Process text using Gemini API."""
@@ -153,7 +160,14 @@ class AnthropicProcessor:
         self.prompt = prompt or DEFAULT_CLEANUP_PROMPT
         self.api_url = "https://api.anthropic.com/v1/messages"
         self.model = "claude-3-haiku-20240307"  # Fastest Claude model
+        self.mode = "standard"
         logger.info(f"Anthropic processor initialized (Claude 3.5 Haiku)")
+
+    def set_mode(self, mode: str) -> None:
+        """Update processing mode (standard, prompt, professional, raw)."""
+        self.mode = mode
+        self.prompt = get_prompt(mode)
+        logger.info(f"Anthropic processor mode switched to: {mode}")
 
     def process(self, text: str, max_retries: int = 3) -> str:
         """Process text using Anthropic Claude API."""
@@ -210,7 +224,14 @@ class OpenAIProcessor:
         self.prompt = prompt or DEFAULT_CLEANUP_PROMPT
         self.api_url = "https://api.openai.com/v1/chat/completions"
         self.model = "gpt-4o-mini"  # Fast and cheap
+        self.mode = "standard"
         logger.info(f"OpenAI processor initialized (GPT-4o-mini)")
+
+    def set_mode(self, mode: str) -> None:
+        """Update processing mode (standard, prompt, professional, raw)."""
+        self.mode = mode
+        self.prompt = get_prompt(mode)
+        logger.info(f"OpenAI processor mode switched to: {mode}")
 
     def process(self, text: str, max_retries: int = 3) -> str:
         """Process text using OpenAI API."""

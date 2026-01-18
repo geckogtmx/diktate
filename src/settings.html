@@ -235,6 +235,7 @@
         <div class="tab-btn active" onclick="switchTab('general')">⚙️ General</div>
         <div class="tab-btn" onclick="switchTab('audio')">🎤 Audio</div>
         <div class="tab-btn" onclick="switchTab('modes')">🧠 Modes</div>
+        <div class="tab-btn" onclick="switchTab('apikeys')">🔑 API Keys</div>
         <div class="tab-btn" onclick="switchTab('about')">ℹ️ About</div>
     </div>
 
@@ -311,12 +312,10 @@
             <div class="setting-group">
                 <label>Default Mode</label>
                 <select id="default-mode" onchange="saveSetting('defaultMode', this.value)">
-                    <option value="standard">Standard (Professional)</option>
-                    <option value="developer">Developer (Technical)</option>
-                    <option value="email">Email (Formal)</option>
-                    <option value="prompt">Prompt Helper (For LLMs)</option>
-                    <option value="creative">Creative (Flowing)</option>
-                    <option value="raw">Raw (Literal)</option>
+                    <option value="standard">📝 Standard (General Purpose)</option>
+                    <option value="prompt">🤖 Prompt (For LLM Prompts)</option>
+                    <option value="professional">💼 Professional (Business)</option>
+                    <option value="raw">📜 Raw (Literal, Minimal)</option>
                 </select>
             </div>
 
@@ -327,6 +326,48 @@
                     <option value="es-en">Spanish → English</option>
                     <option value="en-es">English → Spanish</option>
                 </select>
+            </div>
+        </div>
+
+        <!-- API KEYS TAB -->
+        <div id="apikeys" class="tab-content">
+            <h2>API Keys</h2>
+            <p class="sub-label" style="margin-bottom: 20px;">Enter your own API keys to use cloud providers. Keys are
+                stored securely on your device.</p>
+
+            <div class="setting-group">
+                <label>Gemini API Key</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="password" id="gemini-api-key" placeholder="Enter Gemini API key" style="flex: 1;">
+                    <button class="btn btn-secondary" onclick="testApiKey('gemini')">Test</button>
+                </div>
+                <span class="sub-label">Get your key from <a href="#"
+                        onclick="openExternalLink('https://aistudio.google.com/apikey')">Google AI Studio</a></span>
+            </div>
+
+            <div class="setting-group">
+                <label>Anthropic API Key</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="password" id="anthropic-api-key" placeholder="Enter Anthropic API key"
+                        style="flex: 1;">
+                    <button class="btn btn-secondary" onclick="testApiKey('anthropic')">Test</button>
+                </div>
+                <span class="sub-label">Get your key from <a href="#"
+                        onclick="openExternalLink('https://console.anthropic.com/')">Anthropic Console</a></span>
+            </div>
+
+            <div class="setting-group">
+                <label>OpenAI API Key</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="password" id="openai-api-key" placeholder="Enter OpenAI API key" style="flex: 1;">
+                    <button class="btn btn-secondary" onclick="testApiKey('openai')">Test</button>
+                </div>
+                <span class="sub-label">Get your key from <a href="#"
+                        onclick="openExternalLink('https://platform.openai.com/api-keys')">OpenAI Platform</a></span>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <button class="btn" onclick="saveApiKeys()">💾 Save All Keys</button>
             </div>
         </div>
 

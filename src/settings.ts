@@ -11,6 +11,10 @@ interface SettingsAPI {
     set: (key: string, value: any) => Promise<void>;
     saveAudioDevice: (deviceId: string, deviceLabel: string) => void;
     openExternal: (url: string) => void;
+    // API Key methods
+    getApiKeys: () => Promise<Record<string, boolean>>;
+    setApiKey: (provider: string, key: string) => Promise<void>;
+    testApiKey: (provider: string, key: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 declare global {
@@ -182,9 +186,77 @@ function openExternalLink(url: string) {
     window.settingsAPI.openExternal(url);
 }
 
+// API Key Functions
+async function loadApiKeys() {
+    try {
+        const keys = await window.settingsAPI.getApiKeys();
+        if (keys) {
+            // Only show masked placeholder if key exists
+            ['gemini', 'anthropic', 'openai'].forEach(provider => {
+                const input = document.getElementById(`${provider}-api-key`) as HTMLInputElement;
+                if (input && keys[`${provider}ApiKey`]) {
+                    input.placeholder = '••••••••••••••••';
+                }
+            });
+        }
+    } catch (e) {
+        console.error('Failed to load API keys:', e);
+    }
+}
+
+async function saveApiKeys() {
+    const geminiKey = (document.getElementById('gemini-api-key') as HTMLInputElement)?.value;
+    const anthropicKey = (document.getElementById('anthropic-api-key') as HTMLInputElement)?.value;
+    const openaiKey = (document.getElementById('openai-api-key') as HTMLInputElement)?.value;
+
+    try {
+        if (geminiKey) await window.settingsAPI.setApiKey('gemini', geminiKey);
+        if (anthropicKey) await window.settingsAPI.setApiKey('anthropic', anthropicKey);
+        if (openaiKey) await window.settingsAPI.setApiKey('openai', openaiKey);
+
+        alert('API keys saved securely!');
+
+        // Clear inputs after save
+        ['gemini-api-key', 'anthropic-api-key', 'openai-api-key'].forEach(id => {
+            const input = document.getElementById(id) as HTMLInputElement;
+            if (input) {
+                input.value = '';
+                input.placeholder = '••••••••••••••••';
+            }
+        });
+    } catch (e) {
+        console.error('Failed to save API keys:', e);
+        alert('Failed to save API keys');
+    }
+}
+
+async function testApiKey(provider: string) {
+    const input = document.getElementById(`${provider}-api-key`) as HTMLInputElement;
+    const key = input?.value;
+
+    if (!key) {
+        alert(`Please enter a ${provider} API key first`);
+        return;
+    }
+
+    try {
+        const result = await window.settingsAPI.testApiKey(provider, key);
+        if (result.success) {
+            alert(`✅ ${provider} API key is valid!`);
+        } else {
+            alert(`❌ ${provider} API key test failed: ${result.error}`);
+        }
+    } catch (e) {
+        alert(`❌ Test failed: ${e}`);
+    }
+}
+
 // Expose functions to global scope for onclick handlers
 (window as any).switchTab = switchTab;
 (window as any).saveSetting = saveSetting;
 (window as any).recordHotkey = recordHotkey;
 (window as any).resetHotkey = resetHotkey;
 (window as any).openExternalLink = openExternalLink;
+(window as any).saveApiKeys = saveApiKeys;
+(window as any).testApiKey = testApiKey;
+

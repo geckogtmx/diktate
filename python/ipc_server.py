@@ -48,6 +48,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from core import Recorder, Transcriber, Injector
 from core.processor import create_processor
+from config.prompts import get_translation_prompt
+from utils.security import redact_text
 
 # Configure logging
 log_dir = Path(Path.home()) / ".diktate" / "logs"
@@ -123,6 +125,7 @@ class IpcServer:
         self.recording = False
         self.audio_file = None
         self.perf = PerformanceMetrics()
+        self.trans_mode = "none"  # Translation mode: none, es-en, en-es
 
         logger.info("Initializing IPC Server...")
         self._initialize_components()
@@ -228,7 +231,7 @@ class IpcServer:
             self.perf.start("transcription")
             raw_text = self.transcriber.transcribe(self.audio_file)
             self.perf.end("transcription")
-            logger.info(f"[RESULT] Transcribed: {raw_text}")
+            logger.info(f"[RESULT] Transcribed: {redact_text(raw_text)}")
 
             if not raw_text or not raw_text.strip():
                 logger.info("[PROCESS] Empty transcription, skipping processing and injection")
@@ -243,7 +246,21 @@ class IpcServer:
             else:
                 processed_text = raw_text
             self.perf.end("processing")
-            logger.info(f"[RESULT] Processed: {processed_text}")
+            logger.info(f"[RESULT] Processed: {redact_text(processed_text)}")
+
+            # Optional: Translate (post-processing)
+            if self.trans_mode and self.trans_mode != "none":
+                trans_prompt = get_translation_prompt(self.trans_mode)
+                if trans_prompt and self.processor:
+                    logger.info(f"[TRANSLATE] Translating ({self.trans_mode})...")
+                    self.perf.start("translation")
+                    # Use the processor to translate with a custom prompt
+                    original_prompt = self.processor.prompt
+                    self.processor.prompt = trans_prompt
+                    processed_text = self.processor.process(processed_text)
+                    self.processor.prompt = original_prompt  # Restore
+                    self.perf.end("translation")
+                    logger.info(f"[RESULT] Translated: {redact_text(processed_text)}")
 
             # Inject text
             self._set_state(State.INJECTING)
@@ -256,7 +273,8 @@ class IpcServer:
             # End total timing and log all metrics
             self.perf.end("total")
             metrics = self.perf.get_metrics()
-            logger.info(f"[PERF] Session complete - Total: {metrics.get('total', 0):.0f}ms")
+            metrics["charCount"] = len(processed_text)  # Add char count for token stats
+            logger.info(f"[PERF] Session complete - Total: {metrics.get('total', 0):.0f}ms, Chars: {metrics['charCount']}")
             self._emit_event("performance-metrics", metrics)
 
             # Cleanup
@@ -274,7 +292,7 @@ class IpcServer:
             self._set_state(State.ERROR)
 
     def configure(self, config: dict) -> dict:
-        """Configure the pipeline (switch models, modes, etc)"""
+        """Configure the pipeline (switch models, modes, providers, etc)"""
         try:
             updates = []
             
@@ -285,7 +303,23 @@ class IpcServer:
                 self.transcriber = Transcriber(model_size=model_size, device="auto")
                 updates.append(f"Model: {model_size}")
 
-            # 2. Processor Mode (Standard, Professional, Literal)
+            # 2. Provider (local/cloud/anthropic/openai) - Hot-swap processor
+            provider = config.get("provider")
+            if provider:
+                logger.info(f"[CONFIG] Switching provider to: {provider}")
+                # Set env var for factory, then recreate processor
+                os.environ["PROCESSING_MODE"] = provider
+                try:
+                    self.processor = create_processor()
+                    updates.append(f"Provider: {provider}")
+                except Exception as e:
+                    logger.error(f"Failed to switch provider to {provider}: {e}")
+                    # Fall back to local
+                    os.environ["PROCESSING_MODE"] = "local"
+                    self.processor = create_processor()
+                    return {"success": False, "error": f"Provider switch failed: {e}. Reverted to local."}
+
+            # 3. Processor Mode (Standard, Prompt, Professional, Raw)
             mode = config.get("mode")
             if mode and self.processor:
                 logger.info(f"[CONFIG] Switching processing mode to: {mode}")
@@ -294,6 +328,13 @@ class IpcServer:
                     updates.append(f"Mode: {mode}")
                 else:
                     logger.warning(f"Processor {type(self.processor)} does not support mode switching")
+
+            # 4. Translation Mode (none, es-en, en-es)
+            trans_mode = config.get("transMode")
+            if trans_mode is not None:
+                logger.info(f"[CONFIG] Switching translation mode to: {trans_mode}")
+                self.trans_mode = trans_mode
+                updates.append(f"Trans: {trans_mode}")
 
             if updates:
                 return {"success": True, "message": f"Updated: {', '.join(updates)}"}

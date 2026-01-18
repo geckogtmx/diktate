@@ -19,7 +19,7 @@ const settingsAPI = {
     // External links (safe wrapper)
     openExternal: (url: string) => {
         // Whitelist allowed URLs for security
-        const allowedDomains = ['dikta.me', 'github.com', 'ko-fi.com'];
+        const allowedDomains = ['dikta.me', 'github.com', 'ko-fi.com', 'aistudio.google.com', 'console.anthropic.com', 'platform.openai.com'];
         try {
             const parsed = new URL(url);
             if (allowedDomains.some(d => parsed.hostname.endsWith(d))) {
@@ -30,9 +30,15 @@ const settingsAPI = {
         } catch (e) {
             console.error('Invalid URL:', url);
         }
-    }
+    },
+
+    // API Key methods (secure IPC)
+    getApiKeys: () => ipcRenderer.invoke('apikey:get-all'),
+    setApiKey: (provider: string, key: string) => ipcRenderer.invoke('apikey:set', provider, key),
+    testApiKey: (provider: string, key: string) => ipcRenderer.invoke('apikey:test', provider, key)
 };
 
 contextBridge.exposeInMainWorld('settingsAPI', settingsAPI);
 
 console.log('[PRELOAD:Settings] Secure settings bridge loaded');
+

@@ -3,7 +3,7 @@
  * Handles system tray, Python subprocess, and global hotkey
  */
 
-import { app, Tray, Menu, ipcMain, globalShortcut, BrowserWindow, Notification, nativeImage, NativeImage, shell } from 'electron';
+import { app, Tray, Menu, ipcMain, globalShortcut, BrowserWindow, Notification, nativeImage, NativeImage, shell, safeStorage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { PythonManager } from './services/pythonManager';
@@ -11,6 +11,7 @@ import { logger } from './utils/logger';
 import { performanceMetrics } from './utils/performanceMetrics';
 
 import Store from 'electron-store';
+import { validateIpcMessage, SettingsSetSchema, ApiKeySetSchema, ApiKeyTestSchema } from './utils/ipcSchemas';
 
 const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
 
@@ -223,7 +224,8 @@ function initializeTray(): void {
 
   tray.setContextMenu(contextMenu);
 
-  tray.setToolTip('dIKtate - Press Ctrl+Alt+D to dictate');
+  const mode = store.get('processingMode', 'local').toUpperCase();
+  tray.setToolTip(`dIKtate [${mode}] - Press Ctrl+Alt+D to dictate`);
 }
 
 /**
@@ -420,6 +422,13 @@ function setupIpcHandlers(): void {
   });
 
   ipcMain.handle('settings:set', (event, key: keyof UserSettings, value: any) => {
+    // Validate payload
+    const validation = validateIpcMessage(SettingsSetSchema, { key, value });
+    if (!validation.success) {
+      logger.error('IPC', `Invalid settings payload: ${validation.error}`);
+      throw new Error(`Invalid payload: ${validation.error}`);
+    }
+
     store.set(key, value);
 
     // If hotkey changed, re-register
@@ -438,6 +447,116 @@ function setupIpcHandlers(): void {
       if (debugWindow && !debugWindow.isDestroyed()) {
         debugWindow.webContents.send('mode-update', value);
       }
+    }
+
+    // If processing provider changed (local/cloud/anthropic/openai)
+    if (key === 'processingMode' && pythonManager) {
+      logger.info('IPC', `Processing provider changed to ${value}, updating Python`);
+      pythonManager.setConfig({ provider: value }).catch(err => {
+        logger.error('IPC', 'Failed to update Python provider', err);
+      });
+
+      // Update Debug Window UI with new provider
+      if (debugWindow && !debugWindow.isDestroyed()) {
+        debugWindow.webContents.send('provider-update', value);
+      }
+
+      // Update tray tooltip to show current mode
+      if (tray) {
+        tray.setToolTip(`dIKtate [${value.toUpperCase()}] - Press Ctrl+Alt+D to dictate`);
+      }
+    }
+
+    // If translation mode changed (none/es-en/en-es)
+    if (key === 'transMode' && pythonManager) {
+      logger.info('IPC', `Translation mode changed to ${value}, updating Python`);
+      pythonManager.setConfig({ transMode: value }).catch(err => {
+        logger.error('IPC', 'Failed to update Python transMode', err);
+      });
+    }
+  });
+
+  // API Key IPC Handlers (secure storage with safeStorage)
+  ipcMain.handle('apikey:get-all', () => {
+    // Return object indicating which keys are set (not the actual keys)
+    return {
+      geminiApiKey: !!store.get('encryptedGeminiApiKey'),
+      anthropicApiKey: !!store.get('encryptedAnthropicApiKey'),
+      openaiApiKey: !!store.get('encryptedOpenaiApiKey')
+    };
+  });
+
+  ipcMain.handle('apikey:set', async (_event, provider: string, key: string) => {
+    if (!safeStorage.isEncryptionAvailable()) {
+      logger.warn('IPC', 'safeStorage encryption not available');
+      throw new Error('Encryption not available');
+    }
+
+    // Validate payload
+    const validation = validateIpcMessage(ApiKeySetSchema, { provider, key });
+    if (!validation.success) {
+      logger.error('IPC', `Invalid API key payload: ${validation.error}`);
+      throw new Error(`Invalid payload: ${validation.error}`);
+    }
+
+    const encrypted = safeStorage.encryptString(key);
+    const storeKey = `encrypted${provider.charAt(0).toUpperCase() + provider.slice(1)}ApiKey`;
+    store.set(storeKey, encrypted.toString('base64'));
+    logger.info('IPC', `API key for ${provider} stored securely`);
+
+    // Also update Python with the new key
+    if (pythonManager) {
+      pythonManager.setConfig({ [`${provider}ApiKey`]: key }).catch(err => {
+        logger.error('IPC', `Failed to update Python with ${provider} API key`, err);
+      });
+    }
+  });
+
+  ipcMain.handle('apikey:test', async (_event, provider: string, key: string) => {
+    // Validate payload
+    const validation = validateIpcMessage(ApiKeyTestSchema, { provider, key });
+    if (!validation.success) {
+      return { success: false, error: validation.error };
+    }
+
+    // Simple validation test for each provider
+    try {
+      if (provider === 'gemini') {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: 'Hi' }] }] })
+          }
+        );
+        if (response.ok) return { success: true };
+        const error = await response.json();
+        return { success: false, error: error.error?.message || 'Invalid key' };
+      } else if (provider === 'anthropic') {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({ model: 'claude-3-haiku-20240307', max_tokens: 1, messages: [{ role: 'user', content: 'Hi' }] })
+        });
+        if (response.ok) return { success: true };
+        const error = await response.json();
+        return { success: false, error: error.error?.message || 'Invalid key' };
+      } else if (provider === 'openai') {
+        const response = await fetch('https://api.openai.com/v1/models', {
+          headers: { 'Authorization': `Bearer ${key}` }
+        });
+        if (response.ok) return { success: true };
+        const error = await response.json();
+        return { success: false, error: error.error?.message || 'Invalid key' };
+      }
+      return { success: false, error: 'Unknown provider' };
+    } catch (e) {
+      return { success: false, error: String(e) };
     }
   });
 }

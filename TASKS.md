@@ -26,15 +26,15 @@
 - [ ] **High: IPC Validation** - Add Zod schemas (Deferred to Phase 3)
 - [ ] **High: Log Redaction** - Mask sensitive transcripts in logs (Deferred)
 
-### P0: Cloud/Local Toggle (Immediate Focus)
-- [ ] **Backend (Python)**
-    - [ ] Implement `configure(provider)` logic in `ipc_server.py`
+### P0: Cloud/Local Toggle ✅ COMPLETE
+- [x] **Backend (Python)**
+    - [x] Implement `configure(provider)` logic in `ipc_server.py`
     - [x] Cloud Provider classes exist (`processor.py`: Gemini, Anthropic, OpenAI)
-    - [ ] Hot-swap processor on settings change
-- [ ] **Frontend (Electron)**
+    - [x] Hot-swap processor on settings change
+- [x] **Frontend (Electron)**
     - [x] Wire `settings.ts` to send `processingMode` via IPC
-    - [ ] Verify `main.ts` passes settings to Python
-    - [ ] Show current mode in system tray tooltip
+    - [x] Verify `main.ts` passes settings to Python
+    - [x] Show current mode in system tray tooltip
 
 ### P0: Settings Persistence & UI
 - [x] Create settings window component (Vanilla JS/HTML)
@@ -57,26 +57,34 @@
 
 **Goal:** Differentiate the product with "Personality" and "Translation".
 
-### P1: Personality Modes
-- [ ] **Backend Implementation** (`processor.py`)
-    - [ ] Standard (Clean, professional - Done)
-    - [ ] Developer (Technical, precise)
-    - [ ] Email (Formal, polished)
-    - [ ] Raw (Literal transcription)
-- [ ] **UI Integration**
-    - [ ] Add mode selector in Settings
-    - [ ] Add mode indicator in Status Window
-    - [ ] Persist mode preference
+### P1: Personality Modes ✅ COMPLETE
+- [x] **Backend Implementation** (`processor.py`)
+    - [x] Standard (General purpose)
+    - [x] Prompt (For LLM prompts)
+    - [x] Professional (Business-ready)
+    - [x] Raw (Literal transcription)
+- [x] **UI Integration**
+    - [x] Add mode selector in Settings (4 modes with emoji icons)
+    - [x] `set_mode()` added to all processors (Local + Cloud)
+    - [x] Mode persisted via electron-store
 
-### P1: Translation Modes
-- [ ] Research & Spec: ES → EN Translation prompt
-- [ ] Research & Spec: EN → ES Translation prompt
-- [ ] Add language selector in Settings
+### P1: Translation Modes ✅ COMPLETE
+- [x] Translation prompts: ES→EN, EN→ES in `config/prompts.py`
+- [x] Post-processing step in `ipc_server.py` pipeline
+- [x] Translation selector in Settings UI (already existed)
+- [x] `transMode` IPC wiring from Electron → Python
 
-### P1: Google OAuth (Gemini Integration)
-- [ ] Research Gemini CLI OAuth flow
-- [ ] Implement Google login button
-- [ ] Store OAuth tokens securely (safeStorage)
+### P1: Cloud Provider Authentication
+**Phase 1: API Key Entry ✅ COMPLETE**
+- [x] API Keys tab in Settings (Gemini, Anthropic, OpenAI)
+- [x] Secure storage with Electron safeStorage
+- [x] Test buttons for key validation
+- [x] Keys passed to Python via configure()
+
+**Phase 2: Google OAuth (Future)**
+- [ ] Google Cloud Console OAuth Client ID setup
+- [ ] "Login with Google" button
+- [ ] Use AI Pro subscription quotas
 
 ---
 

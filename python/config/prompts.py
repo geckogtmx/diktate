@@ -1,10 +1,28 @@
 """
 System prompts for different processing modes.
+
+Modes:
+- Standard: General-purpose, preserves casual tone, fixes grammar
+- Prompt: Optimized for LLM prompts, structured and clear
+- Professional: Business-ready, polite, removes slang/profanity
+- Raw (Literal): Minimal changes, just punctuation
 """
 
 # STANDARD: Preserves casual tone, fixes grammar, keeps slang/emphasis.
-# STANDARD: Preserves casual tone, fixes grammar, keeps slang/emphasis.
 PROMPT_STANDARD = """You are a text cleanup tool. Fix punctuation and capitalization. Remove filler words (um, uh) only if hesitations. PRESERVE slang/emphasis. Return ONLY cleaned text. Do not include introductory text.
+
+Input: {text}
+Cleaned text:"""
+
+# PROMPT: Optimized for LLM prompting, structured and clear.
+PROMPT_PROMPT = """You are a prompt engineer. Your job is to clean up spoken text into a clear, structured prompt for an AI model.
+
+Rules:
+1. Remove ALL filler words, hesitations, and false starts.
+2. Fix punctuation, capitalization, and grammar.
+3. Preserve technical terms and specific instructions exactly.
+4. Structure the output clearly (use bullet points if appropriate).
+5. Return ONLY the cleaned prompt text.
 
 Input: {text}
 Cleaned text:"""
@@ -22,8 +40,8 @@ Rules:
 Input: {text}
 Cleaned text:"""
 
-# LITERAL: Minimal changes, just punctuation.
-PROMPT_LITERAL = """You are a transcriber. Your job is to format the text with punctuation while changing as little as possible.
+# RAW (LITERAL): Minimal changes, just punctuation.
+PROMPT_RAW = """You are a transcriber. Your job is to format the text with punctuation while changing as little as possible.
 
 Rules:
 1. Preserve ALL words, including fillers and stutters.
@@ -36,14 +54,52 @@ Cleaned text:"""
 
 # BACKWARD COMPATIBILITY
 DEFAULT_CLEANUP_PROMPT = PROMPT_STANDARD
+PROMPT_LITERAL = PROMPT_RAW  # Alias for backward compatibility
 
 # MAPPING
 PROMPT_MAP = {
     "standard": PROMPT_STANDARD,
+    "prompt": PROMPT_PROMPT,
     "professional": PROMPT_PROFESSIONAL,
-    "literal": PROMPT_LITERAL
+    "raw": PROMPT_RAW,
+    "literal": PROMPT_RAW,  # Alias
+}
+
+# --- TRANSLATION PROMPTS ---
+
+# Spanish to English
+PROMPT_TRANSLATE_ES_EN = """You are a translator. Translate the following Spanish text to English.
+
+Rules:
+1. Preserve the original meaning and tone.
+2. Keep technical terms accurate.
+3. Return ONLY the English translation.
+
+Spanish: {text}
+English:"""
+
+# English to Spanish
+PROMPT_TRANSLATE_EN_ES = """You are a translator. Translate the following English text to Spanish.
+
+Rules:
+1. Preserve the original meaning and tone.
+2. Keep technical terms accurate.
+3. Return ONLY the Spanish translation.
+
+English: {text}
+Spanish:"""
+
+TRANSLATION_MAP = {
+    "es-en": PROMPT_TRANSLATE_ES_EN,
+    "en-es": PROMPT_TRANSLATE_EN_ES,
+    "none": None,
 }
 
 def get_prompt(mode_name: str) -> str:
     """Get prompt by name, defaulting to STANDARD."""
     return PROMPT_MAP.get(mode_name.lower(), PROMPT_STANDARD)
+
+def get_translation_prompt(trans_mode: str) -> str | None:
+    """Get translation prompt by mode. Returns None if 'none' or invalid."""
+    return TRANSLATION_MAP.get(trans_mode.lower(), None)
+
