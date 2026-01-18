@@ -201,6 +201,45 @@ class PerformanceMetrics:
                 
         except Exception as e:
             logger.warning(f"Failed to save metrics to JSON: {e}")
+    
+    def log_inference_time(self, model: str, duration_ms: float, log_dir: Path) -> None:
+        """Log inference time to JSON file and alert on 2s+ threshold (A.1)"""
+        try:
+            # Alert if processing exceeds 2-second threshold
+            if duration_ms > 2000:
+                logger.warning(f"[SLOW INFERENCE] {model} took {duration_ms:.0f}ms (> 2000ms threshold)")
+            
+            # Log to inference_times.json
+            inference_file = log_dir / "inference_times.json"
+            entry = {
+                "timestamp": time.time(),
+                "model": model,
+                "duration_ms": round(duration_ms, 2),
+                "threshold_exceeded": duration_ms > 2000
+            }
+            
+            # Read existing or create new
+            data = []
+            if inference_file.exists():
+                try:
+                    with open(inference_file, 'r') as f:
+                        data = json.load(f)
+                        if not isinstance(data, list):
+                            data = []
+                except:
+                    data = []
+            
+            data.append(entry)
+            
+            # Keep only last 500 entries
+            if len(data) > 500:
+                data = data[-500:]
+                
+            with open(inference_file, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+        except Exception as e:
+            logger.warning(f"Failed to log inference time: {e}")
 
 
 class IpcServer:
@@ -354,7 +393,12 @@ class IpcServer:
                 processed_text = self.processor.process(raw_text)
             else:
                 processed_text = raw_text
-            self.perf.end("processing")
+            processing_time = self.perf.end("processing")
+            
+            # Log inference time for model monitoring (A.1)
+            if self.processor:
+                processor_model = getattr(self.processor, 'model', 'unknown')
+                self.perf.log_inference_time(processor_model, processing_time, log_dir)
             logger.info(f"[RESULT] Processed: {redact_text(processed_text)}")
 
             # Optional: Translate (post-processing)
