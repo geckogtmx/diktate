@@ -81,10 +81,14 @@
 ## 📋 Instructions for Next Model
 
 ### Priority Order
-1. **Verify SEC-001:** Run `git log --all -p -- .env | head -50` to check for exposed API key
-2. **Continue Phase A:** Model monitoring, baseline testing
-3. **Consider test infrastructure** (QUAL-002) if planning v1.0 release
-4. **Processor refactoring** (QUAL-001) is good but not urgent
+1. **Document Hardware Optimization** - Add to E.3 documentation:
+   - Hardware scan utility (VRAM/RAM detection)
+   - Model recommendations table (by VRAM: 4GB→gemma3:4b, 12GB→llama3:8b)
+   - Ollama tuning env vars (OLLAMA_NUM_GPU_LAYERS, OLLAMA_NUM_THREADS)
+   - First-run wizard concept (D.5 already planned)
+2. **Verify SEC-001:** Run `git log --all -p -- .env | head -50` to check for exposed API key
+3. **Continue Phase A:** Model monitoring, baseline testing
+4. **Consider test infrastructure** (QUAL-002) if planning v1.0 release
 
 ### Context Needed
 - [DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md) - Current phase structure
