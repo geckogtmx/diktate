@@ -1,61 +1,76 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-17 19:18
-> **Last Model:** Gemini (Antigravity)
-> **Session Focus:** Security Hardening & QA Strategy
+> **Last Updated:** 2026-01-17
+> **Last Model:** Gemini 1.5 Pro
+> **Session Focus:** `dikta.me` Marketing Website Build
 
 ---
 
 ## ✅ Completed This Session
 
-| Feature | Status |
-|---------|--------|
-| **Security Hardening** | ✅ **COMPLETE** |
-| - Log Redaction | ✅ Python exceptions sanitized |
-| - Notification Privacy | ✅ Bodies redacted in `main.main` |
-| - Verification | ✅ `tests/test_log_redaction.py` passed |
-| **QA Strategy** | ✅ `docs/QA_STRATEGY.md` created |
+-   **Marketing Site Structure (`site/index.html`)**:
+    -   Built single-pager with Hero, Comparison, Features, Bilingual, Pricing, and Footer sections.
+    -   Integrated `Vite` + `Tailwind CSS v4`.
+-   **Animations (`site/src/main.ts`)**:
+    -   Implemented text cycling in Hero ("Stop Typing. Start [TALKING/WORKING/PRODUCING/WINNING].") using `gsap` + `ScrollTrigger`.
+    -   Added smooth scrolling with `Lenis`.
+    -   Implemented staggered/batched entry animations for grids.
+-   **Content Refinement**:
+    -   **"Smart Control Panel"**: Rebranded spec sheet to look like app dashboard.
+    -   **"Intelligent Modes"**: Consolidated mode cards.
+    -   **"Google Login" / "BYO Keys"**: Highlighted hybrid architecture.
+    -   **Pricing**: Updated Lifetime tier to "1 Year of Updates" (Recurring revenue prep).
+    -   **MacOS Support**: Added "Download for MacOS (Soon™)" button.
+-   **Styling Polish**:
+    -   Fixed "Most Popular" badge (High contrast, Neon on Black).
+    -   Added lift + glow hover effects to feature cards.
 
----
+## ⚠️ Known Issues / Broken
 
-## 🔐 Google OAuth Status (Phase 2 Pending)
+-   [ ] **Responsiveness Check**: While built with `md:` prefixes, detailed mobile testing hasn't been performed. Needs a pass on iPhone/Android dimensions.
+-   [ ] **Validation**: The 'Download' buttons are currently placeholders (`#download`). Need to link to actual installer or GitHub release when ready.
 
-**Google Cloud Console Status:**
-- Project: "dIKtame" ✅ Created
-- Generative Language API: ✅ Enabled
-- OAuth Credentials: ⏳ **Pending setup (User Action Required)**
+## 🔄 In Progress / Pending
 
----
+-   [ ] **Deployment**: Site needs to be deployed to Netlify/Vercel.
+-   [ ] **Application Installer**: The `site` is ready, but the `app` installer isn't linked yet.
 
-## 📋 Instructions for Next Session (Google OAuth)
+## 📋 Instructions for Next Model
 
-### 1. Verification of Google Cloud Credentials
-Ask the user if they have created the OAuth Client ID credentials yet.
-- If YES: Proceed to implementation.
-- If NO: Guide them to Google Cloud Console > Credentials > Create Credentials > OAuth client ID > Desktop app.
+1.  **Mobile QA**: Run the site on mobile viewports. Fix any overflow or stacking issues in the Comparison table and Feature Grid.
+2.  **Deployment**: Configure `netlify.toml` or `vercel.json` for the `site/` folder.
+3.  **Link Installer**: Update the "Download v0.1" buttons to point to the latest GitHub Release asset.
 
-### 2. Implement OAuth Flow
-Once `client_secret.json` is available:
-- Create `python/core/google_auth.py`
-- Add "Login with Google" button to `settings.html`
-- Wire up IPC for `google:login`
+### Priority Order
+1. Mobile QA (Critical for launch)
+2. Deployment Config
+3. Link Installer
 
----
+### Context Needed
+- `site/index.html` (Main structure)
+- `site/src/main.ts` (Animation logic)
+- `docs/COMMERCIAL_LAUNCH_STRATEGY.md` (Strategy alignment)
 
-## ⚠️ Known Issues / Context
-- **No Git Remote:** The local repository has no remote configured. `git push` failed.
-- **Zod Dependency:** Added `zod` to `package.json`. Ensure `pnpm install` is run if deploying fresh.
+### Do NOT
+- Do not revert the "1 Year of Updates" pricing change. This is a strategic decision.
+- Do not add heavy libraries (e.g. React/Vue) to the `site/` folder. Keep it Vanilla/Vite for speed.
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
-### 2026-01-17 19:18 - Gemini (Antigravity)
-- **Security:** Implemented log redaction for Python exceptions and Electron notifications.
-- **QA:** Created `docs/QA_STRATEGY.md` and `tests/test_log_redaction.py`.
-- **Commit:** "feat(security): Implement log redaction and IPC validation hardening".
+### 2026-01-17 - Gemini
+- Built full `dikta.me` marketing site (Hero, Features, Pricing).
+- Refined animations (Text cycle, Grid batching).
+- Strategic pricing update (Lifetime = 1 yr updates).
+- Added "Smart Control Panel" section.
 
-### 2026-01-17 19:03 - Gemini (Antigravity)
-- **Security Hardening:** Implemented Zod schemas (`ipcSchemas.ts`), IPC validation in `main.ts`.
-- **API Key Entry:** Added secure storage (`safeStorage`) and settings UI.
-- **Features:** Finished Personality Modes, Translation Modes, Cloud/Local toggle.
+### 2026-01-18 - Gemini
+- Implemented Secure API Key Entry & Hardening (Phase 1).
+- Wired Electron `safeStorage` to Python backend.
+- Added Log Redaction for sensitive keys/transcripts.
+
+### 2026-01-17 - Claude
+- Refined "Average Time" stat to "Speed" (chars/sec).
+- Implemented Audio Device Selection in Settings.
+- Fixed blank Settings window build issue.
