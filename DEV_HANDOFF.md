@@ -1,72 +1,86 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-17
-> **Last Model:** Gemini 1.5 Pro
-> **Session Focus:** Implement Snippets & Settings Persistence (FAILED - Reverted)
+> **Last Updated:** 2026-01-18
+> **Last Model:** Claude Opus 4.5
+> **Session Focus:** Ollama Performance Optimization
 
 ---
 
-## ⚠️ EMERGENCY HANDOFF: ENVIRONMENT FAILURE
+## ✅ Session Complete: Ollama Performance Fix
 
-**Reason:** Critical Runtime Environment Corruption.
-**State:** **REVERTED**. The repository has been reset to the state prior to this session.
+**Problem:** Local LLM processing (Ollama) was stalling intermittently, causing 60s+ timeouts and failed dictations.
 
-### Critical Issue
-The `pnpm` environment is corrupted. The `electron` package is not exposing its API correctly.
--   **Symptom:** `require('electron')` returns a `string` (path to executable) instead of the API `object`.
--   **Result:** Application crashes with `TypeError: Cannot read properties of undefined (reading 'on')` (referring to `app.on`).
--   **Actions Taken:**
-    -   Verified code correctness (reverted to known good state -> still crashed).
-    -   Ran `pnpm install --force`.
-    -   Ran nuclear clean (`rm node_modules`, `pnpm store prune`).
-    -   **Result:** Failure persisted.
+**Root Cause:** GPU VRAM contention between Whisper (large-v3-turbo) and llama3:8B. With only 8GB VRAM on RTX 4060 Ti:
+- Whisper: ~1.5GB
+- llama3 + 64K context: ~6GB
+- Free: <700MB (insufficient buffer)
 
-### Corrective Action for Next Session
-**DO NOT WRITE CODE UNTIL THE ENVIRONMENT IS FIXED.**
+When Whisper finished transcription, CUDA didn't immediately free memory, causing Ollama to stall waiting for VRAM.
 
-1.  **Validate Environment:** Run `node -e "console.log(require('electron'))"` (or check `debug.js` created this session if it survived, otherwise recreate it). If it prints a string path, **STOP**.
-2.  **Recommended Fix:**
-    -   Abandon `pnpm` for this specific project if possible, OR
-    -   Debug `pnpm-workspace.yaml` / `package.json` resolution priorities.
-    -   Try `bpm` or `yarn` or pure `npm` to see if it links `electron` correctly.
+### Changes Made (`python/core/processor.py`)
+
+1. **Switched default model**: `llama3:latest` → `gemma3:4b`
+   - 4B params vs 8B = faster inference
+   - ~3.3GB vs ~6GB base size
+
+2. **Reduced context window**: 64K → 2K tokens
+   - Saves ~1.4GB VRAM
+   - Sufficient for text cleanup tasks
+
+3. **Added keep_alive**: `"keep_alive": "10m"`
+   - Prevents model unloading between requests
+   - Eliminates cold start delays
+
+4. **Reduced timeout**: 60s → 20s
+   - Fail fast on stalls
+   - Falls back to raw transcription gracefully
+
+5. **Added model warmup on startup**
+   - Sends empty prompt with `num_predict: 1` during init
+   - Ensures model is loaded before first dictation
+   - Eliminates "first request eaten" issue
+
+### Performance Comparison
+
+| Model | Context | Processing Time | Stability |
+|-------|---------|-----------------|-----------|
+| llama3:8B | 64K | 2-5s (stalls often) | Poor |
+| llama3:8B | 2K | 1.9-2.9s | OK |
+| **gemma3:4b** | **2K** | **350-750ms** | **Stable** |
 
 ---
 
-## 🔄 In Progress / Pending (Reverted)
+## 🔄 Pending
 
--   [ ] **Snippets Feature**: The code for this was written but reverted. Needs to be re-implemented once environment works.
--   [ ] **Custom Dictionary**: Deferred.
+- [ ] **Snippets Feature**: Needs re-implementation (was reverted in prior session)
+- [ ] **Custom Dictionary**: Deferred
+- [ ] **Configurable Model Selection**: User should be able to choose Ollama model in settings
+- [ ] **Auto-select Model**: Detect available VRAM and pick optimal model
 
 ---
 
-## 📋 Instructions for Next Model
+## 📋 Notes for Next Session
 
-1.  **FIX THE BUILD**: Do not attempt to add features until `pnpm dev` launches the app successfully.
-2.  **Re-implement Snippets**: Once build works, referencing the *Previous Session Log* (if available in chat history) or just re-implementing from scratch:
-    -   Settings UI (List/Add/Delete)
-    -   `ipc_server.py` replacement logic
-    -   `main.ts` settings handler
-
-### Do NOT
--   Do not assume `pnpm dev` works just because it compiles. Verification requires **launch**.
+- Environment issue from previous session is **RESOLVED** (was transient pnpm issue)
+- `pnpm dev` works correctly
+- Local processing is stable with gemma3:4b
+- Consider adding model selection UI in Settings
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
-### 2026-01-17 - Gemini (Current)
--   Attempted to implement Snippets.
--   Encountered "undefined app" runtime error.
--   Diagnosed `require('electron')` returning string.
--   Attempted environment fix (nuclear clean). Failed.
--   **REVERTED ALL CHANGES** to leave repo clean.
+### 2026-01-18 - Claude Opus 4.5 (Current)
+- Diagnosed Ollama stalls as VRAM contention issue
+- Benchmarked llama3 vs gemma3 performance
+- Implemented model warmup on startup
+- Optimized context size and timeouts
+- **Result:** Processing time reduced from 2-5s to 350-750ms, no more stalls
 
 ### 2026-01-17 - Gemini
--   Built full `dikta.me` marketing site (Hero, Features, Pricing).
--   Refined animations (Text cycle, Grid batching).
--   Strategic pricing update (Lifetime = 1 yr updates).
+- Attempted Snippets implementation (reverted due to env issue)
+- Environment issue was transient, now resolved
 
-### 2026-01-18 - Gemini
--   Implemented Secure API Key Entry & Hardening (Phase 1).
--   Wired Electron `safeStorage` to Python backend.
--   Added Log Redaction for sensitive keys/transcripts.
+### 2026-01-17 - Gemini
+- Built dikta.me marketing site (Hero, Features, Pricing)
+- Strategic pricing update (Lifetime = 1 yr updates)

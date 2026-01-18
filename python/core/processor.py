@@ -22,7 +22,7 @@ class LocalProcessor:
     def __init__(
         self,
         ollama_url: str = "http://localhost:11434",
-        model: str = "llama3:latest",
+        model: str = "gemma3:4b",
         mode: str = "standard"
     ):
         self.ollama_url = ollama_url
@@ -38,7 +38,7 @@ class LocalProcessor:
         logger.info(f"Processor mode switched to: {mode}")
 
     def _verify_ollama(self) -> None:
-        """Verify Ollama server is running."""
+        """Verify Ollama server is running and warm up the model."""
         try:
             response = requests.get(f"{self.ollama_url}/api/tags", timeout=5)
             if response.status_code == 200:
@@ -49,22 +49,44 @@ class LocalProcessor:
             logger.error(f"Cannot connect to Ollama at {self.ollama_url}: {e}")
             raise
 
+        # Warm up the model by loading it into memory
+        try:
+            logger.info(f"Warming up {self.model}...")
+            requests.post(
+                f"{self.ollama_url}/api/generate",
+                json={
+                    "model": self.model,
+                    "prompt": "",
+                    "stream": False,
+                    "options": {"num_ctx": 2048, "num_predict": 1},
+                    "keep_alive": "10m"
+                },
+                timeout=30
+            )
+            logger.info(f"Model {self.model} ready")
+        except Exception as e:
+            logger.warning(f"Model warmup failed (will retry on first use): {e}")
+
     def process(self, text: str, max_retries: int = 3) -> str:
         """Process text using Ollama."""
         prompt = self.prompt.replace("{text}", text)
 
         for attempt in range(max_retries):
             try:
-                logger.info(f"Processing text with Ollama (attempt {attempt + 1}/{max_retries})...")
+                logger.info(f"Processing text with {self.model} (attempt {attempt + 1}/{max_retries})...")
                 response = requests.post(
                     f"{self.ollama_url}/api/generate",
                     json={
                         "model": self.model,
                         "prompt": prompt,
                         "stream": False,
-                        "temperature": 0.1
+                        "options": {
+                            "temperature": 0.1,
+                            "num_ctx": 2048  # Small context to save VRAM
+                        },
+                        "keep_alive": "10m"  # Keep model loaded
                     },
-                    timeout=60
+                    timeout=20  # Fail fast
                 )
 
                 if response.status_code == 200:
