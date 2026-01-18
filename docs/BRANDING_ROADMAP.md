@@ -1,8 +1,22 @@
 # Branding Roadmap: diktate → Waal
 
-> **Status:** PLANNED  
-> **Timeline:** Post-MVP (v1.0+)  
-> **Decision Date:** 2026-01-16
+> **Status:** ❌ CANCELLED
+> **Decision Date:** 2026-01-17
+> **Reason:** Domain dikta.me secured. Running with diktate brand.
+
+---
+
+## ⚠️ DEPRECATION NOTICE
+
+**This rebrand is cancelled.** The project will remain `diktate` with domain `dikta.me`.
+
+This document is preserved for historical reference only. Do not implement any Waal branding.
+
+See [DEVELOPMENT_ROADMAP.md](../DEVELOPMENT_ROADMAP.md) for current plans.
+
+---
+
+## Original Plan (Historical)
 
 ---
 

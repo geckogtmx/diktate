@@ -1,14 +1,53 @@
-# Master Task List
+# Task List
 
 > **Status:** ACTIVE
-> **Focus:** V1.0 Commercial Launch Sprint
-> **Context:** Single Source of Truth for all development activities.
+> **Current Phase:** Stability & Monitoring (Phase A)
+> **Master Plan:** See [DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md)
 
 ---
 
-## ⚡ Current Sprint: Core UX & Settings (Week 1)
+## Current Sprint: Phase A - Stability
 
-**Goal:** Ship settings window, cloud/local toggle, and ensure core stability.
+**Goal:** Ensure rock-solid dictation with gemma3:4b before adding features.
+
+### ✅ Cloud/Local Toggle (COMPLETE)
+- [x] Decrypt API keys from secure storage when switching providers
+- [x] Pass decrypted keys to Python via IPC
+- [x] Python sets keys in environment for processor factory
+- [x] Toggle shows actual processor state on load
+- [x] Badge updates after switching providers
+- **Status:** Working. User tested Gemini ↔ Gemma switching.
+
+### Settings Bugs (LOW PRIORITY - Optional)
+See `DEV_HANDOFF.md` for exact code fixes. These don't block functionality.
+- [ ] Fix `loadApiKeys()` not called on init (`settings.ts:30-40`)
+- [ ] Fix `saveSetting()` missing await/error handling (`settings.ts:132-135`)
+- [ ] Add missing `audioDeviceId`/`audioDeviceLabel` types (`main.ts:19-26`)
+- [ ] Verify settings persist across app restart
+
+### Model Monitoring
+- [ ] Add model health check (is Ollama responding?)
+- [ ] Log inference times to persistent file
+- [ ] Alert when processing > 2s threshold
+
+### Pipeline Observability
+- [ ] Persist performance metrics to JSON
+- [ ] Add session stats (success rate, avg time)
+
+### Error Recovery
+- [ ] Verify Ollama reconnection after timeout
+- [ ] Test behavior when Ollama restarts mid-session
+
+### Baseline Testing
+- [ ] Run 10+ samples with gemma3:4b
+- [ ] Document baseline metrics
+- [ ] Test various input lengths (1s, 5s, 10s, 30s)
+
+**Exit Criteria:** 30-minute session with 0 failures.
+
+---
+
+## Completed (MVP)
 ### P0: Status Dashboard ✅ COMPLETE
 - [x] **UI/UX Redesign**
     - [x] Removed large circle, replaced with compact data-rich dashboard
@@ -108,17 +147,29 @@
 
 ---
 
-## 🛣️ Roadmap Reference
+## Next Session Quick Start
 
-*High-level phases from `PHASE_ROADMAP.md`.*
+1. **Optional:** Fix settings bugs (low priority, see DEV_HANDOFF.md)
+2. **Ready to test:** Run baseline test suite
+   - Follow `docs/qa/TEST_PROCEDURE.md`
+   - Use `/test-diktate` workflow to analyze logs
+   - Compare Gemini vs Gemma performance
+3. **Then:** Move to Phase B (Testing Infrastructure) or Phase C.1 (Settings Persistence)
 
-*   **Phase 1 (MVP)**: Core Dictation & Offline functionality. (In Progress/Polishing)
-*   **Phase 2 (v0.2)**: User Experience (Settings, Modes). (Current Sprint)
-*   **Phase 3 (v0.3)**: Advanced Architecture (WebSocket, Zod, State Management).
-*   **Phase 4 (v0.4)**: Premium UI/UX (Floating Pill, Design System).
-*   **Phase 5 (v1.0)**: Power Features (Custom Prompts, History).
+---
 
-> For detailed specs, see `docs/L3_MEMORY/PHASE_ROADMAP.md`.
+## Roadmap Reference
+
+**Master Plan:** [DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md)
+
+| Phase | Focus | Status |
+|-------|-------|--------|
+| A | Stability & Monitoring | **CURRENT** |
+| B | Testing Infrastructure | NEXT |
+| C | Hardening | PENDING |
+| D | Distribution | PENDING |
+| E | Features | FUTURE |
+
 > For deferred ideas, see `docs/L3_MEMORY/DEFERRED_FEATURES.md`.
 
 ---

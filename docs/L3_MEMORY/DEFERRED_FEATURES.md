@@ -4,159 +4,105 @@
 
 **Philosophy:** Nothing is lost—everything is phased. All detailed specifications are preserved in `L3_MEMORY/FULL_VISION/` for future implementation.
 
+**Master Plan:** See [DEVELOPMENT_ROADMAP.md](../../DEVELOPMENT_ROADMAP.md) for current development direction.
+
+---
+
+> **UPDATE 2026-01-17:** Many Phase 2-3 features are now COMPLETE. Items marked with ✅ COMPLETE have been implemented. Remaining items are tracked in DEVELOPMENT_ROADMAP.md Phase E.
+
 ---
 
 ## Phase 2: Enhanced User Experience (Weeks 4-6)
 
 ### Context Modes
-**Status:** Deferred from MVP  
-**Reference:** `FULL_VISION/LLM_PROVIDERS_FULL.md` (Context Mode Prompts section)  
+**Status:** ✅ COMPLETE (Personality Modes in settings)
+**Reference:** `FULL_VISION/LLM_PROVIDERS_FULL.md` (Context Mode Prompts section)
 **Complexity:** Medium
 
 **Features:**
-- Developer mode (code comments, variable names, documentation)
-- Email mode (professional prose expansion)
-- Raw mode (no transformation, literal transcription)
-- Mode switching via hotkey (Ctrl+Shift+M)
-
-**Why Deferred:**
-MVP proves core concept with Standard mode only. Additional modes add complexity without validating fundamental value proposition.
-
-**Implementation Notes:**
-- Requires prompt template system
-- Needs UI for mode selection
-- Should support custom prompts per mode
+- ✅ Standard mode (general purpose)
+- ✅ Professional mode (business-ready)
+- ✅ Prompt mode (for LLM prompts)
+- ✅ Raw mode (literal transcription)
+- Mode switching via hotkey - NOT IMPLEMENTED
 
 ---
 
 ### Hotkey Configuration
-**Status:** Deferred from MVP  
-**Reference:** `FULL_VISION/STATE_MANAGEMENT_FULL.md` (Settings Store section)  
+**Status:** ✅ COMPLETE
+**Reference:** `FULL_VISION/STATE_MANAGEMENT_FULL.md` (Settings Store section)
 **Complexity:** Low
 
 **Features:**
-- User-configurable global hotkey
-- Hotkey conflict detection
-- Push-to-talk vs. toggle mode selection
-- Quick mode switch hotkey
-
-**Why Deferred:**
-Hardcoded `Ctrl+Shift+Space` is sufficient for MVP. Configuration adds UI complexity.
-
-**Implementation Notes:**
-- Use Electron's globalShortcut API
-- Persist to settings
-- Validate no conflicts with system shortcuts
+- ✅ User-configurable global hotkey
+- ✅ Persist to settings
+- Hotkey conflict detection - NOT IMPLEMENTED
 
 ---
 
 ### Settings Window
-**Status:** Deferred from MVP  
-**Reference:** `FULL_VISION/DESIGN_SYSTEM_FULL.md` (Settings Window section)  
+**Status:** ✅ COMPLETE
+**Reference:** `FULL_VISION/DESIGN_SYSTEM_FULL.md` (Settings Window section)
 **Complexity:** Medium
 
 **Features:**
-- General settings (activation mode, context mode, launch at startup)
-- Audio settings (device selection, input level, noise gate)
-- Processing settings (provider selection, model selection)
-- Shortcuts settings (hotkey configuration)
-
-**Why Deferred:**
-MVP uses hardcoded defaults. Settings window adds significant UI development time.
-
-**Implementation Notes:**
-- Create React-based settings UI
-- Implement tabbed navigation
-- Add form validation
-- Persist settings to localStorage or file
+- ✅ General settings (activation mode, context mode)
+- ✅ Audio settings (device selection)
+- ✅ Processing settings (provider selection, cloud/local toggle)
+- ✅ API key management (Gemini, Anthropic, OpenAI)
+- ✅ Persist settings to electron-store
 
 ---
 
 ### Audio Device Selection
-**Status:** Deferred from MVP  
-**Reference:** `FULL_VISION/STATE_MANAGEMENT_FULL.md` (Settings Store - Audio Settings)  
+**Status:** ✅ COMPLETE
+**Reference:** `FULL_VISION/STATE_MANAGEMENT_FULL.md` (Settings Store - Audio Settings)
 **Complexity:** Low
 
 **Features:**
-- List available audio input devices
-- Select specific microphone
-- Real-time input level visualization
-- Noise gate threshold configuration
-
-**Why Deferred:**
-System default microphone works for most users. Device selection is "nice to have."
-
-**Implementation Notes:**
-- Use PyAudio to enumerate devices
-- Add device selection to settings window
-- Persist selected device ID
+- ✅ List available audio input devices
+- ✅ Select specific microphone
+- Real-time input level visualization - NOT IMPLEMENTED
+- Noise gate threshold - NOT IMPLEMENTED
 
 ---
 
 ### Toggle Mode
-**Status:** Deferred from MVP  
-**Reference:** `FULL_VISION/STATE_MANAGEMENT_FULL.md` (Settings Store - Hotkey Config)  
+**Status:** ✅ COMPLETE (Push-to-talk is default, toggle available)
+**Reference:** `FULL_VISION/STATE_MANAGEMENT_FULL.md` (Settings Store - Hotkey Config)
 **Complexity:** Low
-
-**Features:**
-- Tap hotkey to start recording
-- Tap again to stop recording
-- No need to hold key down
-
-**Why Deferred:**
-Push-to-talk is simpler and more predictable for MVP.
-
-**Implementation Notes:**
-- Add state tracking (recording on/off)
-- Update hotkey handler logic
-- Add setting to choose mode
 
 ---
 
 ## Phase 3: Advanced Features (Weeks 7-10)
 
 ### Provider Switching (Gemini Fallback)
-**Status:** Deferred from MVP  
-**Reference:** `FULL_VISION/LLM_PROVIDERS_FULL.md` (Provider Factory section)  
+**Status:** ✅ COMPLETE
+**Reference:** `FULL_VISION/LLM_PROVIDERS_FULL.md` (Provider Factory section)
 **Complexity:** High
 
 **Features:**
-- Gemini API integration
-- Automatic fallback when Ollama unavailable
-- Provider selection in settings
-- Cost estimation for cloud providers
-- API key secure storage
-
-**Why Deferred:**
-MVP is local-first. Gemini adds complexity and requires API key management.
-
-**Implementation Notes:**
-- Implement GeminiProvider class (already spec'd)
-- Add provider factory with selection logic
-- Use Electron safeStorage for API keys
-- Add cost tracking
+- ✅ Gemini API integration
+- ✅ Anthropic Claude API integration
+- ✅ OpenAI API integration
+- ✅ Provider selection in settings (cloud/local toggle)
+- ✅ API key secure storage (Electron safeStorage)
+- ✅ Hot-swap between providers
+- Automatic fallback - NOT IMPLEMENTED
+- Cost estimation - NOT IMPLEMENTED
 
 ---
 
 ### IPC Validation (Zod Schemas)
-**Status:** Deferred from MVP  
-**Reference:** `FULL_VISION/IPC_DESIGN_FULL.md` (Channel Definitions section)  
+**Status:** ✅ COMPLETE
+**Reference:** `FULL_VISION/IPC_DESIGN_FULL.md` (Channel Definitions section)
 **Complexity:** Medium
 
 **Features:**
-- Zod schema validation for all IPC messages
-- Type-safe IPC channels
-- Error sanitization
-- Retry logic with exponential backoff
-
-**Why Deferred:**
-MVP trusts renderer process. Validation adds security but not core functionality.
-
-**Implementation Notes:**
-- Define Zod schemas for all IPC channels
-- Wrap IPC handlers with validation
-- Implement error sanitization
-- Add retry logic for transient failures
+- ✅ Zod schema validation for IPC messages
+- ✅ Type-safe IPC channels
+- Error sanitization - PARTIAL
+- Retry logic - NOT IMPLEMENTED
 
 ---
 

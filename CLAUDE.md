@@ -2,7 +2,7 @@
 
 > **Role:** Implementer, Refactorer, Polisher
 > **Context:** Precision / Speed / Code Gen
-> **Links:** [📜 AI_CODEX](./AI_CODEX.md) | [🧠 GEMINI.md](./GEMINI.md)
+> **Links:** [📜 AI_CODEX](./AI_CODEX.md) | [🧠 GEMINI.md](./GEMINI.md) | [🗺️ DEVELOPMENT_ROADMAP](./DEVELOPMENT_ROADMAP.md)
 
 ---
 
@@ -11,7 +11,8 @@
 As a **Claude** model, your strength lies in precise code generation, speed, and standard enforcement. You are the Builder.
 
 1.  **Execution & Implementation**
-    -   Execute the plans laid out in `TASKS.md` or by Gemini.
+    -   Follow the current phase in `DEVELOPMENT_ROADMAP.md`.
+    -   Execute sprint tasks from `TASKS.md`.
     -   Write clean, strictly typed TypeScript and efficient Python.
     -   Follow the "Ship early, iterate fast" directive.
 
@@ -33,7 +34,7 @@ As a **Claude** model, your strength lies in precise code generation, speed, and
 ## 🛠️ Technical Protocols
 
 -   **Formatting:** Prettier/ESLint must pass.
--   **Naming:** Follow the `diktate` convention for now. Do not proactively rename to `Waal` unless instructed.
+-   **Naming:** Use `diktate` (brand) and `dikta.me` (domain). No rebrand planned.
 -   **UI:** Use the established design system (or lack thereof for MVP). Simplicity > Flash.
 
 ---

@@ -305,10 +305,24 @@ class IpcServer:
 
             # 2. Provider (local/cloud/anthropic/openai) - Hot-swap processor
             provider = config.get("provider")
+            api_key = config.get("apiKey")
             if provider:
                 logger.info(f"[CONFIG] Switching provider to: {provider}")
                 # Set env var for factory, then recreate processor
                 os.environ["PROCESSING_MODE"] = provider
+
+                # Set API key in environment if provided
+                if api_key:
+                    if provider in ("cloud", "gemini"):
+                        os.environ["GEMINI_API_KEY"] = api_key
+                        logger.info("[CONFIG] Gemini API key set from secure storage")
+                    elif provider == "anthropic":
+                        os.environ["ANTHROPIC_API_KEY"] = api_key
+                        logger.info("[CONFIG] Anthropic API key set from secure storage")
+                    elif provider == "openai":
+                        os.environ["OPENAI_API_KEY"] = api_key
+                        logger.info("[CONFIG] OpenAI API key set from secure storage")
+
                 try:
                     self.processor = create_processor()
                     updates.append(f"Provider: {provider}")

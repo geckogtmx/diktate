@@ -452,7 +452,40 @@ function setupIpcHandlers(): void {
     // If processing provider changed (local/cloud/anthropic/openai)
     if (key === 'processingMode' && pythonManager) {
       logger.info('IPC', `Processing provider changed to ${value}, updating Python`);
-      pythonManager.setConfig({ provider: value }).catch(err => {
+
+      // Decrypt and pass API key for cloud providers
+      let apiKey: string | undefined;
+      try {
+        if (value === 'cloud' || value === 'gemini') {
+          const encrypted = store.get('encryptedGeminiApiKey') as string | undefined;
+          if (encrypted && safeStorage.isEncryptionAvailable()) {
+            apiKey = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
+          }
+        } else if (value === 'anthropic') {
+          const encrypted = store.get('encryptedAnthropicApiKey') as string | undefined;
+          if (encrypted && safeStorage.isEncryptionAvailable()) {
+            apiKey = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
+          }
+        } else if (value === 'openai') {
+          const encrypted = store.get('encryptedOpenaiApiKey') as string | undefined;
+          if (encrypted && safeStorage.isEncryptionAvailable()) {
+            apiKey = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
+          }
+        }
+      } catch (e) {
+        logger.error('IPC', 'Failed to decrypt API key', e);
+      }
+
+      pythonManager.setConfig({ provider: value, apiKey }).then(() => {
+        // Refresh badges after successful provider switch
+        if (debugWindow && !debugWindow.isDestroyed()) {
+          pythonManager!.sendCommand('status').then((result: any) => {
+            if (result?.processor) {
+              debugWindow!.webContents.send('badge-update', { processor: result.processor });
+            }
+          }).catch(() => {});
+        }
+      }).catch(err => {
         logger.error('IPC', 'Failed to update Python provider', err);
       });
 
@@ -706,13 +739,23 @@ async function initialize(): Promise<void> {
         }
       }
 
+      // Derive actual processingMode from Python's processor
+      let actualProcessingMode = store.get('processingMode', 'local');
+      if (models.processor) {
+        const proc = models.processor.toUpperCase();
+        if (proc.includes('GEMINI')) actualProcessingMode = 'cloud';
+        else if (proc.includes('CLAUDE')) actualProcessingMode = 'anthropic';
+        else if (proc.includes('GPT')) actualProcessingMode = 'openai';
+        else if (proc.includes('LOCAL') || proc.includes('GEMMA') || proc.includes('LLAMA')) actualProcessingMode = 'local';
+      }
+
       return {
         status: pythonManager?.getStatus() || 'disconnected',
         isRecording,
         mode: currentMode,
         models,
         soundFeedback: store.get('soundFeedback', true),
-        processingMode: store.get('processingMode', 'local')
+        processingMode: actualProcessingMode
       };
     });
 

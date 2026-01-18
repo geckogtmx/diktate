@@ -37,6 +37,9 @@ const electronAPI = {
   onModeChange: (callback: (mode: string) => void) => {
     ipcRenderer.on('mode-update', (_, mode) => callback(mode));
   },
+  onBadgeUpdate: (callback: (badges: { processor?: string }) => void) => {
+    ipcRenderer.on('badge-update', (_, badges) => callback(badges));
+  },
   toggleRecording: () => ipcRenderer.invoke('python:toggle-recording'),
   getInitialState: () => ipcRenderer.invoke('get-initial-state'),
   setSetting: (key: string, value: any) => ipcRenderer.invoke('settings:set', key, value),

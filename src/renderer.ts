@@ -229,6 +229,13 @@ if (window.electronAPI) {
         window.electronAPI.onPerformanceMetrics((metrics) => updatePerformanceMetrics(metrics));
     }
 
+    // Badge update handler (for provider switches)
+    if ((window.electronAPI as any).onBadgeUpdate) {
+        (window.electronAPI as any).onBadgeUpdate((badges: { processor?: string }) => {
+            updateBadges(badges);
+        });
+    }
+
     // Get initial state
     window.electronAPI.getInitialState().then((state) => {
         if (state) {

@@ -14,10 +14,9 @@ We are building a "Department of One" ecosystem. Efficiency, clarity, and contin
 
 ## 2. Project Identity & Branding
 
-- **Current Name:** `diktate` (Use in code, MVP release v0.1.0-v0.9.x)
-- **Future Name:** `Waal` (Rebrand at v1.0.0)
-- **Etymology:** *Mayan* (Breath/Speech), *Metaphorical* (Privacy Wall), *Functional* (Lubricant).
-- **Reference:** See [docs/BRANDING_ROADMAP.md](./docs/BRANDING_ROADMAP.md)
+- **Name:** `diktate`
+- **Domain:** dikta.me
+- **No rebrand planned** - We are running with diktate.
 
 ## 3. The Trinity Protocol
 
@@ -35,7 +34,8 @@ This project utilizes a multi-model collaboration strategy. Each agent has disti
 - **Handoffs:** Never end a session without updating `DEV_HANDOFF.md`.
 
 ### B. Task Management
-- **Task Lists:** `TASKS.md` is the SINGLE SOURCE OF TRUTH. Do not create competing task lists.
+- **Roadmap:** `DEVELOPMENT_ROADMAP.md` is the MASTER PLAN for development direction.
+- **Task Lists:** `TASKS.md` contains current sprint tasks (derived from roadmap).
 - **Granularity:** Tasks should be small, verifiable steps.
 
 ### C. Coding Standards
@@ -55,6 +55,16 @@ This project utilizes a multi-model collaboration strategy. Each agent has disti
 
 
 ## 5. Cross-Reference
-- For model-specific instructions, consult:
-    - [GEMINI.md](./GEMINI.md)
-    - [CLAUDE.md](./CLAUDE.md)
+
+### Document Hierarchy
+```
+DEVELOPMENT_ROADMAP.md  ← Master plan (development direction)
+    ↓
+TASKS.md                ← Current sprint tasks
+DEV_HANDOFF.md          ← Session notes (ephemeral)
+AI_CODEX.md             ← Governance rules (stable)
+```
+
+### Model-Specific Instructions
+- [GEMINI.md](./GEMINI.md) - Architect role
+- [CLAUDE.md](./CLAUDE.md) - Builder role
