@@ -11,7 +11,7 @@ import { logger } from './utils/logger';
 import { performanceMetrics } from './utils/performanceMetrics';
 
 import Store from 'electron-store';
-import { validateIpcMessage, SettingsSetSchema, ApiKeySetSchema, ApiKeyTestSchema } from './utils/ipcSchemas';
+import { validateIpcMessage, SettingsSetSchema, ApiKeySetSchema, ApiKeyTestSchema, redactSensitive } from './utils/ipcSchemas';
 
 const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
 
@@ -314,7 +314,7 @@ function showNotification(title: string, body: string, isError: boolean = false)
     });
 
     notification.show();
-    logger.info('MAIN', 'Notification shown', { title, body });
+    logger.info('MAIN', 'Notification shown', { title, body: redactSensitive(body, 50) });
   } catch (error) {
     logger.error('MAIN', 'Failed to show notification', error);
   }
@@ -425,7 +425,7 @@ function setupIpcHandlers(): void {
     // Validate payload
     const validation = validateIpcMessage(SettingsSetSchema, { key, value });
     if (!validation.success) {
-      logger.error('IPC', `Invalid settings payload: ${validation.error}`);
+      logger.error('IPC', `Invalid settings payload: ${redactSensitive(validation.error, 100)}`);
       throw new Error(`Invalid payload: ${validation.error}`);
     }
 
@@ -495,7 +495,7 @@ function setupIpcHandlers(): void {
     // Validate payload
     const validation = validateIpcMessage(ApiKeySetSchema, { provider, key });
     if (!validation.success) {
-      logger.error('IPC', `Invalid API key payload: ${validation.error}`);
+      logger.error('IPC', `Invalid API key payload: ${redactSensitive(validation.error)}`);
       throw new Error(`Invalid payload: ${validation.error}`);
     }
 

@@ -23,8 +23,8 @@
 ### P0: Security Hardening ✅ COMPLETE
 - [x] **Critical: Settings Window** - Migrated to secure preload bridge (`preloadSettings.ts`)
 - [x] **Critical: XSS Prevention** - Replaced `innerHTML` with safe `textContent` in `renderer.ts`
-- [ ] **High: IPC Validation** - Add Zod schemas (Deferred to Phase 3)
-- [ ] **High: Log Redaction** - Mask sensitive transcripts in logs (Deferred)
+- [x] **High: IPC Validation** - Add Zod schemas (Completed)
+- [x] **High: Log Redaction** - Mask sensitive transcripts in logs (Completed)
 
 ### P0: Cloud/Local Toggle ✅ COMPLETE
 - [x] **Backend (Python)**

@@ -49,7 +49,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from core import Recorder, Transcriber, Injector
 from core.processor import create_processor
 from config.prompts import get_translation_prompt
-from utils.security import redact_text
+from utils.security import redact_text, sanitize_log_message
 
 # Configure logging
 log_dir = Path(Path.home()) / ".diktate" / "logs"
@@ -188,7 +188,7 @@ class IpcServer:
             logger.info("[REC] Recording started")
             return {"success": True}
         except Exception as e:
-            logger.error(f"Failed to start recording: {e}")
+            logger.error(sanitize_log_message(f"Failed to start recording: {e}"))
             self._set_state(State.ERROR)
             return {"success": False, "error": str(e)}
 
@@ -217,7 +217,7 @@ class IpcServer:
             return {"success": True}
 
         except Exception as e:
-            logger.error(f"Error stopping recording: {e}")
+            logger.error(sanitize_log_message(f"Error stopping recording: {e}"))
             self._set_state(State.ERROR)
             return {"success": False, "error": str(e)}
 
@@ -288,7 +288,7 @@ class IpcServer:
             self._set_state(State.IDLE)
 
         except Exception as e:
-            logger.error(f"Pipeline error: {e}")
+            logger.error(sanitize_log_message(f"Pipeline error: {e}"))
             self._set_state(State.ERROR)
 
     def configure(self, config: dict) -> dict:
@@ -340,7 +340,7 @@ class IpcServer:
                 return {"success": True, "message": f"Updated: {', '.join(updates)}"}
             return {"success": False, "error": "No valid configuration found"}
         except Exception as e:
-            logger.error(f"Configuration failed: {e}")
+            logger.error(sanitize_log_message(f"Configuration failed: {e}"))
             return {"success": False, "error": str(e)}
 
     def handle_command(self, command: dict) -> dict:
@@ -390,7 +390,7 @@ class IpcServer:
                 return {"success": False, "error": f"Unknown command: {cmd_name}"}
 
         except Exception as e:
-            logger.error(f"Error handling command: {e}")
+            logger.error(sanitize_log_message(f"Error handling command: {e}"))
             return {"success": False, "error": str(e)}
 
     def _emit_event(self, event_type: str, data: dict) -> None:
@@ -440,7 +440,7 @@ class IpcServer:
                     logger.error(f"Invalid JSON received: {e}")
                     self._send_error(f"Invalid JSON: {e}")
                 except Exception as e:
-                    logger.error(f"Error processing command: {e}")
+                    logger.error(sanitize_log_message(f"Error processing command: {e}"))
                     self._send_error(f"Error: {e}")
 
         except KeyboardInterrupt:
