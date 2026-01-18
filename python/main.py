@@ -16,18 +16,25 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core import Recorder, Transcriber, Processor, Injector
 
-# Configure logging
+# Configure logging - Session-based log files
+from datetime import datetime
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
+
+# Create session-specific log file with timestamp
+session_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+session_log_file = log_dir / f"diktate_{session_timestamp}.log"
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(log_dir / "diktate.log"),
+        logging.FileHandler(session_log_file),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
+logger.info(f"Session log: {session_log_file}")
 
 
 class State(Enum):

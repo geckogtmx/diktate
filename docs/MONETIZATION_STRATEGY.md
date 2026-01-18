@@ -1,109 +1,138 @@
-# dIKtate Monetization Strategy
+# dikta.me Anti-Subscription Monetization Strategy
 
-**Philosophy:** Free forever for local-first users. Optional premium for cloud convenience.
+**Philosophy:** One-time payments only. No recurring subscriptions. 25% margins on cloud. We're the good guys.
+
+---
+
+## The Anti-Subscription Manifesto
+
+> "Subscription vampires charge you $100-240 EVERY YEAR for voice dictation.
+> We charge $10-25 ONCE. Own it forever. No tricks."
 
 ---
 
 ## Pricing Tiers
 
-### Free Forever (Core Product)
-**Price:** $0  
+### Libre Tier (Local-Only)
+**Price:** $0 (Free) / $10 (Supporter)
 **Target:** Privacy-conscious users, developers, open-source advocates
 
-**Features:**
+**Free ($0) Features:**
 - ✅ **100% local processing** (Whisper + Ollama)
-- ✅ Unlimited usage (no word limits)
+- ✅ Unlimited usage (no word limits, ever)
 - ✅ All context modes (Standard, Developer, Email, Raw)
 - ✅ Custom prompts
 - ✅ Hotkey configuration
 - ✅ Audio device selection
-- ✅ All UI features (Floating Pill, Settings)
+- ✅ All UI features
 - ✅ Open source (MIT license)
 - ✅ Community support (Discord, GitHub)
 
-**Requirements:**
-- User provides their own hardware (GPU recommended)
-- User installs Ollama locally
-- User downloads Whisper models
+**Supporter ($10) Adds:**
+- ✅ Everything in Free
+- ✅ Supporter badge (in-app + Discord)
+- ✅ Priority GitHub issue responses
+- ✅ Beta access to new features
+- ✅ Name in credits/supporters list
 
 **Value Proposition:**
-> "Your hardware, your data, your freedom. Forever free."
+> "Your hardware, your data, your freedom. Forever free—or $10 to support development."
 
 ---
 
-### Plus ($12/year)
-**Price:** $1/month ($12/year, billed annually)  
-**Target:** Users who want convenience without high costs
+### Pro Tier (BYOK + Cloud)
+**Price:** $25 one-time
+**Target:** Professionals, power users, cloud-enabled workflows
 
-**Everything in Free, PLUS:**
-- ✅ **Cloud fallback** (Gemini API when Ollama unavailable)
-  - User provides their own Gemini API key
-  - OR uses dIKtate's shared pool (fair usage limits)
-- ✅ **Hosted model selection** (access to premium cloud models)
-- ✅ **Priority support** (email support, faster response)
-- ✅ **Early access** to new features (beta testing)
-- ✅ **Cloud sync** (settings, custom prompts across devices)
-- ✅ **Usage analytics** (track your dictation stats)
-
-**Fair Usage Policy (Shared Pool):**
-- 50,000 words/month via dIKtate's Gemini pool
-- Beyond that, use your own API key (pay-as-you-go)
+**Everything in Libre, PLUS:**
+- ✅ **BYOK (Bring Your Own Key)** - Use your Gemini, OpenAI, Anthropic keys
+- ✅ **Wallet cloud credits** (v1.1) - Top-up, no subscriptions
+- ✅ **Premium cloud providers** - Access to fastest/best models
+- ✅ **Priority support** - Email support, faster response
+- ✅ **Early access** - All beta features before public release
+- ✅ **Source-Available license** - Audit the code
 
 **Value Proposition:**
-> "Local-first, cloud when you need it. Less than a coffee per year."
+> "Pay once, own forever. Cloud when you need it. $25 vs $144/year from competitors."
 
 ---
 
-### Pro ($5/month or $50/year)
-**Price:** $5/month or $50/year (save $10)  
-**Target:** Power users, professionals, teams
+## Wallet Credits (v1.1 - No Subscriptions!)
 
-**Everything in Plus, PLUS:**
-- ✅ **Unlimited cloud usage** (via dIKtate's Gemini pool)
-- ✅ **Premium models** (GPT-4, Claude, etc. via dIKtate pool)
-- ✅ **Team features** (shared dictionaries, snippets)
-- ✅ **Advanced analytics** (productivity reports, insights)
-- ✅ **Custom integrations** (Zapier, webhooks)
-- ✅ **White-label option** (remove branding for businesses)
-- ✅ **Priority feature requests** (vote on roadmap)
+> **Radical Transparency:** We keep 25%, you get 75% in compute value.
 
-**Value Proposition:**
-> "Professional-grade dictation with enterprise features. Still cheaper than competitors."
+### Credit Packages
+
+| Package | Price | Estimated Words | Note |
+|---------|-------|-----------------|------|
+| **Starter** | $5 | 10,000-30,000 | Try cloud computing |
+| **Standard** | $10 | 20,000-60,000 | Regular usage |
+| **Bulk** | $25 | 50,000-150,000 | Power users |
+
+*Word counts vary by provider (Groq, DeepSeek, Gemini). Credits NEVER expire.*
+
+### Why 25% Margin?
+
+We could charge more. Competitors hide their margins.
+
+We're transparent:
+- **Your $10:** $7.50 goes to cloud compute, $2.50 to dikta.me
+- **Their $10/month:** Who knows? It's a black box.
+
+---
+
+## 🔄 Active Status (Soft Recurring Revenue)
+
+> Stay active, stay updated. Not a subscription—a choice.
+
+**To receive ongoing updates for Libre & Pro:**
+
+| Method | Requirement | Benefits |
+|--------|-------------|----------|
+| **Wallet Balance** | Keep $10+ topped up every 6 months | Updates + usable cloud credits |
+| **Ko-fi/Substack** | $2-3/month supporter tier | Updates + community perks |
+
+**Why this model:**
+- Users choose their method (wallet vs platform)
+- Wallet credits are usable, not wasted
+- $20/year vs competitors' $144-240/year
+- Creates sustainable recurring revenue ethically
 
 ---
 
 ## Comparison with Competitors
 
-| Feature | dIKtate Free | dIKtate Plus | dIKtate Pro | WisprFlow | Glaido | AquaVoice |
-|---------|--------------|--------------|-------------|-----------|--------|-----------|
-| **Price** | **$0** | **$12/yr** | **$50/yr** | $144/yr | $240/yr | $96/yr |
-| **Local Processing** | ✅ Always | ✅ Default | ✅ Default | ❌ | ⚠️ Optional | ⚠️ Optional |
-| **Cloud Fallback** | ❌ | ✅ (BYOK or pool) | ✅ Unlimited | ✅ | ✅ | ✅ |
-| **Open Source** | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **Word Limits** | ✅ Unlimited | ✅ Unlimited | ✅ Unlimited | ❌ Free tier | ❌ Free tier | ❌ Free tier |
-| **Custom Prompts** | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ |
-| **Team Features** | ❌ | ❌ | ✅ | ✅ | ❌ | ✅ |
+| Feature | dikta.me Libre | dikta.me Pro | WisprFlow | Glaido | AquaVoice |
+|---------|----------------|--------------|-----------|--------|-----------|
+| **Price** | **$0-10 once** | **$25 once** | $144/yr | $240/yr | $96/yr |
+| **Payment Model** | One-time | One-time | ❌ Subscription | ❌ Subscription | ❌ Subscription |
+| **Local Processing** | ✅ Always | ✅ Default | ❌ Cloud-only | ⚠️ Optional | ⚠️ Optional |
+| **Cloud Access** | ❌ Local-only | ✅ BYOK + Wallet | ✅ Included | ✅ Included | ✅ Included |
+| **Open Source** | ✅ MIT | ✅ Source-Available | ❌ | ❌ | ❌ |
+| **Word Limits** | ✅ Unlimited | ✅ Unlimited | ❌ 2K/week free | ❌ 2K/week free | ❌ 1K total free |
+| **Cloud Margins** | N/A | **25% transparent** | Unknown | Unknown | Unknown |
 
 ---
 
-## Revenue Model
+## Revenue Model (Anti-Subscription)
 
 ### Target Breakdown (Year 1)
 
 **Assumptions:**
 - 10,000 total users
-- 80% Free (8,000 users) - $0 revenue
-- 15% Plus (1,500 users) - $18,000 revenue
-- 5% Pro (500 users) - $25,000 revenue
+- 75% Libre Free (7,500 users) - $0 revenue
+- 15% Libre Supporter (1,500 users @ $10) - $15,000 revenue
+- 10% Pro (1,000 users @ $25) - $25,000 revenue
+- Wallet top-ups (25% margin): ~$2,000 revenue
 
-**Total Year 1 Revenue:** $43,000
+**Total Year 1 Revenue:** ~$42,000
 
 **Costs:**
-- Cloud API costs (Gemini pool): ~$15,000/year
-- Infrastructure (hosting, CDN): ~$5,000/year
-- Support (part-time): ~$10,000/year
+- Cloud API costs (25% margin = break-even): ~$0 net
+- Infrastructure (hosting, CDN): ~$2,000/year
+- Support (community): ~$0
 
-**Net Profit:** $13,000/year (sustainable for solo developer or small team)
+**Net Profit:** ~$40,000/year (sustainable for solo developer)
 
 ---
 
@@ -111,33 +140,35 @@
 
 **Assumptions:**
 - 100,000 total users
-- 75% Free (75,000 users) - $0 revenue
-- 20% Plus (20,000 users) - $240,000 revenue
-- 5% Pro (5,000 users) - $250,000 revenue
+- 70% Libre Free (70,000 users) - $0 revenue
+- 20% Libre Supporter (20,000 users @ $10) - $200,000 revenue
+- 10% Pro (10,000 users @ $25) - $250,000 revenue
+- Wallet top-ups (25% margin): ~$50,000 revenue
 
-**Total Year 3 Revenue:** $490,000
+**Total Year 3 Revenue:** ~$500,000
 
 **Costs:**
-- Cloud API costs: ~$150,000/year
-- Infrastructure: ~$30,000/year
-- Support (2 full-time): ~$120,000/year
-- Development (2 full-time): ~$150,000/year
+- Cloud API (passed through, 25% margin retained): ~$0 net
+- Infrastructure: ~$20,000/year
+- Support (part-time contractor): ~$30,000/year
 
-**Net Profit:** $40,000/year (sustainable small business)
+**Net Profit:** ~$450,000/year (sustainable small business)
 
 ---
 
 ## Key Differentiators
 
 ### vs. WisprFlow ($144/year)
-- ✅ **8x cheaper** (Plus) or **12x cheaper** (Free)
+- ✅ **6x cheaper** (Pro $25 once) or **FREE**
+- ✅ **No subscription** (pay once, own forever)
 - ✅ **100% local option** (WisprFlow is cloud-only)
 - ✅ **Open source** (WisprFlow is proprietary)
 
 ### vs. Glaido ($240/year)
-- ✅ **20x cheaper** (Plus) or **free**
-- ✅ **Windows support** (Glaido is macOS-only)
-- ✅ **100% local by default** (Glaido's local is optional)
+- ✅ **10x cheaper** (Pro $25 once) or **FREE**
+- ✅ **No subscription** (pay once, own forever)
+- ✅ **Windows support** (Glaido is macOS-focused)
+- ✅ **Transparent pricing** (25% margin vs hidden costs)
 
 ### vs. AquaVoice ($96/year)
 - ✅ **8x cheaper** (Plus) or **free**

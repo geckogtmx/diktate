@@ -37,9 +37,10 @@
 | **D: Distribution** | Packaging, installer, history panel | PENDING |
 | **E: Polish** | Snippets, dictionary, final QA | PENDING |
 
-### v1.1 (Post-Release)
+### v1.1 (Post-Release Priority)
 | Phase | Focus | Status |
 |-------|-------|--------|
+| **F: Wallet Backend** | Stripe, wallet credits, cloud API proxy | PLANNED |
 | **1.1-A: Premium UI** | Floating pill, design system, waveform | PLANNED |
 | **1.1-B: Power Features** | Custom prompts, advanced audio, extended history | PLANNED |
 | **1.1-C: Architecture** | WebSocket, Zustand, enhanced IPC | PLANNED |
@@ -63,6 +64,10 @@
 - [ ] Add session-level stats (success rate, avg time, error count)
 - [ ] Create simple metrics viewer in status window
 - [ ] Log transcription confidence scores (if available from Whisper)
+- [ ] **Log audio duration** (correlate processing time with input length)
+- [ ] **Log audio file size** (detect recording issues)
+- [ ] **Log model version/name** (track exactly which model was used)
+- [ ] **Session summary at shutdown** (total dictations, avg times, errors)
 
 ### A.3 Error Recovery
 - [ ] Verify Ollama reconnection after timeout
@@ -90,7 +95,28 @@
 - [ ] Persist selected Whisper model to settings
 - [ ] Apply on next recording (no restart needed)
 
-**Exit Criteria:** 30-minute session with 0 failures, `/test-diktate` shows < 7s latency, model selectors working.
+### A.7 Audio Encoder/Transcriber Testing (NEW)
+
+> **Goal:** Scientifically compare Whisper model options to validate current choice.
+
+**Current:** Using `deepdml/faster-whisper-large-v3-turbo-ct2` (Turbo V3)
+
+**Test Matrix:**
+- [ ] Create standardized test audio files (5s, 15s, 30s utterances)
+- [ ] Test each model with same audio:
+  - [ ] `tiny` (39M params, ~10x faster)
+  - [ ] `base` (74M params)
+  - [ ] `small` (244M params)
+  - [ ] `medium` (769M params)
+  - [ ] `large-v3` (1.5B params)
+  - [ ] `large-v3-turbo` (current - optimized large)
+- [ ] Measure for each: transcription time, WER (if possible), VRAM usage
+- [ ] Document results in `docs/BENCHMARKS.md`
+- [ ] Validate current choice or switch to better option
+
+**Success Criteria:** Data-backed recommendation for default model.
+
+**Exit Criteria:** 30-minute session with 0 failures, `/test-diktate` shows < 7s latency, model selectors working, audio encoder validated.
 
 ---
 
@@ -281,7 +307,81 @@ Document any app-specific issues.
 - [ ] Cost tracking for cloud providers (Gemini, OpenAI, Anthropic)
 - [ ] Automatic provider fallback (cloud fails → local, local fails → raw)
 
-**Exit Criteria:** All v1.0 features complete, ready for public release.
+### E.3 Documentation & Onboarding Materials
+
+> **Goal:** Turn "install Ollama" friction into a VALUE-ADD. Users aren't just getting dikta.me—they're unlocking a local AI platform.
+
+#### E.3.1 Ollama Value Proposition Docs
+- [ ] "What is Ollama?" beginner guide
+- [ ] "What else can you do with Ollama?" power user guide
+  - Chat interfaces (Open WebUI, Chatbox)
+  - Coding assistants (Continue, Aider, Cursor local)
+  - Image analysis (LLaVA, Gemini Vision)
+  - Document analysis
+- [ ] Model recommendations by use case
+- [ ] Hardware requirements guide (GPU/CPU/RAM)
+
+#### E.3.2 Installation Guides
+- [ ] dikta.me installation walkthrough (Windows)
+- [ ] Ollama installation guide (Windows, with screenshots)
+- [ ] Combined quick-start: "dikta.me + Ollama in 5 minutes"
+- [ ] Troubleshooting FAQ
+  - "Ollama not detected"
+  - "Model download stuck"
+  - "CUDA/GPU not recognized"
+  - "App not injecting text"
+  - "Audio device issues"
+
+#### E.3.3 Video Content
+- [ ] Installation walkthrough video (2-3 min)
+- [ ] Quick-start demo video (30-60 sec)
+- [ ] "First dictation" tutorial
+- [ ] Troubleshooting common issues video
+- [ ] YouTube Shorts: "Install dikta.me in 60 seconds"
+
+#### E.3.4 Website Documentation Site
+- [ ] Deploy docs site (VitePress/Docusaurus)
+- [ ] Structure: Getting Started → User Guide → Troubleshooting → Developers
+- [ ] Spanish translations for key pages
+
+**Exit Criteria:** All v1.0 features complete, documentation ready, ready for public release.
+
+---
+
+## Phase F: Cloud Wallet Infrastructure (v1.1 Priority)
+
+**Goal:** Backend infrastructure for wallet-based cloud credits (anti-subscription model).
+
+> ⚠️ **Note:** v1.0 ships with BYOK (Bring Your Own Key) for Pro tier. Wallet is v1.1.
+
+### F.1 Backend Setup
+- [ ] Set up edge API project (Cloudflare Workers or Vercel Edge)
+- [ ] Configure database (Supabase or PlanetScale)
+- [ ] Implement Stripe webhook handlers for one-time payments
+- [ ] Create license key generation/validation system
+- [ ] Set up usage logging and analytics
+
+### F.2 API Endpoints
+- [ ] `/api/auth` - License key validation
+- [ ] `/api/wallet` - Balance checking, top-up history
+- [ ] `/api/transcribe` - Whisper proxy with credit deduction
+- [ ] `/api/process` - LLM proxy with credit deduction
+- [ ] `/api/usage` - Usage tracking, deduction logging
+
+### F.3 Cloud Provider Integration
+- [ ] Evaluate provider SDKs (Groq, DeepSeek, Cerebras, Gemini)
+- [ ] Select primary provider (easiest integration wins)
+- [ ] Implement fallback order for reliability
+- [ ] Configure 25% margin pricing per provider
+
+### F.4 Desktop App Integration
+- [ ] Add license key input in Settings
+- [ ] Add wallet balance display in status window
+- [ ] Implement "Top Up Credits" → opens browser
+- [ ] Show credit usage after each cloud transcription
+- [ ] Graceful degradation when credits exhausted
+
+**Exit Criteria:** User can purchase Pro, enter license key, top up wallet credits, use cloud transcription with balance tracking.
 
 ---
 

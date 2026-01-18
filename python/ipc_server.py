@@ -51,13 +51,33 @@ from core.processor import create_processor
 from config.prompts import get_translation_prompt
 from utils.security import redact_text, sanitize_log_message
 
-# Configure logging
+# Configure logging - Session-based log files
 log_dir = Path(Path.home()) / ".diktate" / "logs"
 log_dir.mkdir(parents=True, exist_ok=True)
 
+# Create session-specific log file with timestamp
+from datetime import datetime
+session_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+session_log_file = log_dir / f"diktate_{session_timestamp}.log"
+
+# Cleanup old log files (keep last 10 sessions)
+def cleanup_old_logs(log_dir: Path, keep_count: int = 10):
+    """Remove old log files, keeping only the most recent ones."""
+    try:
+        log_files = sorted(log_dir.glob("diktate_*.log"), key=lambda f: f.stat().st_mtime, reverse=True)
+        for old_log in log_files[keep_count:]:
+            try:
+                old_log.unlink()
+            except Exception:
+                pass  # Ignore errors deleting old logs
+    except Exception:
+        pass  # Ignore errors listing logs
+
+cleanup_old_logs(log_dir)
+
 # Build handlers list - StreamHandler only in debug mode to avoid leaking transcripts
 import os
-log_handlers = [logging.FileHandler(log_dir / "diktate.log")]
+log_handlers = [logging.FileHandler(session_log_file)]
 if os.environ.get("DEBUG") == "1":
     log_handlers.append(logging.StreamHandler())
 
@@ -67,6 +87,7 @@ logging.basicConfig(
     handlers=log_handlers
 )
 logger = logging.getLogger(__name__)
+logger.info(f"Session log: {session_log_file}")
 
 
 class State(Enum):

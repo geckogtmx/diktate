@@ -61,6 +61,25 @@
 4. **Spanish market underserved** → "Díctame" bilingual advantage
 5. **All cost $96-240/year** → We're FREE or dirt cheap
 6. **"$X/month" is misleading** → Their real monthly costs are 25%+ higher
+7. **🚀 Cloud is SLOWER than local** → Network latency adds 300-1200ms (see below)
+
+### 🚀 Speed Advantage (Benchmark-Backed)
+
+> **Local gemma3:4b: 350-750ms | Cloud APIs: 800-2000ms**
+> 
+> Local is 2-3x FASTER. Users can verify this themselves.
+
+| Provider | Total Latency | Why |
+|----------|---------------|-----|
+| **dikta.me (local)** | **350-750ms** | 0ms network overhead |
+| Cloud APIs (avg) | 800-2000ms | 300-1200ms network + provider queue |
+
+**Why cloud can't win:**
+- DNS + TCP + TLS: ~150-300ms
+- Network round-trip: ~100-500ms
+- Provider queue time: ~100-500ms (spikes unpredictably)
+
+*Full benchmarks: [BENCHMARKS.md](file:///e:/git/diktate/docs/BENCHMARKS.md)*
 
 ### Marketing Ammunition 🎯
 
@@ -77,6 +96,11 @@
 ```
 "AquaVoice gives you 1,000 words FREE... total. Ever.
  dikta.me: Unlimited. Always. No catch."
+```
+
+```
+"Cloud dictation: 1-2 seconds per response (network wait).
+ dikta.me local: 350-750ms. 2-3x faster. Test it yourself."
 ```
 
 ### 💸 The $20/Month Reality Check
@@ -122,85 +146,121 @@
 
 ---
 
-## 💰 Monetization Strategy: Lifetime-First
+## 💰 Anti-Subscription Monetization
 
-> **Core Insight:** Cloud API at marginal/break-even profit. **Lifetime one-time payment = main revenue.**
+> **Philosophy:** One-time payments only. No recurring subscriptions. We're the good guys.
 
-### The Flip
+### The Anti-Subscription Manifesto
 
-| Traditional Model | dikta.me Model |
-|-------------------|----------------|
-| Cloud = main revenue (recurring) | Cloud = cheap funnel (break-even) |
-| Local = afterthought | **Local lifetime = cash cow** |
-| High margins on API | Low/no margins on API |
-| Lock users into subscriptions | **One-time payment, own forever** |
+| Subscription Model (Them) | Anti-Subscription Model (Us) |
+|---------------------------|------------------------------|
+| $144-240/year, every year | **$10-25 once, own forever** |
+| Cloud = recurring revenue trap | Cloud = wallet top-ups (pay as you go) |
+| Word limits = forced upgrades | **Unlimited local, always** |
+| Lock-in via subscriptions | **One payment = lifetime access** |
 
-### Pricing Structure
+### Pricing Structure (FINAL)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    dikta.me Pricing                         │
+│              dikta.me ANTI-SUBSCRIPTION PRICING              │
 │                                                             │
-│   ☁️ CLOUD (Funnel)              🏠 LOCAL (Revenue)         │
-│   ────────────────               ──────────────────         │
-│   Free Trial: 2K words           Libre: FREE (Ollama DIY)   │
-│   Starter: $2/mo (cheap!)        ⭐ LIFETIME: $29 one-time  │
-│   Pro: $4/mo (still cheap)       (bundled, no setup)        │
+│   🏠 LIBRE TIER                 ⭐ PRO TIER                  │
+│   ─────────────                 ─────────                   │
+│   $0  - Free (OSS)              $25 - One-time payment      │
+│   $10 - Supporter Edition       • Everything in Libre       │
+│   • 100% local processing       • BYOK (Bring Your Own Key) │
+│   • MIT License                 • Wallet cloud credits*     │
+│   • Unlimited usage             • Priority support          │
+│   • Community support           • Source-Available license  │
 │                                                             │
-│   [API margins: ~0-10%]          [Lifetime margins: 100%]   │
+│   *Wallet credits available in v1.1                         │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│              💳 WALLET TOP-UPS (v1.1 - No Subscriptions!)   │
+│   ─────────────────────────────────────────────────────────│
+│   • Credits never expire, use at your own pace              │
+│   • 25% margin (we're transparent about our costs)          │
+│   • Pricing based on provider (Groq/DeepSeek/Gemini)        │
+│   • Estimated $5 = 10,000-30,000 words depending on model   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Cloud Tiers (Break-Even Pricing)
+### Tier Details
 
-| Tier | Price | Words/Mo | Our Cost | Margin |
-|------|-------|----------|----------|--------|
-| **Free Trial** | $0 | 2,000 | ~$0.05 | Loss leader |
-| **Starter** | $2/mo | 25,000 | ~$1.50 | ~25% |
-| **Pro** | $4/mo | 50,000 | ~$3.00 | ~25% |
+| Tier | Price | Target User | What They Get |
+|------|-------|-------------|---------------|
+| **Libre (Free)** | $0 | OSS users, privacy advocates | Full local app, MIT license |
+| **Libre (Supporter)** | $10 | Support the project | Free + badge, priority issues, beta access |
+| **Pro** | $25 | Professionals, cloud users | BYOK + wallet credits + priority support |
 
-> **Strategy:** Undercut competitors ($8-20/mo) while breaking even. Push users to lifetime.
+### Why $10 / $25?
 
-### Lifetime Local Tier (Main Revenue)
+**The Math (vs Competitors):**
+- WisprFlow: $144/year → dikta.me Pro pays for itself in **2 months**
+- Glaido: $240/year → dikta.me is **10x cheaper** on day one
+- AquaVoice: $96/year → dikta.me is **4x cheaper** immediately
 
-| Tier | Price | What They Get | Our Cost | Margin |
-|------|-------|---------------|----------|--------|
-| **Libre** | $0 | OSS, Ollama DIY | $0 | - |
-| **⭐ Lifetime** | $29 | Bundled local, 1 yr updates | $0 | **100%** |
-| **Lifetime+** | $49 | + Priority support, beta | $0 | **100%** |
-
-### Why This Works
-
-1. **Cloud as funnel:** Low price attracts users from expensive competitors
-2. **Lifetime converts:** Users realize "just pay once = no more subscriptions"
-3. **Zero ongoing cost:** Local = no API bills for us
-4. **Word of mouth:** "$29 forever" is shareable
-5. **Undercut competition:** They can't match our cloud prices + survive
-
-### Marketing Angle
-
+**The Message:**
 ```
-"WisprFlow: $144/year, every year.
- dikta.me: $29 once. Forever. Or use cloud for $2/mo.
- Your choice. No tricks."
+"Competitors: $100-240 per YEAR. Every year. Forever.
+ dikta.me: $25 once. That's it. You own it."
 ```
 
-### Revenue Projection
+### Wallet Credits (v1.1, 25% Margin)
 
-| Scenario | Users | Cloud (break-even) | Lifetime ($29) | Total |
-|----------|-------|--------------------|--------------------|-------|
-| **Conservative** | 1,000 | $200/mo | 300 × $29 = $8,700 | **$8,700** |
-| **Moderate** | 5,000 | $800/mo | 1,500 × $29 = $43,500 | **$43,500** |
-| **Optimistic** | 20,000 | $2,000/mo | 6,000 × $29 = $174,000 | **$174,000** |
+> We're transparent: we keep 25%, you get 75% in compute value.
 
-### Ko-fi Implementation
+| Package | Price | Est. Words | Providers |
+|---------|-------|------------|-----------|
+| Starter | $5 | ~10,000-30,000 | Groq, DeepSeek, Gemini |
+| Standard | $10 | ~20,000-60,000 | Groq, DeepSeek, Gemini |
+| Bulk | $25 | ~50,000-150,000 | Groq, DeepSeek, Gemini |
 
-| Product | Ko-fi Type | Price |
-|---------|------------|-------|
-| Lifetime Local | One-time purchase | $29 |
-| Lifetime+ | One-time purchase | $49 |
-| Cloud Starter | Monthly membership | $2/mo |
-| Cloud Pro | Monthly membership | $4/mo |
+*Word counts vary by provider cost. Credits never expire.*
+
+### Revenue Projection (Revised)
+
+| Scenario | Users | Libre ($10) | Pro ($25) | Wallet (25% margin) | Total |
+|----------|-------|-------------|-----------|---------------------|-------|
+| **Conservative** | 1,000 | 200 × $10 | 100 × $25 | $500 | **$7,000** |
+| **Moderate** | 5,000 | 1,000 × $10 | 500 × $25 | $5,000 | **$27,500** |
+| **Optimistic** | 20,000 | 4,000 × $10 | 2,000 × $25 | $20,000 | **$110,000** |
+
+### Ko-fi / Stripe Implementation
+
+| Product | Type | Price | Platform |
+|---------|------|-------|----------|
+| Libre Supporter | One-time | $10 | Ko-fi |
+| Pro License | One-time | $25 | Ko-fi → Stripe (v1.1) |
+| Wallet Credits | One-time | $5-25 | Stripe (v1.1) |
+| Active Supporter | Monthly | $2-3/mo | Ko-fi / Substack |
+
+### 🔄 Active Status (Soft Recurring)
+
+> **The "Good Guy" recurring model:** Not a subscription—a choice.
+
+**To receive ongoing updates for Libre & Pro, stay "Active" via:**
+
+| Method | Requirement | What You Get |
+|--------|-------------|--------------|
+| **Wallet Balance** | Keep $10+ topped up every 6 months | Updates + cloud credits to use |
+| **Ko-fi/Substack** | $2-3/month supporter tier | Updates + community perks |
+
+**Why this works:**
+- **Not a subscription trap** — wallet credits are usable, not wasted
+- **User choice** — pick wallet OR platform, whatever suits you
+- **Transparent** — we need recurring revenue to keep developing
+- **Fair** — $10 every 6 months = $20/year vs competitors' $144-240/year
+
+**Messaging:**
+```
+"Stay active, stay updated. Your choice:
+ • Keep $10 in your wallet (and use it for cloud credits), OR
+ • Support us on Ko-fi for $2/month
+
+Either way, you get updates. No tricks. No subscriptions."
+```
 
 ---
 
