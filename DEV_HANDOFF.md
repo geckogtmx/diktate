@@ -1,10 +1,41 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-18 10:27
+> **Last Updated:** 2026-01-18 10:35
 > **Last Model:** Gemini 2.5 Pro (Architect)
 > **Current Phase:** Stability & Monitoring (Phase A)
 > **Master Plan:** [DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md)
 > **Brand:** diktate / dikta.me (NO rebrand to Waal)
+
+---
+
+## ✅ Session 4 Accomplishments (2026-01-18)
+
+### Documentation Sync ✅
+**Files Modified:** `README.md`, `GEMINI.md`
+
+- Removed outdated Waal rebrand note from README.md
+- Updated GEMINI.md branding note to reflect diktate as final brand
+- Verified SEC-001: No `.env` in git history ✅ CLEAR
+
+### Phase A.2 Pipeline Observability ✅
+**File Modified:** `python/ipc_server.py`
+
+**New Features:**
+- **SessionStats class:** Tracks dictation count, success/error counts, total chars, avg time
+- **Audio metadata logging:** Duration (seconds), file size (bytes) logged per dictation
+- **Model version logging:** Logs transcriber and processor model per dictation
+- **Session summary at shutdown:** Comprehensive stats (dictations, chars, avg time, session duration)
+
+**Log Output Examples:**
+```
+[AUDIO] Duration: 3.42s, Size: 109056 bytes
+[MODELS] Transcriber: turbo, Processor: gemma3:4b
+[SESSION SUMMARY]
+  Dictations: 5 (5 success, 0 errors)
+  Total Chars: 423
+  Avg Time: 1850ms
+  Session Duration: 324.5s
+```
 
 ---
 
@@ -81,13 +112,9 @@
 ## 📋 Instructions for Next Model
 
 ### Priority Order
-1. **Document Hardware Optimization** - Add to E.3 documentation:
-   - Hardware scan utility (VRAM/RAM detection)
-   - Model recommendations table (by VRAM: 4GB→gemma3:4b, 12GB→llama3:8b)
-   - Ollama tuning env vars (OLLAMA_NUM_GPU_LAYERS, OLLAMA_NUM_THREADS)
-   - First-run wizard concept (D.5 already planned)
-2. **Verify SEC-001:** Run `git log --all -p -- .env | head -50` to check for exposed API key
-3. **Continue Phase A:** Model monitoring, baseline testing
+1. **Continue Phase A.1:** Model health check endpoint (Ollama responding?)
+2. **Persist Metrics:** Save performance metrics to JSON file (A.2)
+3. **Baseline Testing:** Run gemma3:4b baseline tests (A.4)
 4. **Consider test infrastructure** (QUAL-002) if planning v1.0 release
 
 ### Context Needed

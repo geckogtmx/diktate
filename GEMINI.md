@@ -32,7 +32,7 @@ As a **Gemini** model, your strength lies in massive context handling and comple
 
 ## 🔍 Specific Context Notes
 
--   **Branding:** Remember we are `diktate` now, but `Waal` later. Don't rename valid code artifacts yet, but build with the rename in mind (e.g., modular naming).
+-   **Branding:** We are **diktate** (dikta.me) — final brand, no rebrand planned.
 -   **Privacy:** Always prioritize the "Wall" aspect—local execution is non-negotiable.
 
 ---

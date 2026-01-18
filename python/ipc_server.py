@@ -99,6 +99,43 @@ class State(Enum):
     ERROR = "error"
 
 
+class SessionStats:
+    """Track session-level statistics for observability (A.2)"""
+
+    def __init__(self):
+        self.dictation_count: int = 0
+        self.success_count: int = 0
+        self.error_count: int = 0
+        self.total_chars: int = 0
+        self.total_time_ms: float = 0.0
+        self.session_start: float = time.time()
+
+    def record_success(self, chars: int, time_ms: float) -> None:
+        """Record a successful dictation"""
+        self.dictation_count += 1
+        self.success_count += 1
+        self.total_chars += chars
+        self.total_time_ms += time_ms
+
+    def record_error(self) -> None:
+        """Record a failed dictation"""
+        self.dictation_count += 1
+        self.error_count += 1
+
+    def get_summary(self) -> Dict:
+        """Get session summary statistics"""
+        session_duration = time.time() - self.session_start
+        avg_time = self.total_time_ms / self.success_count if self.success_count > 0 else 0
+        return {
+            "dictations": self.dictation_count,
+            "successes": self.success_count,
+            "errors": self.error_count,
+            "total_chars": self.total_chars,
+            "avg_time_ms": round(avg_time, 0),
+            "session_duration_s": round(session_duration, 1)
+        }
+
+
 class PerformanceMetrics:
     """Track performance metrics for the pipeline"""
 
@@ -146,6 +183,7 @@ class IpcServer:
         self.recording = False
         self.audio_file = None
         self.perf = PerformanceMetrics()
+        self.session_stats = SessionStats()  # Session-level stats (A.2)
         self.trans_mode = "none"  # Translation mode: none, es-en, en-es
 
         logger.info("Initializing IPC Server...")
@@ -247,6 +285,23 @@ class IpcServer:
         try:
             self._set_state(State.PROCESSING)
 
+            # Log audio file metadata (A.2 observability)
+            if self.audio_file:
+                try:
+                    import wave
+                    audio_size = os.path.getsize(self.audio_file)
+                    with wave.open(self.audio_file, 'rb') as wf:
+                        frames = wf.getnframes()
+                        rate = wf.getframerate()
+                        audio_duration = frames / float(rate)
+                    # Log model versions for this dictation
+                    transcriber_model = getattr(self.transcriber, 'model_size', 'unknown')
+                    processor_model = getattr(self.processor, 'model', 'unknown') if self.processor else 'none'
+                    logger.info(f"[AUDIO] Duration: {audio_duration:.2f}s, Size: {audio_size} bytes")
+                    logger.info(f"[MODELS] Transcriber: {transcriber_model}, Processor: {processor_model}")
+                except Exception as e:
+                    logger.warning(f"Could not read audio metadata: {e}")
+
             # Transcribe
             logger.info("[TRANSCRIBE] Transcribing audio...")
             self.perf.start("transcription")
@@ -298,6 +353,9 @@ class IpcServer:
             logger.info(f"[PERF] Session complete - Total: {metrics.get('total', 0):.0f}ms, Chars: {metrics['charCount']}")
             self._emit_event("performance-metrics", metrics)
 
+            # Record session stats (A.2)
+            self.session_stats.record_success(len(processed_text), metrics.get('total', 0))
+
             # Cleanup
             if self.audio_file:
                 try:
@@ -310,6 +368,7 @@ class IpcServer:
 
         except Exception as e:
             logger.error(sanitize_log_message(f"Pipeline error: {e}"))
+            self.session_stats.record_error()  # Track errors (A.2)
             self._set_state(State.ERROR)
 
     def configure(self, config: dict) -> dict:
@@ -488,6 +547,16 @@ class IpcServer:
     def shutdown(self) -> None:
         """Clean up and shutdown"""
         logger.info("Shutting down IPC Server...")
+
+        # Log session summary (A.2)
+        summary = self.session_stats.get_summary()
+        logger.info("=" * 60)
+        logger.info("[SESSION SUMMARY]")
+        logger.info(f"  Dictations: {summary['dictations']} ({summary['successes']} success, {summary['errors']} errors)")
+        logger.info(f"  Total Chars: {summary['total_chars']}")
+        logger.info(f"  Avg Time: {summary['avg_time_ms']:.0f}ms")
+        logger.info(f"  Session Duration: {summary['session_duration_s']:.1f}s")
+        logger.info("=" * 60)
 
         if self.recording and self.recorder:
             try:

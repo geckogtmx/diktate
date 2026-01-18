@@ -61,13 +61,13 @@
 
 ### A.2 Pipeline Observability
 - [ ] Persist performance metrics to JSON file
-- [ ] Add session-level stats (success rate, avg time, error count)
+- [x] Add session-level stats (success rate, avg time, error count)
 - [ ] Create simple metrics viewer in status window
 - [ ] Log transcription confidence scores (if available from Whisper)
-- [ ] **Log audio duration** (correlate processing time with input length)
-- [ ] **Log audio file size** (detect recording issues)
-- [ ] **Log model version/name** (track exactly which model was used)
-- [ ] **Session summary at shutdown** (total dictations, avg times, errors)
+- [x] **Log audio duration** (correlate processing time with input length)
+- [x] **Log audio file size** (detect recording issues)
+- [x] **Log model version/name** (track exactly which model was used)
+- [x] **Session summary at shutdown** (total dictations, avg times, errors)
 
 ### A.3 Error Recovery
 - [ ] Verify Ollama reconnection after timeout
