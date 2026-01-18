@@ -13,6 +13,17 @@ import { performanceMetrics } from './utils/performanceMetrics';
 import Store from 'electron-store';
 import { validateIpcMessage, SettingsSetSchema, ApiKeySetSchema, ApiKeyTestSchema, redactSensitive } from './utils/ipcSchemas';
 
+// ============================================
+// Single Instance Lock - Prevent multiple instances
+// ============================================
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // Another instance is already running - exit immediately
+  console.log('dIKtate is already running. Exiting this instance...');
+  process.exit(0);
+}
+
 const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
 
 // Types for Settings
@@ -20,9 +31,15 @@ interface UserSettings {
   processingMode: string;
   autoStart: boolean;
   soundFeedback: boolean;
+  feedbackSound: string;
   defaultMode: string;
   transMode: string;
   hotkey: string;
+  askHotkey: string;
+  askOutputMode: string;
+  defaultOllamaModel: string;
+  audioDeviceId: string;
+  audioDeviceLabel: string;
 }
 
 // Initialize Store with defaults
@@ -31,15 +48,22 @@ const store = new Store<UserSettings>({
     processingMode: 'local',
     autoStart: false,
     soundFeedback: true,
+    feedbackSound: 'click',
     defaultMode: 'standard',
     transMode: 'none',
-    hotkey: 'Ctrl+Alt+D'
+    hotkey: 'Ctrl+Alt+D',
+    askHotkey: 'Ctrl+Alt+A',
+    askOutputMode: 'type',
+    defaultOllamaModel: 'gemma3:4b',
+    audioDeviceId: 'default',
+    audioDeviceLabel: 'Default Microphone'
   }
 });
 
 let tray: Tray | null = null;
 let pythonManager: PythonManager | null = null;
 let isRecording: boolean = false;
+let recordingMode: 'dictate' | 'ask' = 'dictate';
 let settingsWindow: BrowserWindow | null = null;
 
 /**
@@ -390,6 +414,61 @@ function setupPythonEventHandlers(): void {
       });
     }
   });
+
+  // Handle Ask Mode responses
+  pythonManager.on('ask-response', async (response: any) => {
+    logger.info('MAIN', 'Ask response received', { success: response.success });
+
+    // Reset recording state
+    isRecording = false;
+    updateTrayIcon('idle');
+    updateTrayState('Idle');
+
+    if (!response.success) {
+      showNotification('Ask Failed', response.error || 'Unknown error', true);
+      return;
+    }
+
+    const { question, answer } = response;
+    const outputMode = store.get('askOutputMode') || 'clipboard';
+
+    logger.info('MAIN', 'Delivering ask response', { outputMode, answerLength: answer?.length });
+
+    // Deliver based on output mode
+    switch (outputMode) {
+      case 'clipboard':
+        // Copy to clipboard
+        const { clipboard } = require('electron');
+        clipboard.writeText(answer);
+        showNotification('Answer Ready', `${answer.substring(0, 100)}${answer.length > 100 ? '...' : ''}\n\n📋 Copied to clipboard!`, false);
+        break;
+
+      case 'type':
+        // Type the answer (like dictation)
+        if (pythonManager) {
+          await pythonManager.sendCommand('inject_text', { text: answer });
+        }
+        break;
+
+      case 'notification':
+        // Just show notification
+        showNotification('Answer', answer, false);
+        break;
+
+      case 'clipboard+notify':
+      default:
+        // Both clipboard and notification
+        const { clipboard: clip } = require('electron');
+        clip.writeText(answer);
+        showNotification('Answer Ready', `${answer.substring(0, 150)}${answer.length > 150 ? '...' : ''}\n\n📋 Copied to clipboard!`, false);
+        break;
+    }
+
+    // Forward to debug window if open
+    if (debugWindow && !debugWindow.isDestroyed()) {
+      debugWindow.webContents.send('ask-response', { question, answer });
+    }
+  });
 }
 
 /**
@@ -483,7 +562,7 @@ function setupIpcHandlers(): void {
             if (result?.processor) {
               debugWindow!.webContents.send('badge-update', { processor: result.processor });
             }
-          }).catch(() => {});
+          }).catch(() => { });
         }
       }).catch(err => {
         logger.error('IPC', 'Failed to update Python provider', err);
@@ -507,9 +586,114 @@ function setupIpcHandlers(): void {
         logger.error('IPC', 'Failed to update Python transMode', err);
       });
     }
+
+    // If default Ollama model changed
+    if (key === 'defaultOllamaModel' && pythonManager) {
+      logger.info('IPC', `Default Ollama model changed to ${value}, updating Python`);
+      pythonManager.setConfig({ defaultModel: value }).catch(err => {
+        logger.error('IPC', 'Failed to update Python default model', err);
+      });
+    }
+
+    // If auto-start setting changed
+    if (key === 'autoStart') {
+      try {
+        app.setLoginItemSettings({
+          openAtLogin: value,
+          openAsHidden: false
+        });
+        logger.info('IPC', `Auto-start ${value ? 'enabled' : 'disabled'}`);
+      } catch (err) {
+        logger.error('IPC', 'Failed to set auto-start', err);
+      }
+    }
   });
 
-  // API Key IPC Handlers (secure storage with safeStorage)
+  // Settings get single value
+  ipcMain.handle('settings:get', (_event, key: string) => {
+    return store.get(key);
+  });
+
+  // Sound playback handler
+  ipcMain.handle('settings:play-sound', async (_event, soundName: string) => {
+    const soundPath = path.join(__dirname, '..', 'assets', 'sounds', `${soundName}.wav`);
+
+    // Check if sound file exists
+    if (!fs.existsSync(soundPath)) {
+      logger.warn('IPC', `Sound file not found: ${soundPath}`);
+      // For now, just log - we'll create sound files later
+      return;
+    }
+
+    // Play sound using platform-specific method
+    try {
+      // On Windows, we can use powershell to play sounds
+      const { exec } = require('child_process');
+      exec(`powershell -c "(New-Object Media.SoundPlayer '${soundPath}').PlaySync()"`, (err: Error | null) => {
+        if (err) {
+          logger.error('IPC', 'Failed to play sound', err);
+        }
+      });
+    } catch (err) {
+      logger.error('IPC', 'Failed to play sound', err);
+    }
+  });
+
+  // Hardware test handler
+  ipcMain.handle('settings:run-hardware-test', async () => {
+    try {
+      const { exec } = require('child_process');
+
+      let gpu = 'Unknown';
+      let vram = 'Unknown';
+      let tier = 'Fast (CPU-optimized)';
+
+      // Try to get NVIDIA GPU info using nvidia-smi
+      return new Promise((resolve) => {
+        exec('nvidia-smi --query-gpu=name,memory.total --format=csv,noheader', (err: Error | null, stdout: string) => {
+          if (err || !stdout.trim()) {
+            // No NVIDIA GPU found, try to detect any GPU
+            logger.info('IPC', 'No NVIDIA GPU detected, using CPU mode');
+            resolve({
+              gpu: 'CPU Mode',
+              vram: 'N/A',
+              tier: 'Fast (CPU-optimized)',
+              speed: 0
+            });
+            return;
+          }
+
+          // Parse nvidia-smi output
+          const parts = stdout.trim().split(',').map((s: string) => s.trim());
+          gpu = parts[0] || 'Unknown NVIDIA GPU';
+          vram = parts[1] || 'Unknown';
+
+          // Determine tier based on VRAM
+          const vramMB = parseInt(vram.replace(/[^\d]/g, ''));
+          if (vramMB >= 12000) {
+            tier = 'Quality (12GB+ VRAM)';
+          } else if (vramMB >= 6000) {
+            tier = 'Balanced (6-12GB VRAM)';
+          } else if (vramMB >= 4000) {
+            tier = 'Fast (4-6GB VRAM)';
+          } else {
+            tier = 'Fast (Low VRAM)';
+          }
+
+          logger.info('IPC', `Hardware test complete: ${gpu}, ${vram}, ${tier}`);
+          resolve({ gpu, vram, tier, speed: 0 });
+        });
+      });
+    } catch (err) {
+      logger.error('IPC', 'Hardware test failed', err);
+      return {
+        gpu: 'Test failed',
+        vram: 'Test failed',
+        tier: 'Unknown',
+        speed: 0
+      };
+    }
+  });
   ipcMain.handle('apikey:get-all', () => {
     // Return object indicating which keys are set (not the actual keys)
     return {
@@ -596,8 +780,9 @@ function setupIpcHandlers(): void {
 
 /**
  * Toggle recording state
+ * @param mode - 'dictate' for normal dictation, 'ask' for Q&A mode
  */
-async function toggleRecording(): Promise<void> {
+async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<void> {
   if (!pythonManager) {
     logger.warn('MAIN', 'Python manager not initialized');
     return;
@@ -605,10 +790,10 @@ async function toggleRecording(): Promise<void> {
 
   if (isRecording) {
     // Stop recording
-    logger.info('MAIN', 'Stopping recording');
+    logger.info('MAIN', 'Stopping recording', { mode: recordingMode });
     isRecording = false;
     updateTrayIcon('processing');
-    updateTrayState('Processing');
+    updateTrayState(recordingMode === 'ask' ? 'Thinking...' : 'Processing');
 
     try {
       await pythonManager.sendCommand('stop_recording');
@@ -619,10 +804,16 @@ async function toggleRecording(): Promise<void> {
     }
   } else {
     // Start recording
-    logger.info('MAIN', 'Starting recording');
+    recordingMode = mode;
+    logger.info('MAIN', 'Starting recording', { mode });
     isRecording = true;
     updateTrayIcon('recording');
-    updateTrayState('Recording');
+    updateTrayState(mode === 'ask' ? 'Listening (Ask)' : 'Recording');
+
+    // Notify status window of mode change
+    if (debugWindow && !debugWindow.isDestroyed()) {
+      debugWindow.webContents.send('mode-update', mode);
+    }
 
     try {
       // Get preferred device ID and Label
@@ -631,7 +822,8 @@ async function toggleRecording(): Promise<void> {
 
       await pythonManager.sendCommand('start_recording', {
         deviceId: audioDeviceId,
-        deviceLabel: audioDeviceLabel
+        deviceLabel: audioDeviceLabel,
+        mode: mode  // Pass the mode to Python
       });
     } catch (error) {
       logger.error('MAIN', 'Failed to start recording', error);
@@ -644,18 +836,22 @@ async function toggleRecording(): Promise<void> {
 }
 
 /**
- * Setup global hotkey listener
+ * Setup global hotkey listeners for both Dictate and Ask modes
  */
 function setupGlobalHotkey(): void {
   try {
     let lastHotkeyPress = 0;
     const HOTKEY_DEBOUNCE_MS = 500;
-    const currentHotkey = store.get('hotkey') || 'Control+Alt+D';
+
+    // Get hotkeys from settings
+    const dictateHotkey = store.get('hotkey') || 'Control+Alt+D';
+    const askHotkey = store.get('askHotkey') || 'Control+Alt+A';
 
     // Unregister old if exists
     globalShortcut.unregisterAll();
 
-    const ret = globalShortcut.register(currentHotkey, async () => {
+    // Register Dictate hotkey (Ctrl+Alt+D)
+    const dictateRet = globalShortcut.register(dictateHotkey, async () => {
       const now = Date.now();
       if (now - lastHotkeyPress < HOTKEY_DEBOUNCE_MS) {
         logger.debug('HOTKEY', 'Ignoring debounce hotkey press');
@@ -663,25 +859,46 @@ function setupGlobalHotkey(): void {
       }
       lastHotkeyPress = now;
 
-      logger.debug('HOTKEY', 'Hotkey pressed', { isRecording });
-      await toggleRecording();
+      logger.debug('HOTKEY', 'Dictate hotkey pressed', { isRecording, mode: 'dictate' });
+      await toggleRecording('dictate');
     });
 
-    if (!ret) {
-      logger.warn('HOTKEY', 'Failed to register global hotkey');
+    if (!dictateRet) {
+      logger.warn('HOTKEY', 'Failed to register dictate hotkey', { hotkey: dictateHotkey });
       showNotification(
         'Hotkey Registration Failed',
-        'Could not register Ctrl+Alt+D. Another application may be using it.',
+        `Could not register ${dictateHotkey}. Another application may be using it.`,
         true
       );
     } else {
-      logger.info('HOTKEY', 'Global hotkey registered successfully', { hotkey: currentHotkey });
+      logger.info('HOTKEY', 'Dictate hotkey registered', { hotkey: dictateHotkey });
     }
+
+    // Register Ask hotkey (Ctrl+Alt+A)
+    const askRet = globalShortcut.register(askHotkey, async () => {
+      const now = Date.now();
+      if (now - lastHotkeyPress < HOTKEY_DEBOUNCE_MS) {
+        logger.debug('HOTKEY', 'Ignoring debounce ask hotkey press');
+        return;
+      }
+      lastHotkeyPress = now;
+
+      logger.debug('HOTKEY', 'Ask hotkey pressed', { isRecording, mode: 'ask' });
+      await toggleRecording('ask');
+    });
+
+    if (!askRet) {
+      logger.warn('HOTKEY', 'Failed to register ask hotkey', { hotkey: askHotkey });
+      // Don't show notification for ask - it's a secondary feature
+    } else {
+      logger.info('HOTKEY', 'Ask hotkey registered', { hotkey: askHotkey });
+    }
+
   } catch (error) {
-    logger.error('HOTKEY', 'Error registering global hotkey', error);
+    logger.error('HOTKEY', 'Error registering global hotkeys', error);
     showNotification(
       'Hotkey Error',
-      'Failed to register global hotkey. Please restart the application.',
+      'Failed to register global hotkeys. Please restart the application.',
       true
     );
   }
@@ -748,7 +965,8 @@ async function initialize(): Promise<void> {
         mode: currentMode,
         models,
         soundFeedback: store.get('soundFeedback', true),
-        processingMode: actualProcessingMode
+        processingMode: actualProcessingMode,
+        recordingMode: recordingMode
       };
     });
 
@@ -799,6 +1017,23 @@ async function initialize(): Promise<void> {
  * App ready
  */
 app.on('ready', () => {
+  // Handle when user tries to open a second instance
+  app.on('second-instance', () => {
+    // Show a notification that app is already running
+    if (Notification.isSupported()) {
+      new Notification({
+        title: 'dIKtate Already Running',
+        body: 'One instance is already running. Check your system tray.'
+      }).show();
+    }
+
+    // Focus the settings window if it exists
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      if (settingsWindow.isMinimized()) settingsWindow.restore();
+      settingsWindow.focus();
+    }
+  });
+
   initialize();
 });
 

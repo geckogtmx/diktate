@@ -538,6 +538,67 @@ These are not committed to v1.1 but preserved for future consideration:
 | Speaker diarization | Multi-speaker transcription |
 | Real-time collab | Shared dictation sessions |
 
+### Ask Mode (v1.0.5) ✅ IN PROGRESS
+
+**Status:** Phase 1 & 3 Complete (2026-01-18)
+
+Voice Q&A feature - "The Workflow Crutch" for micro-queries.
+
+| Phase | Scope | Status |
+|-------|-------|--------|
+| Phase 1 | Core infrastructure (hotkey, Python handler) | ✅ Complete |
+| Phase 2 | Status window mode toggle UI | ⏳ Pending |
+| Phase 3 | Settings page integration (Output toggle) | ✅ Complete |
+| Phase 4 | Optimizations (Calculator, Feedback Loop) | 📅 Planned |
+
+**How it works:**
+- `Ctrl+Alt+D` = Dictate (transcribe → clean → type)
+- `Ctrl+Alt+A` = Ask (transcribe → ask LLM → clipboard/notify/type)
+
+**Strategy:** "Quick Reference Crutch" - faster than Google for math, dates, facts.
+**Planned Optimization:** Calculator Mode (skip LLM for pure math).
+
+**Output options:** Clipboard, **Type (Default)**, Voice TTS, Notification
+
+---
+
+## 🎮 Satellite Product Idea: Streamer AI Co-Host
+
+> **Status:** CONCEPT - Not yet planned
+> **Added:** 2026-01-18
+
+**Concept:** Repurpose diktate's local voice + LLM stack for streamers to have an AI co-host/moderator using local models (no expensive cloud subscriptions).
+
+### Use Cases
+
+| Feature | Description |
+|---------|-------------|
+| **AI Chat Responder** | LLM types in Twitch/YouTube chat based on streamer's voice commands |
+| **TTS with Personality** | Local text-to-speech with custom voice/personality for reading donations |
+| **Moderation Bot** | Local LLM monitors chat for toxicity, auto-responds or mutes |
+| **Sound Board AI** | Voice-activated sound effects ("play sad trombone") |
+| **Stream Recap** | Summarizes stream highlights using transcription |
+
+### Integration Targets
+
+- **StreamerBot** - For event handling and OBS control
+- **OBS WebSocket** - Direct scene/source control
+- **Twitch API** - Read/write chat
+- **YouTube Live API** - Chat interaction
+
+### Advantages Over Competitors
+
+- 100% local = no API costs, no subscription
+- Privacy = chat/audio never leaves machine
+- Customizable = train personalities on local models
+- Offline = works without internet
+
+### MVP for Streamers
+
+1. Voice command → LLM generates chat message → sends to StreamerBot
+2. Donation alert → TTS reads with AI personality
+3. Chat toxicity → local moderation (no OpenAI costs)
+
 ---
 
 ## Version Reference

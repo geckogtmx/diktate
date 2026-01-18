@@ -14,11 +14,13 @@ export const SettingsKeySchema = z.enum([
     'processingMode',
     'autoStart',
     'soundFeedback',
+    'feedbackSound',
     'hotkey',
     'defaultMode',
     'transMode',
     'audioDeviceId',
-    'audioDeviceLabel'
+    'audioDeviceLabel',
+    'defaultOllamaModel'
 ]);
 
 // API key provider schema

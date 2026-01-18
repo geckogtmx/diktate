@@ -253,6 +253,7 @@ class IpcServer:
         self.processor: Optional[Processor] = None
         self.injector: Optional[Injector] = None
         self.recording = False
+        self.recording_mode = "dictate"  # 'dictate' or 'ask'
         self.audio_file = None
         self.perf = PerformanceMetrics()
         self.session_stats = SessionStats()  # Session-level stats (A.2)
@@ -300,8 +301,14 @@ class IpcServer:
         self.state = new_state
         self._emit_event("state-change", {"state": new_state.value})
 
-    def start_recording(self, device_id: Optional[str] = None, device_label: Optional[str] = None) -> dict:
-        """Start recording audio"""
+    def start_recording(self, device_id: Optional[str] = None, device_label: Optional[str] = None, mode: str = "dictate") -> dict:
+        """Start recording audio
+        
+        Args:
+            device_id: Audio device ID
+            device_label: Audio device label for matching
+            mode: 'dictate' for normal dictation, 'ask' for Q&A mode
+        """
         if self.state != State.IDLE:
             error_msg = f"Cannot start recording in {self.state.value} state"
             logger.warning(error_msg)
@@ -312,11 +319,14 @@ class IpcServer:
             self.perf.reset()
             self.perf.start("total")
             self.perf.start("recording")
+            
+            # Store the mode for processing
+            self.recording_mode = mode
+            logger.info(f"[REC] Recording started in {mode} mode")
 
             self._set_state(State.RECORDING)
             self.recorder.start(device_id=device_id, device_label=device_label)
             self.recording = True
-            logger.info("[REC] Recording started")
             return {"success": True}
         except Exception as e:
             logger.error(sanitize_log_message(f"Failed to start recording: {e}"))
@@ -334,15 +344,18 @@ class IpcServer:
         try:
             self.recorder.stop()
             self.perf.end("recording")
-            logger.info("[STOP] Recording stopped")
+            logger.info(f"[STOP] Recording stopped (mode: {self.recording_mode})")
 
             # Save audio to temporary file
             import os
             self.audio_file = os.path.join(self.recorder.temp_dir, "recording.wav")
             self.recorder.save_to_file(self.audio_file)
 
-            # Process the recording in a background thread
-            thread = threading.Thread(target=self._process_recording)
+            # Process based on mode
+            if self.recording_mode == "ask":
+                thread = threading.Thread(target=self._process_ask_recording)
+            else:
+                thread = threading.Thread(target=self._process_recording)
             thread.start()
 
             return {"success": True}
@@ -449,6 +462,90 @@ class IpcServer:
         except Exception as e:
             logger.error(sanitize_log_message(f"Pipeline error: {e}"))
             self.session_stats.record_error()  # Track errors (A.2)
+            self._set_state(State.ERROR)
+
+    def _process_ask_recording(self) -> None:
+        """Process the recorded audio as a question for Q&A mode"""
+        try:
+            self._set_state(State.PROCESSING)
+            logger.info("[ASK] Processing question...")
+
+            # Log audio file metadata
+            if self.audio_file:
+                try:
+                    import wave
+                    audio_size = os.path.getsize(self.audio_file)
+                    with wave.open(self.audio_file, 'rb') as wf:
+                        frames = wf.getnframes()
+                        rate = wf.getframerate()
+                        audio_duration = frames / float(rate)
+                    logger.info(f"[AUDIO] Duration: {audio_duration:.2f}s, Size: {audio_size} bytes")
+                except Exception as e:
+                    logger.warning(f"Could not read audio metadata: {e}")
+
+            # Transcribe the question
+            logger.info("[TRANSCRIBE] Transcribing question...")
+            self.perf.start("transcription")
+            question = self.transcriber.transcribe(self.audio_file)
+            self.perf.end("transcription")
+            logger.info(f"[QUESTION] {redact_text(question)}")
+
+            if not question or not question.strip():
+                logger.info("[ASK] Empty question, skipping")
+                self._emit_event("ask-response", {"success": False, "error": "No question detected"})
+                self._set_state(State.IDLE)
+                return
+
+            # Ask the LLM (use processor with Q&A prompt)
+            if self.processor:
+                logger.info("[ASK] Asking LLM...")
+                self.perf.start("ask")
+                
+                # Store original prompt and use Q&A prompt
+                original_prompt = self.processor.prompt
+                self.processor.prompt = """You are a helpful AI assistant. The user has asked you a question via voice.
+Answer the question concisely and helpfully. Be direct and informative.
+
+USER QUESTION: {text}
+
+YOUR ANSWER:"""
+                
+                try:
+                    answer = self.processor.process(question)
+                finally:
+                    # Restore original prompt
+                    self.processor.prompt = original_prompt
+                
+                self.perf.end("ask")
+                logger.info(f"[ANSWER] {redact_text(answer)}")
+                
+                # Emit the response (don't inject)
+                self._emit_event("ask-response", {
+                    "success": True,
+                    "question": question.strip(),
+                    "answer": answer.strip()
+                })
+            else:
+                logger.error("[ASK] No processor available")
+                self._emit_event("ask-response", {"success": False, "error": "No LLM processor available"})
+
+            # End total timing
+            self.perf.end("total")
+            metrics = self.perf.get_metrics()
+            logger.info(f"[PERF] Ask complete - Total: {metrics.get('total', 0):.0f}ms")
+
+            # Cleanup
+            if self.audio_file:
+                try:
+                    os.remove(self.audio_file)
+                except Exception as e:
+                    logger.warning(f"Failed to delete temporary audio file: {e}")
+
+            self._set_state(State.IDLE)
+
+        except Exception as e:
+            logger.error(sanitize_log_message(f"Ask pipeline error: {e}"))
+            self._emit_event("ask-response", {"success": False, "error": str(e)})
             self._set_state(State.ERROR)
 
     def check_health(self) -> dict:
@@ -559,7 +656,8 @@ class IpcServer:
             if cmd_name == "start_recording":
                 return self.start_recording(
                     device_id=command.get("deviceId"),
-                    device_label=command.get("deviceLabel")
+                    device_label=command.get("deviceLabel"),
+                    mode=command.get("mode", "dictate")
                 )
             elif cmd_name == "stop_recording":
                 return self.stop_recording()

@@ -53,6 +53,10 @@ const perfInject = document.getElementById('perf-inject');
 const toggleSound = document.getElementById('toggle-sound') as HTMLInputElement | null;
 const toggleCloud = document.getElementById('toggle-cloud') as HTMLInputElement | null;
 
+// Mode toggle elements
+const modeDictateBtn = document.getElementById('mode-dictate') as HTMLButtonElement | null;
+const modeAskBtn = document.getElementById('mode-ask') as HTMLButtonElement | null;
+
 // Session statistics
 let sessionCount = 0;
 let totalChars = 0;
@@ -219,6 +223,27 @@ function setupToggles() {
     }
 }
 
+// Update mode toggle UI
+function updateModeToggle(mode: 'dictate' | 'ask') {
+    if (!modeDictateBtn || !modeAskBtn) return;
+
+    if (mode === 'dictate') {
+        modeDictateBtn.classList.add('active');
+        modeAskBtn.classList.remove('active');
+    } else {
+        modeDictateBtn.classList.remove('active');
+        modeAskBtn.classList.add('active');
+    }
+}
+
+// Make switchMode available globally for onclick handler
+(window as any).switchMode = function (mode: 'dictate' | 'ask') {
+    updateModeToggle(mode);
+    addLogEntry('INFO', `Mode switched to: ${mode.toUpperCase()}`);
+    // Note: Mode is primarily controlled by which hotkey is pressed
+    // This UI just shows the current state
+};
+
 // Update metrics panel with recent data (A.2 observability)
 async function updateMetricsPanel() {
     const metricsChart = document.getElementById('metrics-chart');
@@ -302,6 +327,13 @@ if (window.electronAPI) {
         });
     }
 
+    // Mode change handler (Dictate/Ask mode)
+    if ((window.electronAPI as any).onModeChange) {
+        (window.electronAPI as any).onModeChange((mode: string) => {
+            updateModeToggle(mode as 'dictate' | 'ask');
+        });
+    }
+
     // Get initial state
     window.electronAPI.getInitialState().then((state) => {
         if (state) {
@@ -314,6 +346,11 @@ if (window.electronAPI) {
             }
             if (toggleCloud && state.processingMode) {
                 toggleCloud.checked = state.processingMode === 'cloud';
+            }
+
+            // Restore mode toggle state
+            if (state.recordingMode) {
+                updateModeToggle(state.recordingMode as 'dictate' | 'ask');
             }
 
             // Load metrics panel

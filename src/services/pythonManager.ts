@@ -244,6 +244,11 @@ export class PythonManager extends EventEmitter {
       this.emit('error', new Error(event.message));
     } else if (event.event === 'performance-metrics') {
       this.emit('performance-metrics', event);
+    } else if (event.event === 'ask-response') {
+      // Forward ask-response event for Q&A mode
+      this.emit('ask-response', event);
+    } else if (event.event === 'status-check') {
+      this.emit('status-check', event);
     }
   }
 

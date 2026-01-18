@@ -38,25 +38,26 @@ Commercial voice tools send your audio to the cloud. dIKtate runs entirely on yo
 
 ## MVP Features (v0.1.0) - Implementation Status
 
-✅ **Recording:** Toggle activation (hardcoded `Ctrl+Alt+D`) - **Complete**
-✅ **Transcription:** Whisper medium model (CPU mode) - **Complete**
-✅ **Processing:** Ollama local LLM (mistral:latest, Strict cleanup mode) - **Complete**
+✅ **Recording:** Toggle activation (`Ctrl+Alt+D` default, configurable) - **Complete**
+✅ **Transcription:** Whisper V3 Turbo (CUDA) - **Complete**
+✅ **Processing:** Ollama local LLM (gemma3:4b, Strict cleanup mode) - **Complete**
 ✅ **Injection:** Types into any application via pynput - **Complete**
-✅ **UI:** Status Window (Traffic Light) + System tray icon - **Complete**
+✅ **UI:** Status Window + System tray icon - **Complete**
+✅ **Settings:** Full settings window with audio, models, modes, API keys - **Complete**
 ✅ **Error Handling:** Comprehensive logging + native notifications - **Complete**
 ✅ **Performance Tracking:** Full pipeline metrics tracking - **Complete**
 ✅ **Offline:** 100% local operation - **Complete**
+🆕 **Ask Mode:** Voice Q&A with LLM (`Ctrl+Alt+A`) - **In Progress**
 
-**Status:** Ready for User Acceptance Testing (Phase 4)
+**Status:** Active Development
 
-### Deferred to Future Phases
+### Hotkeys
 
-❌ Context modes (Developer, Email, Raw) → Phase 2  
-❌ Hotkey configuration → Phase 2  
-❌ Settings window → Phase 2  
-❌ Gemini cloud fallback → Phase 3  
-❌ Floating pill UI → Phase 4  
-❌ Design system → Phase 4  
+| Key | Action |
+|-----|--------|
+| `Ctrl+Alt+D` | Dictate - transcribe, clean, type |
+| `Ctrl+Alt+A` | Ask - transcribe, ask LLM, clipboard |
+
 
 **See:** `docs/L3_MEMORY/DEFERRED_FEATURES.md` for complete list
 

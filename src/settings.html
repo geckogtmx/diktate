@@ -210,6 +210,14 @@
             background-color: var(--dark-teal);
         }
 
+        .btn-danger {
+            background-color: #dc2626;
+        }
+
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+
         /* HOTKEY INPUT */
         #hotkey-display {
             background: #111;
@@ -234,6 +242,7 @@
     <div id="sidebar">
         <div class="tab-btn active" onclick="switchTab('general')">⚙️ General</div>
         <div class="tab-btn" onclick="switchTab('audio')">🎤 Audio</div>
+        <div class="tab-btn" onclick="switchTab('models')">🤖 Models</div>
         <div class="tab-btn" onclick="switchTab('modes')">🧠 Modes</div>
         <div class="tab-btn" onclick="switchTab('apikeys')">🔑 API Keys</div>
         <div class="tab-btn" onclick="switchTab('about')">ℹ️ About</div>
@@ -294,13 +303,88 @@
 
             <div class="setting-group">
                 <label>Feedback Sound</label>
+                <span class="sub-label">Sound to play when recording starts/stops</span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="feedback-sound" style="flex: 1;" onchange="saveSetting('feedbackSound', this.value)">
+                        <option value="none">🔇 None (Silent)</option>
+                        <option value="click" selected>🔊 Click</option>
+                        <option value="beep">🔊 Beep</option>
+                        <option value="chime">🔊 Chime</option>
+                        <option value="pop">🔊 Pop</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="previewSound()">▶ Preview</button>
+                </div>
+            </div>
+
+            <div class="setting-group">
                 <div class="setting-row">
-                    <span class="sub-label">Play sound on start/stop</span>
+                    <div>
+                        <label>Noise Reduction <span
+                                style="font-size: 0.7em; background: #444; padding: 2px 6px; border-radius: 3px; margin-left: 8px;">Coming
+                                Soon</span></label>
+                        <span class="sub-label">Filter background noise from recordings</span>
+                    </div>
                     <label class="switch">
-                        <input type="checkbox" id="sound-feedback" checked
-                            onchange="saveSetting('soundFeedback', this.checked)">
-                        <span class="slider"></span>
+                        <input type="checkbox" id="noise-reduction" disabled>
+                        <span class="slider" style="opacity: 0.5;"></span>
                     </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODELS TAB -->
+        <div id="models" class="tab-content">
+            <h2>Model Management</h2>
+
+            <div class="setting-group">
+                <label>Hardware Capabilities</label>
+                <span class="sub-label">Test your system to get model recommendations</span>
+                <div id="hardware-status"
+                    style="background: #1a1a1a; padding: 12px; border-radius: 6px; margin: 10px 0;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #888;">GPU:</span>
+                        <span id="hw-gpu">Not tested</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #888;">VRAM:</span>
+                        <span id="hw-vram">Not tested</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #888;">Recommended Tier:</span>
+                        <span id="hw-tier" style="color: #4ade80;">Unknown</span>
+                    </div>
+                </div>
+                <button class="btn" onclick="runHardwareTest()">🔬 Run Hardware Test</button>
+            </div>
+
+            <div class="setting-group">
+                <label>Ollama Status</label>
+                <div id="ollama-status" style="background: #1a1a1a; padding: 12px; border-radius: 6px; margin: 10px 0;">
+                    <span id="ollama-version">Checking connection...</span>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn btn-secondary" onclick="launchOllamaUI()">💬 Open Chat</button>
+                    <button class="btn btn-secondary" onclick="refreshOllamaModels()">🔄 Refresh Models</button>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label>Default Processing Model</label>
+                <span class="sub-label">Model used for local text processing (change takes effect immediately)</span>
+                <select id="default-model" onchange="onDefaultModelChange(this.value)">
+                    <option value="">Loading models...</option>
+                </select>
+                <div id="model-change-status"
+                    style="display: none; margin-top: 8px; padding: 8px 12px; background: #1a3a1a; border: 1px solid #22c55e; border-radius: 4px; color: #4ade80;">
+                    ✓ Model updated! Will be used for next dictation.
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label>Installed Models</label>
+                <div id="models-list"
+                    style="background: #1a1a1a; padding: 12px; border-radius: 6px; max-height: 200px; overflow-y: auto;">
+                    <div style="color: #888;">Loading...</div>
                 </div>
             </div>
         </div>
@@ -311,6 +395,7 @@
 
             <div class="setting-group">
                 <label>Default Mode</label>
+                <span class="sub-label">Mode used when you start dictating</span>
                 <select id="default-mode" onchange="saveSetting('defaultMode', this.value)">
                     <option value="standard">📝 Standard (General Purpose)</option>
                     <option value="prompt">🤖 Prompt (For LLM Prompts)</option>
@@ -327,47 +412,187 @@
                     <option value="en-es">English → Spanish</option>
                 </select>
             </div>
+
+            <div class="setting-group">
+                <label>Mode-Specific Models</label>
+                <span class="sub-label">Assign different models to each mode (optional)</span>
+
+                <div style="display: grid; gap: 12px; margin-top: 12px;">
+                    <!-- Standard Mode -->
+                    <div
+                        style="background: #1a1a1a; padding: 12px; border-radius: 6px; border-left: 3px solid #3b82f6;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong>📝 Standard</strong>
+                        </div>
+                        <select id="model-standard" class="mode-model-select"
+                            onchange="saveModeModel('standard', this.value)">
+                            <option value="">Use default model</option>
+                        </select>
+                        <p style="margin: 4px 0 0; color: #888; font-size: 0.8em;">General purpose cleanup. 4B+
+                            recommended.</p>
+                    </div>
+
+                    <!-- Prompt Mode -->
+                    <div
+                        style="background: #1a1a1a; padding: 12px; border-radius: 6px; border-left: 3px solid #8b5cf6;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong>🤖 Prompt</strong>
+                        </div>
+                        <select id="model-prompt" class="mode-model-select"
+                            onchange="saveModeModel('prompt', this.value)">
+                            <option value="">Use default model</option>
+                        </select>
+                        <p style="margin: 4px 0 0; color: #888; font-size: 0.8em;">For LLM prompts. Preserves structure.
+                        </p>
+                    </div>
+
+                    <!-- Professional Mode -->
+                    <div
+                        style="background: #1a1a1a; padding: 12px; border-radius: 6px; border-left: 3px solid #f59e0b;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong>💼 Professional</strong>
+                        </div>
+                        <select id="model-professional" class="mode-model-select"
+                            onchange="saveModeModel('professional', this.value)">
+                            <option value="">Use default model</option>
+                        </select>
+                        <p style="margin: 4px 0 0; color: #888; font-size: 0.8em;">Business-ready. 8B+ recommended for
+                            best results.</p>
+                    </div>
+
+                    <!-- Raw Mode -->
+                    <div
+                        style="background: #1a1a1a; padding: 12px; border-radius: 6px; border-left: 3px solid #6b7280; opacity: 0.7;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong>📜 Raw</strong>
+                            <span style="color: #888; font-size: 0.8em;">No model needed</span>
+                        </div>
+                        <p style="margin: 4px 0 0; color: #888; font-size: 0.8em;">Literal transcription. Bypasses LLM
+                            processing.</p>
+                    </div>
+
+                    <!-- Ask Mode (New) -->
+                    <div
+                        style="background: #1a1a1a; padding: 12px; border-radius: 6px; border-left: 3px solid #f43f5e; margin-top: 12px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong>❓ Ask Mode (Ctrl+Alt+A)</strong>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <label style="margin: 0; min-width: 80px; font-size: 0.9em;">Output:</label>
+                            <select id="ask-output-mode" class="mode-model-select"
+                                onchange="saveSetting('askOutputMode', this.value)">
+                                <option value="clipboard">📋 Clipboard Only</option>
+                                <option value="type">⌨️ Type (Inject)</option>
+                                <option value="notification">🔔 Notification Only</option>
+                                <option value="clipboard+notify">📋 + 🔔 Both</option>
+                            </select>
+                        </div>
+                        <p style="margin: 4px 0 0; color: #888; font-size: 0.8em;">How to deliver LLM answers.</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- API KEYS TAB -->
         <div id="apikeys" class="tab-content">
             <h2>API Keys</h2>
-            <p class="sub-label" style="margin-bottom: 20px;">Enter your own API keys to use cloud providers. Keys are
-                stored securely on your device.</p>
 
-            <div class="setting-group">
-                <label>Gemini API Key</label>
-                <div style="display: flex; gap: 10px;">
+            <!-- Security Callout -->
+            <div
+                style="background: linear-gradient(135deg, #1a2f1a 0%, #0f1f0f 100%); border: 1px solid #22c55e; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                    <span style="font-size: 2em;">🔐</span>
+                    <div>
+                        <h3 style="margin: 0 0 8px 0; color: #4ade80; font-size: 1.1em;">Your Keys Are Secure</h3>
+                        <ul style="margin: 0; padding-left: 18px; color: #a3e635; font-size: 0.9em; line-height: 1.6;">
+                            <li><strong>OS-Level Encryption</strong> - Keys are encrypted using Windows Credential
+                                Manager (DPAPI)</li>
+                            <li><strong>Stored Locally</strong> - Never uploaded to any server or cloud service</li>
+                            <li><strong>App-Specific</strong> - Only dIKtate can decrypt your keys</li>
+                            <li><strong>Deletable Anytime</strong> - Remove keys instantly with the delete button</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gemini -->
+            <div class="setting-group" id="gemini-key-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>Gemini API Key</label>
+                    <span id="gemini-status" class="key-status"></span>
+                </div>
+                <div id="gemini-input-row" style="display: flex; gap: 10px;">
                     <input type="password" id="gemini-api-key" placeholder="Enter Gemini API key" style="flex: 1;">
                     <button class="btn btn-secondary" onclick="testApiKey('gemini')">Test</button>
+                    <button class="btn btn-secondary" onclick="saveApiKey('gemini')">Save</button>
+                </div>
+                <div id="gemini-saved-row"
+                    style="display: none; padding: 10px; background: #1a3a1a; border: 1px solid #22c55e; border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #4ade80;">✓ API Key Saved</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="testSavedApiKey('gemini')">Test</button>
+                            <button class="btn btn-danger" onclick="deleteApiKey('gemini')">🗑️ Delete</button>
+                        </div>
+                    </div>
                 </div>
                 <span class="sub-label">Get your key from <a href="#"
                         onclick="openExternalLink('https://aistudio.google.com/apikey')">Google AI Studio</a></span>
             </div>
 
-            <div class="setting-group">
-                <label>Anthropic API Key</label>
-                <div style="display: flex; gap: 10px;">
+            <!-- Anthropic -->
+            <div class="setting-group" id="anthropic-key-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>Anthropic API Key</label>
+                    <span id="anthropic-status" class="key-status"></span>
+                </div>
+                <div id="anthropic-input-row" style="display: flex; gap: 10px;">
                     <input type="password" id="anthropic-api-key" placeholder="Enter Anthropic API key"
                         style="flex: 1;">
                     <button class="btn btn-secondary" onclick="testApiKey('anthropic')">Test</button>
+                    <button class="btn btn-secondary" onclick="saveApiKey('anthropic')">Save</button>
+                </div>
+                <div id="anthropic-saved-row"
+                    style="display: none; padding: 10px; background: #1a3a1a; border: 1px solid #22c55e; border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #4ade80;">✓ API Key Saved</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="testSavedApiKey('anthropic')">Test</button>
+                            <button class="btn btn-danger" onclick="deleteApiKey('anthropic')">🗑️ Delete</button>
+                        </div>
+                    </div>
                 </div>
                 <span class="sub-label">Get your key from <a href="#"
                         onclick="openExternalLink('https://console.anthropic.com/')">Anthropic Console</a></span>
             </div>
 
-            <div class="setting-group">
-                <label>OpenAI API Key</label>
-                <div style="display: flex; gap: 10px;">
+            <!-- OpenAI -->
+            <div class="setting-group" id="openai-key-group">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>OpenAI API Key</label>
+                    <span id="openai-status" class="key-status"></span>
+                </div>
+                <div id="openai-input-row" style="display: flex; gap: 10px;">
                     <input type="password" id="openai-api-key" placeholder="Enter OpenAI API key" style="flex: 1;">
                     <button class="btn btn-secondary" onclick="testApiKey('openai')">Test</button>
+                    <button class="btn btn-secondary" onclick="saveApiKey('openai')">Save</button>
+                </div>
+                <div id="openai-saved-row"
+                    style="display: none; padding: 10px; background: #1a3a1a; border: 1px solid #22c55e; border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #4ade80;">✓ API Key Saved</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="testSavedApiKey('openai')">Test</button>
+                            <button class="btn btn-danger" onclick="deleteApiKey('openai')">🗑️ Delete</button>
+                        </div>
+                    </div>
                 </div>
                 <span class="sub-label">Get your key from <a href="#"
                         onclick="openExternalLink('https://platform.openai.com/api-keys')">OpenAI Platform</a></span>
-            </div>
-
-            <div style="margin-top: 30px;">
-                <button class="btn" onclick="saveApiKeys()">💾 Save All Keys</button>
             </div>
         </div>
 
