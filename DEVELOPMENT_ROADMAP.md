@@ -55,8 +55,8 @@
 
 ### A.1 Model Monitoring
 - [x] Add model health check endpoint (is Ollama responding?)
-- [ ] Log model inference times to file (not just console)
-- [ ] Alert when processing exceeds 2s threshold
+- [x] Log model inference times to file (not just console)
+- [x] Alert when processing exceeds 2s threshold
 - [ ] Track consecutive failures and auto-recover
 
 ### A.2 Pipeline Observability
