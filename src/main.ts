@@ -739,15 +739,8 @@ async function initialize(): Promise<void> {
         }
       }
 
-      // Derive actual processingMode from Python's processor
-      let actualProcessingMode = store.get('processingMode', 'local');
-      if (models.processor) {
-        const proc = models.processor.toUpperCase();
-        if (proc.includes('GEMINI')) actualProcessingMode = 'cloud';
-        else if (proc.includes('CLAUDE')) actualProcessingMode = 'anthropic';
-        else if (proc.includes('GPT')) actualProcessingMode = 'openai';
-        else if (proc.includes('LOCAL') || proc.includes('GEMMA') || proc.includes('LLAMA')) actualProcessingMode = 'local';
-      }
+      // Use stored processingMode (user's preference controls the setting)
+      const actualProcessingMode = store.get('processingMode', 'local');
 
       return {
         status: pythonManager?.getStatus() || 'disconnected',
