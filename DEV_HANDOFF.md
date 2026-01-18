@@ -2,75 +2,71 @@
 
 > **Last Updated:** 2026-01-17
 > **Last Model:** Gemini 1.5 Pro
-> **Session Focus:** `dikta.me` Marketing Website Build
+> **Session Focus:** Implement Snippets & Settings Persistence (FAILED - Reverted)
 
 ---
 
-## ✅ Completed This Session
+## ⚠️ EMERGENCY HANDOFF: ENVIRONMENT FAILURE
 
--   **Marketing Site Structure (`site/index.html`)**:
-    -   Built single-pager with Hero, Comparison, Features, Bilingual, Pricing, and Footer sections.
-    -   Integrated `Vite` + `Tailwind CSS v4`.
--   **Animations (`site/src/main.ts`)**:
-    -   Implemented text cycling in Hero ("Stop Typing. Start [TALKING/WORKING/PRODUCING/WINNING].") using `gsap` + `ScrollTrigger`.
-    -   Added smooth scrolling with `Lenis`.
-    -   Implemented staggered/batched entry animations for grids.
--   **Content Refinement**:
-    -   **"Smart Control Panel"**: Rebranded spec sheet to look like app dashboard.
-    -   **"Intelligent Modes"**: Consolidated mode cards.
-    -   **"Google Login" / "BYO Keys"**: Highlighted hybrid architecture.
-    -   **Pricing**: Updated Lifetime tier to "1 Year of Updates" (Recurring revenue prep).
-    -   **MacOS Support**: Added "Download for MacOS (Soon™)" button.
--   **Styling Polish**:
-    -   Fixed "Most Popular" badge (High contrast, Neon on Black).
-    -   Added lift + glow hover effects to feature cards.
+**Reason:** Critical Runtime Environment Corruption.
+**State:** **REVERTED**. The repository has been reset to the state prior to this session.
 
-## ⚠️ Known Issues / Broken
+### Critical Issue
+The `pnpm` environment is corrupted. The `electron` package is not exposing its API correctly.
+-   **Symptom:** `require('electron')` returns a `string` (path to executable) instead of the API `object`.
+-   **Result:** Application crashes with `TypeError: Cannot read properties of undefined (reading 'on')` (referring to `app.on`).
+-   **Actions Taken:**
+    -   Verified code correctness (reverted to known good state -> still crashed).
+    -   Ran `pnpm install --force`.
+    -   Ran nuclear clean (`rm node_modules`, `pnpm store prune`).
+    -   **Result:** Failure persisted.
 
--   [ ] **Responsiveness Check**: While built with `md:` prefixes, detailed mobile testing hasn't been performed. Needs a pass on iPhone/Android dimensions.
--   [ ] **Validation**: The 'Download' buttons are currently placeholders (`#download`). Need to link to actual installer or GitHub release when ready.
+### Corrective Action for Next Session
+**DO NOT WRITE CODE UNTIL THE ENVIRONMENT IS FIXED.**
 
-## 🔄 In Progress / Pending
+1.  **Validate Environment:** Run `node -e "console.log(require('electron'))"` (or check `debug.js` created this session if it survived, otherwise recreate it). If it prints a string path, **STOP**.
+2.  **Recommended Fix:**
+    -   Abandon `pnpm` for this specific project if possible, OR
+    -   Debug `pnpm-workspace.yaml` / `package.json` resolution priorities.
+    -   Try `bpm` or `yarn` or pure `npm` to see if it links `electron` correctly.
 
--   [ ] **Deployment**: Site needs to be deployed to Netlify/Vercel.
--   [ ] **Application Installer**: The `site` is ready, but the `app` installer isn't linked yet.
+---
+
+## 🔄 In Progress / Pending (Reverted)
+
+-   [ ] **Snippets Feature**: The code for this was written but reverted. Needs to be re-implemented once environment works.
+-   [ ] **Custom Dictionary**: Deferred.
+
+---
 
 ## 📋 Instructions for Next Model
 
-1.  **Mobile QA**: Run the site on mobile viewports. Fix any overflow or stacking issues in the Comparison table and Feature Grid.
-2.  **Deployment**: Configure `netlify.toml` or `vercel.json` for the `site/` folder.
-3.  **Link Installer**: Update the "Download v0.1" buttons to point to the latest GitHub Release asset.
-
-### Priority Order
-1. Mobile QA (Critical for launch)
-2. Deployment Config
-3. Link Installer
-
-### Context Needed
-- `site/index.html` (Main structure)
-- `site/src/main.ts` (Animation logic)
-- `docs/COMMERCIAL_LAUNCH_STRATEGY.md` (Strategy alignment)
+1.  **FIX THE BUILD**: Do not attempt to add features until `pnpm dev` launches the app successfully.
+2.  **Re-implement Snippets**: Once build works, referencing the *Previous Session Log* (if available in chat history) or just re-implementing from scratch:
+    -   Settings UI (List/Add/Delete)
+    -   `ipc_server.py` replacement logic
+    -   `main.ts` settings handler
 
 ### Do NOT
-- Do not revert the "1 Year of Updates" pricing change. This is a strategic decision.
-- Do not add heavy libraries (e.g. React/Vue) to the `site/` folder. Keep it Vanilla/Vite for speed.
+-   Do not assume `pnpm dev` works just because it compiles. Verification requires **launch**.
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
+### 2026-01-17 - Gemini (Current)
+-   Attempted to implement Snippets.
+-   Encountered "undefined app" runtime error.
+-   Diagnosed `require('electron')` returning string.
+-   Attempted environment fix (nuclear clean). Failed.
+-   **REVERTED ALL CHANGES** to leave repo clean.
+
 ### 2026-01-17 - Gemini
-- Built full `dikta.me` marketing site (Hero, Features, Pricing).
-- Refined animations (Text cycle, Grid batching).
-- Strategic pricing update (Lifetime = 1 yr updates).
-- Added "Smart Control Panel" section.
+-   Built full `dikta.me` marketing site (Hero, Features, Pricing).
+-   Refined animations (Text cycle, Grid batching).
+-   Strategic pricing update (Lifetime = 1 yr updates).
 
 ### 2026-01-18 - Gemini
-- Implemented Secure API Key Entry & Hardening (Phase 1).
-- Wired Electron `safeStorage` to Python backend.
-- Added Log Redaction for sensitive keys/transcripts.
-
-### 2026-01-17 - Claude
-- Refined "Average Time" stat to "Speed" (chars/sec).
-- Implemented Audio Device Selection in Settings.
-- Fixed blank Settings window build issue.
+-   Implemented Secure API Key Entry & Hardening (Phase 1).
+-   Wired Electron `safeStorage` to Python backend.
+-   Added Log Redaction for sensitive keys/transcripts.
