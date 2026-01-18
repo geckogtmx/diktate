@@ -51,8 +51,8 @@ For multi-line tests, make a distinct **2-second pause** where indicated `[PAUSE
 
 ---
 
-## Group B: Alternative Model (Llama 3)
-*Switch model to `llama3:latest` before starting.*
+## Group B: Alternative Model (Mistral 7B)
+*Switch model to `mistral:latest` before starting.*
 
 **Run 11 (Standard)**
 > "This is test run 11 for dIKta.me app. The quick brown fox jumps over the lazy dog."
@@ -68,9 +68,9 @@ For multi-line tests, make a distinct **2-second pause** where indicated `[PAUSE
 > "No wait (sorry) I meant to say London."
 
 **Run 14 (Long Prose)**
-> "This is test run 14 for dIKta.me app. We are now testing the Llama 3 model to see if it handles pauses better or worse than Gemma."
+> "This is test run 14 for dIKta.me app. We are now testing the Mistral 7B model to see if it provides a better balance of speed and intelligence."
 > `[PAUSE 2s]`
-> "The larger parameter count might help with context, but we are worried about the latency penalty."
+> "It is slightly larger than Gemma but potentially more robust in its instruction following capabilities."
 
 **Run 15 (Verbal Punctuation)**
 > "This is test run 15. She said quote unquote goodbye."

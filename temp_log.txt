@@ -1,0 +1,397 @@
+2026-01-18 12:27:20,703 - __main__ - INFO - Session log: C:\Users\gecko\.diktate\logs\diktate_20260118_122720.log
+2026-01-18 12:27:20,703 - __main__ - INFO - Initializing IPC Server...
+2026-01-18 12:27:20,703 - __main__ - INFO - [OK] Recorder initialized
+2026-01-18 12:27:20,722 - core.transcriber - INFO - CUDA detected: Using GPU (Count: 1)
+2026-01-18 12:27:20,722 - core.transcriber - INFO - Loading Whisper model 'deepdml/faster-whisper-large-v3-turbo-ct2' on cuda...
+2026-01-18 12:27:21,216 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/deepdml/faster-whisper-large-v3-turbo-ct2/revision/main "HTTP/1.1 200 OK"
+2026-01-18 12:27:22,791 - core.transcriber - INFO - Model loaded successfully
+2026-01-18 12:27:22,791 - __main__ - INFO - [OK] Transcriber initialized (Turbo V3)
+2026-01-18 12:27:22,791 - core.processor - INFO - Using LOCAL processing mode (Ollama)
+2026-01-18 12:27:22,798 - core.processor - INFO - Ollama server is running
+2026-01-18 12:27:22,798 - core.processor - INFO - Warming up gemma3:4b...
+2026-01-18 12:27:22,996 - core.processor - INFO - Model gemma3:4b ready
+2026-01-18 12:27:22,996 - __main__ - INFO - [OK] Processor initialized
+2026-01-18 12:27:22,996 - __main__ - INFO - [OK] Injector initialized
+2026-01-18 12:27:22,996 - __main__ - INFO - IPC Server initialized successfully
+2026-01-18 12:27:22,996 - __main__ - INFO - ============================================================
+2026-01-18 12:27:22,996 - __main__ - INFO - dIKtate IPC Server is running
+2026-01-18 12:27:22,996 - __main__ - INFO - Waiting for commands from Electron...
+2026-01-18 12:27:22,996 - __main__ - INFO - ============================================================
+2026-01-18 12:27:22,996 - __main__ - INFO - [CMD] Received command: status (id: 1768760839187-0.5546729311577048)
+2026-01-18 12:27:33,480 - __main__ - INFO - [CMD] Received command: start_recording (id: 1768760853480-0.9747655306619365)
+2026-01-18 12:27:33,480 - __main__ - INFO - State transition: idle -> recording
+2026-01-18 12:27:33,626 - core.recorder - INFO - Recording started (Device: Default)
+2026-01-18 12:27:33,626 - __main__ - INFO - [REC] Recording started
+2026-01-18 12:27:40,160 - __main__ - INFO - [CMD] Received command: stop_recording (id: 1768760860159-0.3277723973695714)
+2026-01-18 12:27:40,240 - core.recorder - INFO - Recording stopped
+2026-01-18 12:27:40,240 - __main__ - INFO - [PERF] recording: 6760ms
+2026-01-18 12:27:40,240 - __main__ - INFO - [STOP] Recording stopped
+2026-01-18 12:27:40,241 - core.recorder - INFO - Audio saved to ./temp_audio\recording.wav
+2026-01-18 12:27:40,241 - __main__ - INFO - State transition: recording -> processing
+2026-01-18 12:27:40,241 - __main__ - WARNING - Could not read audio metadata: cannot access local variable 'os' where it is not associated with a value
+2026-01-18 12:27:40,241 - __main__ - INFO - [TRANSCRIBE] Transcribing audio...
+2026-01-18 12:27:40,241 - core.transcriber - INFO - Transcribing ./temp_audio\recording.wav...
+2026-01-18 12:27:40,293 - faster_whisper - INFO - Processing audio with duration 00:06.592
+2026-01-18 12:27:41,112 - core.transcriber - INFO - Transcription complete:  Let's run three tests or let's run five tests. Why not?...
+2026-01-18 12:27:41,112 - __main__ - INFO - [PERF] transcription: 871ms
+2026-01-18 12:27:41,112 - __main__ - INFO - [RESULT] Transcribed:  Let's run three tes...[REDACTED 36 chars]
+2026-01-18 12:27:41,112 - __main__ - INFO - [PROCESS] Processing text...
+2026-01-18 12:27:41,112 - core.processor - INFO - Processing text with gemma3:4b (attempt 1/3)...
+2026-01-18 12:27:41,536 - core.processor - INFO - Text processed successfully
+2026-01-18 12:27:41,537 - __main__ - INFO - [PERF] processing: 425ms
+2026-01-18 12:27:41,547 - __main__ - INFO - [RESULT] Processed: Let’s run three test...[REDACTED 25 chars]
+2026-01-18 12:27:41,547 - __main__ - INFO - State transition: processing -> injecting
+2026-01-18 12:27:41,547 - __main__ - INFO - [INJECT] Injecting text...
+2026-01-18 12:27:41,547 - core.injector - INFO - Pasting 45 characters...
+2026-01-18 12:27:41,707 - core.injector - INFO - Text pasted successfully
+2026-01-18 12:27:41,708 - __main__ - INFO - [PERF] injection: 160ms
+2026-01-18 12:27:41,708 - __main__ - INFO - [SUCCESS] Text injected successfully
+2026-01-18 12:27:41,708 - __main__ - INFO - [PERF] total: 8227ms
+2026-01-18 12:27:41,708 - __main__ - INFO - [PERF] Session complete - Total: 8227ms, Chars: 45
+2026-01-18 12:27:41,709 - __main__ - INFO - State transition: injecting -> idle
+2026-01-18 12:27:49,862 - __main__ - INFO - [CMD] Received command: start_recording (id: 1768760869861-0.23478801104940028)
+2026-01-18 12:27:49,862 - __main__ - INFO - State transition: idle -> recording
+2026-01-18 12:27:49,961 - core.recorder - INFO - Recording started (Device: Default)
+2026-01-18 12:27:49,962 - __main__ - INFO - [REC] Recording started
+2026-01-18 12:28:28,543 - __main__ - INFO - [CMD] Received command: stop_recording (id: 1768760908543-0.36407759170096865)
+2026-01-18 12:28:28,576 - core.recorder - INFO - Recording stopped
+2026-01-18 12:28:28,576 - __main__ - INFO - [PERF] recording: 38714ms
+2026-01-18 12:28:28,576 - __main__ - INFO - [STOP] Recording stopped
+2026-01-18 12:28:28,578 - core.recorder - INFO - Audio saved to ./temp_audio\recording.wav
+2026-01-18 12:28:28,578 - __main__ - INFO - State transition: recording -> processing
+2026-01-18 12:28:28,579 - __main__ - WARNING - Could not read audio metadata: cannot access local variable 'os' where it is not associated with a value
+2026-01-18 12:28:28,579 - __main__ - INFO - [TRANSCRIBE] Transcribing audio...
+2026-01-18 12:28:28,579 - core.transcriber - INFO - Transcribing ./temp_audio\recording.wav...
+2026-01-18 12:28:28,634 - faster_whisper - INFO - Processing audio with duration 00:38.592
+2026-01-18 12:28:29,591 - core.transcriber - INFO - Transcription complete:  we can compare multiple runs for the same Gemma 3 and then maybe try another  set of 10 with other ...
+2026-01-18 12:28:29,591 - __main__ - INFO - [PERF] transcription: 1012ms
+2026-01-18 12:28:29,591 - __main__ - INFO - [RESULT] Transcribed:  we can compare mult...[REDACTED 318 chars]
+2026-01-18 12:28:29,591 - __main__ - INFO - [PROCESS] Processing text...
+2026-01-18 12:28:29,591 - core.processor - INFO - Processing text with gemma3:4b (attempt 1/3)...
+2026-01-18 12:28:30,956 - core.processor - INFO - Text processed successfully
+2026-01-18 12:28:30,956 - __main__ - INFO - [PERF] processing: 1366ms
+2026-01-18 12:28:30,965 - __main__ - INFO - [RESULT] Processed: We can compare multi...[REDACTED 313 chars]
+2026-01-18 12:28:30,965 - __main__ - INFO - State transition: processing -> injecting
+2026-01-18 12:28:30,965 - __main__ - INFO - [INJECT] Injecting text...
+2026-01-18 12:28:30,965 - core.injector - INFO - Pasting 333 characters...
+2026-01-18 12:28:31,124 - core.injector - INFO - Text pasted successfully
+2026-01-18 12:28:31,124 - __main__ - INFO - [PERF] injection: 159ms
+2026-01-18 12:28:31,124 - __main__ - INFO - [SUCCESS] Text injected successfully
+2026-01-18 12:28:31,124 - __main__ - INFO - [PERF] total: 41261ms
+2026-01-18 12:28:31,124 - __main__ - INFO - [PERF] Session complete - Total: 41261ms, Chars: 333
+2026-01-18 12:28:31,132 - __main__ - INFO - State transition: injecting -> idle
+2026-01-18 12:29:14,095 - __main__ - INFO - [CMD] Received command: start_recording (id: 1768760954095-0.009224699554785554)
+2026-01-18 12:29:14,096 - __main__ - INFO - State transition: idle -> recording
+2026-01-18 12:29:14,197 - core.recorder - INFO - Recording started (Device: Default)
+2026-01-18 12:29:14,197 - __main__ - INFO - [REC] Recording started
+2026-01-18 12:29:40,172 - __main__ - INFO - [CMD] Received command: stop_recording (id: 1768760980172-0.07001355966528089)
+2026-01-18 12:29:40,203 - core.recorder - INFO - Recording stopped
+2026-01-18 12:29:40,203 - __main__ - INFO - [PERF] recording: 26107ms
+2026-01-18 12:29:40,203 - __main__ - INFO - [STOP] Recording stopped
+2026-01-18 12:29:40,204 - core.recorder - INFO - Audio saved to ./temp_audio\recording.wav
+2026-01-18 12:29:40,204 - __main__ - INFO - State transition: recording -> processing
+2026-01-18 12:29:40,204 - __main__ - WARNING - Could not read audio metadata: cannot access local variable 'os' where it is not associated with a value
+2026-01-18 12:29:40,204 - __main__ - INFO - [TRANSCRIBE] Transcribing audio...
+2026-01-18 12:29:40,205 - core.transcriber - INFO - Transcribing ./temp_audio\recording.wav...
+2026-01-18 12:29:40,261 - faster_whisper - INFO - Processing audio with duration 00:25.984
+2026-01-18 12:29:41,005 - core.transcriber - INFO - Transcription complete:  I also want to explore the prompting mode, find the proper system prompt for the model to enhance t...
+2026-01-18 12:29:41,005 - __main__ - INFO - [PERF] transcription: 800ms
+2026-01-18 12:29:41,005 - __main__ - INFO - [RESULT] Transcribed:  I also want to expl...[REDACTED 161 chars]
+2026-01-18 12:29:41,005 - __main__ - INFO - [PROCESS] Processing text...
+2026-01-18 12:29:41,005 - core.processor - INFO - Processing text with gemma3:4b (attempt 1/3)...
+2026-01-18 12:29:41,779 - core.processor - INFO - Text processed successfully
+2026-01-18 12:29:41,779 - __main__ - INFO - [PERF] processing: 774ms
+2026-01-18 12:29:41,790 - __main__ - INFO - [RESULT] Processed: I also want to explo...[REDACTED 160 chars]
+2026-01-18 12:29:41,790 - __main__ - INFO - State transition: processing -> injecting
+2026-01-18 12:29:41,790 - __main__ - INFO - [INJECT] Injecting text...
+2026-01-18 12:29:41,790 - core.injector - INFO - Pasting 180 characters...
+2026-01-18 12:29:41,949 - core.injector - INFO - Text pasted successfully
+2026-01-18 12:29:41,949 - __main__ - INFO - [PERF] injection: 159ms
+2026-01-18 12:29:41,949 - __main__ - INFO - [SUCCESS] Text injected successfully
+2026-01-18 12:29:41,949 - __main__ - INFO - [PERF] total: 27853ms
+2026-01-18 12:29:41,949 - __main__ - INFO - [PERF] Session complete - Total: 27853ms, Chars: 180
+2026-01-18 12:29:41,950 - __main__ - INFO - State transition: injecting -> idle
+2026-01-18 12:30:30,860 - __main__ - INFO - [CMD] Received command: start_recording (id: 1768761030860-0.9023995346857021)
+2026-01-18 12:30:30,860 - __main__ - INFO - State transition: idle -> recording
+2026-01-18 12:30:30,962 - core.recorder - INFO - Recording started (Device: Default)
+2026-01-18 12:30:30,962 - __main__ - INFO - [REC] Recording started
+2026-01-18 12:30:35,583 - __main__ - INFO - [CMD] Received command: stop_recording (id: 1768761035583-0.16377256764698345)
+2026-01-18 12:30:35,657 - core.recorder - INFO - Recording stopped
+2026-01-18 12:30:35,658 - __main__ - INFO - [PERF] recording: 4798ms
+2026-01-18 12:30:35,658 - __main__ - INFO - [STOP] Recording stopped
+2026-01-18 12:30:35,658 - core.recorder - INFO - Audio saved to ./temp_audio\recording.wav
+2026-01-18 12:30:35,659 - __main__ - INFO - State transition: recording -> processing
+2026-01-18 12:30:35,659 - __main__ - WARNING - Could not read audio metadata: cannot access local variable 'os' where it is not associated with a value
+2026-01-18 12:30:35,659 - __main__ - INFO - [TRANSCRIBE] Transcribing audio...
+2026-01-18 12:30:35,659 - core.transcriber - INFO - Transcribing ./temp_audio\recording.wav...
+2026-01-18 12:30:35,711 - faster_whisper - INFO - Processing audio with duration 00:04.672
+2026-01-18 12:30:36,191 - core.transcriber - INFO - Transcription complete:  But only after our first runs that you already described....
+2026-01-18 12:30:36,191 - __main__ - INFO - [PERF] transcription: 532ms
+2026-01-18 12:30:36,191 - __main__ - INFO - [RESULT] Transcribed:  But only after our ...[REDACTED 38 chars]
+2026-01-18 12:30:36,191 - __main__ - INFO - [PROCESS] Processing text...
+2026-01-18 12:30:36,191 - core.processor - INFO - Processing text with gemma3:4b (attempt 1/3)...
+2026-01-18 12:30:36,588 - core.processor - INFO - Text processed successfully
+2026-01-18 12:30:36,588 - __main__ - INFO - [PERF] processing: 398ms
+2026-01-18 12:30:36,598 - __main__ - INFO - [RESULT] Processed: But only after our f...[REDACTED 37 chars]
+2026-01-18 12:30:36,598 - __main__ - INFO - State transition: processing -> injecting
+2026-01-18 12:30:36,598 - __main__ - INFO - [INJECT] Injecting text...
+2026-01-18 12:30:36,598 - core.injector - INFO - Pasting 57 characters...
+2026-01-18 12:30:36,762 - core.injector - INFO - Text pasted successfully
+2026-01-18 12:30:36,762 - __main__ - INFO - [PERF] injection: 164ms
+2026-01-18 12:30:36,762 - __main__ - INFO - [SUCCESS] Text injected successfully
+2026-01-18 12:30:36,762 - __main__ - INFO - [PERF] total: 5902ms
+2026-01-18 12:30:36,762 - __main__ - INFO - [PERF] Session complete - Total: 5902ms, Chars: 57
+2026-01-18 12:30:36,763 - __main__ - INFO - State transition: injecting -> idle
+2026-01-18 12:30:55,810 - __main__ - INFO - [CMD] Received command: start_recording (id: 1768761055809-0.022024845377620172)
+2026-01-18 12:30:55,810 - __main__ - INFO - State transition: idle -> recording
+2026-01-18 12:30:55,904 - core.recorder - INFO - Recording started (Device: Default)
+2026-01-18 12:30:55,904 - __main__ - INFO - [REC] Recording started
+2026-01-18 12:31:10,676 - __main__ - INFO - [CMD] Received command: stop_recording (id: 1768761070675-0.7850067488501633)
+2026-01-18 12:31:10,708 - core.recorder - INFO - Recording stopped
+2026-01-18 12:31:10,709 - __main__ - INFO - [PERF] recording: 14899ms
+2026-01-18 12:31:10,709 - __main__ - INFO - [STOP] Recording stopped
+2026-01-18 12:31:10,709 - core.recorder - INFO - Audio saved to ./temp_audio\recording.wav
+2026-01-18 12:31:10,710 - __main__ - INFO - State transition: recording -> processing
+2026-01-18 12:31:10,710 - __main__ - WARNING - Could not read audio metadata: cannot access local variable 'os' where it is not associated with a value
+2026-01-18 12:31:10,710 - __main__ - INFO - [TRANSCRIBE] Transcribing audio...
+2026-01-18 12:31:10,710 - core.transcriber - INFO - Transcribing ./temp_audio\recording.wav...
+2026-01-18 12:31:10,763 - faster_whisper - INFO - Processing audio with duration 00:14.784
+2026-01-18 12:31:11,283 - core.transcriber - INFO - Transcription complete:  feel free to change the script I'm using if you think we can mix and other things  like using quote...
+2026-01-18 12:31:11,283 - __main__ - INFO - [PERF] transcription: 572ms
+2026-01-18 12:31:11,283 - __main__ - INFO - [RESULT] Transcribed:  feel free to change...[REDACTED 99 chars]
+2026-01-18 12:31:11,283 - __main__ - INFO - [PROCESS] Processing text...
+2026-01-18 12:31:11,283 - core.processor - INFO - Processing text with gemma3:4b (attempt 1/3)...
+2026-01-18 12:31:11,953 - core.processor - INFO - Text processed successfully
+2026-01-18 12:31:11,953 - __main__ - INFO - [PERF] processing: 671ms
+2026-01-18 12:31:11,963 - __main__ - INFO - [RESULT] Processed: Feel free to change ...[REDACTED 100 chars]
+2026-01-18 12:31:11,964 - __main__ - INFO - State transition: processing -> injecting
+2026-01-18 12:31:11,964 - __main__ - INFO - [INJECT] Injecting text...
+2026-01-18 12:31:11,964 - core.injector - INFO - Pasting 120 characters...
+2026-01-18 12:31:12,122 - core.injector - INFO - Text pasted successfully
+2026-01-18 12:31:12,122 - __main__ - INFO - [PERF] injection: 158ms
+2026-01-18 12:31:12,122 - __main__ - INFO - [SUCCESS] Text injected successfully
+2026-01-18 12:31:12,123 - __main__ - INFO - [PERF] total: 16313ms
+2026-01-18 12:31:12,123 - __main__ - INFO - [PERF] Session complete - Total: 16313ms, Chars: 120
+2026-01-18 12:31:12,132 - __main__ - INFO - State transition: injecting -> idle
+2026-01-18 12:31:26,625 - __main__ - INFO - [CMD] Received command: start_recording (id: 1768761086624-0.7770755345615243)
+2026-01-18 12:31:26,625 - __main__ - INFO - State transition: idle -> recording
+2026-01-18 12:31:26,718 - core.recorder - INFO - Recording started (Device: Default)
+2026-01-18 12:31:26,718 - __main__ - INFO - [REC] Recording started
+2026-01-18 12:31:33,278 - __main__ - INFO - [CMD] Received command: stop_recording (id: 1768761093278-0.27877894475811926)
+2026-01-18 12:31:33,333 - core.recorder - INFO - Recording stopped
+2026-01-18 12:31:33,333 - __main__ - INFO - [PERF] recording: 6709ms
+2026-01-18 12:31:33,333 - __main__ - INFO - [STOP] Recording stopped
+2026-01-18 12:31:33,334 - core.recorder - INFO - Audio saved to ./temp_audio\recording.wav
+2026-01-18 12:31:33,334 - __main__ - INFO - State transition: recording -> processing
+2026-01-18 12:31:33,334 - __main__ - WARNING - Could not read audio metadata: cannot access local variable 'os' where it is not associated with a value
+2026-01-18 12:31:33,334 - __main__ - INFO - [TRANSCRIBE] Transcribing audio...
+2026-01-18 12:31:33,334 - core.transcriber - INFO - Transcribing ./temp_audio\recording.wav...
+2026-01-18 12:31:33,385 - faster_whisper - INFO - Processing audio with duration 00:06.592
+2026-01-18 12:31:33,822 - core.transcriber - INFO - Transcription complete:  If you want to make changes, suggest them to me first.  I'll approve....
+2026-01-18 12:31:33,822 - __main__ - INFO - [PERF] transcription: 488ms
+2026-01-18 12:31:33,822 - __main__ - INFO - [RESULT] Transcribed:  If you want to make...[REDACTED 50 chars]
+2026-01-18 12:31:33,822 - __main__ - INFO - [PROCESS] Processing text...
+2026-01-18 12:31:33,822 - core.processor - INFO - Processing text with gemma3:4b (attempt 1/3)...
+2026-01-18 12:31:34,343 - core.processor - INFO - Text processed successfully
+2026-01-18 12:31:34,344 - __main__ - INFO - [PERF] processing: 522ms
+2026-01-18 12:31:34,354 - __main__ - INFO - [RESULT] Processed: If you want to make ...[REDACTED 48 chars]
+2026-01-18 12:31:34,354 - __main__ - INFO - State transition: processing -> injecting
+2026-01-18 12:31:34,354 - __main__ - INFO - [INJECT] Injecting text...
+2026-01-18 12:31:34,354 - core.injector - INFO - Pasting 68 characters...
+2026-01-18 12:31:34,515 - core.injector - INFO - Text pasted successfully
+2026-01-18 12:31:34,515 - __main__ - INFO - [PERF] injection: 161ms
+2026-01-18 12:31:34,515 - __main__ - INFO - [SUCCESS] Text injected successfully
+2026-01-18 12:31:34,515 - __main__ - INFO - [PERF] total: 7891ms
+2026-01-18 12:31:34,515 - __main__ - INFO - [PERF] Session complete - Total: 7891ms, Chars: 68
+2026-01-18 12:31:34,526 - __main__ - INFO - State transition: injecting -> idle
+2026-01-18 12:31:37,278 - __main__ - INFO - [CMD] Received command: start_recording (id: 1768761097279-0.5996658914729556)
+2026-01-18 12:31:37,278 - __main__ - INFO - State transition: idle -> recording
+2026-01-18 12:31:37,371 - core.recorder - INFO - Recording started (Device: Default)
+2026-01-18 12:31:37,371 - __main__ - INFO - [REC] Recording started
+2026-01-18 12:31:38,963 - __main__ - INFO - [CMD] Received command: stop_recording (id: 1768761098963-0.13468706451939783)
+2026-01-18 12:31:38,998 - core.recorder - INFO - Recording stopped
+2026-01-18 12:31:38,998 - __main__ - INFO - [PERF] recording: 1720ms
+2026-01-18 12:31:38,998 - __main__ - INFO - [STOP] Recording stopped
+2026-01-18 12:31:38,998 - core.recorder - INFO - Audio saved to ./temp_audio\recording.wav
+2026-01-18 12:31:38,999 - __main__ - INFO - State transition: recording -> processing
+2026-01-18 12:31:38,999 - __main__ - WARNING - Could not read audio metadata: cannot access local variable 'os' where it is not associated with a value
+2026-01-18 12:31:38,999 - __main__ - INFO - [TRANSCRIBE] Transcribing audio...
+2026-01-18 12:31:38,999 - core.transcriber - INFO - Transcribing ./temp_audio\recording.wav...
+2026-01-18 12:31:39,065 - faster_whisper - INFO - Processing audio with duration 00:01.600
+2026-01-18 12:31:39,522 - core.transcriber - INFO - Transcription complete:  Proceed....
+2026-01-18 12:31:39,522 - __main__ - INFO - [PERF] transcription: 522ms
+2026-01-18 12:31:39,522 - __main__ - INFO - [RESULT] Transcribed: [REDACTED]
+2026-01-18 12:31:39,522 - __main__ - INFO - [PROCESS] Processing text...
+2026-01-18 12:31:39,522 - core.processor - INFO - Processing text with gemma3:4b (attempt 1/3)...
+2026-01-18 12:31:39,776 - core.processor - INFO - Text processed successfully
+2026-01-18 12:31:39,777 - __main__ - INFO - [PERF] processing: 255ms
+2026-01-18 12:31:39,785 - __main__ - INFO - [RESULT] Processed: [REDACTED]
+2026-01-18 12:31:39,786 - __main__ - INFO - State transition: processing -> injecting
+2026-01-18 12:31:39,786 - __main__ - INFO - [INJECT] Injecting text...
+2026-01-18 12:31:39,786 - core.injector - INFO - Pasting 8 characters...
+2026-01-18 12:31:39,943 - core.injector - INFO - Text pasted successfully
+2026-01-18 12:31:39,943 - __main__ - INFO - [PERF] injection: 158ms
+2026-01-18 12:31:39,943 - __main__ - INFO - [SUCCESS] Text injected successfully
+2026-01-18 12:31:39,943 - __main__ - INFO - [PERF] total: 2665ms
+2026-01-18 12:31:39,943 - __main__ - INFO - [PERF] Session complete - Total: 2665ms, Chars: 8
+2026-01-18 12:31:39,954 - __main__ - INFO - State transition: injecting -> idle
+2026-01-18 12:32:10,056 - __main__ - INFO - [CMD] Received command: start_recording (id: 1768761130056-0.6589926571078741)
+2026-01-18 12:32:10,056 - __main__ - INFO - State transition: idle -> recording
+2026-01-18 12:32:10,153 - core.recorder - INFO - Recording started (Device: Default)
+2026-01-18 12:32:10,153 - __main__ - INFO - [REC] Recording started
+2026-01-18 12:32:24,444 - __main__ - INFO - [CMD] Received command: stop_recording (id: 1768761144444-0.033415974242995805)
+2026-01-18 12:32:24,507 - core.recorder - INFO - Recording stopped
+2026-01-18 12:32:24,507 - __main__ - INFO - [PERF] recording: 14451ms
+2026-01-18 12:32:24,507 - __main__ - INFO - [STOP] Recording stopped
+2026-01-18 12:32:24,508 - core.recorder - INFO - Audio saved to ./temp_audio\recording.wav
+2026-01-18 12:32:24,508 - __main__ - INFO - State transition: recording -> processing
+2026-01-18 12:32:24,508 - __main__ - WARNING - Could not read audio metadata: cannot access local variable 'os' where it is not associated with a value
+2026-01-18 12:32:24,508 - __main__ - INFO - [TRANSCRIBE] Transcribing audio...
+2026-01-18 12:32:24,508 - core.transcriber - INFO - Transcribing ./temp_audio\recording.wav...
+2026-01-18 12:32:24,565 - faster_whisper - INFO - Processing audio with duration 00:14.336
+2026-01-18 12:32:24,940 - core.transcriber - INFO - Transcription complete:  Make a plan to document the tests done and include them in our open source as some value. They shou...
+2026-01-18 12:32:24,940 - __main__ - INFO - [PERF] transcription: 432ms
+2026-01-18 12:32:24,940 - __main__ - INFO - [RESULT] Transcribed:  Make a plan to docu...[REDACTED 112 chars]
+2026-01-18 12:32:24,940 - __main__ - INFO - [PROCESS] Processing text...
+2026-01-18 12:32:24,940 - core.processor - INFO - Processing text with gemma3:4b (attempt 1/3)...
+2026-01-18 12:32:25,558 - core.processor - INFO - Text processed successfully
+2026-01-18 12:32:25,559 - __main__ - INFO - [PERF] processing: 619ms
+2026-01-18 12:32:25,568 - __main__ - INFO - [RESULT] Processed: Make a plan to docum...[REDACTED 111 chars]
+2026-01-18 12:32:25,569 - __main__ - INFO - State transition: processing -> injecting
+2026-01-18 12:32:25,569 - __main__ - INFO - [INJECT] Injecting text...
+2026-01-18 12:32:25,569 - core.injector - INFO - Pasting 131 characters...
+2026-01-18 12:32:25,732 - core.injector - INFO - Text pasted successfully
+2026-01-18 12:32:25,732 - __main__ - INFO - [PERF] injection: 163ms
+2026-01-18 12:32:25,732 - __main__ - INFO - [SUCCESS] Text injected successfully
+2026-01-18 12:32:25,732 - __main__ - INFO - [PERF] total: 15676ms
+2026-01-18 12:32:25,732 - __main__ - INFO - [PERF] Session complete - Total: 15676ms, Chars: 131
+2026-01-18 12:32:25,733 - __main__ - INFO - State transition: injecting -> idle
+2026-01-18 12:33:10,955 - __main__ - INFO - [CMD] Received command: start_recording (id: 1768761190956-0.18334121202029596)
+2026-01-18 12:33:10,955 - __main__ - INFO - State transition: idle -> recording
+2026-01-18 12:33:11,057 - core.recorder - INFO - Recording started (Device: Default)
+2026-01-18 12:33:11,057 - __main__ - INFO - [REC] Recording started
+2026-01-18 12:33:37,052 - __main__ - INFO - [CMD] Received command: stop_recording (id: 1768761217051-0.15155088933278993)
+2026-01-18 12:33:37,123 - core.recorder - INFO - Recording stopped
+2026-01-18 12:33:37,123 - __main__ - INFO - [PERF] recording: 26167ms
+2026-01-18 12:33:37,123 - __main__ - INFO - [STOP] Recording stopped
+2026-01-18 12:33:37,124 - core.recorder - INFO - Audio saved to ./temp_audio\recording.wav
+2026-01-18 12:33:37,124 - __main__ - INFO - State transition: recording -> processing
+2026-01-18 12:33:37,124 - __main__ - WARNING - Could not read audio metadata: cannot access local variable 'os' where it is not associated with a value
+2026-01-18 12:33:37,124 - __main__ - INFO - [TRANSCRIBE] Transcribing audio...
+2026-01-18 12:33:37,124 - core.transcriber - INFO - Transcribing ./temp_audio\recording.wav...
+2026-01-18 12:33:37,179 - faster_whisper - INFO - Processing audio with duration 00:26.048
+2026-01-18 12:33:37,999 - core.transcriber - INFO - Transcription complete:  We can even, at some point, ask people to go through a script with some instructions to help test o...
+2026-01-18 12:33:38,000 - __main__ - INFO - [PERF] transcription: 876ms
+2026-01-18 12:33:38,000 - __main__ - INFO - [RESULT] Transcribed:  We can even, at som...[REDACTED 206 chars]
+2026-01-18 12:33:38,000 - __main__ - INFO - [PROCESS] Processing text...
+2026-01-18 12:33:38,000 - core.processor - INFO - Processing text with gemma3:4b (attempt 1/3)...
+2026-01-18 12:33:38,881 - core.processor - INFO - Text processed successfully
+2026-01-18 12:33:38,881 - __main__ - INFO - [PERF] processing: 881ms
+2026-01-18 12:33:38,890 - __main__ - INFO - [RESULT] Processed: We can even, at some...[REDACTED 203 chars]
+2026-01-18 12:33:38,890 - __main__ - INFO - State transition: processing -> injecting
+2026-01-18 12:33:38,890 - __main__ - INFO - [INJECT] Injecting text...
+2026-01-18 12:33:38,890 - core.injector - INFO - Pasting 223 characters...
+2026-01-18 12:33:39,047 - core.injector - INFO - Text pasted successfully
+2026-01-18 12:33:39,047 - __main__ - INFO - [PERF] injection: 157ms
+2026-01-18 12:33:39,047 - __main__ - INFO - [SUCCESS] Text injected successfully
+2026-01-18 12:33:39,047 - __main__ - INFO - [PERF] total: 28092ms
+2026-01-18 12:33:39,047 - __main__ - INFO - [PERF] Session complete - Total: 28092ms, Chars: 223
+2026-01-18 12:33:39,050 - __main__ - INFO - State transition: injecting -> idle
+2026-01-18 12:34:29,504 - __main__ - INFO - [CMD] Received command: start_recording (id: 1768761269504-0.20327058256037467)
+2026-01-18 12:34:29,504 - __main__ - INFO - State transition: idle -> recording
+2026-01-18 12:34:29,600 - core.recorder - INFO - Recording started (Device: Default)
+2026-01-18 12:34:29,601 - __main__ - INFO - [REC] Recording started
+2026-01-18 12:35:13,876 - __main__ - INFO - [CMD] Received command: stop_recording (id: 1768761313877-0.7849209132638935)
+2026-01-18 12:35:13,906 - core.recorder - INFO - Recording stopped
+2026-01-18 12:35:13,906 - __main__ - INFO - [PERF] recording: 44402ms
+2026-01-18 12:35:13,906 - __main__ - INFO - [STOP] Recording stopped
+2026-01-18 12:35:13,907 - core.recorder - INFO - Audio saved to ./temp_audio\recording.wav
+2026-01-18 12:35:13,907 - __main__ - INFO - State transition: recording -> processing
+2026-01-18 12:35:13,907 - __main__ - WARNING - Could not read audio metadata: cannot access local variable 'os' where it is not associated with a value
+2026-01-18 12:35:13,907 - __main__ - INFO - [TRANSCRIBE] Transcribing audio...
+2026-01-18 12:35:13,907 - core.transcriber - INFO - Transcribing ./temp_audio\recording.wav...
+2026-01-18 12:35:13,962 - faster_whisper - INFO - Processing audio with duration 00:44.288
+2026-01-18 12:35:15,124 - core.transcriber - INFO - Transcription complete:  Even without accents taken as nationality, which we should thread lightly with that term, just bare...
+2026-01-18 12:35:15,124 - __main__ - INFO - [PERF] transcription: 1218ms
+2026-01-18 12:35:15,124 - __main__ - INFO - [RESULT] Transcribed:  Even without accent...[REDACTED 341 chars]
+2026-01-18 12:35:15,124 - __main__ - INFO - [PROCESS] Processing text...
+2026-01-18 12:35:15,124 - core.processor - INFO - Processing text with gemma3:4b (attempt 1/3)...
+2026-01-18 12:35:16,218 - core.processor - INFO - Text processed successfully
+2026-01-18 12:35:16,219 - __main__ - INFO - [PERF] processing: 1094ms
+2026-01-18 12:35:16,228 - __main__ - INFO - [RESULT] Processed: Even without accents...[REDACTED 338 chars]
+2026-01-18 12:35:16,228 - __main__ - INFO - State transition: processing -> injecting
+2026-01-18 12:35:16,228 - __main__ - INFO - [INJECT] Injecting text...
+2026-01-18 12:35:16,228 - core.injector - INFO - Pasting 358 characters...
+2026-01-18 12:35:16,387 - core.injector - INFO - Text pasted successfully
+2026-01-18 12:35:16,387 - __main__ - INFO - [PERF] injection: 159ms
+2026-01-18 12:35:16,387 - __main__ - INFO - [SUCCESS] Text injected successfully
+2026-01-18 12:35:16,387 - __main__ - INFO - [PERF] total: 46883ms
+2026-01-18 12:35:16,387 - __main__ - INFO - [PERF] Session complete - Total: 46883ms, Chars: 358
+2026-01-18 12:35:16,389 - __main__ - INFO - State transition: injecting -> idle
+2026-01-18 12:35:40,463 - __main__ - INFO - [CMD] Received command: start_recording (id: 1768761340463-0.7495417907350586)
+2026-01-18 12:35:40,463 - __main__ - INFO - State transition: idle -> recording
+2026-01-18 12:35:40,565 - core.recorder - INFO - Recording started (Device: Default)
+2026-01-18 12:35:40,567 - __main__ - INFO - [REC] Recording started
+2026-01-18 12:35:49,259 - __main__ - INFO - [CMD] Received command: stop_recording (id: 1768761349259-0.7793359386630523)
+2026-01-18 12:35:49,291 - core.recorder - INFO - Recording stopped
+2026-01-18 12:35:49,291 - __main__ - INFO - [PERF] recording: 8827ms
+2026-01-18 12:35:49,291 - __main__ - INFO - [STOP] Recording stopped
+2026-01-18 12:35:49,292 - core.recorder - INFO - Audio saved to ./temp_audio\recording.wav
+2026-01-18 12:35:49,292 - __main__ - INFO - State transition: recording -> processing
+2026-01-18 12:35:49,293 - __main__ - WARNING - Could not read audio metadata: cannot access local variable 'os' where it is not associated with a value
+2026-01-18 12:35:49,293 - __main__ - INFO - [TRANSCRIBE] Transcribing audio...
+2026-01-18 12:35:49,293 - core.transcriber - INFO - Transcribing ./temp_audio\recording.wav...
+2026-01-18 12:35:49,345 - faster_whisper - INFO - Processing audio with duration 00:08.704
+2026-01-18 12:35:49,859 - core.transcriber - INFO - Transcription complete:  I think if you run PNP, run....
+2026-01-18 12:35:49,859 - __main__ - INFO - [PERF] transcription: 566ms
+2026-01-18 12:35:49,859 - __main__ - INFO - [RESULT] Transcribed:  I think if you run ...[REDACTED 9 chars]
+2026-01-18 12:35:49,859 - __main__ - INFO - [PROCESS] Processing text...
+2026-01-18 12:35:49,859 - core.processor - INFO - Processing text with gemma3:4b (attempt 1/3)...
+2026-01-18 12:35:50,220 - core.processor - INFO - Text processed successfully
+2026-01-18 12:35:50,220 - __main__ - INFO - [PERF] processing: 362ms
+2026-01-18 12:35:50,231 - __main__ - INFO - [RESULT] Processed: I think if you run P...[REDACTED 8 chars]
+2026-01-18 12:35:50,231 - __main__ - INFO - State transition: processing -> injecting
+2026-01-18 12:35:50,231 - __main__ - INFO - [INJECT] Injecting text...
+2026-01-18 12:35:50,231 - core.injector - INFO - Pasting 28 characters...
+2026-01-18 12:35:50,395 - core.injector - INFO - Text pasted successfully
+2026-01-18 12:35:50,395 - __main__ - INFO - [PERF] injection: 164ms
+2026-01-18 12:35:50,395 - __main__ - INFO - [SUCCESS] Text injected successfully
+2026-01-18 12:35:50,395 - __main__ - INFO - [PERF] total: 9932ms
+2026-01-18 12:35:50,395 - __main__ - INFO - [PERF] Session complete - Total: 9932ms, Chars: 28
+2026-01-18 12:35:50,397 - __main__ - INFO - State transition: injecting -> idle
+2026-01-18 12:36:41,811 - __main__ - INFO - [CMD] Received command: start_recording (id: 1768761401812-0.9373189916794387)
+2026-01-18 12:36:41,811 - __main__ - INFO - State transition: idle -> recording
+2026-01-18 12:36:41,911 - core.recorder - INFO - Recording started (Device: Default)
+2026-01-18 12:36:41,911 - __main__ - INFO - [REC] Recording started
+2026-01-18 12:36:50,663 - __main__ - INFO - [CMD] Received command: stop_recording (id: 1768761410663-0.4646087132971455)
+2026-01-18 12:36:50,697 - core.recorder - INFO - Recording stopped
+2026-01-18 12:36:50,697 - __main__ - INFO - [PERF] recording: 8885ms
+2026-01-18 12:36:50,697 - __main__ - INFO - [STOP] Recording stopped
+2026-01-18 12:36:50,698 - core.recorder - INFO - Audio saved to ./temp_audio\recording.wav
+2026-01-18 12:36:50,698 - __main__ - INFO - State transition: recording -> processing
+2026-01-18 12:36:50,698 - __main__ - WARNING - Could not read audio metadata: cannot access local variable 'os' where it is not associated with a value
+2026-01-18 12:36:50,698 - __main__ - INFO - [TRANSCRIBE] Transcribing audio...
+2026-01-18 12:36:50,698 - core.transcriber - INFO - Transcribing ./temp_audio\recording.wav...
+2026-01-18 12:36:50,758 - faster_whisper - INFO - Processing audio with duration 00:08.768
+2026-01-18 12:36:51,333 - core.transcriber - INFO - Transcription complete:  I think if you run pmpmdev yourself, you can watch it happen, consider that....
+2026-01-18 12:36:51,333 - __main__ - INFO - [PERF] transcription: 636ms
+2026-01-18 12:36:51,333 - __main__ - INFO - [RESULT] Transcribed:  I think if you run ...[REDACTED 57 chars]
+2026-01-18 12:36:51,333 - __main__ - INFO - [PROCESS] Processing text...
+2026-01-18 12:36:51,333 - core.processor - INFO - Processing text with gemma3:4b (attempt 1/3)...
+2026-01-18 12:36:51,905 - core.processor - INFO - Text processed successfully
+2026-01-18 12:36:51,905 - __main__ - INFO - [PERF] processing: 571ms
+2026-01-18 12:36:51,915 - __main__ - INFO - [RESULT] Processed: I think if you run p...[REDACTED 56 chars]
+2026-01-18 12:36:51,915 - __main__ - INFO - State transition: processing -> injecting
+2026-01-18 12:36:51,915 - __main__ - INFO - [INJECT] Injecting text...
+2026-01-18 12:36:51,915 - core.injector - INFO - Pasting 76 characters...
+2026-01-18 12:36:52,078 - core.injector - INFO - Text pasted successfully
+2026-01-18 12:36:52,078 - __main__ - INFO - [PERF] injection: 163ms
+2026-01-18 12:36:52,078 - __main__ - INFO - [SUCCESS] Text injected successfully
+2026-01-18 12:36:52,078 - __main__ - INFO - [PERF] total: 10267ms
+2026-01-18 12:36:52,078 - __main__ - INFO - [PERF] Session complete - Total: 10267ms, Chars: 76
+2026-01-18 12:36:52,087 - __main__ - INFO - State transition: injecting -> idle
+2026-01-18 12:38:37,960 - __main__ - INFO - Shutting down IPC Server...
+2026-01-18 12:38:37,960 - __main__ - INFO - ============================================================
+2026-01-18 12:38:37,960 - __main__ - INFO - [SESSION SUMMARY]
+2026-01-18 12:38:37,960 - __main__ - INFO -   Dictations: 12 (12 success, 0 errors)
+2026-01-18 12:38:37,960 - __main__ - INFO -   Total Chars: 1627

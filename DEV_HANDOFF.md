@@ -1,10 +1,43 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-18 11:45
+> **Last Updated:** 2026-01-18 14:07
 > **Last Model:** Gemini 2.0 Flash Thinking (Extended)
-> **Current Phase:** Stability & Monitoring (Phase A)
+> **Current Phase:** Benchmarking & Optimization (Phase A.4)
 > **Master Plan:** [DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md)
 > **Brand:** diktate / dikta.me (NO rebrand to Waal)
+
+---
+
+## ✅ Session 6 Accomplishments (2026-01-18 PM)
+
+### Benchmarking: Gemma 3 (4b) Baseline ✅
+**Files Modified:** `docs/BENCHMARKS_REPORT_SESSION_1.md`, `TEST_DRILL.md`, `TEST_DRILL_V2.md`
+
+- **Established Speed Baseline:** ~400ms average processing time.
+- **Improved Accuracy:** With "V2" prompt, achieved 100% on correction and profanity filtering tasks (up from ~50%).
+- **Artifacts:** Full report available in `docs/BENCHMARKS_REPORT_SESSION_1.md`.
+
+### Prompt Engineering Upgrade ✅
+**Files Modified:** `python/core/processor.py`, `python/config/prompts.py`
+
+- **Per-Model Prompts:** Implemented logic to support specific system prompts per model.
+- **Gemma 3 Optimization:** Created a stricter `PROMPT_GEMMA_STANDARD` that forces better instruction following (e.g., verbal quotes handling).
+- **Dynamic Loading:** `Processor` now re-fetches the prompt when switching modes or models.
+
+### Failed Experiment: Mistral 7B (Group B) ❌
+**File Modified:** `task.md`, `TEST_DRILL_MISTRAL.md`
+
+- **Attempted:** Benchmarking Mistral 7B (`mistral:latest`) as a "Group B" candidate.
+- **Result:** **Severe VRAM Thrashing.**
+- **Metrics:** Processing time exploded to **60+ seconds** (vs 0.4s for Gemma).
+- **Conclusion:** Hardware limit reached. Operating Whisper Turbo (~2GB) + Mistral 7B (~5GB) simultaneously exceeds available VRAM.
+- **Action:** Reverted default configuration to `gemma3:4b`. Cancelled Mistral tests.
+
+### Config Fixes ✅
+**Files Modified:** `python/core/processor.py`, `python/main.py`
+
+- Fixed `ipc_server.py` using `LocalProcessor` defaults. default model is now explicitly `gemma3:4b`.
+- Added logic to `main.py` (cli wrapper) to respect model args properly.
 
 ---
 
@@ -13,210 +46,70 @@
 ### Bug Fixes ✅
 **Files Modified:** `.env`, `src/main.ts`
 
-1. **Cloud Toggle Auto-Switch Bug (FIXED)**
-   - **Root Cause:** `.env` had `PROCESSING_MODE=gemini` hardcoded, forcing Python to use Gemini Flash
-   - **Secondary Issue:** `main.ts` getInitialState handler was overriding stored settings based on Python's current processor
-   - **Fix:** Changed `.env` to `PROCESSING_MODE=local`, removed override logic in `main.ts`
-   - **Result:** App now correctly starts in Local mode and toggle stays synchronized
+- **Cloud Toggle Auto-Switch Bug (FIXED)**: Adjusted `.env` and `main.ts` to ensure Local mode persistence.
 
 ### Phase A.1 Model Monitoring ✅ COMPLETE
 **File Modified:** `python/ipc_server.py`
 
 - **Inference Time Logging:** All LLM processing times logged to `logs/inference_times.json`
 - **2-Second Threshold Alert:** Console warnings when `duration > 2000ms`
-- **Model Health Check:** Already implemented (from previous session)
-
-**Example Log Entry:**
-```json
-{
-  "timestamp": 1737229841.5,
-  "model": "gemma3:4b",
-  "duration_ms": 1850.23,
-  "threshold_exceeded": false
-}
-```
 
 ### Phase A.2 Metrics Viewer UI ✅ COMPLETE
 **Files Modified:** `src/index.html`, `src/renderer.ts`
 
-- **Collapsible Panel:** "📊 Session Metrics" panel in Status Window
-- **ASCII Bar Chart:** Visual display of last 10 dictations' processing times
-- **Summary Stats:** Shows Avg, Min, Max processing times
-- **Auto-Update:** Refreshes after each dictation
-
-**UI Example:**
-```
-📊 Session Metrics ▼
-Last 5 dictations:
-▓▓▓▓▓▓▓▓░░░░░░░░░░░░ 1.8s
-▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░ 2.1s
-Avg: 2.1s | Min: 1.3s | Max: 3.2s
-```
-
-### Documentation ✅
-- Documented Ollama concurrency limitation in DEV_HANDOFF.md
-- Documented audio metadata bug (deferred, non-critical)
-- Updated DEVELOPMENT_ROADMAP.md: Marked A.1 and A.2 items as complete
-
----
-
-## ✅ Session 4 Accomplishments (2026-01-18 AM)
-
-### Documentation Sync ✅
-**Files Modified:** `README.md`, `GEMINI.md`
-
-- Removed outdated Waal rebrand note from README.md
-- Updated GEMINI.md branding note to reflect diktate as final brand
-- Verified SEC-001: No `.env` in git history ✅ CLEAR
-
-### Phase A.2 Pipeline Observability ✅
-**File Modified:** `python/ipc_server.py`
-
-**New Features:**
-- **SessionStats class:** Tracks dictation count, success/error counts, total chars, avg time
-- **Audio metadata logging:** Duration (seconds), file size (bytes) logged per dictation
-- **Model version logging:** Logs transcriber and processor model per dictation
-- **Session summary at shutdown:** Comprehensive stats (dictations, chars, avg time, session duration)
-- **JSON Metrics Persistence:** Saves performance metrics to `logs/metrics.json`
-- **Model Health Check:** Added endpoint to verify Ollama/Cloud provider availability
-
-**Log Output Examples:**
-```
-[AUDIO] Duration: 3.42s, Size: 109056 bytes
-[MODELS] Transcriber: turbo, Processor: gemma3:4b
-[SESSION SUMMARY]
-  Dictations: 5 (5 success, 0 errors)
-  Total Chars: 423
-  Avg Time: 1850ms
-  Session Duration: 324.5s
-```
-
----
-
-## ✅ Session 3 Accomplishments (2026-01-18)
-
-### Anti-Subscription Monetization Model ✅
-**Files Modified:** `DEVELOPMENT_ROADMAP.md`, `docs/COMMERCIAL_LAUNCH_STRATEGY.md`, `docs/MONETIZATION_STRATEGY.md`
-
-**Pricing Finalized:**
-| Tier | Price | Notes |
-|------|-------|-------|
-| Libre (Free) | $0 | Local-only, MIT license |
-| Libre (Supporter) | $10 | Badge, priority issues, beta |
-| Pro | $25 | BYOK + wallet credits (v1.1) |
-| Wallet Credits | $5-25 | 25% margin, never expire |
-
-**Active Status Perk:** $10 wallet/6mo OR $2-3/mo Ko-fi = updates access
-
-### Session-Based Logging ✅
-**Files Modified:** `python/ipc_server.py`, `python/main.py`
-
-- Timestamped log files: `diktate_YYYYMMDD_HHMMSS.log`
-- Auto-cleanup keeps last 10 sessions
-- Prevents unbounded log growth (old log was 1.3MB)
-
-### Local Speed Advantage Documentation ✅
-**Files Modified:** `docs/BENCHMARKS.md`, `docs/COMMERCIAL_LAUNCH_STRATEGY.md`
-
-- Documented gemma3:4b at 350-750ms vs cloud 800-2000ms
-- Added reproducible testing instructions
-- Updated marketing ammunition with speed claims
-
-### Roadmap Updates ✅
-**File Modified:** `DEVELOPMENT_ROADMAP.md`
-
-- **Phase F:** Cloud Wallet Infrastructure (v1.1 priority)
-- **Phase E.3:** Documentation & Onboarding Materials (Ollama value docs, install guides, videos)
-- **A.7:** Audio Encoder/Transcriber Testing (scientific model comparison)
-- **A.2:** Enhanced logging items (audio duration, file size, session summary)
-
-### Codebase Review Cross-Validation ✅
-**File Added:** `CODEBASE_REVIEW_2026-01-18.md`
-
-- Reviewed Sonnet 4.5 comprehensive codebase review
-- Added Gemini architect notes (Section 13)
-- Identified outdated claims vs current performance
-- Prioritized valid findings for action
+- **Visuals:** Added ASCII bar chart and stats to Status Window.
 
 ---
 
 ## ⚠️ Known Issues / Action Items
 
+### Hardware Constraints (New)
+- [ ] **VRAM Limit:** Cannot run models >4B parameters alongside Whisper Turbo without unloading.
+    - *Decision:* Stick to <4B models for now (Gemma 3, Llama 3.2 3B, Phi 3).
+
 ### From Codebase Review (Verify)
 - [ ] **SEC-001:** Check if API key is in git history (`git log --all -p .env`)
 - [ ] **QUAL-002:** Zero test coverage (real gap, needs addressing)
-- [ ] **QUAL-001:** Processor duplication (70% shared code, consider refactoring)
-
-### Settings Bugs (Low Priority)
-- [ ] `loadApiKeys()` not called on Settings load (`src/settings.ts:30-40`)
-- [ ] `saveSetting()` lacks error handling (`src/settings.ts:132-135`)
-- [ ] Missing audio device types in UserSettings (`src/main.ts:19-26`)
 
 ---
 
 ## 🔄 In Progress / Pending
 
-- [ ] Audio Encoder Testing (A.7) - scientific Whisper model comparison
-- [ ] Test infrastructure (QUAL-002) - minimum viable test suite
-- [ ] Phase F backend spec - Stripe + wallet integration
-- [ ] Documentation site (E.3) - VitePress/Docusaurus for docs
+- [ ] **Benchmarking Group B:** Select and test a new <4B candidate (e.g., `llama3.2:3b`).
+- [ ] **Benchmarking Group C:** Stress testing (Rapid/Noise).
+- [ ] **Analysis:** Finalize `BENCHMARKS.md` report.
 
 ---
 
 ## 📋 Instructions for Next Model
 
 ### Priority Order
-1. **Baseline Testing (A.4):** Run `/test-diktate` workflow with gemma3:4b (10+ samples)
-2. **Error Recovery (A.3):** Verify Ollama reconnection, test restart scenarios  
-3. **Confidence Scores (A.2):** Log Whisper confidence if available
-4. **Phase B Planning:** Review test infrastructure needs (QUAL-002)
+1.  **Select Group B Candidate:** Choose a smaller model to replace Mistral (e.g., `llama3.2:3b` or `phi3:3.8b`).
+2.  **Run Group B Drills:** Re-use the existing drill format to benchmark the new candidate.
+3.  **Run Stress Tests:** Proceed to Group C (stress tests) in `BENCHMARK_PLAN.md`.
 
 ### Context Needed
-- [DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md) - Current phase structure
-- [docs/BENCHMARKS.md](./docs/BENCHMARKS.md) - Performance baselines
-- [CODEBASE_REVIEW_2026-01-18.md](./CODEBASE_REVIEW_2026-01-18.md) - Section 13 for Gemini notes
+- [task.md](file:///C:/Users/gecko/.gemini/antigravity/brain/2577d960-f9d6-4279-a11e-34ae85d6279d/task.md) - Current progress tracker.
+- [BENCHMARKS_REPORT_SESSION_1.md](file:///e:/git/diktate/docs/BENCHMARKS_REPORT_SESSION_1.md) - Results so far.
 
 ### Do NOT
-- Don't trust performance claims in Sonnet's review (outdated - we're at 2-6s, not 18s)
-- Don't change wallet pricing without discussion ($10/$25 is final)
-- Don't implement wallet backend yet (v1.1, not v1.0)
-
----
-
-## ⚠️ Known Issues
-
-### Non-Critical (Deferred)
-1. **Audio Metadata Logging Bug** - Missing `import os` in `ipc_server.py` causes warning when logging audio duration/file size. Does NOT affect transcription. Fix deferred to avoid potential side effects.
-
-### Behavioral (By Design)
-2. **Ollama Concurrent Model Limitation** - Ollama can only process one model at a time. If another app (e.g., Ollama UI with qwen3:30b) is using Ollama, dIKtate's gemma3:4b requests will timeout after 60s (3 retries × 20s). Text is still injected but without LLM cleanup (raw transcription only). **Expected behavior** - not a bug.
-
----
-
-## Compilation Status
-- ✅ TypeScript compiles with **0 errors**
-- ✅ Python changes tested (session logging verified in logs)
-- ✅ Git status clean after commit
+- **Do NOT try 7B+ models** without implementing the "Low VRAM" (unloading) strategy first. We established this is a hard limit.
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
+### 2026-01-18 14:07 - Gemini 2.0 Flash
+- **Benchmarking:** Established Gemma 3 baseline (Speed/Quality).
+- **Prompt Engineering:** Implemented per-model prompts (20% -> 100% fix rate).
+- **Hardware Check:** Confirmed Mistral 7B is unusable (60s latency). Reverted to Gemma.
+
+### 2026-01-18 11:45 - Gemini 2.0 Flash
+- **Cloud Toggle:** Fixed persistence bug.
+- **Monitoring:** Implemented inference logging & alerts.
+- **UI:** Added metrics panel to status window.
+
 ### 2026-01-18 10:27 - Gemini 2.5 Pro (Architect)
-- Anti-subscription monetization model ($10 Libre / $25 Pro / 25% wallet margin)
-- Session-based logging (timestamped files, auto-cleanup)
-- Local speed advantage documentation (350-750ms vs cloud)
-- Roadmap updates (Phase F wallet, E.3 docs, A.7 encoder testing)
-- Reviewed Sonnet 4.5 codebase review, added cross-validation notes
-
-### 2026-01-17 - Claude Haiku 4.5
-- Cloud/Local toggle fully functional
-- API key decryption and secure storage working
-- Badge updates on provider switch
-- Performance data: Local 631ms, Cloud 1800-2200ms
-
-### 2026-01-17 - Claude Opus 4.5
-- Diagnosed Ollama stalls as VRAM contention
-- Switched to gemma3:4b (350-750ms processing)
-- Model warmup on startup
-- Context window optimization (64K → 2K)
+- **Strategy:** Anti-subscription model ($10/$25 tier).
+- **Logging:** Session-based log files.
+- **Roadmap:** Updated for commercial launch.
