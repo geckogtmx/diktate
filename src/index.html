@@ -370,6 +370,46 @@
             background: var(--dark-teal);
             border-radius: 2px;
         }
+
+        /* METRICS PANEL */
+        #metrics-panel {
+            background: var(--jet-black);
+            border-top: 1px solid var(--border-color);
+        }
+
+        #metrics-header {
+            padding: 6px 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #888;
+            user-select: none;
+        }
+
+        #metrics-header:hover {
+            background: var(--dark-teal);
+            color: white;
+        }
+
+        #metrics-content {
+            padding: 8px 12px;
+            font-size: 0.7rem;
+        }
+
+        #metrics-chart {
+            font-family: monospace;
+            color: var(--dark-teal-3);
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        #metrics-summary {
+            display: flex;
+            gap: 15px;
+            color: #888;
+            font-size: 0.65rem;
+        }
     </style>
 </head>
 
@@ -438,6 +478,18 @@
             </label>
         </div>
 
+        <!-- METRICS PANEL -->
+        <div id="metrics-panel">
+            <div id="metrics-header" onclick="toggleMetrics()">
+                <span>📊 Session Metrics</span>
+                <span id="metrics-toggle-icon">▼</span>
+            </div>
+            <div id="metrics-content" style="display: none;">
+                <div id="metrics-chart"></div>
+                <div id="metrics-summary"></div>
+            </div>
+        </div>
+
         <!-- PERFORMANCE TIMELINE -->
         <div id="perf-timeline">
             <span class="perf-step" id="perf-rec">Rec: --</span>
@@ -477,6 +529,18 @@
             } else {
                 panel.style.height = '25px';
                 icon.textContent = '▲';
+            }
+        }
+
+        function toggleMetrics() {
+            const content = document.getElementById('metrics-content');
+            const icon = document.getElementById('metrics-toggle-icon');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
             }
         }
     </script>

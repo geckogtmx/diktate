@@ -219,6 +219,58 @@ function setupToggles() {
     }
 }
 
+// Update metrics panel with recent data (A.2 observability)
+async function updateMetricsPanel() {
+    const metricsChart = document.getElementById('metrics-chart');
+    const metricsSummary = document.getElementById('metrics-summary');
+
+    if (!metricsChart || !metricsSummary) return;
+
+    try {
+        // For now, we'll track metrics locally until we have file system access
+        // This would ideally read from metrics.json
+        const recentMetrics: number[] = [];
+
+        // Store metrics locally on performance events
+        if ((window as any)._recentMetrics) {
+            const metrics = (window as any)._recentMetrics.slice(-10);
+
+            if (metrics.length === 0) {
+                metricsChart.textContent = 'No metrics yet. Run a dictation to see data here.';
+                metricsSummary.textContent = '';
+                return;
+            }
+
+            // Create ASCII bar chart
+            const maxTime = Math.max(...metrics);
+            const chart = metrics.map((time: number) => {
+                const bars = Math.ceil((time / maxTime) * 20);
+                const bar = '▓'.repeat(bars) + '░'.repeat(20 - bars);
+                return `${bar} ${(time / 1000).toFixed(1)}s`;
+            }).join('\n');
+
+            metricsChart.textContent = `Last ${metrics.length} dictations:\n${chart}`;
+
+            // Calculate summary stats
+            const avg = metrics.reduce((a: number, b: number) => a + b, 0) / metrics.length;
+            const min = Math.min(...metrics);
+            const max = Math.max(...metrics);
+
+            metricsSummary.innerHTML = `
+                <span>Avg: ${(avg / 1000).toFixed(1)}s</span>
+                <span>Min: ${(min / 1000).toFixed(1)}s</span>
+                <span>Max: ${(max / 1000).toFixed(1)}s</span>
+            `;
+        } else {
+            metricsChart.textContent = 'No metrics yet. Run a dictation to see data here.';
+            metricsSummary.textContent = '';
+        }
+    } catch (e) {
+        metricsChart.textContent = 'Error loading metrics';
+        metricsSummary.textContent = '';
+    }
+}
+
 // Initialize
 if (window.electronAPI) {
     window.electronAPI.onLog((level, message, data) => addLogEntry(level, message, data));
@@ -226,7 +278,21 @@ if (window.electronAPI) {
 
     // Performance metrics handler
     if (window.electronAPI.onPerformanceMetrics) {
-        window.electronAPI.onPerformanceMetrics((metrics) => updatePerformanceMetrics(metrics));
+        window.electronAPI.onPerformanceMetrics((metrics) => {
+            updatePerformanceMetrics(metrics);
+
+            // Store for metrics panel
+            if (!((window as any)._recentMetrics)) {
+                (window as any)._recentMetrics = [];
+            }
+            if (metrics.total) {
+                (window as any)._recentMetrics.push(metrics.total);
+                if ((window as any)._recentMetrics.length > 20) {
+                    (window as any)._recentMetrics.shift();
+                }
+                updateMetricsPanel();
+            }
+        });
     }
 
     // Badge update handler (for provider switches)
@@ -249,6 +315,9 @@ if (window.electronAPI) {
             if (toggleCloud && state.processingMode) {
                 toggleCloud.checked = state.processingMode === 'cloud';
             }
+
+            // Load metrics panel
+            updateMetricsPanel();
         }
     }).catch(err => addLogEntry('ERROR', 'Init failed'));
 
