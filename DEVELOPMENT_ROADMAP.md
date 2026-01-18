@@ -62,7 +62,7 @@
 ### A.2 Pipeline Observability
 - [x] Persist performance metrics to JSON file
 - [x] Add session-level stats (success rate, avg time, error count)
-- [ ] Create simple metrics viewer in status window
+- [x] Create simple metrics viewer in status window
 - [ ] Log transcription confidence scores (if available from Whisper)
 - [x] **Log audio duration** (correlate processing time with input length)
 - [x] **Log audio file size** (detect recording issues)
