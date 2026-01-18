@@ -131,6 +131,16 @@
 
 ---
 
+## ⚠️ Known Issues
+
+### Non-Critical (Deferred)
+1. **Audio Metadata Logging Bug** - Missing `import os` in `ipc_server.py` causes warning when logging audio duration/file size. Does NOT affect transcription. Fix deferred to avoid potential side effects.
+
+### Behavioral (By Design)
+2. **Ollama Concurrent Model Limitation** - Ollama can only process one model at a time. If another app (e.g., Ollama UI with qwen3:30b) is using Ollama, dIKtate's gemma3:4b requests will timeout after 60s (3 retries × 20s). Text is still injected but without LLM cleanup (raw transcription only). **Expected behavior** - not a bug.
+
+---
+
 ## Compilation Status
 - ✅ TypeScript compiles with **0 errors**
 - ✅ Python changes tested (session logging verified in logs)
