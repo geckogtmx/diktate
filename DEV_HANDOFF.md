@@ -1,14 +1,66 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-18 10:35
-> **Last Model:** Gemini 2.5 Pro (Architect)
+> **Last Updated:** 2026-01-18 11:45
+> **Last Model:** Gemini 2.0 Flash Thinking (Extended)
 > **Current Phase:** Stability & Monitoring (Phase A)
 > **Master Plan:** [DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md)
 > **Brand:** diktate / dikta.me (NO rebrand to Waal)
 
 ---
 
-## ✅ Session 4 Accomplishments (2026-01-18)
+## ✅ Session 5 Accomplishments (2026-01-18 PM)
+
+### Bug Fixes ✅
+**Files Modified:** `.env`, `src/main.ts`
+
+1. **Cloud Toggle Auto-Switch Bug (FIXED)**
+   - **Root Cause:** `.env` had `PROCESSING_MODE=gemini` hardcoded, forcing Python to use Gemini Flash
+   - **Secondary Issue:** `main.ts` getInitialState handler was overriding stored settings based on Python's current processor
+   - **Fix:** Changed `.env` to `PROCESSING_MODE=local`, removed override logic in `main.ts`
+   - **Result:** App now correctly starts in Local mode and toggle stays synchronized
+
+### Phase A.1 Model Monitoring ✅ COMPLETE
+**File Modified:** `python/ipc_server.py`
+
+- **Inference Time Logging:** All LLM processing times logged to `logs/inference_times.json`
+- **2-Second Threshold Alert:** Console warnings when `duration > 2000ms`
+- **Model Health Check:** Already implemented (from previous session)
+
+**Example Log Entry:**
+```json
+{
+  "timestamp": 1737229841.5,
+  "model": "gemma3:4b",
+  "duration_ms": 1850.23,
+  "threshold_exceeded": false
+}
+```
+
+### Phase A.2 Metrics Viewer UI ✅ COMPLETE
+**Files Modified:** `src/index.html`, `src/renderer.ts`
+
+- **Collapsible Panel:** "📊 Session Metrics" panel in Status Window
+- **ASCII Bar Chart:** Visual display of last 10 dictations' processing times
+- **Summary Stats:** Shows Avg, Min, Max processing times
+- **Auto-Update:** Refreshes after each dictation
+
+**UI Example:**
+```
+📊 Session Metrics ▼
+Last 5 dictations:
+▓▓▓▓▓▓▓▓░░░░░░░░░░░░ 1.8s
+▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░ 2.1s
+Avg: 2.1s | Min: 1.3s | Max: 3.2s
+```
+
+### Documentation ✅
+- Documented Ollama concurrency limitation in DEV_HANDOFF.md
+- Documented audio metadata bug (deferred, non-critical)
+- Updated DEVELOPMENT_ROADMAP.md: Marked A.1 and A.2 items as complete
+
+---
+
+## ✅ Session 4 Accomplishments (2026-01-18 AM)
 
 ### Documentation Sync ✅
 **Files Modified:** `README.md`, `GEMINI.md`
@@ -114,10 +166,10 @@
 ## 📋 Instructions for Next Model
 
 ### Priority Order
-1. **Continue Phase A.1:** Model health check endpoint (Ollama responding?)
-2. **Persist Metrics:** Save performance metrics to JSON file (A.2)
-3. **Baseline Testing:** Run gemma3:4b baseline tests (A.4)
-4. **Consider test infrastructure** (QUAL-002) if planning v1.0 release
+1. **Baseline Testing (A.4):** Run `/test-diktate` workflow with gemma3:4b (10+ samples)
+2. **Error Recovery (A.3):** Verify Ollama reconnection, test restart scenarios  
+3. **Confidence Scores (A.2):** Log Whisper confidence if available
+4. **Phase B Planning:** Review test infrastructure needs (QUAL-002)
 
 ### Context Needed
 - [DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md) - Current phase structure
