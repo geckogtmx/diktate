@@ -1,70 +1,57 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-18
+> **Last Updated:** 2026-01-18 23:05
 > **Last Model:** Gemini
-> **Session Focus:** Website Design Overhaul (Smart Panel, Pricing, Visuals, Mobile Prep)
+> **Session Focus:** Settings UI Fixes, Zero-Latency Audio Handler, Security Audit Triage
 
 ---
 
 ## ✅ Completed This Session
 
-- **Smart Control Panel**: Replaced static specs with an interactive, scrolling dashboard (`site/index.html`).
-- **Seamless "Deep Sea" Design**: 
-    - Implemented a fixed global background (`#001a21` -> `#000508`).
-    - Made page sections transparent to eliminate "hard cuts".
-    - Darkened the entire palette by ~30%.
-- **Pricing Section Refactor**:
-    - Reordered to "Paid Tabs" on top, "Free Banner" on bottom.
-    - Added comedic "Best Value" vs "Bester Value" badges.
-    - Added "Keep It All Updated" donation button.
-- **Mobile Strategy**:
-    - Created `mobile_site/` sandbox (copy of `site/`) for safe parallel development.
-    - Updated `DEVELOPMENT_ROADMAP.md` with Phase E.3 Mobile Optimization plan.
+### 1. Settings Bug Fixes
+- **Ask Mode UI:** Moved from "Mode-Specific Models" to a standalone section (cleaner layout).
+- **API Key Testing:** Fixed "too small" validation error (now allows testing stored keys via empty input).
+- **Mode Dropdowns:** Fixed population logic (selectors now carry correct `model-mode` IDs).
+
+### 2. Audio Handler (Zero Latency)
+- **Pivot to WAV:** Switched from Renderer-based MP3 (high latency) to Main Process `System.Media.SoundPlayer` (WAV).
+- **Assets:** Populated `assets/sounds/` with `a.wav`, `b.wav`, `c.wav`.
+- **Logic:** `playSound` helper in `src/main.ts` now triggers instant native playback.
+
+### 3. Security Audit Analysis
+- **Review:** Analyzed `latest_claude_audit_2026-01-18.md`.
+- **Triage:** identified 3 **Indispensable** fixes vs "Can Wait" items.
 
 ## ⚠️ Known Issues / Broken
 
-- **Mobile View**: Even with the sandbox, the current `site/index.html` is NOT mobile-optimized (nav hidden, paddings too large).
-- **Sandbox State**: `mobile_site/` is currently an exact clone of `site/`; no mobile fixes have been applied yet.
+- **Anthropic Key Leak:** `security.py` regex fails to redact keys with hyphens (PROD PRIVACY RISK).
+- **Phantom Audio Files:** `try/catch` deletion is flaky on Windows; files may persist.
+- **Dependency Vulnerability:** `requests` v2.31.0 has known SSRF CVE.
 
 ## 🔄 In Progress / Pending
 
-- [ ] **Mobile Navigation**: Needs hamburger menu implementation in `mobile_site/`.
-- [ ] **Responsive Tuning**: Needs `py-32` -> `py-16` and font scaling in `mobile_site/`.
-- [ ] **Merge Back**: `mobile_site/index.html` needs to be copied back to `site/index.html` once verified.
+- [ ] Execute **Indispensable Security Fixes** (See Instructions below).
+- [ ] Verify Audio Handler in built application (ensure WAV packing works).
 
 ## 📋 Instructions for Next Model
 
-1.  **Work in the Sandbox**: Perform ALL mobile optimization work in `mobile_site/index.html` first.
-2.  **Execute Phase E.3**: Follow the plan in `DEVELOPMENT_ROADMAP.md`:
-    - Implement the hamburger menu.
-    - Fix the grid stacking and typography.
-3.  **Verify & Merge**: Once `mobile_site/` looks good on 375px width, copy the code back to `site/`.
+**Priority 1: Execute Security Fixes (Indispensable)**
+1.  **Redact Anthropic Keys:** Update `python/utils/security.py` regex to capture `sk-ant-[a-zA-Z0-9_-]+`.
+2.  **Audio Cleanup:** Implement `atexit` handler in `python/ipc_server.py` to guarantee deletion of temp files.
+3.  **Update Requests:** `pip install requests>=2.32.0`.
 
-### Priority Order
-1.  Implement Mobile Navigation (Hamburger) in `mobile_site/`.
-2.  Fix extensive vertical spacing on mobile.
-3.  Verify "Build It Yourself" banner stacking on mobile.
+**Priority 2: Verification**
+- Verify that `assets/sounds/*.wav` are correctly bundled in the `dist` or `resources` folder during build (`pnpm build`).
 
 ### Context Needed
-- `DEVELOPMENT_ROADMAP.md` (Phase E.3)
-- `site/index.html` (Source of truth)
-- `mobile_site/index.html` (Your playground)
-
-### Do NOT
-- Do NOT edit `site/index.html` directly for these responsive tests (risk of breaking desktop layout).
-- Do NOT remove the fixed global background; it's key to the "Seamless" look.
+- `latest_claude_audit_2026-01-18.md` (Audit findings)
+- `python/utils/security.py` (Redaction logic)
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
-### 2026-01-18 - Gemini
-- **Design Overhaul**: "Deep Sea" global background, Smart Control Panel, Pricing Refactor.
-- **Mobile Prep**: Created `mobile_site` sandbox.
-
-### 2026-01-18 - Claude
-- **Analysis**: Competitor analysis (WisprFlow, Aqua Voice).
-- **Strategy**: Defined "Truth-First" positioning and Product Architecture.
-
-### 2026-01-17 - Claude
-- **Stability**: Fixed Electron runtime, improved logging, defined v1.1 roadmap.
+### 2026-01-18 23:00 - Gemini
+- **Fix:** Settings Bugs (Ask Mode, API Key Test, Mode Dropdowns).
+- **Feat:** Zero-Latency WAV Sound Handler (`main.ts`).
+- **Plan:** Prioritized Security Audit findings.

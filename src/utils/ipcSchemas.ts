@@ -39,8 +39,9 @@ export const ApiKeySetSchema = z.object({
 
 export const ApiKeyTestSchema = z.object({
     provider: ApiKeyProviderSchema,
-    key: z.string().min(10).max(200)
+    key: z.string().max(200) // Empty string = "test stored key"
 });
+
 
 // Validation helper
 export function validateIpcMessage<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; error: string } {

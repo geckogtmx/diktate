@@ -201,6 +201,33 @@ function createSettingsWindow(): void {
 }
 
 /**
+ * Helper to play sound via Main Process (Zero Latency)
+ */
+function playSound(soundName: string) {
+  if (!soundName || soundName === 'none') return;
+
+  const soundPath = path.join(__dirname, '..', 'assets', 'sounds', `${soundName}.wav`);
+
+  if (!fs.existsSync(soundPath)) {
+    logger.warn('MAIN', `Sound file not found: ${soundPath}`);
+    return;
+  }
+
+  try {
+    const { exec } = require('child_process');
+    // Using Hidden window style and .PlaySync() to ensure process stays alive
+    const psCommand = `(New-Object System.Media.SoundPlayer '${soundPath}').PlaySync()`;
+    exec(`powershell -c "${psCommand}"`, { windowsHide: true }, (error: Error | null) => {
+      if (error) {
+        logger.error('MAIN', 'Sound playback failed', error);
+      }
+    });
+  } catch (e) {
+    logger.error('MAIN', 'Failed to trigger sound', e);
+  }
+}
+
+/**
  * Build tray menu template
  */
 function buildTrayMenu(state: string = 'Idle'): Electron.MenuItemConstructorOptions[] {
@@ -518,8 +545,8 @@ function setupPythonEventHandlers(): void {
 
     // Show notification
     const durationText = max_duration === 60 ? '1 minute' :
-                        max_duration === 120 ? '2 minutes' :
-                        `${max_duration} seconds`;
+      max_duration === 120 ? '2 minutes' :
+        `${max_duration} seconds`;
     showNotification(
       'Recording Auto-Stopped',
       `Maximum recording duration (${durationText}) reached.\n\nProcessing your dictation now...`,
@@ -657,7 +684,12 @@ function setupIpcHandlers(): void {
         const currentState = isRecording ? (recordingMode === 'ask' ? 'Listening (Ask)' : 'Recording') : 'Idle';
         updateTrayState(currentState);
       }
+      // Update Status Window badge with new model
+      if (debugWindow && !debugWindow.isDestroyed()) {
+        debugWindow.webContents.send('badge-update', { processor: value });
+      }
     }
+
 
     // If processing mode changed
     if (key === 'processingMode') {
@@ -686,27 +718,7 @@ function setupIpcHandlers(): void {
 
   // Sound playback handler
   ipcMain.handle('settings:play-sound', async (_event, soundName: string) => {
-    const soundPath = path.join(__dirname, '..', 'assets', 'sounds', `${soundName}.wav`);
-
-    // Check if sound file exists
-    if (!fs.existsSync(soundPath)) {
-      logger.warn('IPC', `Sound file not found: ${soundPath}`);
-      // For now, just log - we'll create sound files later
-      return;
-    }
-
-    // Play sound using platform-specific method
-    try {
-      // On Windows, we can use powershell to play sounds
-      const { exec } = require('child_process');
-      exec(`powershell -c "(New-Object Media.SoundPlayer '${soundPath}').PlaySync()"`, (err: Error | null) => {
-        if (err) {
-          logger.error('IPC', 'Failed to play sound', err);
-        }
-      });
-    } catch (err) {
-      logger.error('IPC', 'Failed to play sound', err);
-    }
+    playSound(soundName);
   });
 
   // Hardware test handler
@@ -806,11 +818,29 @@ function setupIpcHandlers(): void {
       return { success: false, error: validation.error };
     }
 
+    // If empty key passed, retrieve the stored encrypted key
+    let testKey = key;
+    if (!key) {
+      const storeKey = `encrypted${provider.charAt(0).toUpperCase() + provider.slice(1)}ApiKey`;
+      const storedKey = store.get(storeKey);
+
+      if (storedKey && safeStorage.isEncryptionAvailable()) {
+        try {
+          testKey = safeStorage.decryptString(Buffer.from(storedKey as string, 'base64'));
+        } catch (e) {
+          return { success: false, error: 'Failed to decrypt stored key' };
+        }
+      } else {
+        return { success: false, error: 'No saved key found' };
+      }
+    }
+
     // Simple validation test for each provider
     try {
+
       if (provider === 'gemini') {
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${testKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -825,7 +855,7 @@ function setupIpcHandlers(): void {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': key,
+            'x-api-key': testKey,
             'anthropic-version': '2023-06-01'
           },
           body: JSON.stringify({ model: 'claude-3-haiku-20240307', max_tokens: 1, messages: [{ role: 'user', content: 'Hi' }] })
@@ -835,7 +865,7 @@ function setupIpcHandlers(): void {
         return { success: false, error: error.error?.message || 'Invalid key' };
       } else if (provider === 'openai') {
         const response = await fetch('https://api.openai.com/v1/models', {
-          headers: { 'Authorization': `Bearer ${key}` }
+          headers: { 'Authorization': `Bearer ${testKey}` }
         });
         if (response.ok) return { success: true };
         const error = await response.json();
@@ -859,6 +889,12 @@ async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<voi
   }
 
   if (isRecording) {
+    // Play feedback sound
+    if (store.get('soundFeedback')) {
+      const sound = store.get('feedbackSound');
+      playSound(sound);
+    }
+
     // Stop recording
     logger.info('MAIN', 'Stopping recording', { mode: recordingMode });
     isRecording = false;
@@ -873,6 +909,12 @@ async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<voi
       updateTrayState('Idle');
     }
   } else {
+    // Play feedback sound
+    if (store.get('soundFeedback')) {
+      const sound = store.get('feedbackSound');
+      playSound(sound);
+    }
+
     // Start recording
     recordingMode = mode;
     logger.info('MAIN', 'Starting recording', { mode });

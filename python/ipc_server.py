@@ -692,6 +692,17 @@ YOUR ANSWER:"""
                 self.trans_mode = trans_mode
                 updates.append(f"Trans: {trans_mode}")
 
+            # 5. Default Ollama Model (for local processing)
+            default_model = config.get("defaultModel")
+            if default_model and self.processor:
+                logger.info(f"[CONFIG] Switching default Ollama model to: {default_model}")
+                if hasattr(self.processor, "set_model"):
+                    self.processor.set_model(default_model)
+                    updates.append(f"OllamaModel: {default_model}")
+                else:
+                    logger.warning(f"Processor {type(self.processor).__name__} does not support model switching (not LocalProcessor)")
+
+
             if updates:
                 return {"success": True, "message": f"Updated: {', '.join(updates)}"}
             return {"success": False, "error": "No valid configuration found"}

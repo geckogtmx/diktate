@@ -43,6 +43,9 @@ const electronAPI = {
   toggleRecording: () => ipcRenderer.invoke('python:toggle-recording'),
   getInitialState: () => ipcRenderer.invoke('get-initial-state'),
   setSetting: (key: string, value: any) => ipcRenderer.invoke('settings:set', key, value),
+  onPlaySound: (callback: (soundName: string) => void) => {
+    ipcRenderer.on('play-sound', (_, soundName) => callback(soundName));
+  }
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

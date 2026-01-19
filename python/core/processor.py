@@ -38,6 +38,36 @@ class LocalProcessor:
         self.prompt = get_prompt(mode, self.model)
         logger.info(f"Processor mode switched to: {mode}")
 
+    def set_model(self, model: str) -> None:
+        """Hot-swap the Ollama model without recreating the processor."""
+        if model == self.model:
+            logger.info(f"Model already set to {model}, skipping")
+            return
+        
+        old_model = self.model
+        self.model = model
+        self.prompt = get_prompt(self.mode, model)
+        logger.info(f"Processor model switched from {old_model} to {model}")
+        
+        # Warm up the new model
+        try:
+            logger.info(f"Warming up {model}...")
+            requests.post(
+                f"{self.ollama_url}/api/generate",
+                json={
+                    "model": model,
+                    "prompt": "",
+                    "stream": False,
+                    "options": {"num_ctx": 2048, "num_predict": 1},
+                    "keep_alive": "10m"
+                },
+                timeout=30
+            )
+            logger.info(f"Model {model} ready")
+        except Exception as e:
+            logger.warning(f"Model warmup failed (will retry on first use): {e}")
+
+
     def _verify_ollama(self) -> None:
         """Verify Ollama server is running and warm up the model."""
         try:

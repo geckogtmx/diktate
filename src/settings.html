@@ -242,11 +242,13 @@
     <div id="sidebar">
         <div class="tab-btn active" onclick="switchTab('general')">⚙️ General</div>
         <div class="tab-btn" onclick="switchTab('audio')">🎤 Audio</div>
-        <div class="tab-btn" onclick="switchTab('models')">🤖 Models</div>
+        <div class="tab-btn" onclick="switchTab('ollama')">🦙 Ollama</div>
         <div class="tab-btn" onclick="switchTab('modes')">🧠 Modes</div>
         <div class="tab-btn" onclick="switchTab('apikeys')">🔑 API Keys</div>
         <div class="tab-btn" onclick="switchTab('about')">ℹ️ About</div>
     </div>
+
+
 
     <div id="content">
         <!-- GENERAL TAB -->
@@ -268,11 +270,32 @@
             </div>
 
             <div class="setting-group">
-                <label>Global Hotkey</label>
-                <span class="sub-label">Press to start/stop dictation</span>
-                <div id="hotkey-display" onclick="recordHotkey()">Ctrl + Alt + D</div>
+                <label>Dictate Hotkey</label>
+                <span class="sub-label">Press to start/stop dictation (transcribe → clean → type)</span>
+                <div id="hotkey-display" onclick="recordHotkey('dictate')" style="cursor: pointer;">Ctrl + Alt + D</div>
                 <div style="text-align: right; margin-top: 5px;">
-                    <button class="btn btn-secondary" onclick="resetHotkey()">Reset Default</button>
+                    <button class="btn btn-secondary" onclick="resetHotkey('dictate')">Reset Default</button>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label>Ask Mode Hotkey</label>
+                <span class="sub-label">Press to ask questions (transcribe → LLM answer → type/clipboard)</span>
+                <div id="ask-hotkey-display" onclick="recordHotkey('ask')" style="cursor: pointer;">Ctrl + Alt + A</div>
+                <div style="text-align: right; margin-top: 5px;">
+                    <button class="btn btn-secondary" onclick="resetHotkey('ask')">Reset Default</button>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label>Default AI Model</label>
+                <span class="sub-label">Model used for local text processing</span>
+                <select id="default-model" onchange="onDefaultModelChange(this.value)">
+                    <option value="">Loading models...</option>
+                </select>
+                <div id="model-change-status"
+                    style="display: none; margin-top: 8px; padding: 8px 12px; background: #1a3a1a; border: 1px solid #22c55e; border-radius: 4px; color: #4ade80;">
+                    ✓ Model updated!
                 </div>
             </div>
 
@@ -289,6 +312,7 @@
                 </div>
             </div>
         </div>
+
 
         <!-- AUDIO TAB -->
         <div id="audio" class="tab-content">
@@ -307,14 +331,14 @@
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <select id="feedback-sound" style="flex: 1;" onchange="saveSetting('feedbackSound', this.value)">
                         <option value="none">🔇 None (Silent)</option>
-                        <option value="click" selected>🔊 Click</option>
-                        <option value="beep">🔊 Beep</option>
-                        <option value="chime">🔊 Chime</option>
-                        <option value="pop">🔊 Pop</option>
+                        <option value="a" selected>🔊 Soft Click</option>
+                        <option value="b">🔊 Notification</option>
+                        <option value="c">🔊 Chime</option>
                     </select>
                     <button class="btn btn-secondary" onclick="previewSound()">▶ Preview</button>
                 </div>
             </div>
+
 
             <div class="setting-group">
                 <div class="setting-row">
@@ -336,81 +360,117 @@
                 <span class="sub-label">Auto-stop recording after this duration (prevents runaway recordings)</span>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <label style="flex: 1;">
-                        <input type="radio" name="max-duration" value="30" onchange="saveSetting('maxRecordingDuration', 30)">
+                        <input type="radio" name="max-duration" value="30"
+                            onchange="saveSetting('maxRecordingDuration', 30)">
                         <span style="margin-left: 5px;">30 seconds</span>
                     </label>
                     <label style="flex: 1;">
-                        <input type="radio" name="max-duration" value="60" onchange="saveSetting('maxRecordingDuration', 60)" checked>
+                        <input type="radio" name="max-duration" value="60"
+                            onchange="saveSetting('maxRecordingDuration', 60)" checked>
                         <span style="margin-left: 5px;">1 minute</span>
                     </label>
                     <label style="flex: 1;">
-                        <input type="radio" name="max-duration" value="120" onchange="saveSetting('maxRecordingDuration', 120)">
+                        <input type="radio" name="max-duration" value="120"
+                            onchange="saveSetting('maxRecordingDuration', 120)">
                         <span style="margin-left: 5px;">2 minutes</span>
                     </label>
                     <label style="flex: 1;">
-                        <input type="radio" name="max-duration" value="0" onchange="saveSetting('maxRecordingDuration', 0)">
+                        <input type="radio" name="max-duration" value="0"
+                            onchange="saveSetting('maxRecordingDuration', 0)">
                         <span style="margin-left: 5px;">⚠️ Unlimited</span>
                     </label>
                 </div>
             </div>
         </div>
 
-        <!-- MODELS TAB -->
-        <div id="models" class="tab-content">
-            <h2>Model Management</h2>
+        <!-- OLLAMA TAB -->
+        <div id="ollama" class="tab-content">
+            <h2>🦙 Ollama Management</h2>
 
+            <!-- Service Status -->
             <div class="setting-group">
-                <label>Hardware Capabilities</label>
-                <span class="sub-label">Test your system to get model recommendations</span>
-                <div id="hardware-status"
+                <label>Service Status</label>
+                <span class="sub-label">Local LLM inference engine</span>
+                <div id="ollama-status-panel"
                     style="background: #1a1a1a; padding: 12px; border-radius: 6px; margin: 10px 0;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span style="color: #888;">GPU:</span>
-                        <span id="hw-gpu">Not tested</span>
+                        <span style="color: #888;">Status:</span>
+                        <span id="ollama-service-status">Checking...</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span style="color: #888;">VRAM:</span>
-                        <span id="hw-vram">Not tested</span>
+                        <span style="color: #888;">Version:</span>
+                        <span id="ollama-service-version">--</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #888;">Recommended Tier:</span>
-                        <span id="hw-tier" style="color: #4ade80;">Unknown</span>
+                        <span style="color: #888;">Models Loaded:</span>
+                        <span id="ollama-loaded-models">--</span>
                     </div>
                 </div>
-                <button class="btn" onclick="runHardwareTest()">🔬 Run Hardware Test</button>
-            </div>
-
-            <div class="setting-group">
-                <label>Ollama Status</label>
-                <div id="ollama-status" style="background: #1a1a1a; padding: 12px; border-radius: 6px; margin: 10px 0;">
-                    <span id="ollama-version">Checking connection...</span>
-                </div>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button class="btn btn-secondary" onclick="launchOllamaUI()">💬 Open Chat</button>
-                    <button class="btn btn-secondary" onclick="refreshOllamaModels()">🔄 Refresh Models</button>
+                    <button class="btn btn-secondary" onclick="refreshOllamaStatus()">🔄 Refresh</button>
+                    <button class="btn btn-secondary" onclick="openExternalLink('https://ollama.com/library')">📚 Browse
+                        Models</button>
                 </div>
             </div>
 
+            <!-- Model Management -->
             <div class="setting-group">
-                <label>Default Processing Model</label>
-                <span class="sub-label">Model used for local text processing (change takes effect immediately)</span>
-                <select id="default-model" onchange="onDefaultModelChange(this.value)">
-                    <option value="">Loading models...</option>
-                </select>
-                <div id="model-change-status"
-                    style="display: none; margin-top: 8px; padding: 8px 12px; background: #1a3a1a; border: 1px solid #22c55e; border-radius: 4px; color: #4ade80;">
-                    ✓ Model updated! Will be used for next dictation.
+                <label>Pull New Model</label>
+                <span class="sub-label">Download a model from the Ollama registry</span>
+
+                <!-- Quick picks for popular models -->
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0;">
+                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85em;"
+                        onclick="quickPullModel('gemma3:4b')">gemma3:4b</button>
+                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85em;"
+                        onclick="quickPullModel('llama3.2:3b')">llama3.2:3b</button>
+                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85em;"
+                        onclick="quickPullModel('phi3:mini')">phi3:mini</button>
+                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85em;"
+                        onclick="quickPullModel('qwen2.5:3b')">qwen2.5:3b</button>
+                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85em;"
+                        onclick="quickPullModel('mistral:7b')">mistral:7b</button>
                 </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="ollama-pull-model" placeholder="Or type model name..." style="flex: 1;">
+                    <button class="btn btn-secondary" onclick="pullOllamaModel()">⬇️ Pull</button>
+                </div>
+                <div id="ollama-pull-status" style="margin-top: 8px; font-size: 0.9em; color: #888;"></div>
             </div>
+
 
             <div class="setting-group">
                 <label>Installed Models</label>
-                <div id="models-list"
-                    style="background: #1a1a1a; padding: 12px; border-radius: 6px; max-height: 200px; overflow-y: auto;">
-                    <div style="color: #888;">Loading...</div>
+                <span class="sub-label">Manage your downloaded models</span>
+                <div id="ollama-models-list"
+                    style="background: #1a1a1a; padding: 12px; border-radius: 6px; margin: 10px 0; max-height: 200px; overflow-y: auto;">
+                    Loading...
                 </div>
             </div>
+
+            <!-- Performance Settings -->
+            <div class="setting-group">
+                <label>Keep-Alive Duration</label>
+                <span class="sub-label">How long to keep models loaded in memory after use</span>
+                <select id="ollama-keep-alive" onchange="saveOllamaSetting('keepAlive', this.value)">
+                    <option value="5m">5 minutes</option>
+                    <option value="10m" selected>10 minutes (default)</option>
+                    <option value="30m">30 minutes</option>
+                    <option value="1h">1 hour</option>
+                    <option value="24h">24 hours (always loaded)</option>
+                </select>
+            </div>
+
+            <!-- Advanced -->
+            <div class="setting-group">
+                <label>Ollama Server URL</label>
+                <span class="sub-label">Change if running Ollama on a remote machine</span>
+                <input type="text" id="ollama-server-url" value="http://localhost:11434"
+                    onchange="saveOllamaSetting('serverUrl', this.value)" style="width: 100%;">
+            </div>
         </div>
+
 
         <!-- MODES TAB -->
         <div id="modes" class="tab-content">
@@ -433,6 +493,18 @@
                     <option value="none">Disabled</option>
                     <option value="es-en">Spanish → English</option>
                     <option value="en-es">English → Spanish</option>
+                </select>
+            </div>
+
+            <!-- Ask Mode Output -->
+            <div class="setting-group">
+                <label>Ask Mode Output</label>
+                <span class="sub-label">How to deliver answers when using Ask Mode (Ctrl+Alt+A)</span>
+                <select id="ask-output-mode" onchange="saveSetting('askOutputMode', this.value)">
+                    <option value="type">⌨️ Type (Inject text)</option>
+                    <option value="clipboard">📋 Clipboard Only</option>
+                    <option value="notification">🔔 Notification Only</option>
+                    <option value="clipboard+notify">📋 + 🔔 Both</option>
                 </select>
             </div>
 
@@ -496,29 +568,10 @@
                         <p style="margin: 4px 0 0; color: #888; font-size: 0.8em;">Literal transcription. Bypasses LLM
                             processing.</p>
                     </div>
-
-                    <!-- Ask Mode (New) -->
-                    <div
-                        style="background: #1a1a1a; padding: 12px; border-radius: 6px; border-left: 3px solid #f43f5e; margin-top: 12px;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <strong>❓ Ask Mode (Ctrl+Alt+A)</strong>
-                        </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <label style="margin: 0; min-width: 80px; font-size: 0.9em;">Output:</label>
-                            <select id="ask-output-mode" class="mode-model-select"
-                                onchange="saveSetting('askOutputMode', this.value)">
-                                <option value="clipboard">📋 Clipboard Only</option>
-                                <option value="type">⌨️ Type (Inject)</option>
-                                <option value="notification">🔔 Notification Only</option>
-                                <option value="clipboard+notify">📋 + 🔔 Both</option>
-                            </select>
-                        </div>
-                        <p style="margin: 4px 0 0; color: #888; font-size: 0.8em;">How to deliver LLM answers.</p>
-                    </div>
                 </div>
             </div>
         </div>
+
 
         <!-- API KEYS TAB -->
         <div id="apikeys" class="tab-content">

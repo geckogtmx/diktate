@@ -12,6 +12,7 @@ declare global {
             onPerformanceMetrics: (callback: (metrics: PerformanceMetrics) => void) => void;
             getInitialState: () => Promise<any>;
             setSetting: (key: string, value: any) => Promise<void>;
+            onPlaySound: (callback: (soundName: string) => void) => void;
         };
     }
 }
@@ -362,3 +363,14 @@ if (window.electronAPI) {
 }
 
 addLogEntry('INFO', 'Dashboard initialized');
+
+// Sound playback
+window.electronAPI.onPlaySound((soundName: string) => {
+    // Try to play from assets folder
+    // In dev, assets are at root level relative to where we serve?
+    // In build, we might need to adjust.
+    // Let's rely on relative path from the HTML file.
+    const audio = new Audio(`../assets/sounds/${soundName}.mp3`);
+    audio.volume = 0.5;
+    audio.play().catch(e => console.error('Failed to play sound:', e));
+});

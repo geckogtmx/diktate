@@ -118,11 +118,19 @@ function switchTab(tabId: string) {
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     document.getElementById(tabId)?.classList.add('active');
 
-    // If switching to models tab, refresh the list
+    // If switching to models tab, refresh the list and status
     if (tabId === 'models') {
         loadOllamaModels();
+        checkOllamaStatus();
+    }
+
+    // If switching to ollama tab, refresh status and models
+    if (tabId === 'ollama') {
+        refreshOllamaStatus();
     }
 }
+
+
 
 // Load Settings into UI
 function loadSettings(settings: any) {
@@ -151,12 +159,17 @@ function loadSettings(settings: any) {
     setVal('trans-mode', settings.transMode || 'none');
     setVal('ask-output-mode', settings.askOutputMode || 'type');
 
-    // Hotkey
+    // Hotkeys
     if (settings.hotkey) {
         const hotkeyDisplay = document.getElementById('hotkey-display');
         if (hotkeyDisplay) hotkeyDisplay.textContent = settings.hotkey;
     }
+    if (settings.askHotkey) {
+        const askHotkeyDisplay = document.getElementById('ask-hotkey-display');
+        if (askHotkeyDisplay) askHotkeyDisplay.textContent = settings.askHotkey;
+    }
 }
+
 
 // Helpers
 function setVal(id: string, val: string) {
@@ -176,8 +189,10 @@ function saveSetting(key: string, value: any) {
 }
 
 // Hotkey Recording
-function recordHotkey() {
-    const display = document.getElementById('hotkey-display');
+function recordHotkey(mode: 'dictate' | 'ask' = 'dictate') {
+    const displayId = mode === 'ask' ? 'ask-hotkey-display' : 'hotkey-display';
+    const settingKey = mode === 'ask' ? 'askHotkey' : 'hotkey';
+    const display = document.getElementById(displayId);
     if (isRecordingHotkey || !display) return;
 
     isRecordingHotkey = true;
@@ -200,13 +215,25 @@ function recordHotkey() {
         const key = e.key.toUpperCase();
         const shortcut = [...modifiers, key].join('+');
 
+        // Check for conflict with the other hotkey
+        const otherDisplayId = mode === 'ask' ? 'hotkey-display' : 'ask-hotkey-display';
+        const otherDisplay = document.getElementById(otherDisplayId);
+        if (otherDisplay && otherDisplay.textContent === shortcut) {
+            alert(`⚠️ This hotkey is already used for ${mode === 'ask' ? 'Dictate' : 'Ask'} mode. Please choose a different one.`);
+            display.textContent = mode === 'ask' ? 'Ctrl + Alt + A' : 'Ctrl + Alt + D';
+            display.classList.remove('recording');
+            isRecordingHotkey = false;
+            document.removeEventListener('keydown', handler);
+            return;
+        }
+
         // Update UI
         display.textContent = shortcut;
         display.classList.remove('recording');
         isRecordingHotkey = false;
 
         // Save
-        saveSetting('hotkey', shortcut);
+        saveSetting(settingKey, shortcut);
 
         // Remove listener
         document.removeEventListener('keydown', handler);
@@ -215,12 +242,20 @@ function recordHotkey() {
     document.addEventListener('keydown', handler);
 }
 
-function resetHotkey() {
-    const defaultHotkey = 'Ctrl+Alt+D';
-    const display = document.getElementById('hotkey-display');
+function resetHotkey(mode: 'dictate' | 'ask' = 'dictate') {
+    const defaults = {
+        dictate: 'Ctrl+Alt+D',
+        ask: 'Ctrl+Alt+A'
+    };
+    const displayId = mode === 'ask' ? 'ask-hotkey-display' : 'hotkey-display';
+    const settingKey = mode === 'ask' ? 'askHotkey' : 'hotkey';
+    const defaultHotkey = defaults[mode];
+
+    const display = document.getElementById(displayId);
     if (display) display.textContent = defaultHotkey;
-    saveSetting('hotkey', defaultHotkey);
+    saveSetting(settingKey, defaultHotkey);
 }
+
 
 // External links handler (called from onclick in HTML)
 function openExternalLink(url: string) {
@@ -311,6 +346,14 @@ async function testApiKey(provider: string) {
 (window as any).saveApiKey = saveApiKey;
 (window as any).testSavedApiKey = testSavedApiKey;
 (window as any).deleteApiKey = deleteApiKey;
+// Ollama tab functions
+(window as any).refreshOllamaStatus = refreshOllamaStatus;
+(window as any).pullOllamaModel = pullOllamaModel;
+(window as any).deleteOllamaModel = deleteOllamaModel;
+(window as any).saveOllamaSetting = saveOllamaSetting;
+(window as any).quickPullModel = quickPullModel;
+
+
 
 // ============================================
 // Sound Preview Functions
@@ -352,9 +395,8 @@ async function checkOllamaStatus() {
 
 async function loadOllamaModels() {
     const select = document.getElementById('default-model') as HTMLSelectElement;
-    const list = document.getElementById('models-list');
 
-    if (!select || !list) return;
+    if (!select) return;
 
     try {
         const response = await fetch('http://localhost:11434/api/tags');
@@ -367,15 +409,12 @@ async function loadOllamaModels() {
 
         // Clear and populate select
         select.innerHTML = '';
-        list.innerHTML = '';
 
         if (models.length === 0) {
             const option = document.createElement('option');
             option.value = '';
             option.text = 'No models installed';
             select.appendChild(option);
-
-            list.innerHTML = '<div style="color: #888;">No models found. Use <code>ollama pull gemma3:4b</code> to install one.</div>';
             return;
         }
 
@@ -395,47 +434,7 @@ async function loadOllamaModels() {
                 option.style.color = '#f87171';
             }
             select.appendChild(option);
-
-            // Add to list with color coding
-            const card = document.createElement('div');
-            card.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #333;';
-
-            let statusBadge = '';
-            let nameColor = '#fff';
-
-            if (modelSizeClass === 'too-large') {
-                statusBadge = '<span style="background: #dc2626; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7em; margin-left: 8px;">⚠️ TOO LARGE</span>';
-                nameColor = '#f87171';
-            } else if (modelSizeClass === 'borderline') {
-                statusBadge = '<span style="background: #d97706; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7em; margin-left: 8px;">HEAVY</span>';
-                nameColor = '#fbbf24';
-            } else {
-                statusBadge = '<span style="background: #16a34a; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7em; margin-left: 8px;">✓ OK</span>';
-                nameColor = '#4ade80';
-            }
-
-            card.innerHTML = `
-                <span style="color: ${nameColor};">${model.name}${statusBadge}</span>
-                <span style="color: #888;">${formatBytes(model.size)}</span>
-            `;
-            list.appendChild(card);
         });
-
-        // Add warning if any models are too large
-        const hasLargeModels = models.some((m: any) => {
-            const sizeGB = m.size / (1024 * 1024 * 1024);
-            return getModelSizeClass(m.name, sizeGB, maxRecommendedGB) === 'too-large';
-        });
-
-        if (hasLargeModels) {
-            const warning = document.createElement('div');
-            warning.style.cssText = 'background: #7f1d1d; border: 1px solid #dc2626; padding: 10px; border-radius: 6px; margin-top: 12px; font-size: 0.85em;';
-            warning.innerHTML = `
-                <strong style="color: #fca5a5;">⚠️ Large Model Warning</strong>
-                <p style="color: #fca5a5; margin: 4px 0 0;">Models marked "TOO LARGE" may cause slow performance or crashes on your hardware. Consider using 4B or smaller models.</p>
-            `;
-            list.appendChild(warning);
-        }
 
         // Restore saved selection
         try {
@@ -451,9 +450,9 @@ async function loadOllamaModels() {
     } catch (e) {
         console.error('Failed to load Ollama models:', e);
         select.innerHTML = '<option value="">Ollama not available</option>';
-        list.innerHTML = '<div style="color: #f87171;">Could not connect to Ollama. Make sure it\'s running.</div>';
     }
 }
+
 
 function refreshOllamaModels() {
     loadOllamaModels();
@@ -719,4 +718,179 @@ async function loadApiKeyStatuses() {
     } catch (e) {
         console.error('Failed to load API key statuses:', e);
     }
+}
+
+// ============================================
+// Ollama Tab Functions
+// ============================================
+
+async function refreshOllamaStatus() {
+    const statusEl = document.getElementById('ollama-service-status');
+    const versionEl = document.getElementById('ollama-service-version');
+    const loadedEl = document.getElementById('ollama-loaded-models');
+
+    if (statusEl) statusEl.textContent = 'Checking...';
+
+    try {
+        // Check version
+        const versionResponse = await fetch('http://localhost:11434/api/version');
+        if (versionResponse.ok) {
+            const versionData = await versionResponse.json();
+            if (statusEl) {
+                statusEl.textContent = '✅ Running';
+                statusEl.style.color = '#4ade80';
+            }
+            if (versionEl) {
+                versionEl.textContent = `v${versionData.version}`;
+            }
+        } else {
+            throw new Error('Not responding');
+        }
+
+        // Check loaded models
+        const psResponse = await fetch('http://localhost:11434/api/ps');
+        if (psResponse.ok) {
+            const psData = await psResponse.json();
+            const loadedModels = psData.models || [];
+            if (loadedEl) {
+                loadedEl.textContent = loadedModels.length > 0
+                    ? loadedModels.map((m: any) => m.name).join(', ')
+                    : 'None (idle)';
+            }
+        }
+
+        // Refresh models list
+        await loadOllamaModelsList();
+
+    } catch (e) {
+        if (statusEl) {
+            statusEl.textContent = '❌ Not running';
+            statusEl.style.color = '#f87171';
+        }
+        if (versionEl) versionEl.textContent = '--';
+        if (loadedEl) loadedEl.textContent = '--';
+    }
+}
+
+async function loadOllamaModelsList() {
+    const listEl = document.getElementById('ollama-models-list');
+    if (!listEl) return;
+
+    try {
+        const response = await fetch('http://localhost:11434/api/tags');
+        if (!response.ok) throw new Error('Ollama not available');
+
+        const data = await response.json();
+        const models = data.models || [];
+
+        if (models.length === 0) {
+            listEl.innerHTML = '<div style="color: #888;">No models installed. Use "Pull New Model" above.</div>';
+            return;
+        }
+
+        listEl.innerHTML = models.map((model: any) => {
+            const sizeGB = (model.size / (1024 * 1024 * 1024)).toFixed(1);
+            return `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #333;">
+                    <div>
+                        <span style="color: #fff;">${model.name}</span>
+                        <span style="color: #888; font-size: 0.85em; margin-left: 8px;">${sizeGB} GB</span>
+                    </div>
+                    <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.8em;" 
+                            onclick="deleteOllamaModel('${model.name}')">🗑️ Delete</button>
+                </div>
+            `;
+        }).join('');
+
+    } catch (e) {
+        listEl.innerHTML = '<div style="color: #f87171;">Could not connect to Ollama.</div>';
+    }
+}
+
+async function pullOllamaModel() {
+    const input = document.getElementById('ollama-pull-model') as HTMLInputElement;
+    const statusEl = document.getElementById('ollama-pull-status');
+    const modelName = input?.value?.trim();
+
+    if (!modelName) {
+        if (statusEl) statusEl.textContent = '⚠️ Please enter a model name';
+        return;
+    }
+
+    if (statusEl) {
+        statusEl.textContent = `⏳ Pulling ${modelName}... This may take several minutes.`;
+        statusEl.style.color = '#fbbf24';
+    }
+
+    try {
+        const response = await fetch('http://localhost:11434/api/pull', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: modelName, stream: false })
+        });
+
+        if (response.ok) {
+            if (statusEl) {
+                statusEl.textContent = `✅ Successfully pulled ${modelName}!`;
+                statusEl.style.color = '#4ade80';
+            }
+            input.value = '';
+            // Refresh lists
+            await loadOllamaModelsList();
+            await loadOllamaModels(); // Also refresh the Models tab dropdown
+        } else {
+            const errorData = await response.text();
+            if (statusEl) {
+                statusEl.textContent = `❌ Failed: ${errorData}`;
+                statusEl.style.color = '#f87171';
+            }
+        }
+    } catch (e) {
+        if (statusEl) {
+            statusEl.textContent = `❌ Error: ${e}`;
+            statusEl.style.color = '#f87171';
+        }
+    }
+}
+
+async function deleteOllamaModel(modelName: string) {
+    if (!confirm(`Delete model "${modelName}"? This will free up disk space but you'll need to re-download it to use again.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:11434/api/delete', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: modelName })
+        });
+
+        if (response.ok) {
+            alert(`🗑️ ${modelName} deleted successfully`);
+            // Refresh lists
+            await loadOllamaModelsList();
+            await loadOllamaModels(); // Also refresh the Models tab dropdown
+        } else {
+            const errorData = await response.text();
+            alert(`❌ Failed to delete: ${errorData}`);
+        }
+    } catch (e) {
+        alert(`❌ Error deleting model: ${e}`);
+    }
+}
+
+function saveOllamaSetting(key: string, value: string) {
+    // Save Ollama-specific settings
+    const ollamaKey = `ollama_${key}`;
+    saveSetting(ollamaKey, value);
+    console.log(`Saved Ollama setting: ${key} = ${value}`);
+}
+
+function quickPullModel(modelName: string) {
+    // Set the model name in the input field and trigger pull
+    const input = document.getElementById('ollama-pull-model') as HTMLInputElement;
+    if (input) {
+        input.value = modelName;
+    }
+    pullOllamaModel();
 }
