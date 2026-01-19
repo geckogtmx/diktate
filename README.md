@@ -186,6 +186,10 @@ Premium UI: floating pill, design system, animations
 ### Phase 5 (v1.0.0) - Weeks 15+
 Power features: custom prompts, model selection, history
 
+### Phase 6 (v2.0) - Future
+**Mobile Expansion:** iOS/Android companion app (Cloud-First strategy).
+**Browser Agent:** Hands-free web navigation.
+
 **See:** `docs/L3_MEMORY/PHASE_ROADMAP.md` for details
 
 ---

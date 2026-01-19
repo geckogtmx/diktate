@@ -385,13 +385,13 @@ These features were mentioned in detailed docs but are not planned for any near-
 - **Multi-language support** (UI localization)
 - **Cloud sync** (settings, history)
 - **Team features** (shared prompts, admin dashboard)
-- **Mobile app** (iOS/Android companion)
-- **Browser extension** (Chrome, Firefox)
 - **API/CLI** (programmatic access)
 - **Plugins/extensions** (third-party integrations)
-- **Voice commands** (beyond dictation)
 - **Speaker diarization** (multi-speaker transcription)
-- **Real-time collaboration** (shared dictation sessions)
+
+### Moved to V2.0 (See DEVELOPMENT_ROADMAP.md)
+- **Mobile app** (iOS/Android companion - *Cloud Strategy*)
+- **Browser Agent** (Hands-free navigation)
 
 ---
 

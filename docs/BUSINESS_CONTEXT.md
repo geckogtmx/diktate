@@ -286,3 +286,19 @@ The market has:
 dIKtate combines all four: **local + intelligent + Windows + free**.
 
 The MVP should prove the core thesis: that sub-second, local, intelligent dictation is possible and desirable. User validation will guide whether this becomes a sustainable open source project, a commercial product, or a successful proof of concept.
+
+---
+
+## 🔒 Strategic Alignment (Internal)
+
+> **Note:** This section is for strategic context only and does not affect daily engineering tasks.
+
+**The "Department of One" Philosophy:**
+This project (`diktate`) serves a dual purpose:
+1.  **Product:** A functional, competitive software tool.
+2.  **Content:** A vehicle to demonstrate the "Department of One" capabilities.
+
+**Implications:**
+-   **Education Tier:** The "Build It Yourself" (Free) tier is positioned as an educational resource ("Masterclass") to drive authority and content views.
+-   **Manifesto:** The "Truth-First" commercial strategy is designed to create narrative contrast with competitors, fueling content engagement.
+-   **Priorities:** While code quality is paramount, features that demonstrate "indie power" (e.g., Local AI, Air-Gap) are prioritized for their narrative value.

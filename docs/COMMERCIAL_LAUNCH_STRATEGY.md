@@ -16,15 +16,42 @@
 
 ---
 
-## 🎯 Executive Summary
+## 🛡️ The Winning Strategy: "Truth-First"
+**Philosophy:** We outperform competitors not by out-spending them, but by strictly adhering to a "Truth-First" philosophy that prioritizes user ownership and clarity.
 
-**Mission:** Launch the only **open-source, local-first, AI-powered dictation tool** as a commercial product with guerrilla marketing tactics, penetration pricing, and Ko-fi-managed subscriptions.
+### Pillar 1: Uncompromising Privacy
+> **Competitor Weakness:** Loose data management and cloud dependency.
 
-**Value Proposition:**
-> "Your voice, your machine, your freedom. Always free. Always private."
+**The Promise:**
+"Your data never leaves this device. Physically. We stop data leaks at the source."
 
-**Languages:** English + Spanish (underserved market)
-**Target:** Privacy-conscious developers, writers, and professionals
+**Concrete Actions:**
+1.  **"Air-Gap" Guarantee:** The app functions 100% offline. Pull the ethernet cable to test us.
+2.  **Telemetry-Free:** No "Staging IDs," no "Usage Analytics," no data drift.
+3.  **Local Intelligence:** Data is processed locally. It only leaves if you explicitly pay for a cloud Top-Up.
+
+### Pillar 2: Honest Pricing (No Rent)
+> **Competitor Weakness:** Recurring subscriptions, hidden annualized pricing.
+
+**The Promise:**
+"Simple by design. You buy it, you own it, you control it."
+
+**Concrete Actions:**
+1.  **Barebones Local ($10):** Forever license. 100% Local.
+2.  **Power Version V1 ($25):** Forever license. Includes Ask Mode, Cloud integration, & Satellite features.
+3.  **Transparent Ops:** Updates are optional ($2/mo or donation). The version you bought works forever.
+
+### Pillar 3: Radical Transparency
+> **Competitor Weakness:** "Black Box" AI, hidden caps.
+
+**The Promise:**
+"Glass Box AI: You see the cost, the code, and the caps."
+
+**Concrete Actions:**
+1.  **Source Available:** Full source code access. Nothing to hide.
+2.  **Show the Thinking:** UI shows raw LLM output vs refined text.
+3.  **Token Transparency:** Real-time counter of usage/costs.
+4.  **Clean Uninstall:** We leave no trace.
 
 ---
 
@@ -146,53 +173,28 @@
 
 ---
 
-## 💰 Anti-Subscription Monetization
-
-> **Philosophy:** One-time payments only. No recurring subscriptions. We're the good guys.
-
-### The Anti-Subscription Manifesto
-
-| Subscription Model (Them) | Anti-Subscription Model (Us) |
-|---------------------------|------------------------------|
-| $144-240/year, every year | **$10-25 once, own forever** |
-| Cloud = recurring revenue trap | Cloud = wallet top-ups (pay as you go) |
-| Word limits = forced upgrades | **Unlimited local, always** |
-| Lock-in via subscriptions | **One payment = lifetime access** |
-
-### Pricing Structure (FINAL)
+## 💰 Anti-Subscription Pricing Structure (FINAL)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │              dikta.me ANTI-SUBSCRIPTION PRICING              │
 │                                                             │
-│   🏠 LIBRE TIER                 ⭐ PRO TIER                  │
-│   ─────────────                 ─────────                   │
-│   $0  - Free (OSS)              $25 - One-time payment      │
-│   $10 - Supporter Edition       • Everything in Libre       │
-│   • 100% local processing       • BYOK (Bring Your Own Key) │
-│   • MIT License                 • Wallet cloud credits*     │
-│   • Unlimited usage             • Priority support          │
-│   • Community support           • Source-Available license  │
-│                                                             │
-│   *Wallet credits available in v1.1                         │
+│   🏠 BAREBONES LOCAL ($10)      ⭐ POWER VERSION ($25)       │
+│   ───────────────────────       ───────────────────────     │
+│   • One-Time Payment            • One-Time Payment          │
+│   • 100% Local / Offline        • Ask Mode UI               │
+│   • Telemetry-Free              • Cloud APIs (BYOK/Wallet)  │
+│   • Air-Gap Guarantee           • Streamer Satellite        │
+│   • MIT License                 • Source-Available License  │
 │                                                             │
 ├─────────────────────────────────────────────────────────────┤
-│              💳 WALLET TOP-UPS (v1.1 - No Subscriptions!)   │
+│              💳 TRANSPARENT UPDATES (Optional)               │
 │   ─────────────────────────────────────────────────────────│
-│   • Credits never expire, use at your own pace              │
-│   • 25% margin (we're transparent about our costs)          │
-│   • Pricing based on provider (Groq/DeepSeek/Gemini)        │
-│   • Estimated $5 = 10,000-30,000 words depending on model   │
+│   • $2/mo (Ko-fi) or Donation                               │
+│   • Keeps the project alive.                                │
+│   • Version you bought WORKS FOREVER regardless.            │
 └─────────────────────────────────────────────────────────────┘
 ```
-
-### Tier Details
-
-| Tier | Price | Target User | What They Get |
-|------|-------|-------------|---------------|
-| **Libre (Free)** | $0 | OSS users, privacy advocates | Full local app, MIT license |
-| **Libre (Supporter)** | $10 | Support the project | Free + badge, priority issues, beta access |
-| **Pro** | $25 | Professionals, cloud users | BYOK + wallet credits + priority support |
 
 ### Why $10 / $25?
 

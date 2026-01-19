@@ -601,13 +601,63 @@ Voice Q&A feature - "The Workflow Crutch" for micro-queries.
 
 ---
 
+## 🚀 V2.0 Mobile & Browser Expansion (Concept)
+
+> **Strategy Change:** For mobile, we pivot from "Local-First" to "Cloud-First" to compete with Wispr Flow's dedicated keyboard.
+
+### 2.1 Mobile Companion App (Cloud-First)
+**Architecture:**
+- **Core App:** React Native (iOS/Android)
+- **Engine:** Google Gemini Flash API (Multimodal Audio → Text) - *BYO Key or Free Tier*
+- **Auth:** Google Sign-In
+- **Input Method:** Native Keyboard Extension (Swift/Kotlin) needed for "Type Anywhere" injection.
+- **Why Cloud?** Battery life, implementation speed (1 month vs 6 months), and instant multimodal capabilities.
+
+### 2.2 Browser Ghost Pilot
+**Concept:** "You talk, dIKtate drives."
+- **Feature:** User speaks navigation commands ("Go to Reddit, find the latest thread on Llama 3").
+- **Tech:** Playwright/Puppeteer driven by local LLM agent.
+- **Goal:** Hands-free web navigation.
+
+---
+
+## 🏗️ Architecture Strategy: Open Core
+
+To support the community while building a viable product, we will adopt an **Open Core** model (Splitting the "Engine" from the "App").
+
+### 1. `diktate-engine` (The Core / SDK)
+- **Repo:** Public / MIT
+- **Scope:** Headless Python library.
+- **Features:** Audio Capture → Whisper → Ollama → Text Injection.
+- **Audience:** Developers, Hackers, Plugin Creators.
+- **Goal:** The standard open-source library for local voice control.
+
+### 2. `dIKtate Libre` (The FOSS App)
+- **Repo:** Public
+- **Scope:** Minimal Electron wrapper around the engine.
+- **Features:** 100% Local. No Cloud APIs. Basic Dictation only.
+- **Audience:** Privacy absolutists, minimalists.
+
+### 3. `dIKtate Pro` (The Power App)
+- **Repo:** Source Available
+- **Scope:** Productivity features for professionals.
+- **Features:** Ask Mode UI, Cloud APIs (Gemini/Claude), Mobile Sync.
+
+### 4. `dIKtate Streamer` (The Studio App)
+- **Repo:** Source Available
+- **Scope:** Specialized for content creators.
+- **Features:** Voice-to-Action (WebSocket), Giveaway Manager, Toxicity AI, Persona TTS.
+- **Audience:** Streamers, Youtubers, Podcasters.
+
+---
+
 ## Version Reference
 
 | Version | Phases | Focus |
 |---------|--------|-------|
 | **v1.0** | A → E | Stability, Testing, Hardening, Distribution, Polish |
 | **v1.1** | 1.1-A → 1.1-E | Premium UI, Power Features, Architecture, Research |
-| **v2.0** | TBD | Platform expansion (macOS, Linux), major features |
+| **v2.0** | TBD | **Mobile (Cloud)**, **Browser Agent**, Platform expansion |
 
 **Brand:** diktate (dikta.me) - No rebrand planned.
 

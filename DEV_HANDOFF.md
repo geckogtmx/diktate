@@ -92,31 +92,40 @@
 - [ ] **Ask Mode Phase 2:** Status Window UI updates (Mode toggle, response panel).
 - [ ] **Ask Mode Phase 4:** Calculator/Regex optimization (<100ms math).
 - [ ] **Sound Files:** `assets/sounds/*.wav` still missing (needed for settings preview).
+-   [ ] **Ask Mode Phase 2:** UI Implementation in Status Window.
+-   [ ] **Streamer Mode:** Prototype WebSocket bridge.
+-   [ ] **Mobile V2:** Conceptual planning only.
 
 ---
 
 ## 📋 Instructions for Next Model
+# 📦 Development Handoff & Status
 
-1.  **Verify Ask Mode:**
-    - Rebuild (`npm run build`).
-    - Test `Ctrl+Alt+A`. Ask "What is 15 times 4?".
-    - Verify it TYPES the answer into your editor (default settings).
-
-2.  **Implement Phase 2 (Status UI):**
-    - Add visual indicator of current mode (Dictate vs Ask) in `index.html`.
-    - Add toggle switch to change mode via mouse.
-
-3.  **Implement Calculator Mode (Phase 4):**
-    - Modify `python/ipc_server.py` to regex-match math queries.
-    - Execute python `eval()` (safely) for instant results, skipping `self.processor.process()`.
+1.  **Implement Ask Mode UI (Phase 2):**
+    -   Add `[Dictate | Ask]` toggle in `StatusWindow.tsx`.
+    -   Create a "Response Panel" to show LLM output (with Copy button).
+    -   *Logic:* When Mode=Ask, ensure `start_recording` sends the flag.
+2.  **Verify Build:**
+    -   Run `npm run build` to ensure the new website assets and docs don't break the app packaging.
+3.  **Check Telemetry:** verify if we actually have any telemetry to disable, to honor the manifesto.
 
 ### Context Needed
-- [ask_mode_concept.md](docs/L3_MEMORY/ask_mode_concept.md) - The strategy.
-- [ask_mode_plan.md](file:///C:/Users/gecko/.gemini/antigravity/brain/3d3c8646-0e04-44e4-b2a2-a185c6acbb68/ask_mode_plan.md) - The implementation steps.
+-   `ask_mode_plan.md` (Phase 2 specs)
+-   `docs/BUILD_GUIDE.md` (Review for alignment)
+-   `python/ipc_server.py` (For backend logic reference)
+
+### Strategic Note
+-   The "Department of One" alignment info is hidden in `docs/BUSINESS_CONTEXT.md`. Do not surface it here.
 
 ---
 
 ## Session Log (Last 3 Sessions)
+
+### 2026-01-18 - Gemini (Session 7)
+-   **Fix:** IPC Server `os` variable scope bug.
+-   **Strategy:** Defined "Streamer Satellite" & "Open Core".
+-   **Web:** Updated Pricing & Manifesto on `site/index.html`.
+-   **Docs:** Created `BUILD_GUIDE.md` & `STREAMER_SATELLITE.md`.
 
 ### 2026-01-18 17:15 - Gemini 2.0 Flash Thinking
 - **Ask Mode:** Implemented full pipeline (Hotkeys, Python Handler, Settings).
@@ -127,7 +136,3 @@
 - **Settings:** Models tab, per-mode model selection, API key status display.
 - **Ask Mode:** Phase 1 started.
 - **Reliability:** Single-instance lock prevents duplicate app windows.
-
-### 2026-01-18 14:07 - Gemini 2.0 Flash
-- **Benchmarking:** Established Gemma 3 baseline (Speed/Quality).
-- **Prompt Engineering:** Implemented per-model prompts.
