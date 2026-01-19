@@ -45,7 +45,7 @@ if (heroSection && verbContainer) {
   // 100% -> Word 3 (Y: -2em)
 
   tl.to(verbContainer, {
-    yPercent: -75, // Move to the 4th item (3/4ths of the way up)
+    yPercent: -66.666, // Move to the 3rd item (2/3rds of the way up)
     ease: "none" // Linear movement tracks scroll 1:1 (most fluid)
   })
 }

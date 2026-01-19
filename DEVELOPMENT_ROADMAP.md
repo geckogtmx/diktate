@@ -258,11 +258,15 @@ Document any app-specific issues.
 - [ ] Create single installer (.exe)
 - [ ] Test on clean Windows VM
 
-### D.2 First-Run Experience
-- [ ] Detect if Ollama is installed
-- [ ] Guide user to install Ollama if missing
-- [ ] Auto-pull gemma3:4b model
-- [ ] Show setup wizard on first launch
+### D.2 First-Run Experience (Embedded Sidecar Strategy) ✅ DECIDED
+- [ ] **Bundle `ollama.exe`** inside Electron app resources (~300MB)
+- [ ] **Detection Logic:**
+  - [ ] Check if user has Ollama running (port 11434) → Use it
+  - [ ] If not, spawn bundled `ollama.exe serve` in background
+- [ ] **Model Initialization:**
+  - [ ] Show "Initializing AI Engine..." progress bar on first launch
+  - [ ] Auto-pull `gemma3:4b` using the active Ollama instance
+  - [ ] Verify model checksum matches expected
 
 ### D.3 Update Mechanism
 - [ ] Plan for auto-updates (or manual download)

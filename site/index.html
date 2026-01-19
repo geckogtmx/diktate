@@ -45,7 +45,6 @@
             <div id="hero-verb-container" class="text-brand-neon drop-shadow-[0_0_15px_rgba(0,255,157,0.5)]">
               <div class="pb-[1.5em] tracking-[0.2em]">TALKING.</div>
               <div class="pb-[1.5em] tracking-widest">WORKING.</div>
-              <div class="pb-[1.5em] tracking-normal">PRODUCING.</div>
               <div class="pb-[1.5em] tracking-[0.2em]">WINNING.</div>
             </div>
           </div>
@@ -55,16 +54,22 @@
           <span class="text-white">Your voice never leaves your GPU.</span>
         </p>
 
-        <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+        <div class="flex flex-col items-center gap-6">
+          <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+            <button
+              class="bg-white text-black px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+              Download for Windows
+              <span class="block text-xs font-normal opacity-60 mt-1">v0.1.0 • Free • Open Source</span>
+            </button>
+            <button
+              class="bg-white text-black px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+              Download for MacOS
+              <span class="block text-xs font-normal opacity-60 mt-1">Soon™</span>
+            </button>
+          </div>
           <button
-            class="bg-white text-black px-8 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.2)]">
-            Download for Windows
-            <span class="block text-xs font-normal opacity-60 mt-1">v0.1.0 • Free • Open Source</span>
-          </button>
-          <button
-            class="px-8 py-4 rounded-full font-bold text-lg text-white border border-white/20 hover:bg-white/5 transition-colors">
-            Download for MacOS
-            <span class="block text-xs font-normal opacity-60 mt-1">Soon™</span>
+            class="px-6 py-2 rounded-full border border-white/20 text-gray-400 hover:text-white hover:border-white/40 hover:bg-white/5 transition-all text-sm">
+            Download for iOS & Android <span class="opacity-60 ml-2">Soon™</span>
           </button>
         </div>
       </div>
@@ -75,28 +80,47 @@
       <div class="max-w-5xl mx-auto">
         <div class="text-center mb-16">
           <h2 class="font-display font-bold text-3xl md:text-5xl mb-6 text-white">The Truth-First Alternative.</h2>
-          <p class="text-xl text-gray-400 max-w-2xl mx-auto">We outperform competitors not by out-spending them, but by
+          <p class="text-xl text-gray-400 max-w-2xl mx-auto">We outperform other available options not by out-spending
+            them, but by
             strictly adhering to a philosophy that prioritizes user ownership.</p>
         </div>
 
         <div class="grid md:grid-cols-3 gap-8">
-          <div class="p-6 bg-white/5 rounded-xl border border-white/10">
-            <div class="text-4xl mb-4">🛡️</div>
-            <h3 class="text-xl font-bold text-white mb-3">Uncompromising Privacy</h3>
-            <p class="text-gray-400 text-sm leading-relaxed">Your data never leaves this device. Physically. We stop
-              data leaks at the source with our <strong>Air-Gap Guarantee</strong>.</p>
+          <div
+            class="group relative p-8 rounded-2xl border border-white/10 overflow-hidden hover:border-white/20 transition-all">
+            <div
+              class="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-60 transition-opacity duration-700"
+              style="background-image: url('/texture_privacy.png');"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+            <div class="relative z-10 pt-32">
+              <h3 class="text-2xl font-bold text-white mb-3">Uncompromising Privacy</h3>
+              <p class="text-gray-400 text-sm leading-relaxed">Your data never leaves this device. Physically. We stop
+                data leaks at the source with our <strong>Air-Gap Guarantee</strong>.</p>
+            </div>
           </div>
-          <div class="p-6 bg-white/5 rounded-xl border border-white/10">
-            <div class="text-4xl mb-4">🤝</div>
-            <h3 class="text-xl font-bold text-white mb-3">Honest Pricing</h3>
-            <p class="text-gray-400 text-sm leading-relaxed">Simple by design. You buy it, you own it, you control it.
-              No hidden rent, no annualized trickery.</p>
+          <div
+            class="group relative p-8 rounded-2xl border border-white/10 overflow-hidden hover:border-white/20 transition-all">
+            <div
+              class="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-60 transition-opacity duration-700"
+              style="background-image: url('/texture_honest.png');"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+            <div class="relative z-10 pt-32">
+              <h3 class="text-2xl font-bold text-white mb-3">Honest Pricing</h3>
+              <p class="text-gray-400 text-sm leading-relaxed">Simple by design. You buy it, you own it, you control it.
+                No hidden rent, no annualized trickery.</p>
+            </div>
           </div>
-          <div class="p-6 bg-white/5 rounded-xl border border-white/10">
-            <div class="text-4xl mb-4">🔍</div>
-            <h3 class="text-xl font-bold text-white mb-3">Radical Transparency</h3>
-            <p class="text-gray-400 text-sm leading-relaxed">Glass Box AI. You see the cost, the code, and the caps.
-              Source-available license for trust.</p>
+          <div
+            class="group relative p-8 rounded-2xl border border-white/10 overflow-hidden hover:border-white/20 transition-all">
+            <div
+              class="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-60 transition-opacity duration-700"
+              style="background-image: url('/texture_transparency.png');"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+            <div class="relative z-10 pt-32">
+              <h3 class="text-2xl font-bold text-white mb-3">Radical Transparency</h3>
+              <p class="text-gray-400 text-sm leading-relaxed">Glass Box AI. You see the cost, the code, and the caps.
+                Source-available license for trust.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -106,7 +130,7 @@
     <section id="why" class="py-32 px-4 bg-black relative border-t border-white/5">
       <div class="max-w-7xl mx-auto">
         <div class="text-center mb-20">
-          <h2 class="font-display font-bold text-5xl mb-6">The "Standard" vs. The Wall.</h2>
+          <h2 class="font-display font-bold text-5xl mb-6">The "Standard" vs. dIKta.me</h2>
           <p class="text-xl text-gray-400">See exactly what you're paying for.</p>
         </div>
 
@@ -114,8 +138,8 @@
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="border-b border-white/10 text-gray-500 text-sm uppercase tracking-wider">
-                <th class="py-6 px-4 font-normal">Feature</th>
-                <th class="py-6 px-4 font-normal text-red-500/80">Cloud Apps (Wispr/Glaido)</th>
+                <th class="py-6 px-4 font-normal w-1/5">Feature</th>
+                <th class="py-6 px-4 font-normal text-red-500/80">Cloud Apps (Wispr/Glaido/Aqua)</th>
                 <th class="py-6 px-4 font-bold text-brand-neon">dikta.me</th>
               </tr>
             </thead>
@@ -138,7 +162,7 @@
               <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
                 <td class="py-6 px-4 text-gray-300">Latency</td>
                 <td class="py-6 px-4 text-gray-500">🐢 Network dependent (800ms+)</td>
-                <td class="py-6 px-4 text-white">✅ <span class="text-brand-neon">&lt; 700ms</span> (Native speed)</td>
+                <td class="py-6 px-4 text-white">✅ <span class="text-brand-neon">&lt; 700ms*</span> (Native speed)</td>
               </tr>
               <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
                 <td class="py-6 px-4 text-gray-300">Offline Use</td>
@@ -158,6 +182,8 @@
               </tr>
             </tbody>
           </table>
+          <p class="text-xs text-center text-gray-600 mt-6">* Performance depends on your hardware specifications
+            (GPU/CPU). Tested on RTX 3060.</p>
         </div>
       </div>
     </section>
@@ -182,7 +208,7 @@
         <div
           class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
           <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Intelligence</div>
-          <h3 class="text-lg font-bold text-white mb-2">Llama 3 Cleanup</h3>
+          <h3 class="text-lg font-bold text-white mb-2">Small 4b Model Cleanup</h3>
           <p class="text-sm text-gray-400">Intelligent formatting and filler removal.</p>
         </div>
 
@@ -190,8 +216,8 @@
         <div
           class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
           <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Speed</div>
-          <h3 class="text-lg font-bold text-white mb-2">Global Hotkey</h3>
-          <p class="text-sm text-gray-400">Ctrl+Alt+D anywhere. Instant recording.</p>
+          <h3 class="text-lg font-bold text-white mb-2">Global Hotkeys</h3>
+          <p class="text-sm text-gray-400">Ctrl+Alt+D (Dictate) & Ctrl+Alt+A (Ask).</p>
         </div>
 
         <!-- Feature Card 4 -->
@@ -263,7 +289,39 @@
           class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
           <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Deploy</div>
           <h3 class="text-lg font-bold text-white mb-2">Single Binary</h3>
-          <p class="text-sm text-gray-400">One .exe file. Includes Python environment.</p>
+          <p class="text-sm text-gray-400">One .exe file. Includes Python environment & Ollama Sidecar.</p>
+        </div>
+
+        <!-- Feature Card 13 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Productivity</div>
+          <h3 class="text-lg font-bold text-white mb-2">Voice Macros</h3>
+          <p class="text-sm text-gray-400">Expand "my-email" into your full signature instantly.</p>
+        </div>
+
+        <!-- Feature Card 14 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Flexibility</div>
+          <h3 class="text-lg font-bold text-white mb-2">Model Agnostic</h3>
+          <p class="text-sm text-gray-400">One-click switch between Llama, Mistral, or Gemma.</p>
+        </div>
+
+        <!-- Feature Card 15 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Reliability</div>
+          <h3 class="text-lg font-bold text-white mb-2">Smart Fallback</h3>
+          <p class="text-sm text-gray-400">Auto-switches to raw transcription if the LLM hangs. Never lose text.</p>
+        </div>
+
+        <!-- Feature Card 16 -->
+        <div
+          class="p-6 rounded-xl bg-white/5 border border-white/10 hover:border-brand-neon/50 transition-all hover:-translate-y-1 hover:shadow-[0_0_25px_rgba(0,255,157,0.15)]">
+          <div class="text-brand-neon mb-4 font-mono text-xs uppercase tracking-widest">Architecture</div>
+          <h3 class="text-lg font-bold text-white mb-2">Hackable Core</h3>
+          <p class="text-sm text-gray-400">Built on ZeroMQ. Exposes a clean event stream for your own plugins.</p>
         </div>
       </div>
 
@@ -274,7 +332,7 @@
           <div>
             <div class="inline-block mb-4 px-3 py-1 bg-white/10 rounded-full text-white text-xs font-mono">NEW FEATURE
             </div>
-            <h2 class="font-display font-bold text-5xl mb-6">Speak Español.<br>Write English.</h2>
+            <h2 class="font-display font-bold text-5xl mb-6">We Speak Spanish.<br>Hablamos Inglés.</h2>
             <p class="text-xl text-gray-300 mb-8">
               Real-time translation at the edge. Dictate freely in your native tongue and let the engine bridge the gap
               instantly.
@@ -300,6 +358,54 @@
             <div class="text-brand-neon typing-effect">"Hi, I need to send the financial report before noon, can you
               review it?"</div>
           </div>
+        </div>
+      </section>
+
+      <!-- ASK MODE SECTION (Inverted) -->
+      <section class="py-32 px-4 relative overflow-hidden bg-[#050505]">
+        <div class="absolute inset-0 bg-gradient-to-l from-brand-neon/5 to-transparent opacity-20"></div>
+        <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center relative z-10">
+
+          <!-- Card (Left) -->
+          <div
+            class="bg-black/80 rounded-2xl border border-white/20 p-8 font-mono text-sm leading-loose shadow-2xl order-last md:order-first relative">
+            <!-- Decorative Elements -->
+            <div class="absolute -top-3 -right-3 w-24 h-24 bg-brand-neon/20 blur-2xl rounded-full"></div>
+
+            <div class="text-gray-500 mb-4 border-b border-white/10 pb-2 flex justify-between">
+              <span>Input (Microphone)</span>
+              <span class="text-xs border border-white/20 px-2 py-0.5 rounded text-gray-400">Ctrl+Alt+A</span>
+            </div>
+            <div class="text-brand-purple mb-8">"What is the airspeed velocity of an unladen swallow?"</div>
+
+            <div class="text-gray-500 mb-4 border-b border-white/10 pb-2">Output (Clipboard/Type)</div>
+            <div class="text-brand-neon">"About 24 miles per hour (roughly 11 meters per second), assuming it's a
+              European swallow."</div>
+          </div>
+
+          <!-- Text (Right) -->
+          <div>
+            <div class="inline-block mb-4 px-3 py-1 bg-brand-neon/10 rounded-full text-brand-neon text-xs font-mono">
+              JUST ADDED</div>
+            <h2 class="font-display font-bold text-5xl mb-6">Don't Search.<br>Just Ask.</h2>
+            <p class="text-xl text-gray-300 mb-8">
+              Skip the browser tab. Query your local LLM instantly for definitions, math, or quick facts without ever
+              leaving your flow.
+            </p>
+            <ul class="space-y-4 text-gray-400">
+              <li class="flex items-center gap-3">
+                <span class="text-brand-neon">✓</span> <strong>Instant Q&A</strong> - for quickies - Math, quotes,
+                references
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="text-brand-neon">✓</span> <strong>No Tracking History</strong> - No one is listening
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="text-brand-neon">✓</span> <strong>Zero Context Switching</strong> - The Flow goes on
+              </li>
+            </ul>
+          </div>
+
         </div>
       </section>
 

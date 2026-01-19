@@ -62,8 +62,25 @@ Want to extend dIKtate? Here is where to look:
 -   **Custom Hotkeys:** Check `src/main.ts`. We use Electron's `globalShortcut` API.
 
 ---
-
-## 5. Why Open Source?
+ 
+ ## 5. Packaging Strategy: The Embedded Sidecar
+ 
+ To ensure a "Zero Friction" experience, we do not ask users to install dependencies manually.
+ 
+ **The "Sidecar" Pattern:**
+ 1.  We bundle the **Ollama binary** (`ollama.exe`) inside the Electron app resources.
+ 2.  On startup, the app checks:
+     *   *Is Ollama running?* → Connect to localhost:11434.
+     *   *Is it missing?* → Spawn our bundled binary in the background.
+ 3.  **Model Hydration:**
+     *   We do **not** bundle the 3GB model file (keeps installer size ~450MB).
+     *   On first launch, we auto-pull `gemma3:4b` via the API, showing a progress bar to the user.
+ 
+ This gives us the best of both worlds: a single installable `.exe` that works out of the box, legal compliance (MIT), and manageable file sizes.
+ 
+ ---
+ 
+ ## 6. Why Open Source?
 
 We give this code away because we believe **Local AI is the future**.
 By building it yourself, you learn:
