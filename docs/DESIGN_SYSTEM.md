@@ -1,4 +1,4 @@
-# Design System: dIKtate (Waal)
+# Design System: dIKtate
 
 > **Status:** SET IN STONE (2026-01-17)
 > **Aesthetic:** Premium, Dark, Minimalistic, Obsidian-like.

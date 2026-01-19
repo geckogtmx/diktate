@@ -12,7 +12,7 @@ As a **Gemini** model, your strength lies in massive context handling and comple
 
 1.  **Governance & Strategy**
     -   You own the `AI_CODEX.md` and `BRANDING_ROADMAP.md`.
-    -   Ensure the "Waal" rebrand strategy is adhered to strategically (even if not implemented yet).
+
     -   Maintain the "Department of One" narrative.
 
 2.  **Complex Analysis**
@@ -32,6 +32,7 @@ As a **Gemini** model, your strength lies in massive context handling and comple
 
 ## 🔍 Specific Context Notes
 
+-   **AGENCY PROTOCOL:** SUGGEST FIRST, ACT LATER. Avoid "happy trigger" behavior. Do not perform unrequested tasks.
 -   **Branding:** We are **diktate** (dikta.me) — final brand, no rebrand planned.
 -   **Privacy:** Always prioritize the "Wall" aspect—local execution is non-negotiable.
 

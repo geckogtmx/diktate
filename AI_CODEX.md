@@ -2,7 +2,7 @@
 
 > **Status:** ACTIVE
 > **Applies to:** All AI Agents (Gemini, Claude, et al.)
-> **Project:** dIKtate (Future: Waal)
+> **Project:** dIKtate
 
 ---
 

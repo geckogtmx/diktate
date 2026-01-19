@@ -1,13 +1,13 @@
 ---
 name: ui-ux-design
-description: Design system and UX guidelines for the dIKtate (Waal) desktop application. Use this skill when building React components, designing the settings window, the floating pill UI, or system tray interactions. Focuses on native desktop feel, privacy aesthetics, and "lubricant" smooth animations.
+description: Design system and UX guidelines for the dIKtate desktop application. Use this skill when building React components, designing the settings window, the floating pill UI, or system tray interactions. Focuses on native desktop feel, privacy aesthetics, and "lubricant" smooth animations.
 ---
 
-# UI/UX Design Specialist (Waal/dIKtate)
+# UI/UX Design Specialist (dIKtate)
 
 This skill governs the visual and interactive design of the dIKtate desktop application.
 
-## 🎨 Brand Aesthetic: "Waal"
+## 🎨 Brand Aesthetic
 
 **Core Concept:** The "Wall" + "Lubricant".
 1.  **Privacy (The Wall):** Solid, opaque, protective, distinct boundaries.

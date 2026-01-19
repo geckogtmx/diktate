@@ -1,4 +1,4 @@
-# QA & Testing Strategy: The "Waal" Protocol
+# QA & Testing Strategy: The "Wall" Protocol
 
 > **Vision:** Testing in dIKtate isn't just about finding bugs; it's about verifying **Privacy**, **Latency**, and **Architecture Integrity**.
 
