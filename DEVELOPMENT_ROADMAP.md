@@ -311,7 +311,15 @@ Document any app-specific issues.
 - [ ] Cost tracking for cloud providers (Gemini, OpenAI, Anthropic)
 - [ ] Automatic provider fallback (cloud fails → local, local fails → raw)
 
-### E.3 Documentation & Onboarding Materials
+### E.3 Mobile Optimization (Parallel Sandbox)
+**Strategy**: Developed in `mobile_site/` to verify responsive changes without breaking the main desktop site.
+- [x] **Sandbox Setup**: Duplicate `site/` to `mobile_site/`.
+- [ ] **Mobile Navigation**: Hamburger menu + glassmorphic overlay.
+- [ ] **Responsive Spacing**: Reduce `py-32` to `py-16` on mobile.
+- [ ] **Typography**: Scale down `text-5xl` headings to `text-3xl`.
+- [ ] **Merge Back**: Once verified, merge `mobile_site/index.html` back to `site/`.
+
+### E.4 Documentation & Onboarding Materials
 
 > **Goal:** Turn "install Ollama" friction into a VALUE-ADD. Users aren't just getting dikta.me—they're unlocking a local AI platform.
 
