@@ -46,7 +46,11 @@ const settingsAPI = {
     playSound: (soundName: string) => ipcRenderer.invoke('settings:play-sound', soundName),
 
     // Hardware testing
-    runHardwareTest: () => ipcRenderer.invoke('settings:run-hardware-test')
+    runHardwareTest: () => ipcRenderer.invoke('settings:run-hardware-test'),
+
+    // Ollama control
+    restartOllama: () => ipcRenderer.invoke('ollama:restart'),
+    warmupOllamaModel: () => ipcRenderer.invoke('ollama:warmup')
 };
 
 contextBridge.exposeInMainWorld('settingsAPI', settingsAPI);

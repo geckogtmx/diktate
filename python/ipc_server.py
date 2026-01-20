@@ -109,6 +109,72 @@ logger = logging.getLogger(__name__)
 logger.info(f"Session log: {session_log_file}")
 
 
+def _ensure_ollama_ready():
+    """Ensure Ollama is running and model is warmed up at startup."""
+    try:
+        import requests
+        import subprocess
+        
+        # 1. Check if Ollama is running
+        try:
+            response = requests.get("http://localhost:11434/api/tags", timeout=2)
+            if response.status_code == 200:
+                logger.info("[STARTUP] Ollama is already running")
+            else:
+                logger.warning(f"[STARTUP] Ollama returned status {response.status_code}")
+                return
+        except requests.ConnectionError:
+            logger.warning("[STARTUP] Ollama not running, attempting to start...")
+            
+            # 2. Try to start Ollama (Windows)
+            try:
+                # Start Ollama in background (Windows)
+                subprocess.Popen(
+                    ["ollama", "serve"],
+                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+                time.sleep(3)  # Wait for startup
+                logger.info("[STARTUP] Ollama started successfully")
+            except FileNotFoundError:
+                logger.error("[STARTUP] Ollama not found in PATH - user must start manually")
+                return
+            except Exception as e:
+                logger.error(f"[STARTUP] Failed to start Ollama: {e}")
+                return
+        
+        # 3. Warm up default model (gemma3:4b)
+        default_model = os.environ.get("DEFAULT_OLLAMA_MODEL", "gemma3:4b")
+        logger.info(f"[STARTUP] Warming up {default_model}...")
+        
+        try:
+            warmup_response = requests.post(
+                "http://localhost:11434/api/generate",
+                json={
+                    "model": default_model,
+                    "prompt": "",
+                    "stream": False,
+                    "options": {"num_ctx": 2048, "num_predict": 1},
+                    "keep_alive": "10m"
+                },
+                timeout=30
+            )
+            
+            if warmup_response.status_code == 200:
+                logger.info(f"[STARTUP] Model {default_model} ready and cached")
+            else:
+                logger.warning(f"[STARTUP] Model warmup returned status {warmup_response.status_code}")
+        except Exception as e:
+            logger.warning(f"[STARTUP] Model warmup failed (will retry on first use): {e}")
+            
+    except Exception as e:
+        logger.warning(f"[STARTUP] Ollama startup check failed (non-fatal): {e}")
+
+# Call at module load
+_ensure_ollama_ready()
+
+
 class State(Enum):
     """Pipeline states"""
     IDLE = "idle"

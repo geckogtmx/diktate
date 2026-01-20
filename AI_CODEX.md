@@ -53,6 +53,12 @@ This project utilizes a multi-model collaboration strategy. Each agent has disti
 - **Performance:** Latency must remain < 7s for standard hardware.
 - **Verification:** Use the `/test-diktate` workflow to verify logs.
 
+### F. Known Bugs
+- **Mode Dropdown Bug:** Mode-specific model dropdowns not populating (Settings → Modes tab)
+  - **Documentation:** [docs/BUG_MODE_MODEL_DROPDOWNS.md](./docs/BUG_MODE_MODEL_DROPDOWNS.md)
+  - **Priority:** Medium
+  - **Workaround:** Use default model
+
 
 ## 5. Cross-Reference
 

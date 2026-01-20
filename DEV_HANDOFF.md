@@ -27,12 +27,29 @@
 - **Critical Issues:** 0
 - **All security audit items:** CLOSED
 - **Tests:** 6/7 passing (1 expected CUDA skip)
-- **Audit report:** `code_audit_2026-01-19.md` (in brain artifacts)
+- **Audit report:** `CODE_AUDIT_2026-01-19.md`
+
+### Ollama Auto-Start & Restart Controls
+
+- **Auto-start:** Added `_ensure_ollama_ready()` in `python/ipc_server.py`
+  - Starts Ollama if not running on app launch
+  - Warms up default model (gemma3:4b) to prevent cold starts
+  - **Status:** ✅ Working (verified in logs)
+- **Restart button:** Added to Settings → Ollama tab
+  - IPC handlers: `ollama:restart`, `ollama:warmup`
+  - **Status:** ✅ Implemented, ready to test
+- **Documentation:** `docs/OLLAMA_AUTO_START.md`
 
 ## ⚠️ Known Issues / Broken
 
 - **M2 (Minor):** Duplicate `PROMPT_LITERAL` assignment in `prompts.py:57,73` (cosmetic)
-- No critical issues.
+- **BUG:** Mode-specific model dropdowns not populating
+  - **File:** `src/settings.ts:606` (`populateModeModelDropdowns()`)
+  - **Symptom:** Dropdowns only show "Use default model", no models listed
+  - **Investigation:** Function may not be called, or failing silently
+  - **Documentation:** `docs/BUG_MODE_MODEL_DROPDOWNS.md`
+  - **Priority:** Medium (workaround: use default model)
+  - **Next Step:** Enable DevTools in Settings window to debug
 
 ## 🔄 In Progress / Pending
 

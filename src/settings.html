@@ -413,6 +413,17 @@
                 </div>
             </div>
 
+            <!-- Service Control -->
+            <div class="setting-group">
+                <label>Service Control</label>
+                <span class="sub-label">Restart Ollama to clear memory and reload models</span>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn btn-secondary" onclick="restartOllama()">🔄 Restart Ollama</button>
+                    <button class="btn btn-secondary" onclick="warmupModel()">🔥 Warm Up Current Model</button>
+                </div>
+                <div id="ollama-restart-status" style="margin-top: 8px; font-size: 0.9em; color: #888;"></div>
+            </div>
+
             <!-- Model Management -->
             <div class="setting-group">
                 <label>Pull New Model</label>

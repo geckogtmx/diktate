@@ -604,14 +604,46 @@ function saveModeModel(mode: string, model: string) {
 }
 
 async function populateModeModelDropdowns() {
+    console.log('🔍 [DEBUG] populateModeModelDropdowns called');
     const modes = ['standard', 'prompt', 'professional'];
 
     try {
-        const response = await fetch('http://localhost:11434/api/tags');
-        if (!response.ok) return;
+        // Retry up to 3 times with 1 second delay (Ollama might be starting up)
+        let response;
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        while (attempts < maxAttempts) {
+            try {
+                // Manual timeout using AbortController for compatibility
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+                response = await fetch('http://localhost:11434/api/tags', { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (response.ok) break;
+            } catch (e) {
+                attempts++;
+                if (attempts < maxAttempts) {
+                    console.log(`Ollama not ready, retrying (${attempts}/${maxAttempts})...`);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+        }
+
+        if (!response || !response.ok) {
+            console.warn('Ollama not available for model dropdowns');
+            return;
+        }
 
         const data = await response.json();
         const models = data.models || [];
+
+        if (models.length === 0) {
+            console.warn('No Ollama models found');
+            return;
+        }
 
         for (const mode of modes) {
             const select = document.getElementById(`model-${mode}`) as HTMLSelectElement;
@@ -635,6 +667,8 @@ async function populateModeModelDropdowns() {
                 select.value = savedModel;
             }
         }
+
+        console.log(`Populated mode dropdowns with ${models.length} models`);
     } catch (e) {
         console.error('Failed to populate mode model dropdowns:', e);
     }
@@ -894,3 +928,64 @@ function quickPullModel(modelName: string) {
     }
     pullOllamaModel();
 }
+
+// ============================================
+// Ollama Service Control
+// ============================================
+
+async function restartOllama() {
+    const statusDiv = document.getElementById('ollama-restart-status');
+    if (!statusDiv) return;
+
+    statusDiv.textContent = '⏳ Restarting Ollama service...';
+    statusDiv.style.color = '#888';
+
+    try {
+        const result = await (window.settingsAPI as any).restartOllama();
+
+        if (result.success) {
+            statusDiv.textContent = '✓ Ollama restarted successfully';
+            statusDiv.style.color = '#4ade80';
+
+            // Refresh status after 2 seconds
+            setTimeout(() => {
+                refreshOllamaStatus();
+                statusDiv.textContent = '';
+            }, 2000);
+        } else {
+            statusDiv.textContent = `✗ Failed: ${result.error}`;
+            statusDiv.style.color = '#ef4444';
+        }
+    } catch (error) {
+        statusDiv.textContent = `✗ Error: ${error}`;
+        statusDiv.style.color = '#ef4444';
+    }
+}
+
+async function warmupModel() {
+    const statusDiv = document.getElementById('ollama-restart-status');
+    if (!statusDiv) return;
+
+    statusDiv.textContent = '🔥 Warming up model...';
+    statusDiv.style.color = '#888';
+
+    try {
+        const result = await (window.settingsAPI as any).warmupOllamaModel();
+
+        if (result.success) {
+            statusDiv.textContent = `✓ Model ${result.model} is ready`;
+            statusDiv.style.color = '#4ade80';
+            setTimeout(() => statusDiv.textContent = '', 3000);
+        } else {
+            statusDiv.textContent = `✗ Failed: ${result.error}`;
+            statusDiv.style.color = '#ef4444';
+        }
+    } catch (error) {
+        statusDiv.textContent = `✗ Error: ${error}`;
+        statusDiv.style.color = '#ef4444';
+    }
+}
+
+// Expose to global scope
+(window as any).restartOllama = restartOllama;
+(window as any).warmupModel = warmupModel;
