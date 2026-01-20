@@ -31,6 +31,13 @@ class TestLogRedaction(unittest.TestCase):
         self.assertNotIn("eyJhbGci", sanitized)
         print(f"Original: {msg}\nSanitized: {sanitized}\n")
 
+        # Scenario 4: Anthropic Key (sk-ant-...) [NEW TEST]
+        msg = "Config loaded with key sk-ant-api03-abcdef123456-7890xyz"
+        sanitized = sanitize_log_message(msg)
+        self.assertIn("sk-ant-[REDACTED]", sanitized)
+        self.assertNotIn("api03-abcdef", sanitized)
+        print(f"Original: {msg}\nSanitized: {sanitized}\n")
+
     def test_redact_api_key(self):
         key = "sk-1234567890abcdef1234567890abcdef"
         redacted = redact_api_key(key)

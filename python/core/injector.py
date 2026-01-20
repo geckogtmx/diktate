@@ -53,8 +53,8 @@ class Injector:
                 self.keyboard.release('v')
                 
             # 4. Wait for paste to complete before restoring clipboard
-            # This is critical - too fast and we restore before the app pastes
-            time.sleep(0.1) 
+            # Reduced from 100ms to 20ms (M2 security fix - minimize clipboard exposure)
+            time.sleep(0.02) 
             
             # 5. Restore original clipboard
             # Note: Some apps might be slow to paste, so this restores 

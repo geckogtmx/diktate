@@ -98,9 +98,19 @@ class LocalProcessor:
         except Exception as e:
             logger.warning(f"Model warmup failed (will retry on first use): {e}")
 
+    def _sanitize_for_prompt(self, text: str) -> str:
+        """Sanitize input text to prevent prompt injection (M1 security fix)."""
+        # Escape code block delimiters that could break prompt structure
+        text = text.replace("```", "'''")
+        # Prevent template injection
+        text = text.replace("{text}", "[text]")
+        return text
+
     def process(self, text: str, max_retries: int = 3) -> str:
         """Process text using Ollama with exponential backoff retry logic."""
-        prompt = self.prompt.replace("{text}", text)
+        # Sanitize input to prevent prompt injection (M1 security fix)
+        safe_text = self._sanitize_for_prompt(text)
+        prompt = self.prompt.replace("{text}", safe_text)
 
         for attempt in range(max_retries):
             try:
@@ -163,9 +173,16 @@ class CloudProcessor:
         self.prompt = get_prompt(mode)
         logger.info(f"Cloud processor mode switched to: {mode}")
 
+    def _sanitize_for_prompt(self, text: str) -> str:
+        """Sanitize input text to prevent prompt injection (M1 security fix)."""
+        text = text.replace("```", "'''")
+        text = text.replace("{text}", "[text]")
+        return text
+
     def process(self, text: str, max_retries: int = 3) -> str:
         """Process text using Gemini API with exponential backoff retry logic."""
-        prompt = self.prompt.replace("{text}", text)
+        safe_text = self._sanitize_for_prompt(text)
+        prompt = self.prompt.replace("{text}", safe_text)
 
         for attempt in range(max_retries):
             try:
@@ -234,9 +251,16 @@ class AnthropicProcessor:
         self.prompt = get_prompt(mode)
         logger.info(f"Anthropic processor mode switched to: {mode}")
 
+    def _sanitize_for_prompt(self, text: str) -> str:
+        """Sanitize input text to prevent prompt injection (M1 security fix)."""
+        text = text.replace("```", "'''")
+        text = text.replace("{text}", "[text]")
+        return text
+
     def process(self, text: str, max_retries: int = 3) -> str:
         """Process text using Anthropic Claude API."""
-        prompt = self.prompt.replace("{text}", text)
+        safe_text = self._sanitize_for_prompt(text)
+        prompt = self.prompt.replace("{text}", safe_text)
 
         for attempt in range(max_retries):
             try:
@@ -304,9 +328,16 @@ class OpenAIProcessor:
         self.prompt = get_prompt(mode)
         logger.info(f"OpenAI processor mode switched to: {mode}")
 
+    def _sanitize_for_prompt(self, text: str) -> str:
+        """Sanitize input text to prevent prompt injection (M1 security fix)."""
+        text = text.replace("```", "'''")
+        text = text.replace("{text}", "[text]")
+        return text
+
     def process(self, text: str, max_retries: int = 3) -> str:
         """Process text using OpenAI API."""
-        prompt = self.prompt.replace("{text}", text)
+        safe_text = self._sanitize_for_prompt(text)
+        prompt = self.prompt.replace("{text}", safe_text)
 
         for attempt in range(max_retries):
             try:

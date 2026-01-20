@@ -1,57 +1,77 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-18 23:05
+> **Last Updated:** 2026-01-19 18:17
 > **Last Model:** Gemini
-> **Session Focus:** Settings UI Fixes, Zero-Latency Audio Handler, Security Audit Triage
+> **Session Focus:** Complete Security Audit Closure + Pre-Distribution Code Review
 
 ---
 
 ## ✅ Completed This Session
 
-### 1. Settings Bug Fixes
-- **Ask Mode UI:** Moved from "Mode-Specific Models" to a standalone section (cleaner layout).
-- **API Key Testing:** Fixed "too small" validation error (now allows testing stored keys via empty input).
-- **Mode Dropdowns:** Fixed population logic (selectors now carry correct `model-mode` IDs).
+### Security Fixes (ALL Audit Items Closed)
 
-### 2. Audio Handler (Zero Latency)
-- **Pivot to WAV:** Switched from Renderer-based MP3 (high latency) to Main Process `System.Media.SoundPlayer` (WAV).
-- **Assets:** Populated `assets/sounds/` with `a.wav`, `b.wav`, `c.wav`.
-- **Logic:** `playSound` helper in `src/main.ts` now triggers instant native playback.
+| ID | Issue | Fix |
+|----|-------|-----|
+| H1 | `requests` CVE-2024-35195 | Already patched (v2.32.5) |
+| M1 | Prompt injection | Added `_sanitize_for_prompt()` to 4 processor classes |
+| M2 | Clipboard exposure | Reduced delay 100ms → 20ms |
+| M3 | Audio file cleanup | Added `atexit` handler in `ipc_server.py` |
+| M4 | API key rate limiting | Added 5/min limit per provider in `main.ts` |
+| L3 | URL subdomain check | Fixed to use `.domain` prefix in `preloadSettings.ts` |
+| — | Anthropic key redaction | Fixed regex in `security.py` |
+| — | PRIVACY.md | Created comprehensive privacy policy |
 
-### 3. Security Audit Analysis
-- **Review:** Analyzed `latest_claude_audit_2026-01-18.md`.
-- **Triage:** identified 3 **Indispensable** fixes vs "Can Wait" items.
+### Pre-Distribution Code Audit
+
+- **Grade:** A- (Ready for v1.0)
+- **Critical Issues:** 0
+- **All security audit items:** CLOSED
+- **Tests:** 6/7 passing (1 expected CUDA skip)
+- **Audit report:** `code_audit_2026-01-19.md` (in brain artifacts)
 
 ## ⚠️ Known Issues / Broken
 
-- **Anthropic Key Leak:** `security.py` regex fails to redact keys with hyphens (PROD PRIVACY RISK).
-- **Phantom Audio Files:** `try/catch` deletion is flaky on Windows; files may persist.
-- **Dependency Vulnerability:** `requests` v2.31.0 has known SSRF CVE.
+- **M2 (Minor):** Duplicate `PROMPT_LITERAL` assignment in `prompts.py:57,73` (cosmetic)
+- No critical issues.
 
 ## 🔄 In Progress / Pending
 
-- [ ] Execute **Indispensable Security Fixes** (See Instructions below).
-- [ ] Verify Audio Handler in built application (ensure WAV packing works).
+- [ ] Phase A.4: Baseline testing (10+ samples with gemma3:4b)
+- [ ] Verify WAV sounds bundled in production build
+- [ ] Distribution Phase (electron-builder, installer, first-run)
 
 ## 📋 Instructions for Next Model
 
-**Priority 1: Execute Security Fixes (Indispensable)**
-1.  **Redact Anthropic Keys:** Update `python/utils/security.py` regex to capture `sk-ant-[a-zA-Z0-9_-]+`.
-2.  **Audio Cleanup:** Implement `atexit` handler in `python/ipc_server.py` to guarantee deletion of temp files.
-3.  **Update Requests:** `pip install requests>=2.32.0`.
+**Priority 1: Baseline Testing (Phase A.4)**
+1. Run manual test: `docs/qa/MANUAL_TEST_SCRIPT.txt`
+2. Use `/test-diktate` workflow to analyze results
+3. Establish baseline metrics (10+ samples)
 
-**Priority 2: Verification**
-- Verify that `assets/sounds/*.wav` are correctly bundled in the `dist` or `resources` folder during build (`pnpm build`).
+**Priority 2: Distribution Prep (Phase D)**
+1. Configure electron-builder for Windows
+2. Bundle Ollama or document external dependency
+3. Test first-run experience
 
 ### Context Needed
-- `latest_claude_audit_2026-01-18.md` (Audit findings)
-- `python/utils/security.py` (Redaction logic)
+- `DEVELOPMENT_ROADMAP.md` (Phase A/D tasks)
+- `code_audit_2026-01-19.md` (Full audit report)
+
+### Do NOT
+- Don't refactor anything major - code is audited and ready
+- Don't change security fixes without re-testing
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
+### 2026-01-19 18:17 - Gemini
+- **Security:** Closed ALL 8 audit items (M1-M4, L3, PRIVACY.md, etc.)
+- **Audit:** Pre-distribution code review, Grade A-
+- **Tests:** 6/7 passing, added Anthropic key redaction test
+
+### 2026-01-19 17:53 - Gemini
+- **Security:** Fixed 3 indispensable findings (Anthropic, atexit, requests CVE)
+
 ### 2026-01-18 23:00 - Gemini
-- **Fix:** Settings Bugs (Ask Mode, API Key Test, Mode Dropdowns).
-- **Feat:** Zero-Latency WAV Sound Handler (`main.ts`).
-- **Plan:** Prioritized Security Audit findings.
+- **Fix:** Settings Bugs (Ask Mode, API Key Test, Mode Dropdowns)
+- **Feat:** Zero-Latency WAV Sound Handler

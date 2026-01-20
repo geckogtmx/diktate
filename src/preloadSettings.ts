@@ -19,11 +19,15 @@ const settingsAPI = {
 
     // External links (safe wrapper)
     openExternal: (url: string) => {
-        // Whitelist allowed URLs for security
+        // Whitelist allowed URLs for security (L3 fix: proper subdomain check)
         const allowedDomains = ['dikta.me', 'github.com', 'ko-fi.com', 'aistudio.google.com', 'console.anthropic.com', 'platform.openai.com', 'localhost'];
         try {
             const parsed = new URL(url);
-            if (allowedDomains.some(d => parsed.hostname.endsWith(d) || parsed.hostname === d)) {
+            // Fixed: Check for exact match OR proper subdomain (hostname ends with '.domain')
+            const isAllowed = allowedDomains.some(d =>
+                parsed.hostname === d || parsed.hostname.endsWith('.' + d)
+            );
+            if (isAllowed) {
                 shell.openExternal(url);
             } else {
                 console.warn('Blocked external URL:', url);

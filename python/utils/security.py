@@ -50,8 +50,9 @@ def sanitize_log_message(message: str) -> str:
     """
     # Redact API key patterns
     patterns = [
-        (r'(sk-[a-zA-Z0-9]{20,})', r'sk-[REDACTED]'),
-        (r'(AIza[a-zA-Z0-9_-]{30,})', r'AIza[REDACTED]'),
+        (r'(sk-ant-[a-zA-Z0-9_-]+)', r'sk-ant-[REDACTED]'),  # Anthropic (must be before generic sk-)
+        (r'(sk-[a-zA-Z0-9]{20,})', r'sk-[REDACTED]'),  # OpenAI
+        (r'(AIza[a-zA-Z0-9_-]{30,})', r'AIza[REDACTED]'),  # Google
         (r'(Bearer\s+[a-zA-Z0-9_-]{20,})', r'Bearer [REDACTED]'),
     ]
     

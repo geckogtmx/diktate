@@ -811,7 +811,29 @@ function setupIpcHandlers(): void {
     }
   });
 
+  // Rate limiting for API key testing (M4 security fix)
+  const apiKeyTestAttempts = new Map<string, { count: number; resetTime: number }>();
+  const MAX_KEY_TESTS_PER_MINUTE = 5;
+
   ipcMain.handle('apikey:test', async (_event, provider: string, key: string) => {
+    // Rate limit check
+    const now = Date.now();
+    const rateLimit = apiKeyTestAttempts.get(provider);
+    if (rateLimit) {
+      if (now < rateLimit.resetTime) {
+        if (rateLimit.count >= MAX_KEY_TESTS_PER_MINUTE) {
+          logger.warn('IPC', `Rate limit exceeded for ${provider} API key testing`);
+          return { success: false, error: 'Rate limit exceeded. Please wait 1 minute.' };
+        }
+        rateLimit.count++;
+      } else {
+        // Reset after 1 minute
+        apiKeyTestAttempts.set(provider, { count: 1, resetTime: now + 60000 });
+      }
+    } else {
+      apiKeyTestAttempts.set(provider, { count: 1, resetTime: now + 60000 });
+    }
+
     // Validate payload
     const validation = validateIpcMessage(ApiKeyTestSchema, { provider, key });
     if (!validation.success) {

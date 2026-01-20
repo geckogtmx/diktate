@@ -51,6 +51,25 @@ from core.processor import create_processor
 from config.prompts import get_translation_prompt
 from utils.security import redact_text, sanitize_log_message
 
+# --- SECURITY: Guaranteed audio file cleanup on exit (M3 fix) ---
+import atexit
+
+def _cleanup_temp_audio_files():
+    """Guaranteed cleanup of temp audio files on exit (even abnormal)."""
+    try:
+        temp_dir = Path("./temp_audio")
+        if temp_dir.exists():
+            for audio_file in temp_dir.glob("*.wav"):
+                try:
+                    audio_file.unlink()
+                except Exception:
+                    pass  # Best effort cleanup
+    except Exception:
+        pass  # Fail silently on cleanup
+
+atexit.register(_cleanup_temp_audio_files)
+# -----------------------------------------------------------------
+
 # Configure logging - Session-based log files
 log_dir = Path(Path.home()) / ".diktate" / "logs"
 log_dir.mkdir(parents=True, exist_ok=True)
