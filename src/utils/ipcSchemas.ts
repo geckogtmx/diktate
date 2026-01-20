@@ -16,11 +16,17 @@ export const SettingsKeySchema = z.enum([
     'soundFeedback',
     'feedbackSound',
     'hotkey',
+    'askHotkey',
+    'askOutputMode',
     'defaultMode',
     'transMode',
     'audioDeviceId',
     'audioDeviceLabel',
-    'defaultOllamaModel'
+    'defaultOllamaModel',
+    'maxRecordingDuration',
+    'modeModel_standard',
+    'modeModel_prompt',
+    'modeModel_professional'
 ]);
 
 // API key provider schema

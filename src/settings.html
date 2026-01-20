@@ -219,7 +219,7 @@
         }
 
         /* HOTKEY INPUT */
-        #hotkey-display {
+        .hotkey-display-box {
             background: #111;
             padding: 10px;
             text-align: center;
@@ -230,7 +230,7 @@
             font-size: 1.2em;
         }
 
-        #hotkey-display.recording {
+        .hotkey-display-box.recording {
             border-color: var(--accent-color);
             color: var(--accent-color);
             background: var(--dark-teal);
@@ -258,8 +258,9 @@
             <div class="setting-group">
                 <div class="setting-row">
                     <div>
-                        <label>Processing Mode</label>
-                        <span class="sub-label">Choose how your voice is processed</span>
+                        <label>Startup Processing Mode</label>
+                        <span class="sub-label">Choose how your voice is processed at startup (can be toggled in the
+                            dashboard)</span>
                     </div>
                     <select id="processing-mode" onchange="saveSetting('processingMode', this.value)">
                         <option value="local">🏠 Local (Offline, Confidential)</option>
@@ -272,7 +273,8 @@
             <div class="setting-group">
                 <label>Dictate Hotkey</label>
                 <span class="sub-label">Press to start/stop dictation (transcribe → clean → type)</span>
-                <div id="hotkey-display" onclick="recordHotkey('dictate')" style="cursor: pointer;">Ctrl + Alt + D</div>
+                <div id="hotkey-display" class="hotkey-display-box" onclick="recordHotkey('dictate')">Ctrl + Alt + D
+                </div>
                 <div style="text-align: right; margin-top: 5px;">
                     <button class="btn btn-secondary" onclick="resetHotkey('dictate')">Reset Default</button>
                 </div>
@@ -281,7 +283,8 @@
             <div class="setting-group">
                 <label>Ask Mode Hotkey</label>
                 <span class="sub-label">Press to ask questions (transcribe → LLM answer → type/clipboard)</span>
-                <div id="ask-hotkey-display" onclick="recordHotkey('ask')" style="cursor: pointer;">Ctrl + Alt + A</div>
+                <div id="ask-hotkey-display" class="hotkey-display-box" onclick="recordHotkey('ask')">Ctrl + Alt + A
+                </div>
                 <div style="text-align: right; margin-top: 5px;">
                     <button class="btn btn-secondary" onclick="resetHotkey('ask')">Reset Default</button>
                 </div>

@@ -3,7 +3,7 @@
  * Uses secure settingsAPI bridge (no direct Node access)
  */
 
-export { }; // Make this a module
+// No export needed, loaded as a script in settings.html
 
 // Type declaration for the secure bridge
 interface SettingsAPI {
@@ -22,10 +22,8 @@ interface SettingsAPI {
     runHardwareTest: () => Promise<{ gpu: string; vram: string; tier: string; speed: number }>;
 }
 
-declare global {
-    interface Window {
-        settingsAPI: SettingsAPI;
-    }
+interface Window {
+    settingsAPI: SettingsAPI;
 }
 
 // State
@@ -33,19 +31,18 @@ let isRecordingHotkey = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Settings window loaded');
     try {
         const settings = await window.settingsAPI.getAll();
         loadSettings(settings);
-        // Refresh devices initially
+
         await refreshAudioDevices(settings.audioDeviceId);
-        // Load Ollama models
+
         await loadOllamaModels();
-        // Check Ollama status
+
         await checkOllamaStatus();
-        // Populate per-mode model dropdowns
+
         await populateModeModelDropdowns();
-        // Load API key statuses
+
         await loadApiKeyStatuses();
     } catch (e) {
         console.error('Failed to load settings:', e);
@@ -604,7 +601,6 @@ function saveModeModel(mode: string, model: string) {
 }
 
 async function populateModeModelDropdowns() {
-    console.log('🔍 [DEBUG] populateModeModelDropdowns called');
     const modes = ['standard', 'prompt', 'professional'];
 
     try {

@@ -2,7 +2,10 @@
 
 > **Reported:** 2026-01-19 19:27
 > **Severity:** Medium
-> **Status:** Open
+> **Status:** RESOLVED
+> **Resolution Date:** 2026-01-19 19:47
+> **Root Cause:** Script was being compiled as a CommonJS module due to 'export {}' statement, causing "exports is not defined" error in browser.
+> **Fix:** Removed 'export {}' to keep script as a plain browser script + updated IPC validation schemas.
 > **Affects:** Settings UI → Modes Tab → Mode-Specific Models section
 
 ---

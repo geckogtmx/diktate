@@ -2,19 +2,17 @@
  * Renderer process for dIKtate Status Dashboard
  * Tracks session statistics and handles live status updates
  */
-export { };
+// No export needed, loaded as a script in index.html
 
-declare global {
-    interface Window {
-        electronAPI: {
-            onLog: (callback: (level: string, message: string, data?: any) => void) => void;
-            onStatusChange: (callback: (status: string) => void) => void;
-            onPerformanceMetrics: (callback: (metrics: PerformanceMetrics) => void) => void;
-            getInitialState: () => Promise<any>;
-            setSetting: (key: string, value: any) => Promise<void>;
-            onPlaySound: (callback: (soundName: string) => void) => void;
-        };
-    }
+interface Window {
+    electronAPI: {
+        onLog: (callback: (level: string, message: string, data?: any) => void) => void;
+        onStatusChange: (callback: (status: string) => void) => void;
+        onPerformanceMetrics: (callback: (metrics: PerformanceMetrics) => void) => void;
+        getInitialState: () => Promise<any>;
+        setSetting: (key: string, value: any) => Promise<void>;
+        onPlaySound: (callback: (soundName: string) => void) => void;
+    };
 }
 
 interface PerformanceMetrics {

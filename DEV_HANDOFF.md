@@ -1,101 +1,65 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-19 18:17
+> **Last Updated:** 2026-01-19 19:53
 > **Last Model:** Gemini
-> **Session Focus:** Complete Security Audit Closure + Pre-Distribution Code Review
+> **Session Focus:** Fixed Mode Dropdowns, UI Consistency, and Schema Validation
 
 ---
 
 ## ✅ Completed This Session
 
-### Security Fixes (ALL Audit Items Closed)
+### 🐞 Bug Fix: Mode-Specific Model Dropdowns
+- **Root Cause:** Script `src/settings.ts` was compiled as a CommonJS module due to a redundant `export { }` statement.
+- **Fix:** Converted to plain browser script and fixed global `Window` augmentations.
+- **Status:** ✅ RESOLVED.
 
-| ID | Issue | Fix |
-|----|-------|-----|
-| H1 | `requests` CVE-2024-35195 | Already patched (v2.32.5) |
-| M1 | Prompt injection | Added `_sanitize_for_prompt()` to 4 processor classes |
-| M2 | Clipboard exposure | Reduced delay 100ms → 20ms |
-| M3 | Audio file cleanup | Added `atexit` handler in `ipc_server.py` |
-| M4 | API key rate limiting | Added 5/min limit per provider in `main.ts` |
-| L3 | URL subdomain check | Fixed to use `.domain` prefix in `preloadSettings.ts` |
-| — | Anthropic key redaction | Fixed regex in `security.py` |
-| — | PRIVACY.md | Created comprehensive privacy policy |
+### 🎨 UI/UX Excellence
+- **Hotkey Consistency:** Unified the visual style of "Dictate" and "Ask" hotkey display boxes using a shared `.hotkey-display-box` class.
+- **Startup Clarification:** Renamed "Processing Mode" to **"Startup Processing Mode"** with a sub-label clarifying that live toggling happens in the dashboard.
+- **Feedback:** All changes verified in the UI.
 
-### Pre-Distribution Code Audit
+### 🛡️ IPC Security & Validation
+- **Schema Update:** Updated `src/utils/ipcSchemas.ts` to include missing keys (`maxRecordingDuration`, `askHotkey`, `askOutputMode`, and `modeModel_*`).
+- **Status:** ✅ IPC validation is now 1:1 with all settings.
 
-- **Grade:** A- (Ready for v1.0)
-- **Critical Issues:** 0
-- **All security audit items:** CLOSED
-- **Tests:** 6/7 passing (1 expected CUDA skip)
-- **Audit report:** `CODE_AUDIT_2026-01-19.md`
-
-### Ollama Auto-Start & Restart Controls
-
-- **Auto-start:** Added `_ensure_ollama_ready()` in `python/ipc_server.py`
-  - Starts Ollama if not running on app launch
-  - Warms up default model (gemma3:4b) to prevent cold starts
-  - **Status:** ✅ Working (verified in logs)
-- **Restart button:** Added to Settings → Ollama tab
-  - IPC handlers: `ollama:restart`, `ollama:warmup`
-  - **Status:** ✅ Implemented, ready to test
-- **Documentation:** `docs/OLLAMA_AUTO_START.md`
+### 🧹 Cleanup
+- Removed all temporary debug logs and DevTools auto-open logic.
+- Recompiled and synced `dist/` artifacts (`pnpm tsc`, `copy src\*.html dist\`).
 
 ## ⚠️ Known Issues / Broken
-
-- **M2 (Minor):** Duplicate `PROMPT_LITERAL` assignment in `prompts.py:57,73` (cosmetic)
-- **BUG:** Mode-specific model dropdowns not populating
-  - **File:** `src/settings.ts:606` (`populateModeModelDropdowns()`)
-  - **Symptom:** Dropdowns only show "Use default model", no models listed
-  - **Investigation:** Function may not be called, or failing silently
-  - **Documentation:** `docs/BUG_MODE_MODEL_DROPDOWNS.md`
-  - **Priority:** Medium (workaround: use default model)
-  - **Next Step:** Enable DevTools in Settings window to debug
+- **M2 (Minor):** Duplicate `PROMPT_LITERAL` assignment in `prompts.py:57,73` (cosmetic).
 
 ## 🔄 In Progress / Pending
-
-- [ ] Phase A.4: Baseline testing (10+ samples with gemma3:4b)
-- [ ] Verify WAV sounds bundled in production build
-- [ ] Distribution Phase (electron-builder, installer, first-run)
+- [ ] Phase A.4: Baseline testing (Establish baseline latency/quality with 10+ samples).
+- [ ] Distribution Phase: Configure `electron-builder` for production distribution.
 
 ## 📋 Instructions for Next Model
 
 **Priority 1: Baseline Testing (Phase A.4)**
-1. Run manual test: `docs/qa/MANUAL_TEST_SCRIPT.txt`
-2. Use `/test-diktate` workflow to analyze results
-3. Establish baseline metrics (10+ samples)
+1. Run the manual test script at `docs/qa/MANUAL_TEST_SCRIPT.txt`.
+2. Use the `/test-diktate` workflow to analyze result logs.
+3. Establish a performance baseline for `gemma3:4b`.
 
 **Priority 2: Distribution Prep (Phase D)**
-1. Configure electron-builder for Windows
-2. Bundle Ollama or document external dependency
-3. Test first-run experience
+1. Verify the `extraResources` path in `package.json` correctly points to the Python backend.
+2. Build a portable version and test a clean installation.
 
 ### Context Needed
-- `DEVELOPMENT_ROADMAP.md` (Phase A/D tasks)
-- `code_audit_2026-01-19.md` (Full audit report)
-
-### Do NOT
-- Don't refactor anything major - code is audited and ready
-- Don't change security fixes without re-testing
+- `DEVELOPMENT_ROADMAP.md` (Phase A/D tasks).
+- `docs/BUG_MODE_MODEL_DROPDOWNS.md` (History of the UI fix).
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
+### 2026-01-19 19:53 - Gemini
+- **Fix:** Resolved "Mode dropdown not populating" bug.
+- **UI:** Unified hotkey styles and clarified startup settings.
+- **Security:** Updated IPC validation schemas for audit compliance.
+
 ### 2026-01-19 19:28 - Gemini
-- **Feat:** Ollama Auto-Start & Warmup (python/ipc_server.py)
-  - Starts Ollama automatically on app launch
-  - Warms up default model to prevent cold starts
-  - Status: ✅ Working
-- **Feat:** Restart & Warmup Buttons (Settings → Ollama tab)
-  - IPC handlers: ollama:restart, ollama:warmup
-  - Status: ✅ Implemented
-- **Bug:** Mode dropdown not populating - documented in docs/BUG_MODE_MODEL_DROPDOWNS.md
-- **Docs:** Updated AI_CODEX.md, DEV_HANDOFF.md, created OLLAMA_AUTO_START.md
+- **Feat:** Ollama Auto-Start & Warmup implementation.
+- **Feat:** Service control buttons in Ollama tab.
 
 ### 2026-01-19 18:17 - Gemini
-- **Security:** Closed ALL 8 audit items (M1-M4, L3, PRIVACY.md, etc.)
-- **Audit:** Pre-distribution code review, Grade A-
-- **Tests:** 6/7 passing, added Anthropic key redaction test
-
-### 2026-01-19 17:53 - Gemini
-- **Security:** Fixed 3 indispensable findings (Anthropic, atexit, requests CVE)
+- **Security:** Closed all 8 audit items, achieved Grade A-.
