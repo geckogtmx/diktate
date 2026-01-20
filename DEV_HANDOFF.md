@@ -81,6 +81,17 @@
 
 ## Session Log (Last 3 Sessions)
 
+### 2026-01-19 19:28 - Gemini
+- **Feat:** Ollama Auto-Start & Warmup (python/ipc_server.py)
+  - Starts Ollama automatically on app launch
+  - Warms up default model to prevent cold starts
+  - Status: ✅ Working
+- **Feat:** Restart & Warmup Buttons (Settings → Ollama tab)
+  - IPC handlers: ollama:restart, ollama:warmup
+  - Status: ✅ Implemented
+- **Bug:** Mode dropdown not populating - documented in docs/BUG_MODE_MODEL_DROPDOWNS.md
+- **Docs:** Updated AI_CODEX.md, DEV_HANDOFF.md, created OLLAMA_AUTO_START.md
+
 ### 2026-01-19 18:17 - Gemini
 - **Security:** Closed ALL 8 audit items (M1-M4, L3, PRIVACY.md, etc.)
 - **Audit:** Pre-distribution code review, Grade A-
@@ -88,7 +99,3 @@
 
 ### 2026-01-19 17:53 - Gemini
 - **Security:** Fixed 3 indispensable findings (Anthropic, atexit, requests CVE)
-
-### 2026-01-18 23:00 - Gemini
-- **Fix:** Settings Bugs (Ask Mode, API Key Test, Mode Dropdowns)
-- **Feat:** Zero-Latency WAV Sound Handler
