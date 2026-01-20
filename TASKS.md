@@ -18,32 +18,25 @@
 - [x] Badge updates after switching providers
 - **Status:** Working. User tested Gemini ↔ Gemma switching.
 
-### Settings Bugs (LOW PRIORITY - Optional)
-See `DEV_HANDOFF.md` for exact code fixes. These don't block functionality.
-- [ ] Fix `loadApiKeys()` not called on init (`settings.ts:30-40`)
-- [ ] Fix `saveSetting()` missing await/error handling (`settings.ts:132-135`)
-- [ ] Add missing `audioDeviceId`/`audioDeviceLabel` types (`main.ts:19-26`)
-- [ ] Verify settings persist across app restart
+### ✅ Settings Bugs (RESOLVED)
+- [x] `loadApiKeys()` integrated into init sequence
+- [x] `saveSetting()` validation errors fixed (numerical types)
+- [x] `audioDeviceId` & `audioDeviceLabel` persistence (with label fallback)
+- [x] **Model Persistence:** Mode-specific model selections (e.g., Standard: Phi 3) now correctly sync to Python and the UI
+- [x] Settings persistence verified across restarts
 
-### Model Monitoring
-- [ ] Add model health check (is Ollama responding?)
-- [ ] Log inference times to persistent file
-- [ ] Alert when processing > 2s threshold
+### 🛡️ Hardware & Model Safety (NEW - COMPLETE)
+- [x] **Automated Hardware Test:** Runs on settings open
+- [x] **Smart Warnings:** Visual warning for oversized models in dropdowns
+- [x] **Service Control:** Restart/Warmup Ollama from UI
+- [x] **High-Trust Model Switching:** Model changes now trigger a "Restart Required" modal to ensure stability.
 
-### Pipeline Observability
-- [ ] Persist performance metrics to JSON
-- [ ] Add session stats (success rate, avg time)
-
-### Error Recovery
-- [ ] Verify Ollama reconnection after timeout
-- [ ] Test behavior when Ollama restarts mid-session
-
-### Baseline Testing
-- [ ] Run 10+ samples with gemma3:4b
+### Baseline Testing (IN PROGRESS)
+- [ ] Run 10+ samples with gemma3:4b using `docs/qa/TEST_DRILL.md`
 - [ ] Document baseline metrics
 - [ ] Test various input lengths (1s, 5s, 10s, 30s)
 
-**Exit Criteria:** 30-minute session with 0 failures.
+**Exit Criteria:** 30-minute session with 0 failures to Baseline Specs.
 
 ---
 

@@ -12,9 +12,9 @@ const settingsAPI = {
     set: (key: string, value: any) => ipcRenderer.invoke('settings:set', key, value),
 
     // Audio devices (uses Web API, no IPC needed, but we expose the save)
-    saveAudioDevice: (deviceId: string, deviceLabel: string) => {
-        ipcRenderer.invoke('settings:set', 'audioDeviceId', deviceId);
-        ipcRenderer.invoke('settings:set', 'audioDeviceLabel', deviceLabel);
+    saveAudioDevice: async (deviceId: string, deviceLabel: string) => {
+        await ipcRenderer.invoke('settings:set', 'audioDeviceId', deviceId);
+        await ipcRenderer.invoke('settings:set', 'audioDeviceLabel', deviceLabel);
     },
 
     // External links (safe wrapper)
@@ -50,7 +50,10 @@ const settingsAPI = {
 
     // Ollama control
     restartOllama: () => ipcRenderer.invoke('ollama:restart'),
-    warmupOllamaModel: () => ipcRenderer.invoke('ollama:warmup')
+    warmupOllamaModel: () => ipcRenderer.invoke('ollama:warmup'),
+
+    // App Control
+    relaunchApp: () => ipcRenderer.invoke('app:relaunch')
 };
 
 contextBridge.exposeInMainWorld('settingsAPI', settingsAPI);

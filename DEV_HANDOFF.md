@@ -1,38 +1,34 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-19 20:20
+> **Last Updated:** 2026-01-19 21:30
 > **Last Model:** Gemini
-> **Session Focus:** Hardware Safety Automation, IPC Type Safety, and UI Minimalism
+> **Session Focus:** High-Trust Model Switching & Backend Stability
 
 ---
 
 ## ✅ Completed This Session
 
-### 🛡️ Hardware & Model Safety
-- **Hardware Test Restored & Automated:** Successfully brought back the "Hardware Performance" monitor on the Ollama settings tab. It now **runs automatically on startup**, ensuring hardware tiering is established before the UI is interactive.
-  - File: `src/settings.ts` (restored `runHardwareTest` calls in `DOMContentLoaded`).
-  - File: `src/settings.html` (restored the UI group).
-- **Smart Model Warnings:** Implemented "too large" warnings in ALL model selection dropdowns (General and Modes tabs). Models exceeding the detected VRAM threshold (e.g., >8GB for Balanced tier) appear in **red** with a **⚠️ warning icon**.
-  - File: `src/settings.ts` (logic in `populateModeModelDropdowns` and `loadOllamaModels`).
-- **Status:** ✅ FULLY AUTOMATED SAFETY DEPLOYED.
+### 🔄 High-Trust Model Switching
+- **Mandatory Relaunch for Model Changes:** Pivot from unstable hot-swapping to a robust "Restart Required" policy for changing models.
+  - File: `src/main.ts` (added `app:relaunch` IPC handler).
+  - File: `src/settings.html` (added warning banner and glassmorphism modal).
+  - File: `src/settings.ts` (implemented change detection and modal triggers).
+  - File: `src/preloadSettings.ts` (exposed `relaunchApp`).
+- **Status:** ✅ STABLE AND PREDICTABLE MODEL SWITCHING.
 
-### 🛡️ IPC Security & Validation
-- **Schema Update:** Updated `src/utils/ipcSchemas.ts` to include missing keys (`maxRecordingDuration`, `askHotkey`, `askOutputMode`, and `modeModel_*`).
-- **Numerical Type Fix:** Fixed a primary validation failure where numerical settings (like `maxRecordingDuration`) were being blocked. Added `z.number()` support to `SettingsSetSchema`.
-- **Status:** ✅ REINFORCED AND FIXED.
+### 🛡️ Python Backend Stability
+- **Fixed Pipe "Bleeding":** Restored missing `_process_ask_recording` function header in `ipc_server.py`. This resolves the "Recording Error" loop reported after the first transcript.
+- **Asynchronous Startup Warmup:** The Python engine now initializes the LLM in a background thread.
+  - App starts in `WARMUP` state immediately (Visual: "LOADING..." pulsing on pill).
+  - Automatically transitions to `IDLE` once model is cached.
+  - File: `python/ipc_server.py` (logic in `__init__` and `_startup_warmup`).
+  - File: `src/services/pythonManager.ts` (initial state set to `warmup`).
+- **Automatic Error Recovery:** Recordings can now be restarted even if the system is in an `ERROR` state.
+- **Status:** ✅ BACKEND RECOVERED AND FLUID.
 
-### 🎨 UI/UX Excellence
-- **Visual-Only Mode Indicators:** Converted the "Dictate" and "Ask" buttons on the Status Dashboard into non-interactive visual indicators. Clicking them no longer does anything, and the cursor is set to `default`.
-  - File: `src/index.html` (buttons converted to divs, styles updated).
-- **Minimalist Settings Sidebar:** Removed emoji icons from the settings sidebar for a cleaner, text-only professional aesthetic.
-  - File: `src/settings.html`.
-- **Hotkey Consistency:** Unified visual style of hotkey display boxes.
-- **Status:** ✅ UI REFINED AND DE-CLUTTERED.
-
-### 🧹 Cleanup
-- Resolved "Mode dropdown not populating" bug.
-- Removed temporary debug logs and DevTools logic.
-- Recompiled and synced `dist/` artifacts (`pnpm tsc`, `copy src\*.html dist\`).
+### 🧹 Fixes
+- **Python Scope Bugs:** Centralized `os` and `wave` imports to fix `UnboundLocalError` when reading audio metadata.
+- **Settings Sync:** Synchronized mode-specific model overrides with the Python backend during initialization.
 
 ---
 
@@ -40,9 +36,9 @@
 
 - [ ] **Phase A.4: Baseline Testing**
   - Establish baseline latency/quality with 10+ samples using `gemma3:4b`.
-  - Correlate audio duration (1s, 5s, 10s, 30s) with processing time.
+  - Correlate audio duration with processing time.
 - [ ] **Phase D: Distribution Prep**
-  - Configure `electron-builder` for production distribution (Windows NSIS/Portable).
+  - Configure `electron-builder` for production distribution.
 
 ## ⚠️ Known Issues / Broken
 
@@ -54,29 +50,27 @@
 
 ### Priority Order
 1. **Baseline Testing (Phase A.4)**:
-   - Run the manual test script at `docs/qa/MANUAL_TEST_SCRIPT.txt`.
-   - Use the `/test-diktate` workflow to analyze result logs.
-2. **Establish Baseline**: Document latency for `gemma3:4b` in `docs/BENCHMARKS.md`.
-3. **Distribution Setup**: Verify `extraResources` in `package.json` and attempt a build.
+   - Run manual test script at `docs/qa/TEST_DRILL.md`.
+   - Use `/test-diktate` to verify results.
+2. **Distribution Setup**: Attempt a production build with `pnpm build` and `electron-builder`.
 
 ### Context Needed
-- `DEVELOPMENT_ROADMAP.md` (Phase A/D tasks).
-- `src/settings.ts` (View how hardware tier influences model warnings).
+- `python/ipc_server.py` (Check `_startup_warmup` and `start_recording` recovery logic).
+- `src/settings.ts` (Review model change detection logic).
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
+### 2026-01-19 21:30 - Gemini
+- **Feat:** Mandatory restart for model changes (Banner + Modal).
+- **Fix:** Restored `_process_ask_recording` and fixed recording errors.
+- **Feat:** Async background warmup on startup (Dashboard shows "WARMING UP").
+- **Fix:** Centralized Python imports to resolve metadata errors.
+
 ### 2026-01-19 20:20 - Gemini
 - **Feat:** Automated hardware detection on startup.
-- **Fix:** Restored VRAM-aware model warnings in all dropdowns.
-- **Fix:** Fixed IPC validation for numerical settings.
-- **UI:** Dashboard buttons made visual-only; settings sidebar simplified.
+- **Fix:** Restored VRAM-aware model warnings.
 
 ### 2026-01-19 19:53 - Gemini
 - **Fix:** Resolved "Mode dropdown not populating" bug.
-- **UI:** Unified hotkey styles and clarified startup settings.
-
-### 2026-01-19 19:28 - Gemini
-- **Feat:** Ollama Auto-Start & Warmup implementation.
-- **Feat:** Service control buttons in Ollama tab.

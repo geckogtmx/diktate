@@ -86,6 +86,28 @@ Market analysis, positioning, and go-to-market strategy for dIKtate.
 | **Ollama** | Uses Ollama for LLM | dIKtate is end-user product, Ollama is infrastructure |
 | **Talon Voice** | Hands-free computing | Talon is for accessibility/control; dIKtate is for text input |
 
+### Detailed Breakdown vs. Major Players
+
+**1. vs. Dragon Professional**
+*   **The Difference:** Dragon is rigid, requiring memorized commands ("Capitalize that").
+*   **dIKtate's Edge:** Intelligent "Smart" Dictation using LLMs. You can speak naturally, stutter, or ask for formatting ("make that a bullet list"), and dIKtate figures it out.
+*   **Winner:** **Dragon** for specialized Legal/Medical vocabularies. **dIKtate** for everyone else who wants modern, casual dictation.
+
+**2. vs. Otter.ai**
+*   **The Difference:** Otter is a *meeting recorder* that lives in the cloud.
+*   **dIKtate's Edge:** A **productivity tool** that types directly into your apps (Word, VS Code, Slack). No cloud storage, no data risk.
+*   **Winner:** **Otter** for Zoom calls. **dIKtate** for writing and drafting.
+
+**3. vs. Superwhisper / MacWhisper**
+*   **The Difference:** Excellent apps, but exclusive to macOS.
+*   **dIKtate's Edge:** The **Windows** answer to MacWhisper. High-quality, local Whisper experience for PC users.
+*   **Winner:** **Tie.** (Use MacWhisper on Mac, dIKtate on Windows).
+
+**4. vs. Apple & Google Dictation**
+*   **The Difference:** "Dumb" pipes that struggle with accents and have time limits.
+*   **dIKtate's Edge:** **Unlimited duration** and **Whisper V3 Large** accuracy. Handles technical jargon and accents far better than Siri/Google.
+*   **Winner:** **dIKtate** (by a landslide) for anything longer than a text message.
+
 ### Competitive Gaps We Fill
 
 1. **No good Windows local dictation** - WisprFlow is macOS-only

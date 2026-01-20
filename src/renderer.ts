@@ -12,6 +12,8 @@ interface Window {
         getInitialState: () => Promise<any>;
         setSetting: (key: string, value: any) => Promise<void>;
         onPlaySound: (callback: (soundName: string) => void) => void;
+        onBadgeUpdate: (callback: (badges: { processor?: string }) => void) => void;
+        onModeChange: (callback: (mode: string) => void) => void;
     };
 }
 
@@ -74,6 +76,7 @@ const STATUS_MESSAGES: Record<string, { text: string; message: string; typing?: 
     transcribing: { text: 'TRANSCRIBING', message: 'Converting speech to text', typing: true },
     processing: { text: 'THINKING', message: 'Polishing your text', typing: true },
     injecting: { text: 'TYPING', message: 'Inserting text', typing: true },
+    warmup: { text: 'WARMING UP', message: 'Loading model into memory...', typing: true },
     error: { text: 'ERROR', message: 'Something went wrong' }
 };
 
@@ -87,6 +90,7 @@ function setStatus(state: string) {
     else if (s.includes('transcrib')) stateKey = 'transcribing';
     else if (s.includes('processing') || s.includes('thinking')) stateKey = 'processing';
     else if (s.includes('inject') || s.includes('typing')) stateKey = 'injecting';
+    else if (s.includes('warmup') || s.includes('loading')) stateKey = 'warmup';
     else if (s.includes('error')) stateKey = 'error';
 
     const statusInfo = STATUS_MESSAGES[stateKey] || STATUS_MESSAGES.idle;

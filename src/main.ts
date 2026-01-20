@@ -556,9 +556,99 @@ function setupPythonEventHandlers(): void {
 }
 
 /**
+ * Synchronize current Electron store settings with the Python backend
+ */
+async function syncPythonConfig(): Promise<void> {
+  if (!pythonManager || !pythonManager.isProcessRunning()) return;
+
+  const processingMode = store.get('processingMode', 'local');
+  const defaultMode = store.get('defaultMode', 'standard');
+  const transMode = store.get('transMode', 'none');
+
+  // Check for mode-specific model override
+  const specificModel = store.get(`modeModel_${defaultMode}` as any);
+  const defaultOllamaModel = specificModel || store.get('defaultOllamaModel', 'gemma3:4b');
+
+  const config: any = {
+    provider: processingMode,
+    mode: defaultMode,
+    transMode: transMode,
+    defaultModel: defaultOllamaModel
+  };
+
+  // Get API key if needed
+  try {
+    let apiKey: string | undefined;
+    let storeKey: string | undefined;
+
+    if (processingMode === 'cloud' || processingMode === 'gemini') storeKey = 'encryptedGeminiApiKey';
+    else if (processingMode === 'anthropic') storeKey = 'encryptedAnthropicApiKey';
+    else if (processingMode === 'openai') storeKey = 'encryptedOpenaiApiKey';
+
+    if (storeKey) {
+      const encrypted = store.get(storeKey as any) as string | undefined;
+      if (encrypted && safeStorage.isEncryptionAvailable()) {
+        apiKey = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
+        config.apiKey = apiKey;
+      }
+    }
+  } catch (e) {
+    logger.error('MAIN', 'Failed to decrypt API key for sync', e);
+  }
+
+  try {
+    logger.info('MAIN', 'Syncing config to Python', {
+      mode: config.mode,
+      provider: config.provider,
+      model: config.defaultModel
+    });
+    await pythonManager.setConfig(config);
+
+    // Update badge in status window
+    if (debugWindow && !debugWindow.isDestroyed()) {
+      debugWindow.webContents.send('badge-update', { processor: config.defaultModel });
+      debugWindow.webContents.send('mode-update', config.mode);
+      debugWindow.webContents.send('provider-update', config.provider);
+    }
+  } catch (err) {
+    logger.error('MAIN', 'Failed to sync config to Python', err);
+  }
+}
+
+/**
  * Setup IPC handlers for communication with Python
  */
 function setupIpcHandlers(): void {
+  // Handle get-initial-state
+  ipcMain.handle('get-initial-state', async () => {
+    const currentMode = store.get('defaultMode') || 'standard';
+
+    let models = { transcriber: 'Unknown', processor: 'Unknown' };
+    if (pythonManager && pythonManager.isProcessRunning()) {
+      try {
+        const result = await pythonManager.sendCommand('status');
+        if (result) {
+          if (result.transcriber) models.transcriber = result.transcriber;
+          if (result.processor) models.processor = result.processor;
+        }
+      } catch (e) {
+        logger.warn('MAIN', 'Failed to fetch python status for initial state', e);
+      }
+    }
+
+    const actualProcessingMode = store.get('processingMode', 'local');
+
+    return {
+      status: pythonManager?.getStatus() || 'disconnected',
+      isRecording,
+      mode: currentMode,
+      models,
+      soundFeedback: store.get('soundFeedback', true),
+      processingMode: actualProcessingMode,
+      recordingMode: recordingMode
+    };
+  });
+
   ipcMain.handle('python:start-recording', async () => {
     if (!isRecording) await toggleRecording();
     return { success: true };
@@ -592,6 +682,7 @@ function setupIpcHandlers(): void {
       throw new Error(`Invalid payload: ${validation.error}`);
     }
 
+    logger.info('IPC', `Setting update: ${key} = ${value}`);
     store.set(key, value);
 
     // If hotkey changed, re-register
@@ -599,102 +690,17 @@ function setupIpcHandlers(): void {
       setupGlobalHotkey(); // Re-register with new key
     }
 
-    // If processing mode changed (Standard/Professional/Literal)
-    if (key === 'defaultMode' && pythonManager) {
-      logger.info('IPC', `Default mode changed to ${value}, updating Python`);
-      pythonManager.setConfig({ mode: value }).catch(err => {
-        logger.error('IPC', 'Failed to update Python config', err);
+    // Trigger sync for core processing modes (non-model changes)
+    const syncKeys = [
+      'defaultMode',
+      'processingMode',
+      'transMode'
+    ];
+
+    if (syncKeys.includes(key as string)) {
+      syncPythonConfig().catch(err => {
+        logger.error('IPC', 'Post-setting sync failed', err);
       });
-
-      // Update Debug Window UI
-      if (debugWindow && !debugWindow.isDestroyed()) {
-        debugWindow.webContents.send('mode-update', value);
-      }
-    }
-
-    // If processing provider changed (local/cloud/anthropic/openai)
-    if (key === 'processingMode' && pythonManager) {
-      logger.info('IPC', `Processing provider changed to ${value}, updating Python`);
-
-      // Decrypt and pass API key for cloud providers
-      let apiKey: string | undefined;
-      try {
-        if (value === 'cloud' || value === 'gemini') {
-          const encrypted = store.get('encryptedGeminiApiKey') as string | undefined;
-          if (encrypted && safeStorage.isEncryptionAvailable()) {
-            apiKey = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
-          }
-        } else if (value === 'anthropic') {
-          const encrypted = store.get('encryptedAnthropicApiKey') as string | undefined;
-          if (encrypted && safeStorage.isEncryptionAvailable()) {
-            apiKey = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
-          }
-        } else if (value === 'openai') {
-          const encrypted = store.get('encryptedOpenaiApiKey') as string | undefined;
-          if (encrypted && safeStorage.isEncryptionAvailable()) {
-            apiKey = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
-          }
-        }
-      } catch (e) {
-        logger.error('IPC', 'Failed to decrypt API key', e);
-      }
-
-      pythonManager.setConfig({ provider: value, apiKey }).then(() => {
-        // Refresh badges after successful provider switch
-        if (debugWindow && !debugWindow.isDestroyed()) {
-          pythonManager!.sendCommand('status').then((result: any) => {
-            if (result?.processor) {
-              debugWindow!.webContents.send('badge-update', { processor: result.processor });
-            }
-          }).catch(() => { });
-        }
-      }).catch(err => {
-        logger.error('IPC', 'Failed to update Python provider', err);
-      });
-
-      // Update Debug Window UI with new provider
-      if (debugWindow && !debugWindow.isDestroyed()) {
-        debugWindow.webContents.send('provider-update', value);
-      }
-
-      // Update tray tooltip to show current mode
-      if (tray) {
-        tray.setToolTip(`dIKtate [${value.toUpperCase()}] - Press Ctrl+Alt+D to dictate`);
-      }
-    }
-
-    // If translation mode changed (none/es-en/en-es)
-    if (key === 'transMode' && pythonManager) {
-      logger.info('IPC', `Translation mode changed to ${value}, updating Python`);
-      pythonManager.setConfig({ transMode: value }).catch(err => {
-        logger.error('IPC', 'Failed to update Python transMode', err);
-      });
-    }
-
-    // If default Ollama model changed
-    if (key === 'defaultOllamaModel' && pythonManager) {
-      logger.info('IPC', `Default Ollama model changed to ${value}, updating Python`);
-      pythonManager.setConfig({ defaultModel: value }).catch(err => {
-        logger.error('IPC', 'Failed to update Python default model', err);
-      });
-      // Update tray tooltip to show new model
-      updateTrayTooltip();
-      // Update tray menu to show new model
-      if (tray) {
-        const currentState = isRecording ? (recordingMode === 'ask' ? 'Listening (Ask)' : 'Recording') : 'Idle';
-        updateTrayState(currentState);
-      }
-      // Update Status Window badge with new model
-      if (debugWindow && !debugWindow.isDestroyed()) {
-        debugWindow.webContents.send('badge-update', { processor: value });
-      }
-    }
-
-
-    // If processing mode changed
-    if (key === 'processingMode') {
-      // Update tray tooltip to show new mode
-      updateTrayTooltip();
     }
 
     // If auto-start setting changed
@@ -709,274 +715,283 @@ function setupIpcHandlers(): void {
         logger.error('IPC', 'Failed to set auto-start', err);
       }
     }
+
+    return { success: true };
   });
 
-  // Settings get single value
-  ipcMain.handle('settings:get', (_event, key: string) => {
-    return store.get(key);
-  });
-
-  // Sound playback handler
-  ipcMain.handle('settings:play-sound', async (_event, soundName: string) => {
-    playSound(soundName);
-  });
-
-  // Hardware test handler
-  ipcMain.handle('settings:run-hardware-test', async () => {
-    try {
-      const { exec } = require('child_process');
-
-      let gpu = 'Unknown';
-      let vram = 'Unknown';
-      let tier = 'Fast (CPU-optimized)';
-
-      // Try to get NVIDIA GPU info using nvidia-smi
-      return new Promise((resolve) => {
-        exec('nvidia-smi --query-gpu=name,memory.total --format=csv,noheader', (err: Error | null, stdout: string) => {
-          if (err || !stdout.trim()) {
-            // No NVIDIA GPU found, try to detect any GPU
-            logger.info('IPC', 'No NVIDIA GPU detected, using CPU mode');
-            resolve({
-              gpu: 'CPU Mode',
-              vram: 'N/A',
-              tier: 'Fast (CPU-optimized)',
-              speed: 0
-            });
-            return;
-          }
-
-          // Parse nvidia-smi output
-          const parts = stdout.trim().split(',').map((s: string) => s.trim());
-          gpu = parts[0] || 'Unknown NVIDIA GPU';
-          vram = parts[1] || 'Unknown';
-
-          // Determine tier based on VRAM
-          const vramMB = parseInt(vram.replace(/[^\d]/g, ''));
-          if (vramMB >= 12000) {
-            tier = 'Quality (12GB+ VRAM)';
-          } else if (vramMB >= 6000) {
-            tier = 'Balanced (6-12GB VRAM)';
-          } else if (vramMB >= 4000) {
-            tier = 'Fast (4-6GB VRAM)';
-          } else {
-            tier = 'Fast (Low VRAM)';
-          }
-
-          logger.info('IPC', `Hardware test complete: ${gpu}, ${vram}, ${tier}`);
-          resolve({ gpu, vram, tier, speed: 0 });
-        });
-      });
-    } catch (err) {
-      logger.error('IPC', 'Hardware test failed', err);
-      return {
-        gpu: 'Test failed',
-        vram: 'Test failed',
-        tier: 'Unknown',
-        speed: 0
-      };
-    }
-  });
-  ipcMain.handle('apikey:get-all', () => {
-    // Return object indicating which keys are set (not the actual keys)
-    return {
-      geminiApiKey: !!store.get('encryptedGeminiApiKey'),
-      anthropicApiKey: !!store.get('encryptedAnthropicApiKey'),
-      openaiApiKey: !!store.get('encryptedOpenaiApiKey')
-    };
-  });
-
-  ipcMain.handle('apikey:set', async (_event, provider: string, key: string) => {
-    if (!safeStorage.isEncryptionAvailable()) {
-      logger.warn('IPC', 'safeStorage encryption not available');
-      throw new Error('Encryption not available');
-    }
-
-    // Validate payload
-    const validation = validateIpcMessage(ApiKeySetSchema, { provider, key });
-    if (!validation.success) {
-      logger.error('IPC', `Invalid API key payload: ${redactSensitive(validation.error)}`);
-      throw new Error(`Invalid payload: ${validation.error}`);
-    }
-
-    const encrypted = safeStorage.encryptString(key);
-    const storeKey = `encrypted${provider.charAt(0).toUpperCase() + provider.slice(1)}ApiKey`;
-    store.set(storeKey, encrypted.toString('base64'));
-    logger.info('IPC', `API key for ${provider} stored securely`);
-
-    // Also update Python with the new key
-    if (pythonManager) {
-      pythonManager.setConfig({ [`${provider}ApiKey`]: key }).catch(err => {
-        logger.error('IPC', `Failed to update Python with ${provider} API key`, err);
-      });
-    }
-  });
-
-  // Rate limiting for API key testing (M4 security fix)
-  const apiKeyTestAttempts = new Map<string, { count: number; resetTime: number }>();
-  const MAX_KEY_TESTS_PER_MINUTE = 5;
-
-  ipcMain.handle('apikey:test', async (_event, provider: string, key: string) => {
-    // Rate limit check
-    const now = Date.now();
-    const rateLimit = apiKeyTestAttempts.get(provider);
-    if (rateLimit) {
-      if (now < rateLimit.resetTime) {
-        if (rateLimit.count >= MAX_KEY_TESTS_PER_MINUTE) {
-          logger.warn('IPC', `Rate limit exceeded for ${provider} API key testing`);
-          return { success: false, error: 'Rate limit exceeded. Please wait 1 minute.' };
-        }
-        rateLimit.count++;
-      } else {
-        // Reset after 1 minute
-        apiKeyTestAttempts.set(provider, { count: 1, resetTime: now + 60000 });
-      }
-    } else {
-      apiKeyTestAttempts.set(provider, { count: 1, resetTime: now + 60000 });
-    }
-
-    // Validate payload
-    const validation = validateIpcMessage(ApiKeyTestSchema, { provider, key });
-    if (!validation.success) {
-      return { success: false, error: validation.error };
-    }
-
-    // If empty key passed, retrieve the stored encrypted key
-    let testKey = key;
-    if (!key) {
-      const storeKey = `encrypted${provider.charAt(0).toUpperCase() + provider.slice(1)}ApiKey`;
-      const storedKey = store.get(storeKey);
-
-      if (storedKey && safeStorage.isEncryptionAvailable()) {
-        try {
-          testKey = safeStorage.decryptString(Buffer.from(storedKey as string, 'base64'));
-        } catch (e) {
-          return { success: false, error: 'Failed to decrypt stored key' };
-        }
-      } else {
-        return { success: false, error: 'No saved key found' };
-      }
-    }
-
-    // Simple validation test for each provider
-    try {
-
-      if (provider === 'gemini') {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${testKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: 'Hi' }] }] })
-          }
-        );
-        if (response.ok) return { success: true };
-        const error = await response.json();
-        return { success: false, error: error.error?.message || 'Invalid key' };
-      } else if (provider === 'anthropic') {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': testKey,
-            'anthropic-version': '2023-06-01'
-          },
-          body: JSON.stringify({ model: 'claude-3-haiku-20240307', max_tokens: 1, messages: [{ role: 'user', content: 'Hi' }] })
-        });
-        if (response.ok) return { success: true };
-        const error = await response.json();
-        return { success: false, error: error.error?.message || 'Invalid key' };
-      } else if (provider === 'openai') {
-        const response = await fetch('https://api.openai.com/v1/models', {
-          headers: { 'Authorization': `Bearer ${testKey}` }
-        });
-        if (response.ok) return { success: true };
-        const error = await response.json();
-        return { success: false, error: error.error?.message || 'Invalid key' };
-      }
-      return { success: false, error: 'Unknown provider' };
-    } catch (e) {
-      return { success: false, error: String(e) };
-    }
-  });
-
-  // Ollama Service Control
-  ipcMain.handle('ollama:restart', async () => {
-    try {
-      logger.info('IPC', 'Restarting Ollama service...');
-      const { exec, spawn } = await import('child_process');
-      const util = await import('util');
-      const execPromise = util.promisify(exec);
-
-      // Kill existing Ollama process (Windows)
-      try {
-        await execPromise('taskkill /F /IM ollama.exe');
-        logger.info('IPC', 'Ollama process terminated');
-      } catch (e) {
-        // Ignore errors if not running
-        logger.info('IPC', 'No existing Ollama process found');
-      }
-
-      // Wait 2 seconds
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Start Ollama again
-      const ollamaProcess = spawn('ollama', ['serve'], {
-        detached: true,
-        stdio: 'ignore',
-        windowsHide: true
-      });
-      ollamaProcess.unref();
-
-      logger.info('IPC', 'Ollama service started');
-
-      // Wait for startup
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Verify it's running
-      const response = await fetch('http://localhost:11434/api/tags');
-      if (response.ok) {
-        logger.info('IPC', 'Ollama restart successful');
-        return { success: true };
-      } else {
-        logger.error('IPC', 'Ollama failed to start after restart');
-        return { success: false, error: 'Ollama failed to start' };
-      }
-    } catch (error) {
-      logger.error('IPC', 'Failed to restart Ollama', error);
-      return { success: false, error: String(error) };
-    }
-  });
-
-  ipcMain.handle('ollama:warmup', async () => {
-    try {
-      const defaultModel = store.get('defaultOllamaModel', 'gemma3:4b');
-      logger.info('IPC', `Warming up model: ${defaultModel}`);
-
-      const response = await fetch('http://localhost:11434/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: defaultModel,
-          prompt: '',
-          stream: false,
-          options: { num_ctx: 2048, num_predict: 1 },
-          keep_alive: '10m'
-        })
-      });
-
-      if (response.ok) {
-        logger.info('IPC', `Model ${defaultModel} warmed up successfully`);
-        return { success: true, model: defaultModel };
-      } else {
-        logger.error('IPC', `Model warmup failed with status ${response.status}`);
-        return { success: false, error: `HTTP ${response.status}` };
-      }
-    } catch (error) {
-      logger.error('IPC', 'Failed to warm up model', error);
-      return { success: false, error: String(error) };
-    }
+  // App Relaunch handler
+  ipcMain.handle('app:relaunch', () => {
+    logger.info('MAIN', 'Application relaunch requested');
+    app.relaunch();
+    app.exit(0);
   });
 }
+
+// Settings get single value
+ipcMain.handle('settings:get', (_event, key: string) => {
+  return store.get(key);
+});
+
+// Sound playback handler
+ipcMain.handle('settings:play-sound', async (_event, soundName: string) => {
+  playSound(soundName);
+});
+
+// Hardware test handler
+ipcMain.handle('settings:run-hardware-test', async () => {
+  try {
+    const { exec } = require('child_process');
+
+    let gpu = 'Unknown';
+    let vram = 'Unknown';
+    let tier = 'Fast (CPU-optimized)';
+
+    // Try to get NVIDIA GPU info using nvidia-smi
+    return new Promise((resolve) => {
+      exec('nvidia-smi --query-gpu=name,memory.total --format=csv,noheader', (err: Error | null, stdout: string) => {
+        if (err || !stdout.trim()) {
+          // No NVIDIA GPU found, try to detect any GPU
+          logger.info('IPC', 'No NVIDIA GPU detected, using CPU mode');
+          resolve({
+            gpu: 'CPU Mode',
+            vram: 'N/A',
+            tier: 'Fast (CPU-optimized)',
+            speed: 0
+          });
+          return;
+        }
+
+        // Parse nvidia-smi output
+        const parts = stdout.trim().split(',').map((s: string) => s.trim());
+        gpu = parts[0] || 'Unknown NVIDIA GPU';
+        vram = parts[1] || 'Unknown';
+
+        // Determine tier based on VRAM
+        const vramMB = parseInt(vram.replace(/[^\d]/g, ''));
+        if (vramMB >= 12000) {
+          tier = 'Quality (12GB+ VRAM)';
+        } else if (vramMB >= 6000) {
+          tier = 'Balanced (6-12GB VRAM)';
+        } else if (vramMB >= 4000) {
+          tier = 'Fast (4-6GB VRAM)';
+        } else {
+          tier = 'Fast (Low VRAM)';
+        }
+
+        logger.info('IPC', `Hardware test complete: ${gpu}, ${vram}, ${tier}`);
+        resolve({ gpu, vram, tier, speed: 0 });
+      });
+    });
+  } catch (err) {
+    logger.error('IPC', 'Hardware test failed', err);
+    return {
+      gpu: 'Test failed',
+      vram: 'Test failed',
+      tier: 'Unknown',
+      speed: 0
+    };
+  }
+});
+ipcMain.handle('apikey:get-all', () => {
+  // Return object indicating which keys are set (not the actual keys)
+  return {
+    geminiApiKey: !!store.get('encryptedGeminiApiKey'),
+    anthropicApiKey: !!store.get('encryptedAnthropicApiKey'),
+    openaiApiKey: !!store.get('encryptedOpenaiApiKey')
+  };
+});
+
+ipcMain.handle('apikey:set', async (_event, provider: string, key: string) => {
+  if (!safeStorage.isEncryptionAvailable()) {
+    logger.warn('IPC', 'safeStorage encryption not available');
+    throw new Error('Encryption not available');
+  }
+
+  // Validate payload
+  const validation = validateIpcMessage(ApiKeySetSchema, { provider, key });
+  if (!validation.success) {
+    logger.error('IPC', `Invalid API key payload: ${redactSensitive(validation.error)}`);
+    throw new Error(`Invalid payload: ${validation.error}`);
+  }
+
+  const encrypted = safeStorage.encryptString(key);
+  const storeKey = `encrypted${provider.charAt(0).toUpperCase() + provider.slice(1)}ApiKey`;
+  store.set(storeKey, encrypted.toString('base64'));
+  logger.info('IPC', `API key for ${provider} stored securely`);
+
+  // Also update Python with the new key
+  if (pythonManager) {
+    pythonManager.setConfig({ [`${provider}ApiKey`]: key }).catch(err => {
+      logger.error('IPC', `Failed to update Python with ${provider} API key`, err);
+    });
+  }
+});
+
+// Rate limiting for API key testing (M4 security fix)
+const apiKeyTestAttempts = new Map<string, { count: number; resetTime: number }>();
+const MAX_KEY_TESTS_PER_MINUTE = 5;
+
+ipcMain.handle('apikey:test', async (_event, provider: string, key: string) => {
+  // Rate limit check
+  const now = Date.now();
+  const rateLimit = apiKeyTestAttempts.get(provider);
+  if (rateLimit) {
+    if (now < rateLimit.resetTime) {
+      if (rateLimit.count >= MAX_KEY_TESTS_PER_MINUTE) {
+        logger.warn('IPC', `Rate limit exceeded for ${provider} API key testing`);
+        return { success: false, error: 'Rate limit exceeded. Please wait 1 minute.' };
+      }
+      rateLimit.count++;
+    } else {
+      // Reset after 1 minute
+      apiKeyTestAttempts.set(provider, { count: 1, resetTime: now + 60000 });
+    }
+  } else {
+    apiKeyTestAttempts.set(provider, { count: 1, resetTime: now + 60000 });
+  }
+
+  // Validate payload
+  const validation = validateIpcMessage(ApiKeyTestSchema, { provider, key });
+  if (!validation.success) {
+    return { success: false, error: validation.error };
+  }
+
+  // If empty key passed, retrieve the stored encrypted key
+  let testKey = key;
+  if (!key) {
+    const storeKey = `encrypted${provider.charAt(0).toUpperCase() + provider.slice(1)}ApiKey`;
+    const storedKey = store.get(storeKey);
+
+    if (storedKey && safeStorage.isEncryptionAvailable()) {
+      try {
+        testKey = safeStorage.decryptString(Buffer.from(storedKey as string, 'base64'));
+      } catch (e) {
+        return { success: false, error: 'Failed to decrypt stored key' };
+      }
+    } else {
+      return { success: false, error: 'No saved key found' };
+    }
+  }
+
+  // Simple validation test for each provider
+  try {
+
+    if (provider === 'gemini') {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${testKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: 'Hi' }] }] })
+        }
+      );
+      if (response.ok) return { success: true };
+      const error = await response.json();
+      return { success: false, error: error.error?.message || 'Invalid key' };
+    } else if (provider === 'anthropic') {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': testKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({ model: 'claude-3-haiku-20240307', max_tokens: 1, messages: [{ role: 'user', content: 'Hi' }] })
+      });
+      if (response.ok) return { success: true };
+      const error = await response.json();
+      return { success: false, error: error.error?.message || 'Invalid key' };
+    } else if (provider === 'openai') {
+      const response = await fetch('https://api.openai.com/v1/models', {
+        headers: { 'Authorization': `Bearer ${testKey}` }
+      });
+      if (response.ok) return { success: true };
+      const error = await response.json();
+      return { success: false, error: error.error?.message || 'Invalid key' };
+    }
+    return { success: false, error: 'Unknown provider' };
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+});
+
+// Ollama Service Control
+ipcMain.handle('ollama:restart', async () => {
+  try {
+    logger.info('IPC', 'Restarting Ollama service...');
+    const { exec, spawn } = await import('child_process');
+    const util = await import('util');
+    const execPromise = util.promisify(exec);
+
+    // Kill existing Ollama process (Windows)
+    try {
+      await execPromise('taskkill /F /IM ollama.exe');
+      logger.info('IPC', 'Ollama process terminated');
+    } catch (e) {
+      // Ignore errors if not running
+      logger.info('IPC', 'No existing Ollama process found');
+    }
+
+    // Wait 2 seconds
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Start Ollama again
+    const ollamaProcess = spawn('ollama', ['serve'], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true
+    });
+    ollamaProcess.unref();
+
+    logger.info('IPC', 'Ollama service started');
+
+    // Wait for startup
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // Verify it's running
+    const response = await fetch('http://localhost:11434/api/tags');
+    if (response.ok) {
+      logger.info('IPC', 'Ollama restart successful');
+      return { success: true };
+    } else {
+      logger.error('IPC', 'Ollama failed to start after restart');
+      return { success: false, error: 'Ollama failed to start' };
+    }
+  } catch (error) {
+    logger.error('IPC', 'Failed to restart Ollama', error);
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle('ollama:warmup', async () => {
+  try {
+    const defaultModel = store.get('defaultOllamaModel', 'gemma3:4b');
+    logger.info('IPC', `Warming up model: ${defaultModel}`);
+
+    const response = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: defaultModel,
+        prompt: '',
+        stream: false,
+        options: { num_ctx: 2048, num_predict: 1 },
+        keep_alive: '10m'
+      })
+    });
+
+    if (response.ok) {
+      logger.info('IPC', `Model ${defaultModel} warmed up successfully`);
+      return { success: true, model: defaultModel };
+    } else {
+      logger.error('IPC', `Model warmup failed with status ${response.status}`);
+      return { success: false, error: `HTTP ${response.status}` };
+    }
+  } catch (error) {
+    logger.error('IPC', 'Failed to warm up model', error);
+    return { success: false, error: String(error) };
+  }
+});
 
 /**
  * Toggle recording state
@@ -1148,42 +1163,6 @@ async function initialize(): Promise<void> {
       }
     });
 
-    // Handle get-initial-state
-    ipcMain.handle('get-initial-state', async () => {
-      const currentMode = store.get('defaultMode') || 'standard';
-
-      let models = { transcriber: 'Unknown', processor: 'Unknown' };
-      if (pythonManager && pythonManager.isProcessRunning()) {
-        try {
-          const result = await pythonManager.sendCommand('status');
-          // sendCommand returns the content of 'data' directly if success=True (see PythonManager.ts:156)
-          // Wait, PythonManager.ts:156 says: resolve(response.data);
-          // And ipc_server.py returns { success: true, data: { transcriber: ..., processor: ... } }
-          // So 'result' here IS the inner data object.
-
-          if (result) {
-            if (result.transcriber) models.transcriber = result.transcriber;
-            if (result.processor) models.processor = result.processor;
-          }
-        } catch (e) {
-          logger.warn('MAIN', 'Failed to fetch python status for initial state', e);
-        }
-      }
-
-      // Use stored processingMode (user's preference controls the setting)
-      const actualProcessingMode = store.get('processingMode', 'local');
-
-      return {
-        status: pythonManager?.getStatus() || 'disconnected',
-        isRecording,
-        mode: currentMode,
-        models,
-        soundFeedback: store.get('soundFeedback', true),
-        processingMode: actualProcessingMode,
-        recordingMode: recordingMode
-      };
-    });
-
     // Setup IPC handlers
     setupIpcHandlers();
     logger.info('MAIN', 'IPC handlers registered');
@@ -1201,10 +1180,7 @@ async function initialize(): Promise<void> {
       logger.info('MAIN', 'Running in DEVELOPMENT mode');
     } else {
       // Production - use bundled executable
-      // In production, resources are at: app.asar/../bin/diktate-engine.exe
-      // process.resourcesPath points to the folder containing app.asar
       pythonExePath = path.join(process.resourcesPath, 'bin', 'diktate-engine.exe');
-      // For executable, the script path argument is ignored or handled internally by the frozen app
       pythonScriptPath = '';
       logger.info('MAIN', 'Running in PRODUCTION mode');
     }
@@ -1214,7 +1190,8 @@ async function initialize(): Promise<void> {
     setupPythonEventHandlers();
 
     await pythonManager.start();
-    logger.info('MAIN', 'dIKtate initialized successfully');
+    await syncPythonConfig();
+    logger.info('MAIN', 'dIKtate initialized and config synced successfully');
 
   } catch (error) {
     logger.error('MAIN', 'Failed to initialize application', error);

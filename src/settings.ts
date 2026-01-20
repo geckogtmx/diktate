@@ -10,7 +10,7 @@ interface SettingsAPI {
     getAll: () => Promise<any>;
     get: (key: string) => Promise<any>;
     set: (key: string, value: any) => Promise<void>;
-    saveAudioDevice: (deviceId: string, deviceLabel: string) => void;
+    saveAudioDevice: (deviceId: string, deviceLabel: string) => Promise<void>;
     openExternal: (url: string) => void;
     // API Key methods
     getApiKeys: () => Promise<Record<string, boolean>>;
@@ -20,6 +20,8 @@ interface SettingsAPI {
     playSound: (soundName: string) => Promise<void>;
     // Hardware testing
     runHardwareTest: () => Promise<{ gpu: string; vram: string; tier: string; speed: number }>;
+    // App Control
+    relaunchApp: () => void;
 }
 
 interface Window {
@@ -28,6 +30,8 @@ interface Window {
 
 // State
 let isRecordingHotkey = false;
+let initialModels: Record<string, string> = {};
+let hasModelChanges = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -35,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const settings = await window.settingsAPI.getAll();
         loadSettings(settings);
 
-        await refreshAudioDevices(settings.audioDeviceId);
+        await refreshAudioDevices(settings.audioDeviceId, settings.audioDeviceLabel);
 
         // Run hardware test first so warnings can be applied to models
         await runHardwareTest();
@@ -47,13 +51,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         await populateModeModelDropdowns();
 
         await loadApiKeyStatuses();
+
+        // Capture initial model selections for change detection
+        const defaultSelect = document.getElementById('default-model') as HTMLSelectElement;
+        if (defaultSelect) initialModels['default'] = defaultSelect.value;
+
+        const modes = ['standard', 'prompt', 'professional'];
+        for (const mode of modes) {
+            const select = document.getElementById(`model-${mode}`) as HTMLSelectElement;
+            if (select) initialModels[`modeModel_${mode}`] = select.value;
+        }
+
     } catch (e) {
         console.error('Failed to load settings:', e);
     }
 });
 
 // Audio Device Handling
-async function refreshAudioDevices(selectedId: string | undefined) {
+async function refreshAudioDevices(selectedId: string | undefined, selectedLabel: string | undefined) {
     const select = document.getElementById('audio-device') as HTMLSelectElement | null;
     if (!select) return;
 
@@ -84,11 +99,31 @@ async function refreshAudioDevices(selectedId: string | undefined) {
         // Restore selection
         if (selectedId) {
             select.value = selectedId;
+
+            // FALLBACK: If ID didn't match (e.g. browser re-randomized IDs), try to match by label
+            if (select.value !== selectedId && selectedLabel) {
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].text === selectedLabel) {
+                        select.selectedIndex = i;
+                        console.log('Restored audio selection via label fallback:', selectedLabel);
+                        break;
+                    }
+                }
+            }
         }
 
         // Handle change
-        select.onchange = () => {
-            window.settingsAPI.saveAudioDevice(select.value, select.options[select.selectedIndex].text);
+        // Handle change
+        select.onchange = async () => {
+            const deviceId = select.value;
+            const label = select.options[select.selectedIndex].text;
+            console.log('Saving audio device:', deviceId, label);
+            try {
+                await window.settingsAPI.saveAudioDevice(deviceId, label);
+                console.log('Audio device saved successfully');
+            } catch (error) {
+                console.error('Failed to save audio device:', error);
+            }
         };
 
     } catch (err) {
@@ -333,19 +368,68 @@ async function testApiKey(provider: string) {
 (window as any).recordHotkey = recordHotkey;
 (window as any).resetHotkey = resetHotkey;
 (window as any).openExternalLink = openExternalLink;
-(window as any).saveApiKeys = saveApiKeys;
-(window as any).testApiKey = testApiKey;
-(window as any).previewSound = previewSound;
-(window as any).runHardwareTest = runHardwareTest;
-(window as any).launchOllamaUI = launchOllamaUI;
-(window as any).refreshOllamaModels = refreshOllamaModels;
-// Per-mode model functions
-(window as any).saveModeModel = saveModeModel;
-(window as any).onDefaultModelChange = onDefaultModelChange;
-// API Key management functions
 (window as any).saveApiKey = saveApiKey;
+(window as any).testApiKey = testApiKey;
 (window as any).testSavedApiKey = testSavedApiKey;
 (window as any).deleteApiKey = deleteApiKey;
+(window as any).refreshOllamaStatus = refreshOllamaStatus;
+(window as any).restartOllama = restartOllama;
+(window as any).warmupModel = warmupModel;
+(window as any).pullOllamaModel = pullOllamaModel;
+(window as any).onDefaultModelChange = onDefaultModelChange;
+(window as any).saveModeModel = saveModeModel;
+(window as any).saveOllamaSetting = saveOllamaSetting;
+(window as any).quickPullModel = quickPullModel;
+(window as any).showRestartModal = showRestartModal;
+(window as any).hideRestartModal = hideRestartModal;
+(window as any).relaunchApp = relaunchApp;
+
+
+// ============================================
+// Restart Modal Logic
+// ============================================
+
+function showRestartModal() {
+    const modal = document.getElementById('restart-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function hideRestartModal() {
+    const modal = document.getElementById('restart-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function relaunchApp() {
+    window.settingsAPI.relaunchApp();
+}
+
+function checkModelChanges() {
+    const banner = document.getElementById('restart-banner');
+    if (!banner) return;
+
+    // Check default model
+    const defaultSelect = document.getElementById('default-model') as HTMLSelectElement;
+    let changed = false;
+
+    if (defaultSelect && initialModels['default'] !== defaultSelect.value) {
+        changed = true;
+    }
+
+    // Check mode models
+    if (!changed) {
+        const modes = ['standard', 'prompt', 'professional'];
+        for (const mode of modes) {
+            const select = document.getElementById(`model-${mode}`) as HTMLSelectElement;
+            if (select && initialModels[`modeModel_${mode}`] !== select.value) {
+                changed = true;
+                break;
+            }
+        }
+    }
+
+    hasModelChanges = changed;
+    banner.style.display = changed ? 'flex' : 'none';
+}
 // Ollama tab functions
 (window as any).refreshOllamaStatus = refreshOllamaStatus;
 (window as any).pullOllamaModel = pullOllamaModel;
@@ -582,16 +666,12 @@ async function onDefaultModelChange(model: string) {
     // Save to settings
     await window.settingsAPI.set('defaultOllamaModel', model);
 
-    // Show status message
-    const statusEl = document.getElementById('model-change-status');
-    if (statusEl) {
-        statusEl.style.display = 'block';
-        statusEl.textContent = `✓ Model changed to ${model}! Will be used for next dictation.`;
+    // Update UI/Banner
+    checkModelChanges();
 
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            statusEl.style.display = 'none';
-        }, 5000);
+    // Show modal if it's different from initial
+    if (initialModels['default'] !== model) {
+        showRestartModal();
     }
 
     console.log(`Default model changed to: ${model}`);
@@ -600,6 +680,15 @@ async function onDefaultModelChange(model: string) {
 function saveModeModel(mode: string, model: string) {
     const key = `modeModel_${mode}` as any;
     window.settingsAPI.set(key, model);
+
+    // Update UI/Banner
+    checkModelChanges();
+
+    // Show modal if it's different from initial
+    if (initialModels[`modeModel_${mode}`] !== model) {
+        showRestartModal();
+    }
+
     console.log(`Saved model for ${mode} mode: ${model || 'default'}`);
 }
 

@@ -235,6 +235,68 @@
             color: var(--accent-color);
             background: var(--dark-teal);
         }
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--jet-black);
+            border: 1px solid var(--accent-color);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .modal h3 {
+            margin-top: 0;
+            color: #fca311;
+        }
+
+        .modal p {
+            color: #ccc;
+            line-height: 1.5;
+            margin-bottom: 25px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        /* WARNING BANNER */
+        #restart-banner {
+            display: none;
+            background: #4a3400;
+            border-left: 4px solid #fca311;
+            padding: 12px 20px;
+            margin: -30px -30px 20px -30px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #restart-banner .msg {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: #ffcc00;
+        }
     </style>
 </head>
 
@@ -251,6 +313,15 @@
 
 
     <div id="content">
+        <!-- Restart Warning Banner -->
+        <div id="restart-banner">
+            <div class="msg">
+                <span>⚠️ Restart Required to Apply Model Changes</span>
+            </div>
+            <button class="btn" style="background: #fca311; color: black; font-weight: bold;"
+                onclick="showRestartModal()">Restart Now</button>
+        </div>
+
         <!-- GENERAL TAB -->
         <div id="general" class="tab-content active">
             <h2>General Settings</h2>
@@ -724,6 +795,20 @@
                     Website</button>
                 <button class="btn btn-secondary"
                     onclick="openExternalLink('https://github.com/diktate/diktate')">GitHub</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restart Required Modal -->
+    <div id="restart-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>🔄 Restart Required</h3>
+            <p>Changing models requires a full application restart to ensure the new model is loaded correctly and
+                cleanly into memory.</p>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="hideRestartModal()">Later</button>
+                <button class="btn" style="background: #fca311; color: black; font-weight: bold;"
+                    onclick="relaunchApp()">Restart Now</button>
             </div>
         </div>
     </div>

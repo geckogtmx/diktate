@@ -67,6 +67,11 @@
             border-left-color: var(--dark-teal-3);
         }
 
+        .state-warmup {
+            background-color: rgba(255, 200, 0, 0.1);
+            border-left-color: #ffc800;
+        }
+
         @keyframes recording-pulse {
 
             0%,
@@ -117,6 +122,11 @@
             animation: dot-spin 1s linear infinite;
         }
 
+        .state-warmup #status-dot {
+            background-color: #ffc800;
+            animation: dot-warmup 1s ease-in-out infinite;
+        }
+
         @keyframes dot-pulse {
 
             0%,
@@ -138,6 +148,20 @@
 
             to {
                 box-shadow: 0 0 10px 3px transparent;
+            }
+        }
+
+        @keyframes dot-warmup {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.4);
+                opacity: 0.7;
             }
         }
 
