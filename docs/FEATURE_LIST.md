@@ -80,13 +80,17 @@
 
 \### Future Roadmap
 
-\- \*\*Floating Pill UI\*\* - Minimalist, draggable desktop overlay for status and control (v1.1).
+- **Floating Pill UI** - Minimalist, draggable desktop overlay for status and control (v1.1).
 
-\- \*\*Waveform Visualization\*\* - Real-time animated audio level display during recording (v1.1).
+- **Waveform Visualization** - Real-time animated audio level display during recording (v1.1).
 
-\- \*\*Extended History\*\* - Searchable local archive of past dictations and interactions (v1.1).
+- **MacOS Desktop Client** - Native desktop application for Apple Silicon and Intel Macs (v2.0).
 
-\- \*\*Mobile Companion App\*\* - iOS/Android app for remote microphone input (v2.0).
+- **iPhone Remote Mic** - Use your iPhone as a wireless high-quality input source (v2.0).
 
-\- \*\*Browser Ghost Pilot\*\* - Hands-free web navigation and control via voice agent (v2.0).
+- **Android Remote Mic** - Use your Android device as a wireless high-quality input source (v2.0).
+
+- **Streamer House Module** - Specialized broadcasting tools for multi-user streamer houses (v2.0).
+
+- **Browser Ghost Pilot** - Hands-free web navigation and control via voice agent (v2.0).
 
