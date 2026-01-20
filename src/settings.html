@@ -240,12 +240,12 @@
 
 <body>
     <div id="sidebar">
-        <div class="tab-btn active" onclick="switchTab('general')">⚙️ General</div>
-        <div class="tab-btn" onclick="switchTab('audio')">🎤 Audio</div>
-        <div class="tab-btn" onclick="switchTab('ollama')">🦙 Ollama</div>
-        <div class="tab-btn" onclick="switchTab('modes')">🧠 Modes</div>
-        <div class="tab-btn" onclick="switchTab('apikeys')">🔑 API Keys</div>
-        <div class="tab-btn" onclick="switchTab('about')">ℹ️ About</div>
+        <div class="tab-btn active" onclick="switchTab('general')">General</div>
+        <div class="tab-btn" onclick="switchTab('audio')">Audio</div>
+        <div class="tab-btn" onclick="switchTab('ollama')">Ollama</div>
+        <div class="tab-btn" onclick="switchTab('modes')">Modes</div>
+        <div class="tab-btn" onclick="switchTab('apikeys')">API Keys</div>
+        <div class="tab-btn" onclick="switchTab('about')">About</div>
     </div>
 
 
@@ -389,6 +389,28 @@
         <!-- OLLAMA TAB -->
         <div id="ollama" class="tab-content">
             <h2>🦙 Ollama Management</h2>
+
+            <!-- Hardware Performance -->
+            <div class="setting-group">
+                <label>Hardware Performance</label>
+                <span class="sub-label">Detect your GPU and VRAM to see recommended models</span>
+                <div id="hardware-status-panel"
+                    style="background: #1a1a1a; padding: 12px; border-radius: 6px; margin: 10px 0; border: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #888;">GPU:</span>
+                        <span id="hw-gpu">Unknown</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #888;">VRAM:</span>
+                        <span id="hw-vram">Unknown</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #888;">Performance Tier:</span>
+                        <span id="hw-tier" style="font-weight: bold;">Unknown</span>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="runHardwareTest()">🔬 Run Hardware Test</button>
+            </div>
 
             <!-- Service Status -->
             <div class="setting-group">

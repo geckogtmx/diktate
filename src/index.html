@@ -255,7 +255,7 @@
             border-radius: 4px;
             color: #888;
             font-size: 0.75rem;
-            cursor: pointer;
+            cursor: default;
             transition: all 0.2s;
             text-align: center;
             font-weight: 500;
@@ -521,14 +521,14 @@
 
         <!-- MODE TOGGLE -->
         <div id="mode-toggle-bar">
-            <button class="mode-btn active" id="mode-dictate" onclick="switchMode('dictate')">
+            <div class="mode-btn active" id="mode-dictate">
                 <span>⌨️ Dictate</span>
                 <span class="mode-hotkey">Ctrl+Alt+D</span>
-            </button>
-            <button class="mode-btn" id="mode-ask" onclick="switchMode('ask')">
+            </div>
+            <div class="mode-btn" id="mode-ask">
                 <span>❓ Ask</span>
                 <span class="mode-hotkey">Ctrl+Alt+A</span>
-            </button>
+            </div>
         </div>
 
         <!-- METRICS PANEL -->

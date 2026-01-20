@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         await refreshAudioDevices(settings.audioDeviceId);
 
+        // Run hardware test first so warnings can be applied to models
+        await runHardwareTest();
+
         await loadOllamaModels();
 
         await checkOllamaStatus();
@@ -641,6 +644,9 @@ async function populateModeModelDropdowns() {
             return;
         }
 
+        // Get the recommended max size from hardware test
+        const maxRecommendedGB = getRecommendedMaxModelSize();
+
         for (const mode of modes) {
             const select = document.getElementById(`model-${mode}`) as HTMLSelectElement;
             if (!select) continue;
@@ -650,9 +656,18 @@ async function populateModeModelDropdowns() {
 
             // Add all models
             models.forEach((model: any) => {
+                const sizeGB = model.size / (1024 * 1024 * 1024);
+                const modelSizeClass = getModelSizeClass(model.name, sizeGB, maxRecommendedGB);
+
                 const option = document.createElement('option');
                 option.value = model.name;
-                option.text = `${model.name} (${formatBytes(model.size)})`;
+                const warningPrefix = modelSizeClass === 'too-large' ? '⚠️ ' : '';
+                option.text = `${warningPrefix}${model.name} (${formatBytes(model.size)})`;
+
+                if (modelSizeClass === 'too-large') {
+                    option.style.color = '#f87171';
+                }
+
                 select.appendChild(option);
             });
 

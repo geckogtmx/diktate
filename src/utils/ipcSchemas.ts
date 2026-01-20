@@ -35,7 +35,7 @@ export const ApiKeyProviderSchema = z.enum(['gemini', 'anthropic', 'openai']);
 // IPC Message schemas
 export const SettingsSetSchema = z.object({
     key: SettingsKeySchema,
-    value: z.union([z.string(), z.boolean()])
+    value: z.union([z.string(), z.boolean(), z.number()])
 });
 
 export const ApiKeySetSchema = z.object({
