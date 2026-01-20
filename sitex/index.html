@@ -14,10 +14,10 @@
 <body class="bg-background text-text selection:bg-primary selection:text-white">
 
   <!-- Navbar -->
-  <nav class="fixed top-0 w-full z-50 transition-all duration-300 bg-transparent border-b border-transparent py-4">
-    <div class="section-container flex justify-between items-center">
+  <nav class="fixed top-0 w-full z-[60] h-16 bg-background border-b border-white/5 flex items-center">
+    <div class="section-container w-full flex justify-between items-center px-8">
       <!-- Logo -->
-      <a href="#" class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+      <a href="#" class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
         <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -28,24 +28,23 @@
         dIKtate
       </a>
 
-      <!-- Desktop Links -->
-      <div class="hidden md:flex items-center gap-8">
-        <a href="#why" class="text-sm font-medium text-muted hover:text-white transition-colors">Why</a>
-        <a href="#features" class="text-sm font-medium text-muted hover:text-white transition-colors">Features</a>
-        <a href="#pricing" class="text-sm font-medium text-muted hover:text-white transition-colors">Pricing</a>
-      </div>
-
-      <!-- CTA & Menu -->
-      <div class="flex items-center gap-4">
-        <a href="#signup" class="hidden md:flex btn-primary py-2 px-4 text-sm shadow-none hover:shadow-glow">
+      <!-- Desktop Links & CTA (Aligned to Right) -->
+      <div class="hidden md:flex items-center gap-12 text-sm font-medium">
+        <a href="#why" class="text-muted hover:text-white transition-colors">Why</a>
+        <a href="#features" class="text-muted hover:text-white transition-colors">Features</a>
+        <a href="#pricing" class="text-muted hover:text-white transition-colors">Pricing</a>
+        <a href="/docs.html" target="_blank" class="text-primary hover:text-white transition-colors">Docs</a>
+        <a href="#signup" class="btn-primary py-2.5 px-8 text-xs shadow-none hover:shadow-glow">
           Sign Up
         </a>
-        <button id="menu-btn" class="md:hidden p-2 text-white">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-          </svg>
-        </button>
       </div>
+
+      <!-- Mobile Menu Toggle -->
+      <button id="menu-btn" class="md:hidden p-2 text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
     </div>
 
     <!-- Mobile Menu -->
@@ -53,6 +52,7 @@
       class="hidden md:hidden absolute top-full left-0 w-full bg-surface border-b border-white/10 p-4 flex flex-col gap-4">
       <a href="#features" class="text-white hover:text-primary">Features</a>
       <a href="#pricing" class="text-white hover:text-primary">Pricing</a>
+      <a href="/docs.html" target="_blank" class="text-primary hover:text-white">Documentation</a>
       <a href="#" class="btn-primary w-full justify-center">Sign Up</a>
     </div>
   </nav>
