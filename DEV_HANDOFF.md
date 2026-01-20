@@ -1,56 +1,59 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-19 22:45
-> **Last Model:** Gemini
-> **Session Focus:** Status Dashboard UI Redesign & Polish
+> **Last Updated:** 2026-01-20 05:25
+> **Last Model:** Gemini (Antigravity)
+> **Session Focus:** Analysis & Specs for TTS and Injection Recall
 
 ---
 
 ## ✅ Completed This Session
 
-### 🎨 UI Redesign: Status Dashboard
-- **Personality Control Bar:** Replaced hotkey-driven "Dictate/Ask" buttons with a segmented control for **Standard**, **Prompt**, and **Professional** modes.
-- **Prominent Performance Grid:** Moved performance stats from a timeline footer to a high-visibility 2x2 grid `(Rec | Trans | AI | Inject)` below the mode buttons.
-- **Visual Polish:**
-  - Renamed "Session Metrics" to "Dictation Metrics" (30% larger font).
-  - Cleaned up Logs header to match (30% larger font + Chart icon).
-  - Added proper padding/spacing between sections.
-  - Increased debug window height by 20% to accommodate new layout.
+### 🧠 Feature Analysis & Specification
+- **Spec Created:** `docs/specs/SPEC_001_TTS_AND_REINJECT.md` detailing:
+  - **TTS for Ask Mode:** Using `pyttsx3` for local audio delivery.
+  - **Paste Last Injection:** "Recall" feature with `Injector` caching and Global Hotkey.
+- **Planning:** Updated `TASKS.md` to include these features in the roadmap (Sprint 2 / Sprint 2.5).
 
-### 🧹 Maintenance
-- **Refactoring:** Removed redundant `switchMode` logic in favor of `switchPersonality`.
-- **Cleanup:** Removed emojis from performance labels for a cleaner look.
+---
+
+## ⚠️ Known Issues / Broken
+
+- [ ] **Mode Model Switching Instability**: Previous session noted instability in mode-specific model overrides. Needs verification.
+- [ ] **Phase A.4: Baseline Testing**: Pending execution of `docs/qa/TEST_DRILL.md`.
 
 ---
 
 ## 🔄 In Progress / Pending
 
-- [ ] **Mode Model Switching Instability**: Investigating why mode-specific model overrides are unstable (User reported).
-- [ ] **Phase A.4: Baseline Testing**:
-  - Run manual test script at `docs/qa/TEST_DRILL.md`.
-  - Use `/test-diktate` to verify results.
-
-## ⚠️ Known Issues / Broken
-
-- **Unstable:** Model switching via the "Mode" settings tab (requires exploration).
+- [ ] **Implement TTS Support**: See `docs/specs/SPEC_001_TTS_AND_REINJECT.md` (Section 1).
+- [ ] **Implement Paste Last Injection**: See `docs/specs/SPEC_001_TTS_AND_REINJECT.md` (Section 2).
 
 ---
 
 ## 📋 Instructions for Next Model
 
 ### Priority Order
-1. **Model Switch Investigation**: Dig into `src/settings.ts` and `python/ipc_server.py` to find the root cause of "Mode Model Switching" instability.
-2. **Baseline Testing (Phase A.4)**:
-   - Run manual test script at `docs/qa/TEST_DRILL.md`.
-   - Use `/test-diktate` to verify results.
+1. **Implement TTS for Ask Mode** (High Value/Low Effort):
+   - Install `pyttsx3`.
+   - Create `python/core/tts.py`.
+   - Update `ipc_server.py` to use it.
+2. **Implement Paste Last Injection**:
+   - Update `Injector` class to cache text.
+   - Add `Ctrl+Alt+V` global hotkey in `main.ts`.
+3. **Information**: The spec `docs/specs/SPEC_001_TTS_AND_REINJECT.md` contains the exact implementation plan. **Read it first.**
 
 ### Context Needed
-- `src/renderer.ts` (UI logic for new dashboard).
-- `src/index.html` (New dashboard structure).
+- `docs/specs/SPEC_001_TTS_AND_REINJECT.md` (The Master Plan for next tasks)
+- `python/ipc_server.py` (Target for TTS integration)
+- `src/main.ts` (Target for Hotkey integration)
 
 ---
 
 ## Session Log (Last 3 Sessions)
+
+### 2026-01-20 05:25 - Gemini
+- **Docs:** Created detailed spec for **TTS** and **Injection Recall**.
+- **Plan:** Updated `TASKS.md` with new feature tasks.
 
 ### 2026-01-19 22:45 - Gemini
 - **Refactor:** Complete redesign of Status Dashboard UI.
@@ -61,8 +64,3 @@
 - **Fix:** Implemented `inject_text` in Python backend for Ask mode.
 - **Fix:** Fixed unhandled promise rejection in `main.ts` for Ask injection.
 - **Docs:** Updated `TASKS.md` and created `walkthrough.md`.
-
-### 2026-01-19 21:30 - Gemini
-- **Feat:** Mandatory restart for model changes (Banner + Modal).
-- **Fix:** Restored `_process_ask_recording` and fixed recording errors.
-- **Feat:** Async background warmup on startup.

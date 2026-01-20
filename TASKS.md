@@ -39,6 +39,10 @@
 - [ ] **UI Integration**: Add mode toggle in Status Dashboard
 - [ ] **Settings**: Configure default output (Type vs Clipboard)
 - [ ] **Optimization**: Response handling
+- [ ] **TTS Support**: Implement `pyttsx3` engine for audio delivery (See `docs/specs/SPEC_001_TTS_AND_REINJECT.md`)
+
+### 🛠️ UX Polish (Sprint 2.5)
+- [ ] **Paste Last Injection**: "Oops" feature to recall lost dictation (See `docs/specs/SPEC_001_TTS_AND_REINJECT.md`)
 
 ---
 
