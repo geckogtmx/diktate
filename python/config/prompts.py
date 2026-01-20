@@ -70,7 +70,6 @@ Rules:
 
 Input: {text}
 Cleaned text:"""
-PROMPT_LITERAL = PROMPT_RAW  # Alias for backward compatibility
 
 PROMPT_MAP = {
     "standard": PROMPT_STANDARD,

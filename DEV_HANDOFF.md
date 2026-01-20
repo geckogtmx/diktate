@@ -1,76 +1,68 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-19 21:30
+> **Last Updated:** 2026-01-19 22:45
 > **Last Model:** Gemini
-> **Session Focus:** High-Trust Model Switching & Backend Stability
+> **Session Focus:** Status Dashboard UI Redesign & Polish
 
 ---
 
 ## ✅ Completed This Session
 
-### 🔄 High-Trust Model Switching
-- **Mandatory Relaunch for Model Changes:** Pivot from unstable hot-swapping to a robust "Restart Required" policy for changing models.
-  - File: `src/main.ts` (added `app:relaunch` IPC handler).
-  - File: `src/settings.html` (added warning banner and glassmorphism modal).
-  - File: `src/settings.ts` (implemented change detection and modal triggers).
-  - File: `src/preloadSettings.ts` (exposed `relaunchApp`).
-- **Status:** ✅ STABLE AND PREDICTABLE MODEL SWITCHING.
+### 🎨 UI Redesign: Status Dashboard
+- **Personality Control Bar:** Replaced hotkey-driven "Dictate/Ask" buttons with a segmented control for **Standard**, **Prompt**, and **Professional** modes.
+- **Prominent Performance Grid:** Moved performance stats from a timeline footer to a high-visibility 2x2 grid `(Rec | Trans | AI | Inject)` below the mode buttons.
+- **Visual Polish:**
+  - Renamed "Session Metrics" to "Dictation Metrics" (30% larger font).
+  - Cleaned up Logs header to match (30% larger font + Chart icon).
+  - Added proper padding/spacing between sections.
+  - Increased debug window height by 20% to accommodate new layout.
 
-### 🛡️ Python Backend Stability
-- **Fixed Pipe "Bleeding":** Restored missing `_process_ask_recording` function header in `ipc_server.py`. This resolves the "Recording Error" loop reported after the first transcript.
-- **Asynchronous Startup Warmup:** The Python engine now initializes the LLM in a background thread.
-  - App starts in `WARMUP` state immediately (Visual: "LOADING..." pulsing on pill).
-  - Automatically transitions to `IDLE` once model is cached.
-  - File: `python/ipc_server.py` (logic in `__init__` and `_startup_warmup`).
-  - File: `src/services/pythonManager.ts` (initial state set to `warmup`).
-- **Automatic Error Recovery:** Recordings can now be restarted even if the system is in an `ERROR` state.
-- **Status:** ✅ BACKEND RECOVERED AND FLUID.
-
-### 🧹 Fixes
-- **Python Scope Bugs:** Centralized `os` and `wave` imports to fix `UnboundLocalError` when reading audio metadata.
-- **Settings Sync:** Synchronized mode-specific model overrides with the Python backend during initialization.
+### 🧹 Maintenance
+- **Refactoring:** Removed redundant `switchMode` logic in favor of `switchPersonality`.
+- **Cleanup:** Removed emojis from performance labels for a cleaner look.
 
 ---
 
 ## 🔄 In Progress / Pending
 
-- [ ] **Phase A.4: Baseline Testing**
-  - Establish baseline latency/quality with 10+ samples using `gemma3:4b`.
-  - Correlate audio duration with processing time.
-- [ ] **Phase D: Distribution Prep**
-  - Configure `electron-builder` for production distribution.
+- [ ] **Mode Model Switching Instability**: Investigating why mode-specific model overrides are unstable (User reported).
+- [ ] **Phase A.4: Baseline Testing**:
+  - Run manual test script at `docs/qa/TEST_DRILL.md`.
+  - Use `/test-diktate` to verify results.
 
 ## ⚠️ Known Issues / Broken
 
-- **Minor:** `PROMPT_LITERAL` assigned twice in `prompts.py:57,73` (cosmetic).
+- **Unstable:** Model switching via the "Mode" settings tab (requires exploration).
 
 ---
 
 ## 📋 Instructions for Next Model
 
 ### Priority Order
-1. **Baseline Testing (Phase A.4)**:
+1. **Model Switch Investigation**: Dig into `src/settings.ts` and `python/ipc_server.py` to find the root cause of "Mode Model Switching" instability.
+2. **Baseline Testing (Phase A.4)**:
    - Run manual test script at `docs/qa/TEST_DRILL.md`.
    - Use `/test-diktate` to verify results.
-2. **Distribution Setup**: Attempt a production build with `pnpm build` and `electron-builder`.
 
 ### Context Needed
-- `python/ipc_server.py` (Check `_startup_warmup` and `start_recording` recovery logic).
-- `src/settings.ts` (Review model change detection logic).
+- `src/renderer.ts` (UI logic for new dashboard).
+- `src/index.html` (New dashboard structure).
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
+### 2026-01-19 22:45 - Gemini
+- **Refactor:** Complete redesign of Status Dashboard UI.
+- **Feat:** Added Personality Control Bar and Performance Grid.
+- **Polish:** Typography updates and layout adjustments.
+
+### 2026-01-19 21:45 - Gemini
+- **Fix:** Implemented `inject_text` in Python backend for Ask mode.
+- **Fix:** Fixed unhandled promise rejection in `main.ts` for Ask injection.
+- **Docs:** Updated `TASKS.md` and created `walkthrough.md`.
+
 ### 2026-01-19 21:30 - Gemini
 - **Feat:** Mandatory restart for model changes (Banner + Modal).
 - **Fix:** Restored `_process_ask_recording` and fixed recording errors.
-- **Feat:** Async background warmup on startup (Dashboard shows "WARMING UP").
-- **Fix:** Centralized Python imports to resolve metadata errors.
-
-### 2026-01-19 20:20 - Gemini
-- **Feat:** Automated hardware detection on startup.
-- **Fix:** Restored VRAM-aware model warnings.
-
-### 2026-01-19 19:53 - Gemini
-- **Fix:** Resolved "Mode dropdown not populating" bug.
+- **Feat:** Async background warmup on startup.

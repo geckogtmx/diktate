@@ -268,7 +268,7 @@
             padding: 8px 12px;
             display: flex;
             gap: 8px;
-            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .mode-btn {
@@ -297,7 +297,7 @@
             box-shadow: 0 0 8px rgba(0, 96, 122, 0.5);
         }
 
-        .mode-btn .mode-hotkey {
+        .mode-btn .mode-desc {
             display: block;
             font-size: 0.6rem;
             opacity: 0.7;
@@ -348,26 +348,45 @@
             transform: translateX(14px);
         }
 
-        /* PERFORMANCE TIMELINE */
-        #perf-timeline {
-            padding: 8px 12px;
-            font-size: 0.7rem;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            flex-wrap: wrap;
+        /* PERFORMANCE GRID */
+        #perf-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 1px;
+            background: var(--border-color);
+            margin: 12px 12px 8px 12px;
+            /* Increased top margin for spacing */
+            border-radius: 4px;
+            overflow: hidden;
+            /* border-top removed as requested */
         }
 
-        .perf-step {
-            display: flex;
-            align-items: center;
-            gap: 3px;
+        .perf-cell {
+            background: var(--jet-black);
+            padding: 8px 6px;
+            text-align: center;
+            transition: background-color 0.3s;
         }
 
-        .perf-step.active {
-            color: var(--dark-teal-3);
-            font-weight: 600;
+        .perf-cell.active {
+            background: rgba(0, 96, 122, 0.4);
+            box-shadow: inset 0 0 10px rgba(0, 150, 190, 0.2);
+        }
+
+        .perf-value {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: white;
+            font-family: 'Consolas', monospace;
+        }
+
+        .perf-label {
+            font-size: 0.6rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
         }
 
         /* LOG PANEL */
@@ -379,6 +398,7 @@
             flex-direction: column;
             font-family: 'Consolas', monospace;
             font-size: 0.75rem;
+            /* Reverted to smaller font size */
         }
 
         #log-header {
@@ -387,7 +407,8 @@
             cursor: pointer;
             display: flex;
             justify-content: space-between;
-            font-size: 0.7rem;
+            font-size: 1rem;
+            /* Increased 30% */
             color: #888;
         }
 
@@ -447,7 +468,8 @@
             cursor: pointer;
             display: flex;
             justify-content: space-between;
-            font-size: 0.75rem;
+            font-size: 1rem;
+            /* Increased 30% */
             color: #888;
             user-select: none;
         }
@@ -459,7 +481,8 @@
 
         #metrics-content {
             padding: 8px 12px;
-            font-size: 0.7rem;
+            font-size: 0.9rem;
+            /* Increased 30% */
         }
 
         #metrics-chart {
@@ -543,22 +566,46 @@
             </label>
         </div>
 
-        <!-- MODE TOGGLE -->
+        <!-- PERSONALITY SELECTION -->
         <div id="mode-toggle-bar">
-            <div class="mode-btn active" id="mode-dictate">
-                <span>⌨️ Dictate</span>
-                <span class="mode-hotkey">Ctrl+Alt+D</span>
+            <div class="mode-btn active" id="mode-standard" onclick="switchPersonality('standard')">
+                <span>✨ Standard</span>
+                <span class="mode-desc">General</span>
             </div>
-            <div class="mode-btn" id="mode-ask">
-                <span>❓ Ask</span>
-                <span class="mode-hotkey">Ctrl+Alt+A</span>
+            <div class="mode-btn" id="mode-prompt" onclick="switchPersonality('prompt')">
+                <span>🤖 Prompt</span>
+                <span class="mode-desc">LLM Ready</span>
+            </div>
+            <div class="mode-btn" id="mode-professional" onclick="switchPersonality('professional')">
+                <span>💼 Pro</span>
+                <span class="mode-desc">Polished</span>
+            </div>
+        </div>
+
+        <!-- PERFORMANCE GRID -->
+        <div id="perf-stats-grid">
+            <div class="perf-cell" id="perf-rec-cell">
+                <div class="perf-value" id="perf-rec">--</div>
+                <div class="perf-label">Recording</div>
+            </div>
+            <div class="perf-cell" id="perf-trans-cell">
+                <div class="perf-value" id="perf-trans">--</div>
+                <div class="perf-label">Transcription</div>
+            </div>
+            <div class="perf-cell" id="perf-proc-cell">
+                <div class="perf-value" id="perf-proc">--</div>
+                <div class="perf-label">AI Processing</div>
+            </div>
+            <div class="perf-cell" id="perf-inject-cell">
+                <div class="perf-value" id="perf-inject">--</div>
+                <div class="perf-label">Injection</div>
             </div>
         </div>
 
         <!-- METRICS PANEL -->
         <div id="metrics-panel">
             <div id="metrics-header" onclick="toggleMetrics()">
-                <span>📊 Session Metrics</span>
+                <span>📊 Dictation Metrics</span>
                 <span id="metrics-toggle-icon">▼</span>
             </div>
             <div id="metrics-content" style="display: none;">
@@ -566,23 +613,12 @@
                 <div id="metrics-summary"></div>
             </div>
         </div>
-
-        <!-- PERFORMANCE TIMELINE -->
-        <div id="perf-timeline">
-            <span class="perf-step" id="perf-rec">Rec: --</span>
-            <span>▸</span>
-            <span class="perf-step" id="perf-trans">Trans: --</span>
-            <span>▸</span>
-            <span class="perf-step" id="perf-proc">Proc: --</span>
-            <span>▸</span>
-            <span class="perf-step" id="perf-inject">Inject: --</span>
-        </div>
     </div>
 
     <!-- LOGS -->
     <div id="log-panel">
         <div id="log-header" onclick="toggleLogs()">
-            <span>LOGS</span>
+            <span>📊 LOGS</span>
             <span id="toggle-icon">▼</span>
         </div>
         <div id="log-container"></div>

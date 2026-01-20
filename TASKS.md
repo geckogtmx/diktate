@@ -6,117 +6,39 @@
 
 ---
 
-## Current Sprint: Phase A - Stability
+## Current Sprint: Phase A - Stability & Verification
 
-**Goal:** Ensure rock-solid dictation with gemma3:4b before adding features.
+**Goal:** Ensure rock-solid dictation with gemma3:4b and prepare for distribution.
 
-### ✅ Cloud/Local Toggle (COMPLETE)
-- [x] Decrypt API keys from secure storage when switching providers
-- [x] Pass decrypted keys to Python via IPC
-- [x] Python sets keys in environment for processor factory
-- [x] Toggle shows actual processor state on load
-- [x] Badge updates after switching providers
-- **Status:** Working. User tested Gemini ↔ Gemma switching.
-
-### ✅ Settings Bugs (RESOLVED)
-- [x] `loadApiKeys()` integrated into init sequence
-- [x] `saveSetting()` validation errors fixed (numerical types)
-- [x] `audioDeviceId` & `audioDeviceLabel` persistence (with label fallback)
-- [x] **Model Persistence:** Mode-specific model selections (e.g., Standard: Phi 3) now correctly sync to Python and the UI
-- [x] Settings persistence verified across restarts
-
-### 🛡️ Hardware & Model Safety (NEW - COMPLETE)
-- [x] **Automated Hardware Test:** Runs on settings open
-- [x] **Smart Warnings:** Visual warning for oversized models in dropdowns
-- [x] **Service Control:** Restart/Warmup Ollama from UI
-- [x] **High-Trust Model Switching:** Model changes now trigger a "Restart Required" modal to ensure stability.
-
-### Baseline Testing (IN PROGRESS)
+### 📊 Baseline Testing (PRIORITY)
 - [ ] Run 10+ samples with gemma3:4b using `docs/qa/TEST_DRILL.md`
-- [ ] Document baseline metrics
+- [ ] Document baseline metrics (Latency vs Duration)
 - [ ] Test various input lengths (1s, 5s, 10s, 30s)
+- [ ] **Verify**: 30-minute session with 0 failures to Baseline Specs.
 
-**Exit Criteria:** 30-minute session with 0 failures to Baseline Specs.
+### 🧪 Verification Pending
+- [ ] **Mode Model Switching**: Investigate instability in mode-specific model selection (User reported).
+- [x] **Ask Mode Injection**: Verify that the new `inject_text` handler correctly types LLM answers (Fixed & Verified).
+- [ ] **Instant Text Injection**: Test in 5+ applications (Notepad, Chrome, Slack, VS Code, Word)
+- [ ] **Settings Persistence**: Verify settings persist across app restarts (Double-check)
 
----
+### 🐛 Fixes
+- [x] **Code Cleanup**: Resolve `PROMPT_LITERAL` assigned twice in `prompts.py` (Fixed)
 
-## Completed (MVP)
-### P0: Status Dashboard ✅ COMPLETE
-- [x] **UI/UX Redesign**
-    - [x] Removed large circle, replaced with compact data-rich dashboard
-    - [x] Background color changes for state (idle/recording/processing)
-    - [x] Stats grid: Sessions, Characters, Avg Time, Last Total
-    - [x] Token stats: Tokens Saved, Est. Savings (with highlight)
-    - [x] Quick toggles: Sound, Cloud
-    - [x] Performance timeline with active step highlighting
-    - [x] Live status messages with typing dots animation
-- [x] **Bug Fix**: Normalize Python log levels (INFO vs ERROR categorization)
-
-### P0: Security Hardening ✅ COMPLETE
-- [x] **Critical: Settings Window** - Migrated to secure preload bridge (`preloadSettings.ts`)
-- [x] **Critical: XSS Prevention** - Replaced `innerHTML` with safe `textContent` in `renderer.ts`
-- [x] **High: IPC Validation** - Add Zod schemas (Completed)
-- [x] **High: Log Redaction** - Mask sensitive transcripts in logs (Completed)
-
-### P0: Cloud/Local Toggle ✅ COMPLETE
-- [x] **Backend (Python)**
-    - [x] Implement `configure(provider)` logic in `ipc_server.py`
-    - [x] Cloud Provider classes exist (`processor.py`: Gemini, Anthropic, OpenAI)
-    - [x] Hot-swap processor on settings change
-- [x] **Frontend (Electron)**
-    - [x] Wire `settings.ts` to send `processingMode` via IPC
-    - [x] Verify `main.ts` passes settings to Python
-    - [x] Show current mode in system tray tooltip
-
-### P0: Settings Persistence & UI
-- [x] Create settings window component (Vanilla JS/HTML)
-- [x] Add hotkey configuration UI
-- [x] Add audio device selector (UI only)
-- [x] Add processing mode selector (Cloud/Local toggle UI)
-- [x] Wire up IPC for settings persistence
-- [x] Store settings in electron-store
-- [ ] **Verify**: Check if settings persist across restarts
-
-### P0: Instant Text Injection
-- [x] Implement clipboard paste in `injector.py`
-- [x] Replace character-by-character with Ctrl+V (Wrapper implemented)
-- [x] Restore original clipboard after paste
-- [ ] **Verify**: Test in 5+ applications (Notepad, Chrome, Slack, etc.)
+### 📦 Phase D: Distribution Prep (NEXT)
+- [ ] **Packaging**: Configure `electron-builder` for Windows NSIS
+- [ ] **Python Bundling**: Set up `PyInstaller` to bundle the engine
+- [ ] **First-Run**: Implement "Embedded Sidecar" detection for Ollama
+- [ ] **Hardware Tiering**: Refine auto-detection suggestions
 
 ---
 
 ## 📋 Sprint 2: Modes & Intelligence (Week 2)
 
-**Goal:** Differentiate the product with "Personality" and "Translation".
-
-### P1: Personality Modes ✅ COMPLETE
-- [x] **Backend Implementation** (`processor.py`)
-    - [x] Standard (General purpose)
-    - [x] Prompt (For LLM prompts)
-    - [x] Professional (Business-ready)
-    - [x] Raw (Literal transcription)
-- [x] **UI Integration**
-    - [x] Add mode selector in Settings (4 modes with emoji icons)
-    - [x] `set_mode()` added to all processors (Local + Cloud)
-    - [x] Mode persisted via electron-store
-
-### P1: Translation Modes ✅ COMPLETE
-- [x] Translation prompts: ES→EN, EN→ES in `config/prompts.py`
-- [x] Post-processing step in `ipc_server.py` pipeline
-- [x] Translation selector in Settings UI (already existed)
-- [x] `transMode` IPC wiring from Electron → Python
-
-### P1: Cloud Provider Authentication
-**Phase 1: API Key Entry ✅ COMPLETE**
-- [x] API Keys tab in Settings (Gemini, Anthropic, OpenAI)
-- [x] Secure storage with Electron safeStorage
-- [x] Test buttons for key validation
-- [x] Keys passed to Python via configure()
-
-**Phase 2: Google OAuth (Future)**
-- [ ] Google Cloud Console OAuth Client ID setup
-- [ ] "Login with Google" button
-- [ ] Use AI Pro subscription quotas
+### 🚧 Ask Mode (In Progress)
+- [ ] **UI Integration**: Add mode toggle in Status Dashboard
+- [ ] **Settings**: Configure default output (Type vs Clipboard)
+- [ ] **Optimization**: Response handling
 
 ---
 
@@ -127,27 +49,11 @@
 - [ ] Extract UI strings for ES/EN localization
 - [ ] Refine Status Window design (animations)
 
-### Packaging & Distribution
-- [ ] Configure `electron-builder` for Windows NSIS
-- [ ] Bundle Python backend (PyInstaller)
-- [ ] **Validate**: Install on clean Windows machine
-
 ### Commercial & Marketing
 - [ ] Set up `dikta.me` domain (Purchase pending)
 - [ ] Create simple landing page (Tailwind)
 - [ ] Set up Ko-fi page (Tiers: Starter, Pro)
 - [ ] Prepare demo video/GIF
-
----
-
-## Next Session Quick Start
-
-1. **Optional:** Fix settings bugs (low priority, see DEV_HANDOFF.md)
-2. **Ready to test:** Run baseline test suite
-   - Follow `docs/qa/TEST_PROCEDURE.md`
-   - Use `/test-diktate` workflow to analyze logs
-   - Compare Gemini vs Gemma performance
-3. **Then:** Move to Phase B (Testing Infrastructure) or Phase C.1 (Settings Persistence)
 
 ---
 
@@ -164,15 +70,3 @@
 | E | Features | FUTURE |
 
 > For deferred ideas, see `docs/L3_MEMORY/DEFERRED_FEATURES.md`.
-
----
-
-## 🧪 Verification & Success Criteria
-
-**V1.0 Launch Criteria:**
-- [ ] Works on clean Windows install
-- [ ] Cloud mode works out of box (no setup)
-- [ ] Local mode works with Ollama guide
-- [ ] Settings persist across restarts
-- [ ] 5+ modes available
-- [ ] No crashes in 1-hour session

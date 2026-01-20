@@ -859,6 +859,15 @@ YOUR ANSWER:"""
                 return self.configure(command.get("config", {}))
             elif cmd_name == "health_check":
                 return self.check_health()
+            elif cmd_name == "inject_text":
+                text = command.get("text", "")
+                if self.injector:
+                    self._set_state(State.INJECTING)
+                    self.injector.type_text(text)
+                    self._set_state(State.IDLE)
+                    return {"success": True}
+                else:
+                    return {"success": False, "error": "Injector not initialized"}
             elif cmd_name == "shutdown":
                 logger.info("[CMD] Shutdown requested")
                 return {"success": True}

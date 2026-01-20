@@ -44,19 +44,27 @@ const statCost = document.getElementById('stat-cost');
 const badgeTranscriber = document.getElementById('badge-transcriber');
 const badgeProcessor = document.getElementById('badge-processor');
 
-// Perf timeline elements
+// Perf grid elements
 const perfRec = document.getElementById('perf-rec');
 const perfTrans = document.getElementById('perf-trans');
 const perfProc = document.getElementById('perf-proc');
 const perfInject = document.getElementById('perf-inject');
 
+const perfRecCell = document.getElementById('perf-rec-cell');
+const perfTransCell = document.getElementById('perf-trans-cell');
+const perfProcCell = document.getElementById('perf-proc-cell');
+const perfInjectCell = document.getElementById('perf-inject-cell');
+
 // Toggle elements
 const toggleSound = document.getElementById('toggle-sound') as HTMLInputElement | null;
 const toggleCloud = document.getElementById('toggle-cloud') as HTMLInputElement | null;
 
-// Mode toggle elements
-const modeDictateBtn = document.getElementById('mode-dictate') as HTMLButtonElement | null;
-const modeAskBtn = document.getElementById('mode-ask') as HTMLButtonElement | null;
+// Personality selection elements
+const personalityBtns: Record<string, HTMLElement | null> = {
+    standard: document.getElementById('mode-standard'),
+    prompt: document.getElementById('mode-prompt'),
+    professional: document.getElementById('mode-professional')
+};
 
 // Session statistics
 let sessionCount = 0;
@@ -110,25 +118,25 @@ function setStatus(state: string) {
 }
 
 function updateTimelineActive(stateKey: string) {
-    perfRec?.classList.toggle('active', stateKey === 'recording');
-    perfTrans?.classList.toggle('active', stateKey === 'transcribing');
-    perfProc?.classList.toggle('active', stateKey === 'processing');
-    perfInject?.classList.toggle('active', stateKey === 'injecting');
+    perfRecCell?.classList.toggle('active', stateKey === 'recording');
+    perfTransCell?.classList.toggle('active', stateKey === 'transcribing');
+    perfProcCell?.classList.toggle('active', stateKey === 'processing');
+    perfInjectCell?.classList.toggle('active', stateKey === 'injecting');
 }
 
 function updatePerformanceMetrics(metrics: PerformanceMetrics) {
-    // Update timeline display
+    // Update grid display
     if (metrics.recording !== undefined && perfRec) {
-        perfRec.textContent = `Rec: ${(metrics.recording / 1000).toFixed(1)}s`;
+        perfRec.textContent = `${(metrics.recording / 1000).toFixed(1)}s`;
     }
     if (metrics.transcription !== undefined && perfTrans) {
-        perfTrans.textContent = `Trans: ${Math.round(metrics.transcription)}ms`;
+        perfTrans.textContent = `${Math.round(metrics.transcription)}ms`;
     }
     if (metrics.processing !== undefined && perfProc) {
-        perfProc.textContent = `Proc: ${Math.round(metrics.processing)}ms`;
+        perfProc.textContent = `${Math.round(metrics.processing)}ms`;
     }
     if (metrics.injection !== undefined && perfInject) {
-        perfInject.textContent = `Inject: ${Math.round(metrics.injection)}ms`;
+        perfInject.textContent = `${Math.round(metrics.injection)}ms`;
     }
 
     // Update session stats
@@ -226,25 +234,21 @@ function setupToggles() {
     }
 }
 
-// Update mode toggle UI
-function updateModeToggle(mode: 'dictate' | 'ask') {
-    if (!modeDictateBtn || !modeAskBtn) return;
-
-    if (mode === 'dictate') {
-        modeDictateBtn.classList.add('active');
-        modeAskBtn.classList.remove('active');
-    } else {
-        modeDictateBtn.classList.remove('active');
-        modeAskBtn.classList.add('active');
-    }
+// Update personality toggle UI
+function updatePersonalityUI(mode: string) {
+    Object.keys(personalityBtns).forEach(k => {
+        const btn = personalityBtns[k];
+        if (btn) {
+            btn.classList.toggle('active', k === mode);
+        }
+    });
 }
 
-// Make switchMode available globally for onclick handler
-(window as any).switchMode = function (mode: 'dictate' | 'ask') {
-    updateModeToggle(mode);
-    addLogEntry('INFO', `Mode switched to: ${mode.toUpperCase()}`);
-    // Note: Mode is primarily controlled by which hotkey is pressed
-    // This UI just shows the current state
+// Make switchPersonality available globally for onclick handler
+(window as any).switchPersonality = function (mode: 'standard' | 'prompt' | 'professional') {
+    updatePersonalityUI(mode);
+    window.electronAPI?.setSetting?.('defaultMode', mode);
+    addLogEntry('INFO', `Personality switched to: ${mode.toUpperCase()}`);
 };
 
 // Update metrics panel with recent data (A.2 observability)
@@ -269,15 +273,12 @@ async function updateMetricsPanel() {
                 return;
             }
 
-            // Create ASCII bar chart
-            const maxTime = Math.max(...metrics);
-            const chart = metrics.map((time: number) => {
-                const bars = Math.ceil((time / maxTime) * 20);
-                const bar = '▓'.repeat(bars) + '░'.repeat(20 - bars);
-                return `${bar} ${(time / 1000).toFixed(1)}s`;
-            }).join('\n');
+            // Create simple list of durations
+            const chart = metrics.map((time: number, i: number) => {
+                return `• ${(time / 1000).toFixed(1)}s`;
+            }).join('  ');
 
-            metricsChart.textContent = `Last ${metrics.length} dictations:\n${chart}`;
+            metricsChart.textContent = `Last ${metrics.length}: ${chart}`;
 
             // Calculate summary stats
             const avg = metrics.reduce((a: number, b: number) => a + b, 0) / metrics.length;
@@ -330,10 +331,10 @@ if (window.electronAPI) {
         });
     }
 
-    // Mode change handler (Dictate/Ask mode)
+    // Mode change handler (triggers status updates, not button changes)
     if ((window.electronAPI as any).onModeChange) {
         (window.electronAPI as any).onModeChange((mode: string) => {
-            updateModeToggle(mode as 'dictate' | 'ask');
+            addLogEntry('INFO', `Active operation: ${mode.toUpperCase()}`);
         });
     }
 
@@ -351,9 +352,9 @@ if (window.electronAPI) {
                 toggleCloud.checked = state.processingMode === 'cloud';
             }
 
-            // Restore mode toggle state
-            if (state.recordingMode) {
-                updateModeToggle(state.recordingMode as 'dictate' | 'ask');
+            // Restore personality selection
+            if (state.defaultMode) {
+                updatePersonalityUI(state.defaultMode);
             }
 
             // Load metrics panel

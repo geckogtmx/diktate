@@ -137,7 +137,7 @@ function createDebugWindow(): void {
 
   debugWindow = new BrowserWindow({
     width: 400,
-    height: 500,
+    height: 600,
     show: true,
     alwaysOnTop: true,
     frame: true, // Keep frame for dragging for now, but maybe remove later
@@ -484,7 +484,12 @@ function setupPythonEventHandlers(): void {
       case 'type':
         // Type the answer (like dictation)
         if (pythonManager) {
-          await pythonManager.sendCommand('inject_text', { text: answer });
+          try {
+            await pythonManager.sendCommand('inject_text', { text: answer });
+          } catch (err) {
+            logger.error('MAIN', 'Failed to inject text for Ask response', err);
+            showNotification('Injection Failed', 'Could not type the answer automatically.', true);
+          }
         }
         break;
 
