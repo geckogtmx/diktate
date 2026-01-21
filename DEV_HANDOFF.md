@@ -1,26 +1,29 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-21 10:22
+> **Last Updated:** 2026-01-21 10:45
 > **Last Model:** Gemini (Antigravity)
-> **Session Focus:** Documentation Overhaul & Feature Sync
+> **Session Focus:** Documentation Overhaul, Git Setup, & Feature Sync
 
 ---
 
 ## ✅ Completed This Session
 
-### 📚 Documentation Restructure
-- **Split Docs**: Created `docs/user_guide/`, `docs/developer_guide/`, and `docs/internal/`.
-- **Internal Move**: Moved all specs/reports to `docs/internal/` to declutter.
-- **New Guides**:
-  - `docs/user_guide/features.md` (Context Modes, Bilingual, etc.)
-  - `docs/user_guide/privacy.md` (Air-Gap, SafeStorage)
-  - `docs/developer_guide/contributing.md`
-- **Updated References**: Fixed links in `README.md` and `DEV_HANDOFF.md`.
+### 📚 Documentation Restructure (Complete)
+- **Repo Structure**:
+  - `docs/user_guide/` (User Manual)
+  - `docs/developer_guide/` (Dev Manual)
+  - `docs/internal/` (Specs, Reports, Archive)
+- **README Audit**:
+  - Synced features with code (Ask Mode = Beta/Text-only).
+  - Removed fictional timelines/hours.
+  - Confirmed Active GPU support.
+  - Pushed to new **private GitHub repo** (`origin/master`).
 
 ### 🛠️ Feature Sync
-- Verified `FEATURE_LIST.md` against User Guide.
-- Added missing Feature/Privacy guides to ensure full coverage.
-- Updated `quick_start.md` to reflect **v1.0 Installer** workflow (Ollama auto-install).
+- **Codebase Check**:
+  - `Ask Mode` logic exists in `main.ts` and `ipc_server.py`.
+  - `CUDA` logic exists in `transcriber.py`.
+- **Status**: Documentation now ACCURATELY reflects the code state.
 
 ---
 
@@ -28,7 +31,6 @@
 
 ### Priority Order
 1.  **EXECUTE v1.0 Mandate (Highest Priority)**:
-    - We paused v1.0 execution to do docs. Now return to code.
     - **Goal:** Implement **TTS for Ask Mode** & **Injection Recall**.
     - **Ref:** `docs/internal/specs/SPEC_001_TTS_AND_REINJECT.md`.
     - **Tasks:**
@@ -37,28 +39,27 @@
         - Implement `dictate:reinject-last` logic.
 
 ### Context Needed
-- **Documentation**: New structure is live. All specs are in `docs/internal/specs/`.
-- **Installer**: User Guide now PROMISES an installer that handles Ollama. We might need to implement that installer script soon (NSIS/Inno Setup).
+- **Repo is now Private**: We have a remote `origin`. Use `git push` freely.
+- **Docs are Clean**: Do not reorganize docs further. Focus on **CODE**.
+- **Ask Mode**: Currently text-only (clipboard/typing). User wants TTS.
 
 ---
 
 ## 🔄 Context & State
-- **Repo State**: Docs are clean and structured. Codebase is unchanged this session.
-- **Git**: Committed changes, but **PUSH FAILED** (no remote configured).
+- **Repo State**: Clean, documented, pushed to `master`.
+- **Git**: Linked to `https://github.com/geckogtmx/diktate.git`.
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
-### 2026-01-21 10:22 - Gemini
-- **Docs**: Complete restructure (User/Dev/Internal).
-- **Features**: Synced Feature List to User Manual.
-- **Git**: Committed documentation updates.
+### 2026-01-21 10:45 - Gemini
+- **Git**: Configured remote, pushed to private repo.
+- **Docs**: Audited README, verified GPU/Ask Mode status, cleaned up timelines.
+- **Restructure**: Split docs into User/Dev/Internal.
 
 ### 2026-01-21 09:55 - Gemini
 - **Planning:** Created detailed specs for Chatbot, Scribe, Visionary.
-- **Roadmap:** Officially mapped out v1.1 and v2.0.
 
 ### 2026-01-20 11:35 - Gemini
-- **UI/UX**: Unified header across site, standardized height/padding.
-- **Docs**: Defined Documentation Master Plan.
+- **UI/UX**: Unified header across site.
