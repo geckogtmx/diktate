@@ -1,73 +1,67 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-20 11:35
+> **Last Updated:** 2026-01-21 09:55
 > **Last Model:** Gemini (Antigravity)
-> **Session Focus:** Marketing Site Polish & Documentation Architecture
+> **Session Focus:** V2.0 Brainstorming & Roadmap Expansion
 
 ---
 
 ## ✅ Completed This Session
 
-### 🌐 Marketing Website (sitex)
-- **Header Unification**: Standardized a solid `h-16` (non-transparent) header across the entire site for visual consistency.
-- **Navigation alignment**: Right-aligned all menu items (`Home`, `GitHub`, `Docs`, `Get Power`) with increased spacing.
-- **Documentation Dashboard**: 
-  - Created `sitex/docs.html` using a premium two-column "Dashboard" layout.
-  - Implemented a fixed lateral navigation bar and a scrollable main content area.
-  - Integrated a sticky Table of Contents (TOC) tracker for secondary navigation.
-- **Documentation Roadmap**: 
-  - Established a structural roadmap in the sidebar based on the "Documentation Master Plan".
-  - Explicitly separated content into **User Center** (Getting Started, Features, Hotkeys) and **Developer Hub** (Architecture, IPC, Troubleshooting).
-- **Interactive Navigation**: Created `sitex/src/docs.js` with intersection observers to automatically highlight the active sidebar link during scroll.
+### 🧠 Roadmap & Planning
+- **Updated `DEVELOPMENT_ROADMAP.md`**:
+  - Added **v1.1 Phase F**: Docs Chatbot ("Neural Help").
+  - Added **v2.0 Phase**: Scribe Layer ("Granola") & Visionary Module.
+- **Updated `AI_CODEX.md`**:
+  - Removed "Department of One" / strict "No Rebrand" language per user request.
 
----
-
-## ⚠️ Known Issues / Broken
-
-- [ ] **Mobile Sidebar**: The new two-column docs layout is optimized for desktop; need to verify and implement a responsive mobile drawer for the documentation sidebar.
-- [ ] **Mode Model Switching Instability**: (Existing) Area of concern for the core app (needs verification in Python/Electron).
-
----
-
-## 🔄 In Progress / Pending
-
-- [ ] **Implement TTS Support**: High Priority. See `docs/specs/SPEC_001_TTS_AND_REINJECT.md` (Section 1).
-- [ ] **Implement Paste Last Injection**: See `docs/specs/SPEC_001_TTS_AND_REINJECT.md` (Section 2).
-- [ ] **Docs Content Injection**: The framework in `docs.html` is ready, but most sections are currently mock/placeholders.
+### 📝 New Specifications
+- **[SPEC_002_DOCS_CHATBOT.md](docs/specs/SPEC_002_DOCS_CHATBOT.md)**: 
+  - Dual Deployment Strategy (Local + Cloud).
+  - RAG Architecture for app vs website.
+- **[SPEC_003_SCRIBE_LAYER.md](docs/specs/SPEC_003_SCRIBE_LAYER.md)**: 
+  - "Granola-like" meeting intelligence.
+  - Concept for Persistent Session Engine (Audio + Notes -> AI Artifact).
+- **[SPEC_004_VISIONARY_MODULE.md](docs/specs/SPEC_004_VISIONARY_MODULE.md)**: 
+  - Hybrid Vision Architecture.
+  - **Local:** Moondream 2B (<2.4GB VRAM) for privacy/speed.
+  - **Cloud:** Gemini Flash for complex reasoning.
 
 ---
 
 ## 📋 Instructions for Next Model
 
 ### Priority Order
-1. **Resume Core App Development**:
-   - Focus on **TTS for Ask Mode** implementation in the Python backend.
-   - Ref: `docs/specs/SPEC_001_TTS_AND_REINJECT.md`.
-   - Setup: `pip install pyttsx3` (ensure threading/non-blocking handling).
-2. **Injection Recall**:
-   - Add caching for the last injected string in `python/core/injector.py`.
-   - Implement the `reinject-last` IPC command.
-3. **Docs Content**:
-   - Transfer technical details from `QUICK_START.md` and `AI_CODEX.md` into the corresponding "User" and "Developer" sections in `sitex/docs.html`.
+1.  **EXECUTE v1.0 Mandate (Highest Priority)**:
+    - We paused v1.0 execution to brainstorm. Now we must return.
+    - **Goal:** Implement **TTS for Ask Mode** & **Injection Recall**.
+    - **Ref:** `docs/specs/SPEC_001_TTS_AND_REINJECT.md`.
+    - **Tasks:**
+        - Install `pyttsx3`.
+        - Implement `dictate:speak` in Python.
+        - Implement `dictate:reinject-last` logic.
 
-### Context Needed
-- `docs/specs/SPEC_001_TTS_AND_REINJECT.md` (Feature technical specs)
-- `sitex/docs.html` (The new structural framework)
-- `python/ipc_server.py` & `python/core/injector.py` (Core logic points)
+2.  **Verify docs/specs/**:
+    - Ensure the 3 new specs are correctly linked in the roadmap.
+
+---
+
+## 🔄 Context & State
+- **Repo State:** Roadmap is now very ambitious (v2.0 is huge). Focus MUST remain on stabilizing v1.0 first.
+- **Architecture:** We have committed to a "Hybrid" future (Local Default + Cloud Optional). This justifies the v1.1 Wallet infrastructure.
+- **VRAM Constraints:** Determined that Moondream 2B fits in 8GB alongside Whisper/Gemma.
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
+### 2026-01-21 09:55 - Gemini
+- **Planning:** Created detailed specs for Chatbot, Scribe, Visionary.
+- **Roadmap:** Officially mapped out v1.1 and v2.0.
+
 ### 2026-01-20 11:35 - Gemini
-- **UI/UX**: Unified header across site, standardized height/padding, and fixed sidebar docs dashboard.
-- **Docs**: Defined Documentation Master Plan and created structural guide for User vs Developer hub.
-- **Logic**: Implemented sidebar scroll observer in `docs.js`.
+- **UI/UX**: Unified header across site, standardized height/padding.
+- **Docs**: Defined Documentation Master Plan.
 
 ### 2026-01-20 11:05 - Gemini
-- **UI/UX:** Massive overhaul of marketing site scrollytelling and sequential animations.
-- **Docs:** Updated `FEATURE_LIST.md` and created the "Arsenal" modal.
-
-### 2026-01-20 05:25 - Gemini
-- **Docs:** Created detailed spec for **TTS** and **Injection Recall**.
-- **Plan:** Updated `TASKS.md` with new feature tasks.
+- **UI/UX:** Massive overhaul of marketing site scrollytelling.

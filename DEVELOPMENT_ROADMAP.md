@@ -503,6 +503,15 @@ Document any app-specific issues.
 
 ---
 
+### v1.1-F: Docs Chatbot ("Neural Help")
+*Spec: `docs/specs/SPEC_002_DOCS_CHATBOT.md`*
+- [ ] **Dual Deployment Strategy (Local + Cloud)**
+- [ ] **App:** RAG-based help system using local Gemma + SQLite + Nomic Embeddings
+- [ ] **Web:** Gemini Flash API powered support bot on `dikta.me`
+- [ ] **CI/CD:** Github Action to sync repo docs to cloud vector DB
+
+---
+
 ## v1.1-D: Research & Experimental
 
 **Goal:** Evaluate next-generation models and technologies.
@@ -617,7 +626,14 @@ Voice Q&A feature - "The Workflow Crutch" for micro-queries.
 
 > **Strategy Change:** For mobile, we pivot from "Local-First" to "Cloud-First" to compete with Wispr Flow's dedicated keyboard.
 
-### 2.1 Mobile Companion App (Cloud-First)
+### 2.1 The Scribe Layer ("Granola Module")
+*Spec: `docs/specs/SPEC_003_SCRIBE_LAYER.md`*
+- **Concept:** Persistent meeting intelligence workspace.
+- **Workflow:** Long-form Audio + User Notes + Template -> AI Synthesis.
+- **Goal:** Move beyond dictation to full session management.
+- **Tech:** Streaming recorder, Sliding window summarization, SQLite session store.
+
+### 2.2 Mobile Companion App (Cloud-First)
 **Architecture:**
 - **Core App:** React Native (iOS/Android)
 - **Engine:** Google Gemini Flash API (Multimodal Audio → Text) - *BYO Key or Free Tier*
@@ -625,7 +641,17 @@ Voice Q&A feature - "The Workflow Crutch" for micro-queries.
 - **Input Method:** Native Keyboard Extension (Swift/Kotlin) needed for "Type Anywhere" injection.
 - **Why Cloud?** Battery life, implementation speed (1 month vs 6 months), and instant multimodal capabilities.
 
-### 2.2 Browser Ghost Pilot
+### 2.3 The Visionary ("Multimodal Eyes")
+*Spec: `docs/specs/SPEC_004_VISIONARY_MODULE.md`*
+- **Concept:** "You talk, dIKtate looks."
+- **Workflow:** Screenshot/Region + Voice Command -> AI Answer.
+- **Tech:** Hybrid Architecture.
+    - **Local:** `moondream:2b` for fast OCR/UI description (< 8GB VRAM friendly).
+    - **Cloud:** `gemini-1.5-flash` for complex reasoning/math/coding.
+
+---
+
+### 2.4 Browser Ghost Pilot
 **Concept:** "You talk, dIKtate drives."
 - **Feature:** User speaks navigation commands ("Go to Reddit, find the latest thread on Llama 3").
 - **Tech:** Playwright/Puppeteer driven by local LLM agent.
@@ -668,8 +694,8 @@ To support the community while building a viable product, we will adopt an **Ope
 | Version | Phases | Focus |
 |---------|--------|-------|
 | **v1.0** | A → E | Stability, Testing, Hardening, Distribution, Polish |
-| **v1.1** | 1.1-A → 1.1-E | Premium UI, Power Features, Architecture, Research |
-| **v2.0** | TBD | **Mobile (Cloud)**, **Browser Agent**, Platform expansion |
+| **v1.1** | 1.1-A → 1.1-E | Premium UI, Power Features, **Docs Chatbot**, Architecture |
+| **v2.0** | TBD | **Scribe (Granola)**, Mobile (Cloud), Browser Agent |
 
 **Brand:** diktate (dikta.me) - No rebrand planned.
 
