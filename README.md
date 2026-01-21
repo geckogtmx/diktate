@@ -8,16 +8,14 @@ A high-performance, local-first voice dictation tool for Windows. Speak naturall
 
 ## 🎯 Project Status: MVP Development
 
-**Current Phase:** Phase 3 Complete (Integration & Testing) ✅
-**Next Step:** Phase 4 - User Acceptance Testing
-**Progress:** 50% complete (3 of 6 phases done)
-**Target:** Working MVP in 2-3 weeks
+**Current Phase:** Phase 4 - Validation & Verification 🧪
+**Progress:** 65% complete (Core pipeline done, Ask Mode in Beta)
+**Target:** Working MVP in 1-2 weeks
 
 ### What the MVP Will Do
-
-3. Press **Ctrl+Alt+D** (default hotkey) to start recording.
-4. Speak your text.
-5. Press **Ctrl+Alt+D** again to stop. 100% offline, 100% private.
+1. Press **Ctrl+Alt+D** (default hotkey) to start recording.
+2. Speak your text.
+3. Press **Ctrl+Alt+D** again to stop. 100% offline, 100% private.
 
 **Example:**
 - You say: "um, so like, I think we should maybe fix the bug"
@@ -47,7 +45,7 @@ Commercial voice tools send your audio to the cloud. dIKtate runs entirely on yo
 ✅ **Error Handling:** Comprehensive logging + native notifications - **Complete**
 ✅ **Performance Tracking:** Full pipeline metrics tracking - **Complete**
 ✅ **Offline:** 100% local operation - **Complete**
-🆕 **Ask Mode:** Voice Q&A with LLM (`Ctrl+Alt+A`) - **In Progress**
+🚧 **Ask Mode:** Voice Q&A with LLM (`Ctrl+Alt+A`) - **Beta (Text response only, TTS coming soon)**
 
 **Status:** Active Development
 
@@ -56,7 +54,7 @@ Commercial voice tools send your audio to the cloud. dIKtate runs entirely on yo
 | Key | Action |
 |-----|--------|
 | `Ctrl+Alt+D` | Dictate - transcribe, clean, type |
-| `Ctrl+Alt+A` | Ask - transcribe, ask LLM, clipboard |
+| `Ctrl+Alt+A` | Ask - transcribe, ask LLM, reply to clipboard/notification |
 
 
 **See:** `docs/L3_MEMORY/DEFERRED_FEATURES.md` for complete list
