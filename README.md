@@ -113,13 +113,13 @@ Commercial voice tools send your audio to the cloud. dIKtate runs entirely on yo
 - **[DEV_HANDOFF.md](./DEV_HANDOFF.md)** — Development status and next steps
 
 ### Commercial Launch (V1.0)
-- **[docs/COMMERCIAL_LAUNCH_STRATEGY.md](./docs/COMMERCIAL_LAUNCH_STRATEGY.md)** — Full commercial strategy
-- **[docs/V1_LAUNCH_SPRINT.md](./docs/V1_LAUNCH_SPRINT.md)** — 4-week sprint plan
+- **[docs/internal/COMMERCIAL_LAUNCH_STRATEGY.md](./docs/internal/COMMERCIAL_LAUNCH_STRATEGY.md)** — Full commercial strategy
+- **[docs/internal/V1_LAUNCH_SPRINT.md](./docs/internal/V1_LAUNCH_SPRINT.md)** — 4-week sprint plan
 
 ### Knowledge Base (L3 Memory)
-- **[docs/L3_MEMORY/PHASE_ROADMAP.md](./docs/L3_MEMORY/PHASE_ROADMAP.md)** — MVP → v1.0 evolution
-- **[docs/L3_MEMORY/DEFERRED_FEATURES.md](./docs/L3_MEMORY/DEFERRED_FEATURES.md)** — Features not in MVP
-- **[docs/L3_MEMORY/FULL_VISION/](./docs/L3_MEMORY/FULL_VISION/)** — Detailed specs for future phases
+- **[docs/internal/PHASE_ROADMAP.md](./docs/internal/L3_MEMORY/PHASE_ROADMAP.md)** — MVP → v1.0 evolution
+- **[docs/internal/DEFERRED_FEATURES.md](./docs/internal/L3_MEMORY/DEFERRED_FEATURES.md)** — Features not in MVP
+- **[docs/internal/FULL_VISION/](./docs/internal/L3_MEMORY/FULL_VISION/)** — Detailed specs for future phases
 
 ---
 
