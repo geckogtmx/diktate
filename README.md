@@ -29,7 +29,7 @@ A high-performance, local-first voice dictation tool for Windows. Speak naturall
 
 Commercial voice tools send your audio to the cloud. dIKtate runs entirely on your hardware:
 
-- **Fast** — 15-30 second latency from speech to text (CPU mode, MVP)
+- **Fast** — 15-30 seconds (CPU) or **<5 seconds** (GPU) latency from speech to text
 - **Private** — Audio never leaves your machine
 - **Intelligent** — Not just transcription, but transformation (grammar fixes, filler removal, cleanup)
 - **Offline** — 100% local operation, no internet required
@@ -76,18 +76,17 @@ Commercial voice tools send your audio to the cloud. dIKtate runs entirely on yo
 
 ## Prerequisites
 
-### MVP (CPU Mode)
-- Windows 10/11
-- Python 3.11+
-- Node.js 18+
-- Modern multi-core CPU (Intel i5/AMD Ryzen 5 or better)
-- 8GB+ RAM
-- [Ollama](https://ollama.com/) installed and running
+### System Requirements
+- **Windows 10/11**
+- **Microphone**
+- **Ollama** (installed automatically)
 
-### Optional (Future GPU Support)
-- NVIDIA GPU with 6GB+ VRAM
-- CUDA Toolkit
-- Expected: 3-5x performance improvement
+### Hardware Acceleration (CUDA)
+dIKtate automatically detects and uses your NVIDIA GPU if available.
+- **Requirement:** NVIDIA GPU with 4GB+ VRAM
+- **Driver:** Make sure you have the latest NVIDIA drivers installed.
+- **Benefit:** 3-5x faster performance compared to CPU.
+
 
 ---
 
