@@ -122,17 +122,17 @@ dIKtate automatically detects and uses your NVIDIA GPU if available.
 
 ## Development Plan
 
-**Total Effort:** 80-120 hours (2-3 weeks full-time)  
+**Total Effort:** Full-time Development  
 **Phases:** 6 phases, 47 tasks, 6 test checkpoints
 
-| Phase | Duration | Focus |
-|-------|----------|-------|
-| 1: Python Backend | 5 days | Record → Transcribe → Process → Inject |
-| 2: Electron Shell | 3 days | System tray, hotkey, Python integration |
-| 3: Integration | 3 days | Error handling, performance, testing |
-| 4: Validation | 3 days | UAT, bug fixes, prerequisites |
-| 5: Documentation | 2 days | User guide, developer docs |
-| 6: Release | 2 days | Packaging, installer, final validation |
+| Phase | Focus |
+|-------|-------|
+| 1: Python Backend | Record → Transcribe → Process → Inject |
+| 2: Electron Shell | System tray, hotkey, Python integration |
+| 3: Integration | Error handling, performance, testing |
+| 4: Validation | UAT, bug fixes, prerequisites |
+| 5: Documentation | User guide, developer docs |
+| 6: Release | Packaging, installer, final validation |
 
 **Detailed Plan:** See artifacts (`mvp_development_plan.md`)
 
@@ -168,19 +168,19 @@ dIKtate automatically detects and uses your NVIDIA GPU if available.
 
 ## Roadmap
 
-### MVP (v0.1.0) - Weeks 1-3
+### MVP (v0.1.0)
 Core functionality: dictation works, 100% offline
 
-### Phase 2 (v0.2.0) - Weeks 4-6
+### Phase 2 (v0.2.0)
 Enhanced UX: context modes, hotkey config, settings window
 
-### Phase 3 (v0.3.0) - Weeks 7-10
+### Phase 3 (v0.3.0)
 Advanced features: Gemini fallback, IPC validation, Zustand stores
 
-### Phase 4 (v0.4.0) - Weeks 11-14
+### Phase 4 (v0.4.0)
 Premium UI: floating pill, design system, animations
 
-### Phase 5 (v1.0.0) - Weeks 15+
+### Phase 5 (v1.0.0)
 Power features: custom prompts, model selection, history
 
 ### Phase 6 (v2.0) - Future
