@@ -10,7 +10,7 @@ A high-performance, local-first voice dictation tool for Windows. Speak naturall
 
 **Current Phase:** Phase 4 - Validation & Verification 🧪
 **Progress:** 65% complete (Core pipeline done, Ask Mode in Beta)
-**Target:** Working MVP in 1-2 weeks
+**Target:** Working V1.0 in 1-2 weeks
 
 ### What the MVP Will Do
 1. Press **Ctrl+Alt+D** (default hotkey) to start recording.
