@@ -1,6 +1,6 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-21 21:05
+> **Last Updated:** 2026-01-21 21:15
 > **Last Model:** Gemini (Antigravity)
 > **Session Focus:** Prompt Refinement & Progress Sync
 
@@ -11,6 +11,8 @@
 - **Prompt Refinement**: Updated `PROMPT_GEMMA_STANDARD` in `python/config/prompts.py` to a more concise and restrictive version: *"Dictation cleanup. Fix punctuation, remove fillers, apply corrections. Nothing else added."*
 - **Documentation Sync**: Committed updates to `DEVELOPMENT_ROADMAP.md` and `DEFERRED_FEATURES.md` reflecting the successful resolution of stress test infrastructure.
 - **Reporting**: Committed `docs/performance_report.html` generated from latest stress tests.
+- **Performance Benchmarking**: Verified local Gemma 3 (2.5s) is significantly faster than Cloud Gemini Flash (7.7s) for identical 9s recordings.
+- **Hardware Insights**: Identified that multi-monitor setups and browsers can cause VRAM "overflow" (swapping to system RAM), doubling inference times on 8GB GPUs. Closing monitors/browsers restored peak performance.
 - **Commit**: a41b1e5 "Refactor: Simplify Gemma Standard prompt and update roadmap progress"
 
 ---
@@ -49,16 +51,19 @@ python python/tools/fetch_test_data.py "https://youtube.com/watch?v=..."
 ### 🔄 Context & State
 - **Status**: All critical blockers resolved
 - **Testing**: Automated stress testing now viable for continuous validation
-- **Performance**: ~18s per phrase average, 100+ phrase tests stable
+- **Performance**: ~18s per phrase average, 100+ phrase tests stable.
+- **Optimizations**: Local inference (2.5s) confirmed 3x faster than Cloud (7.7s).
+- **VRAM Threshold**: Identified 8GB VRAM edge case; multi-monitor/browser usage can trigger slow-path system RAM swapping. Better performance when GPU is dedicated to dIKtate.
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
-### 2026-01-21 21:05 - Gemini (Antigravity)
+### 2026-01-21 21:15 - Gemini (Antigravity)
 - **Refactor**: Simplified `PROMPT_GEMMA_STANDARD` for more reliable and concise output.
-- **Sync**: Committed roadmap and performance logs from previous validation work.
-- **Commit**: a41b1e5
+- **Benchmarks**: Verified 3x speedup of local vs cloud.
+- **Hardware**: Documented VRAM overflow issue on 8GB cards with multi-monitors.
+- **Commit**: 4df0390
 
 ### 2026-01-21 20:08 - Claude Sonnet 4.5
 - **RESOLVED**: Complete fix for stress test synchronization blocking issue
