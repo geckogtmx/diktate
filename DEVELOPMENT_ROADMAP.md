@@ -258,7 +258,24 @@ Document any app-specific issues.
 - [ ] Create single installer (.exe)
 - [ ] Test on clean Windows VM
 
-### D.2 First-Run Experience (Embedded Sidecar Strategy) ✅ DECIDED
+### D.2 App Protection & Licensing (Lemon Squeezy) ✅ NEW
+> **Goal:** Secure the app with a "Soft-DRM" and handle international taxes via Lemon Squeezy.
+
+- [ ] **Business & Tax Setup:**
+  - [ ] Create account on **Lemon Squeezy** (Merchant of Record).
+  - [ ] Set up "Voice Dictation App" as a **Pay What You Want** digital product ($20 min).
+  - [ ] Enable "Generate License Keys" in product settings.
+  - [ ] Set "Thank You" page to the Windows .exe download link.
+- [ ] **Technical Implementation (Electron):**
+  - [ ] **Fingerprinting:** Install `node-machine-id` to identify unique user PCs.
+  - [ ] **Activation UI:** Build a simple "Enter License Key" splash screen/check on first boot.
+  - [ ] **API Sync:** Connect UI to the [Lemon Squeezy License API](https://api.lemonsqueezy.com/v1/licenses/activate).
+  - [ ] **Local Storage:** Store successful activation tokens locally for persistent access.
+- [ ] **Security & Trust:**
+  - [ ] **Code Signing:** Purchase Windows Code Signing Certificate (Azure Trusted Signing) to clear SmartScreen.
+  - [ ] **Source Available License:** Draft license text (transparency without redistribution rights).
+
+### D.3 First-Run Experience (Embedded Sidecar Strategy) ✅ DECIDED
 - [ ] **Bundle `ollama.exe`** inside Electron app resources (~300MB)
 - [ ] **Detection Logic:**
   - [ ] Check if user has Ollama running (port 11434) → Use it
@@ -268,12 +285,12 @@ Document any app-specific issues.
   - [ ] Auto-pull `gemma3:4b` using the active Ollama instance
   - [ ] Verify model checksum matches expected
 
-### D.3 Update Mechanism
+### D.4 Update Mechanism
 - [ ] Plan for auto-updates (or manual download)
 - [ ] Version checking
 - [ ] Changelog display
 
-### D.4 Basic History Panel (NEW)
+### D.5 Basic History Panel (NEW)
 - [ ] Store last 10 transcriptions in memory
 - [ ] Add "History" tab or panel to status window
 - [ ] Show timestamp, raw text, processed text

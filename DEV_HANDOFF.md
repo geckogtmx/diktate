@@ -1,51 +1,47 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-21 22:35
+> **Last Updated:** 2026-01-21 22:58
 > **Last Model:** Gemini (Antigravity)
-> **Session Focus:** Website Messaging & Roadmap Infrastructure
+> **Session Focus:** Commercial Launch & Licensing Strategy (Lemon Squeezy Pivot)
 
 ---
 
 ## ✅ Completed This Session
 
-- **Website Comparison Revamp**:
-    - Replaced "Sovereignty" with **Consistency** and **Censorship** in `sitex/index.html`.
-    - Updated speed benchmarks to "6-12s Latency/Inference (Cloud)" vs. "~3s Local GPU".
-    - Simplified "Word Limits" label from "Capped weekly" to "Capped".
-- **Feature Expansion**:
-    - Added "Your Tokens. Your Choice." scrollytelling section to `sitex/index.html`.
-    - Implemented dynamic card updates in `sitex/src/main.js` that cycle through Local (Gemma), Anthropic (Claude), and Google (Gemini) as the user scrolls (33% phases).
-- **Bug Fix**:
-    - Fixed a logic error in `sitex/src/main.js` where the versus track would lose its highlight selection state after the scroll track ended (re-indexed 4 -> 7 rows).
-- **Roadmap Infrastructure**:
-    - Added `D.6 Web Infrastructure` to `DEVELOPMENT_ROADMAP.md` covering the upcoming marketing site repo split and Vercel deployment.
-- **README Sync**:
-    - Updated `README.md` speed benchmarks to match the marketing site (3s local GPU vs. 12s cloud).
+- **Licensing & Protection Strategy**:
+    - Integrated **Lemon Squeezy** as the Merchant of Record in both `DEVELOPMENT_ROADMAP.md` and `docs/internal/COMMERCIAL_LAUNCH_STRATEGY.md`.
+    - Adopted a **"Pay What You Want"** model (Min $20, Suggested $25) to replace the previous fixed tiers.
+    - Documented the **"Soft-DRM"** technical logic: `node-machine-id` fingerprinting + Lemon Squeezy License API + Local Activation Tokens.
+    - Updated the roadmap to include **Azure Trusted Signing** for Windows SmartScreen clearance.
+- **Roadmap Refinement**:
+    - Re-organized Phase D (Distribution) to prioritize Protection & Licensing ahead of the "Ollama Sidecar" logic.
+- **Commercial Strategy Alignment**:
+    - Simplified the pricing section in `COMMERCIAL_LAUNCH_STRATEGY.md` to reflect the MoR benefits (automated tax handling for international/MX sales).
 
 ## 📋 Instructions for Next Model
 
-### 🚀 Next Milestone: Marketing Site Extraction
-The user wants to split the marketing site into its own repository (`diktate-web`) to scale Auth and Payments independently of the local engine.
+### 🚀 Next Milestone: Licensing Implementation (Section D.2)
+We have a clear technical checklist in `DEVELOPMENT_ROADMAP.md` for app protection.
 
 ### Priority Order
-1. **Verify `sitex/` Integrity**: Ensure all assets and dependencies are local to `sitex/` before splitting.
-2. **Execute Repo Split**:
-   - Move `sitex/` contents to a new dedicated repository.
-   - Update any references in the main `diktate` repo.
-3. **Vercel Deployment**:
-   - Deploy `diktate-web` to Vercel.
-   - Coordinate domain pointing for `dikta.me`.
-4. **Auth System Selection**:
-   - Start implementation of **User Auth** (Clerk or Supabase) as discussed in the roadmap.
+1. **`node-machine-id` Integration**: Add `node-machine-id` to the Electron project and verify it generates a consistent unique fingerprint on Windows.
+2. **Activation UI**: Propose/build a simple splash screen or settings section where users can enter their license key.
+3. **Lemon Squeezy API Logic**: Implement the `/v1/licenses/activate` call in the Electron main process.
+4. **Local Persistence**: Securely store the activation token locally (e.g., in `electron-store`).
 
 ### 🔄 Context & State
-- **Status**: Marketing messaging is now high-impact and accurate (3s benchmarks).
-- **Architecture**: Move toward split-repo architecture for v1.0 release confirmed.
-- **Performance**: 3s local GPU inference is the lead hook.
+- **Status**: Strategy is locked. Business logic (Tax/MoR) is offloaded to Lemon Squeezy.
+- **Architecture**: Protection will be "Soft-DRM" (device-locked licenses).
+- **Target**: Release v1.0 on Windows with a seamless "Pay What You Want" activation flow.
 
 ---
 
 ## Session Log (Last 3 Sessions)
+
+### 2026-01-21 22:58 - Gemini (Antigravity)
+- **Licensing**: Pivoted to Lemon Squeezy + PWYW model.
+- **DRM**: Documented Soft-DRM strategy using machine fingerprinting.
+- **Roadmap**: Updated Phase D with app protection checklist.
 
 ### 2026-01-21 22:35 - Gemini (Antigravity)
 - **Website**: Integrated "Your Tokens" section and refined comparison benchmarks.
@@ -56,9 +52,3 @@ The user wants to split the marketing site into its own repository (`diktate-web
 - **Refactor**: Simplified `PROMPT_GEMMA_STANDARD` for more reliable and concise output.
 - **Benchmarks**: Verified 3x speedup of local vs cloud.
 - **Hardware**: Documented VRAM overflow issue on 8GB cards with multi-monitors.
-
-### 2026-01-21 20:08 - Claude Sonnet 4.5
-- **RESOLVED**: Complete fix for stress test synchronization blocking issue
-- **Reliability**: Replaced audio playback with PyAudio + timeout protection
-- **Synchronization**: Implemented adaptive state polling (replaces fixed delays)
-- **Quality**: Subtitle merging for realistic 8+ second test phrases

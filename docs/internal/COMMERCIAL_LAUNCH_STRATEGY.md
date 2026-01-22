@@ -173,35 +173,39 @@
 
 ---
 
-## 💰 Anti-Subscription Pricing Structure (FINAL)
+## 💰 Anti-Subscription Pricing Structure (PAY WHAT YOU WANT)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │              dikta.me ANTI-SUBSCRIPTION PRICING              │
 │                                                             │
-│   🏠 BAREBONES LOCAL ($10)      ⭐ POWER VERSION ($25)       │
-│   ───────────────────────       ───────────────────────     │
-│   • One-Time Payment            • One-Time Payment          │
-│   • 100% Local / Offline        • Ask Mode UI               │
-│   • Telemetry-Free              • Cloud APIs (BYOK/Wallet)  │
-│   • Air-Gap Guarantee           • Streamer Satellite        │
-│   • MIT License                 • Source-Available License  │
+│   ⭐ DIKTA.ME PRO (Pay What You Want - Min $20)              │
+│   ─────────────────────────────────────────────              │
+│   • One-Time Lifetime License Key                           │
+│   • 100% Local / Offline Core Pipeline                      │
+│   • "Soft-DRM" tied to Machine ID                           │
+│   • Ask Mode UI & Cloud API Integrations                    │
+│   • Source-Available License (Transparency + Peace of Mind)  │
 │                                                             │
 ├─────────────────────────────────────────────────────────────┤
-│              💳 TRANSPARENT UPDATES (Optional)               │
+│              🎫 THE "GOOD GUY" LICENSE MODEL                │
 │   ─────────────────────────────────────────────────────────│
-│   • $2/mo (Ko-fi) or Donation                               │
-│   • Keeps the project alive.                                │
-│   • Version you bought WORKS FOREVER regardless.            │
+│   • Suggested Price: $25                                    │
+│   • Minimum Support: $20                                    │
+│   • Automated License Delivery via Lemon Squeezy            │
+│   • Activation Limit: 1 (Laptops + Desktop flexibility)      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Why $10 / $25?
+### Why Lemon Squeezy?
+1. **Tax Simplicity:** They act as the **Merchant of Record (MoR)**, handling the "Mexico-to-International" tax piece and VAT/Sales Tax collection across the globe automatically.
+2. **Automated Licensing:** Native support for license key generation and activation APIs.
+3. **Pay What You Want:** Maintains the community-first vibe while ensuring a sustainable minimum for development.
 
-**The Math (vs Competitors):**
-- WisprFlow: $144/year → dikta.me Pro pays for itself in **2 months**
-- Glaido: $240/year → dikta.me is **10x cheaper** on day one
-- AquaVoice: $96/year → dikta.me is **4x cheaper** immediately
+### The Math (vs Competitors):
+- WisprFlow: $144/year → dikta.me Pro pays for itself in **2 months**.
+- Glaido: $240/year → dikta.me is **10x cheaper** on day one.
+- AquaVoice: $96/year → dikta.me is **4x cheaper** immediately.
 
 **The Message:**
 ```
@@ -229,14 +233,12 @@
 | **Moderate** | 5,000 | 1,000 × $10 | 500 × $25 | $5,000 | **$27,500** |
 | **Optimistic** | 20,000 | 4,000 × $10 | 2,000 × $25 | $20,000 | **$110,000** |
 
-### Ko-fi / Stripe Implementation
-
+### Lemon Squeezy Implementation
 | Product | Type | Price | Platform |
 |---------|------|-------|----------|
-| Libre Supporter | One-time | $10 | Ko-fi |
-| Pro License | One-time | $25 | Ko-fi → Stripe (v1.1) |
-| Wallet Credits | One-time | $5-25 | Stripe (v1.1) |
-| Active Supporter | Monthly | $2-3/mo | Ko-fi / Substack |
+| dikta.me Pro | One-time (PWYW) | Min $20 / Sug $25 | Lemon Squeezy |
+| Wallet Credits | One-time | $5-25 (v1.1) | Lemon Squeezy / Stripe |
+| active Supporter | Monthly | Optional Donation | Ko-fi |
 
 ### 🔄 Active Status (Soft Recurring)
 
