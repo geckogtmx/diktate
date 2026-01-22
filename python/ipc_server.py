@@ -971,7 +971,19 @@ YOUR ANSWER:"""
                     
                 elif data == "PING":
                     conn.sendall(b"PONG")
-                    
+
+                elif data == "RESET":
+                    # Emergency reset - force app back to IDLE state
+                    logger.warning("[CMD] RESET command received - forcing state to IDLE")
+                    if self.state == State.RECORDING and self.recording:
+                        try:
+                            self.recorder.stop()
+                            self.recording = False
+                        except:
+                            pass
+                    self._set_state(State.IDLE)
+                    conn.sendall(b"OK")
+
                 else:
                     logger.warning(f"[CMD] Unknown TCP command: {data}")
                     conn.sendall(b"UNKNOWN")
