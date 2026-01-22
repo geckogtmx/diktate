@@ -40,24 +40,75 @@ IPC_PORT = 5005
 PROCESS_TIME = 7.0 # Time (seconds) to wait for dIKtate processing
 
 def send_command(cmd: str):
-    """Send a command to the dIKtate IPC server via TCP."""
+    """Send a command to the dIKtate IPC server via TCP.
+
+    Returns:
+        For STATUS: the state string
+        For START/STOP: True if "OK", False otherwise
+    """
     print(f"  [CMD] Sending {cmd}...", end="")
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(2.0)
             s.connect((IPC_HOST, IPC_PORT))
             s.sendall(cmd.encode())
-            response = s.recv(1024).decode()
+            response = s.recv(1024).decode().strip()
             print(f" -> {response}")
+
+            # For STATUS, return the state string
+            if cmd == "STATUS":
+                return response
+
+            # For START/STOP, check for OK (success) or other responses (failure/busy)
             return response == "OK"
     except Exception as e:
         print(f" -> ERROR: {e}")
         return False
 
+def wait_for_idle(timeout: float = 30.0, poll_interval: float = 0.5):
+    """Poll the dIKtate state until it returns to IDLE or timeout.
+
+    Args:
+        timeout: Maximum time to wait (seconds)
+        poll_interval: Time between polls (seconds)
+
+    Returns:
+        bool: True if IDLE reached, False if timeout
+    """
+    start_time = time.time()
+    last_state = None
+
+    while (time.time() - start_time) < timeout:
+        state = send_command("STATUS")
+
+        # Only print state changes to reduce noise
+        if state != last_state:
+            print(f"  [STATE] {state}")
+            last_state = state
+
+        if state == "idle":
+            return True
+
+        time.sleep(poll_interval)
+
+    print(f"  [TIMEOUT] State did not return to IDLE within {timeout}s (last state: {last_state})")
+    return False
+
 def play_audio_segment(segment):
-    """Play using the most standard method available."""
-    from pydub.playback import play
-    play(segment)
+    """Play using simpleaudio for precise blocking."""
+    try:
+        # Simpleaudio is much faster for blocking playback than pydub.play
+        sample_rate = segment.frame_rate
+        channels = segment.channels
+        sample_width = segment.sample_width
+        data = segment.raw_data
+        
+        play_obj = sa.play_buffer(data, channels, sample_width, sample_rate)
+        play_obj.wait_done()
+    except Exception as e:
+        print(f"  [WARN] simpleaudio failed, falling back to pydub.play: {e}")
+        from pydub.playback import play
+        play(segment)
     return None 
 
 def smart_feed(audio_path: Path, srt_path: Path, loop: bool = False, count: int = 0, start_at: int = 0):
@@ -73,15 +124,18 @@ def smart_feed(audio_path: Path, srt_path: Path, loop: bool = False, count: int 
     total_subs = len(subs)
     print(f"Found {total_subs} subtitle lines.")
     print("="*60)
-    print(f"STARTING TEST at index {start_at} - Connecting to dIKtate on port {IPC_PORT}...")
+    print(f"STARTING TEST at index {start_at}")
+    print(f"Sync: Connecting to dIKtate on port {IPC_PORT}...")
     
     # Initial Connection Check
-    if not send_command("STATUS"):
+    status = send_command("STATUS")
+    if not status:
         print("[ERROR] Could not connect to dIKtate. Is the app running?")
         sys.exit(1)
         
-    print("5 seconds to switch focus (if needed)...")
-    time.sleep(5)
+    print(f"App Status: {status}")
+    print("3 seconds to ready...")
+    time.sleep(3)
     
     iteration = 0
     
@@ -98,36 +152,48 @@ def smart_feed(audio_path: Path, srt_path: Path, loop: bool = False, count: int 
             start_ms = (sub.start.hours * 3600 + sub.start.minutes * 60 + sub.start.seconds) * 1000 + sub.start.milliseconds
             end_ms = (sub.end.hours * 3600 + sub.end.minutes * 60 + sub.end.seconds) * 1000 + sub.end.milliseconds
             
-            # Add buffer
-            start_ms = max(0, start_ms - 250) 
-            end_ms = end_ms + 250
+            # Subtitle cleanup/buffer
+            start_ms = max(0, start_ms - 100) 
+            end_ms = end_ms + 100
             
             duration_ms = end_ms - start_ms
-            if duration_ms < 500: continue 
+            if duration_ms < 300: continue 
             
             # 2. Extract Text
             expected_text = sub.text.replace('\n', ' ')
-            print(f"\n[{i+1}/{total_subs}] Test Case:")
+            print(f"\n[{i+1}/{total_subs}] Case {i}:")
             print(f"  [EXPECTED] \"{expected_text}\"")
-            print(f"  [DURATION] {duration_ms/1000:.2f}s")
+            print(f"  [TIMING] {start_ms/1000:.2f}s -> {end_ms/1000:.2f}s (Dur: {duration_ms/1000:.2f}s)")
             
             # 3. Slice Audio
             chunk = audio[start_ms:end_ms]
             
-            # 4. Start Recording (Explicit Command)
-            send_command("START")
-            
-            # 5. Play Audio
-            time.sleep(0.5) 
+            # 4. Ensure IDLE before starting
+            print(f"  [SYNC] Waiting for IDLE state...")
+            if not wait_for_idle(timeout=30.0):
+                print("  [ERROR] App not ready (stuck in non-IDLE state), skipping phrase")
+                continue
+
+            # 5. Start Recording
+            # We send START, wait briefly for dIKtate to initialize hardware, then play
+            if not send_command("START"):
+                print("  [ERROR] Failed to start recording")
+                continue
+
+            # 6. Play Audio (BLOCKING)
+            time.sleep(0.3)
             play_audio_segment(chunk)
-            
-            # 6. Stop Recording (Explicit Command)
-            time.sleep(1.0) 
-            send_command("STOP")
-            
-            # 7. Wait for Processing
-            print(f"  [WAITING] {PROCESS_TIME}s for Processing & Injection...")
-            time.sleep(PROCESS_TIME)
+
+            # 7. Stop Recording
+            # Wait a tiny bit for the trailing audio to be captured by hardware
+            time.sleep(0.5)
+            if not send_command("STOP"):
+                print("  [ERROR] Failed to stop recording")
+
+            # 8. Wait for Processing to Complete (poll for IDLE)
+            print(f"  [PROCESSING] Waiting for completion...")
+            if not wait_for_idle(timeout=30.0):
+                print("  [WARNING] Processing did not complete within timeout, continuing anyway...")
             
         if not loop:
             break
@@ -156,18 +222,25 @@ def dumb_feed(audio_path: Path, chunk_len_sec: int = 10, loop: bool = False):
     while True:
         for i, chunk in enumerate(chunks):
             print(f"\nChunk #{i+1}:")
-            
+
+            # Ensure IDLE before starting
+            print(f"  [SYNC] Waiting for IDLE state...")
+            if not wait_for_idle(timeout=30.0):
+                print("  [ERROR] App not ready, skipping chunk")
+                continue
+
             send_command("START")
             time.sleep(0.5)
-            
+
             play_audio_segment(chunk)
-            
+
             time.sleep(1.0)
             send_command("STOP")
-            
-            print(f"  [WAITING] {PROCESS_TIME}s...")
-            time.sleep(PROCESS_TIME)
-            
+
+            print(f"  [PROCESSING] Waiting for completion...")
+            if not wait_for_idle(timeout=30.0):
+                print("  [WARNING] Processing did not complete within timeout, continuing anyway...")
+
         if not loop: break
 
 if __name__ == "__main__":

@@ -1,68 +1,58 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-21 10:45
+> **Last Updated:** 2026-01-21 19:00
 > **Last Model:** Gemini (Antigravity)
-> **Session Focus:** Documentation Overhaul, Git Setup, & Feature Sync
+> **Session Focus:** Critical Hotfixes & Stress Test Bug Documentation
 
 ---
 
 ## ✅ Completed This Session
 
-### 🧪 Audio Feeder Suite (v1.0)
-- **Architecture Shift**: Moved from unreliable simulated hotkeys to **Direct TCP Control**.
-    - **IPC Server**: Now hosts a TCP Command Server on `localhost:5005`.
-    - **Audio Feeder**: Connects as a client to send precise `START`/`STOP` commands.
-- **Components Built**:
-    - `python/tools/fetch_test_data.py`: Smart YouTube downloader (auto-detects subtitles).
-    - `python/tools/audio_feeder.py`: The "player" script driving the stress tests.
-    - `tests/ui/`: A Node.js + HTML control panel (`http://localhost:3000`).
-- **Features**:
-    - **Smart Mode**: Slices audio by subtitle timestamps.
-    - **Resume Support**: Can start test at specific line index.
-    - **Ground Truth**: Logs expected text vs. actual input.
+### 🩹 Critical Hotfixes
+- **Main Process Crash**: Fixed `ipc_server.py` startup crash (`AttributeError: 'IpcServer' object has no attribute 'run'`). Corrected entry point to `.start()`.
+- **Missing Imports**: Fixed `NameError: name 'socket' is not defined` in `ipc_server.py`.
+- **Dependency Clean**: Resolved secondary issues with zombie Node.js processes on Port 3000.
 
-### 📚 Documentation & Cleanup
-- **Repo Structure**: Organized docs into User/Dev/Internal.
-- **Audits**: Removed fictional timelines, verified GPU support.
-- **Artifacts**: Updated `implementation_plan.md` with new TCP architecture.
+### 🧪 Stress Test Improvements (Ongoing)
+- **Precise Playback**: Switched `audio_feeder.py` to `simpleaudio` for strictly blocking memory playback.
+- **Auto-Recovery**: Added "self-healing" logic to `ipc_server.py` to reset recording state if a `START` command arrives while already recording.
+- **Metadata**: `fetch_test_data.py` now extracts duration and audio specs via `ffprobe` after download.
 
 ---
 
 ## 📋 Instructions for Next Model
 
-### 🛑 Critical First Step
-**YOU MUST RESTART THE MAIN DIKTATE APP.**
-The `ipc_server.py` changes (TCP Server on Port 5005) only load on app startup. If you don't restart, `audio_feeder.py` will fail to connect.
+### 🛑 BLOCKED: Stress Test Sync Issue
+**DO NOT attempt to fix the Stress Test synchronization right now.** 
+The app is stable for manual use, but the automated test suite (`audio_feeder.py`) is causing a desync in the Python backend.
 
 ### Priority Order
-1.  **VERIFY Stress Test Bug Fix (TCP Control)**:
-    -   **Context**: The previous session fixed a "Start but no Stop" bug by moving to TCP.
-    -   **Action**:
-        1.  Start dIKtate (reloads `ipc_server.py`).
-        2.  `cd tests/ui && npm run dev`.
-        3.  Run the test.
-    -   **Success Condition**: `audio_feeder.py` successfully connects to Port 5005 and dIKtate stops recording *automatically* after each phrase.
-2.  **Analyze Results**: Compare the "Expected" text logs with the actual output.
-3.  **EXECUTE v1.0 Features**:
+1.  **Read Bug Report**: See `docs/bugs/BUG_STRESS_TEST_SYNC.md` for the full analysis of why TCP control is failing.
+2.  **Verify App Stability**:
+    -   Start dIKtate.
+    -   Verify manual dictation (`Ctrl+Alt+D`) works.
+    -   Verify the app no longer crashes on start.
+3.  **EXECUTE v1.0 Features (Safe Path)**:
     -   **TTS for Ask Mode**: Implement `pyttsx3` (See `SPEC_001`).
     -   **Injection Recall**: Implement "Paste Last" feature.
 
 ### 🔄 Context & State
-- **Repo**: Private GitHub specific.
-- **Mode**: Planning/Execution.
-- **Docs**: Up to date. Do not move files unnecessarily.
+- **Critical**: The `ipc_server.py` TCP server on Port 5005 is unreliable for long-running automated tests. It holds the app in `RECORDING` mode incorrectly.
+- **Docs**: Bug documented in `docs/bugs/`.
 
 ---
 
 ## Session Log (Last 3 Sessions)
 
+### 2026-01-21 19:00 - Gemini (Antigravity)
+- **Hotfix**: Fixed `ipc_server.py` entry point crash and missing `socket` import.
+- **Cleanup**: Terminated zombie processes on Port 3000.
+- **Documentation**: Formally documented the Stress Test Synchronization Bug in `docs/bugs/BUG_STRESS_TEST_SYNC.md`.
+- **Stabilization**: Improved feeder playback precision using `simpleaudio`.
+
 ### 2026-01-21 10:45 - Gemini
 - **Git**: Configured remote, pushed to private repo.
-- **Docs**: Audited README, verified GPU/Ask Mode status, cleaned up timelines.
-- **Restructure**: Split docs into User/Dev/Internal.
+- **Docs**: Audited README, split docs into User/Dev/Internal.
 
 ### 2026-01-21 09:55 - Gemini
 - **Planning:** Created detailed specs for Chatbot, Scribe, Visionary.
-
-### 2026-01-20 11:35 - Gemini
-- **UI/UX**: Unified header across site.

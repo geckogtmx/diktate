@@ -68,6 +68,36 @@ def fetch_data(url: str, output_dir: str):
             
             if wav_file.exists():
                 print(f"[OK] Audio: {wav_file}")
+                
+                # Extract Metadata via FFprobe
+                print("\n[METADATA] Audio Analysis:")
+                import subprocess
+                import json
+                
+                ffprobe_cmd = [
+                    'ffprobe' if not ffmpeg_loc else os.path.join(ffmpeg_loc, 'ffprobe.exe'),
+                    '-v', 'quiet',
+                    '-print_format', 'json',
+                    '-show_format',
+                    '-show_streams',
+                    str(wav_file)
+                ]
+                
+                try:
+                    res = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
+                    if res.returncode == 0:
+                        meta = json.loads(res.stdout)
+                        if 'streams' in meta and len(meta['streams']) > 0:
+                            stream = meta['streams'][0]
+                            duration = float(meta['format'].get('duration', 0))
+                            print(f"  - Duration: {duration:.2f}s")
+                            print(f"  - Sample Rate: {stream.get('sample_rate')}Hz")
+                            print(f"  - Channels: {stream.get('channels')}")
+                            print(f"  - Bit Depth: {stream.get('bits_per_sample', 'unknown')} bits")
+                    else:
+                        print("  - Could not extract metadata via ffprobe")
+                except Exception as e:
+                    print(f"  - Metadata extraction error: {e}")
             else:
                 print(f"[ERROR] Audio file not found at {wav_file}")
 

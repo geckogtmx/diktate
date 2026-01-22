@@ -12,6 +12,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional, Dict
 import wave
+import socket
 from pynput import keyboard
 
 # --- FIX: Inject NVIDIA DLL paths for ctranslate2/faster-whisper ---
@@ -927,29 +928,55 @@ YOUR ANSWER:"""
         """Start a simple TCP server for external control (Audio Feeder)"""
         def handle_client(conn):
             try:
+                # Set a short timeout for the client connection
+                conn.settimeout(5.0)
                 data = conn.recv(1024).decode().strip().upper()
-                logger.info(f"[CMD] Received external command: {data}")
+                logger.info(f"[CMD] Received external TCP command: {data}")
                 
                 if data == "START":
-                    # Force start even if in other states? No, use standard logic
-                    # But we can force IDLE first if needed.
-                    if self.state != State.IDLE:
-                         # Attempt to stop first?
-                         pass
+                    # For stress testing, make this robust:
+                    # 1. If PROCESSING or INJECTING, reject (client should poll for IDLE first)
+                    if self.state in (State.PROCESSING, State.INJECTING):
+                        error_msg = f"Cannot start while {self.state.value} - wait for IDLE"
+                        logger.warning(f"[CMD] TCP START rejected: {error_msg}")
+                        conn.sendall(f"BUSY: {self.state.value}".encode())
+                        return
+
+                    # 2. If RECORDING, Force STOP then Restart.
+                    if self.state == State.RECORDING:
+                        logger.warning("[CMD] TCP START received while RECORDING. Forcing RESTART of session.")
+                        self.stop_recording()
+                        # Give it a moment for cleanup
+                        time.sleep(0.2)
+
                     res = self.start_recording(mode="dictate")
-                    conn.send(b"OK" if res.get("success") else b"FAIL")
+                    if res.get("success"):
+                        conn.sendall(b"OK")
+                    else:
+                        error_msg = res.get("error", "Unknown error")
+                        logger.error(f"[CMD] TCP START failed: {error_msg}")
+                        conn.sendall(f"FAIL: {error_msg}".encode())
                     
                 elif data == "STOP":
                     res = self.stop_recording()
-                    conn.send(b"OK" if res.get("success") else b"FAIL")
+                    if res.get("success"):
+                        conn.sendall(b"OK")
+                    else:
+                        error_msg = res.get("error", "Unknown error")
+                        logger.error(f"[CMD] TCP STOP failed: {error_msg}")
+                        conn.sendall(f"FAIL: {error_msg}".encode())
                 
                 elif data == "STATUS":
-                    conn.send(self.state.value.encode())
+                    conn.sendall(self.state.value.encode())
+                    
+                elif data == "PING":
+                    conn.sendall(b"PONG")
                     
                 else:
-                    conn.send(b"UNKNOWN")
+                    logger.warning(f"[CMD] Unknown TCP command: {data}")
+                    conn.sendall(b"UNKNOWN")
             except Exception as e:
-                logger.error(f"[CMD] Error handling client: {e}")
+                logger.error(f"[CMD] Error handling TCP client: {e}")
             finally:
                 conn.close()
 
@@ -1000,8 +1027,6 @@ YOUR ANSWER:"""
                 break
             except Exception as e:
                 logger.error(f"Error in main loop: {e}")
-            except Exception as e:
-                logger.error(f"Error in main loop: {e}")
         
         self.shutdown()
 
@@ -1034,4 +1059,4 @@ YOUR ANSWER:"""
 
 if __name__ == "__main__":
     server = IpcServer()
-    server.run()
+    server.start()
