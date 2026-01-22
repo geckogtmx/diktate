@@ -39,11 +39,18 @@ interface UserSettings {
   transMode: string;
   hotkey: string;
   askHotkey: string;
+  translateHotkey: string; // NEW: Ctrl+Alt+T for translate toggle
   askOutputMode: string;
   defaultOllamaModel: string;
   audioDeviceId: string;
   audioDeviceLabel: string;
   maxRecordingDuration: number; // seconds, 0 = unlimited
+  customPrompts: { // NEW: Custom prompts for each mode
+    standard: string;
+    prompt: string;
+    professional: string;
+    raw: string;
+  };
 }
 
 // Initialize Store with defaults
@@ -60,11 +67,18 @@ const store = new Store<UserSettings>({
     transMode: 'none',
     hotkey: 'Ctrl+Alt+D',
     askHotkey: 'Ctrl+Alt+A',
+    translateHotkey: 'Ctrl+Alt+T', // NEW: Translate toggle hotkey
     askOutputMode: 'type',
     defaultOllamaModel: 'gemma3:4b',
     audioDeviceId: 'default',
     audioDeviceLabel: 'Default Microphone',
-    maxRecordingDuration: 60 // 60 seconds default
+    maxRecordingDuration: 60, // 60 seconds default
+    customPrompts: { // NEW: Custom prompts for each mode (empty = use defaults)
+      standard: '',
+      prompt: '',
+      professional: '',
+      raw: ''
+    }
   }
 });
 
@@ -580,11 +594,20 @@ async function syncPythonConfig(): Promise<void> {
   const specificModel = store.get(`modeModel_${defaultMode}` as any);
   const defaultOllamaModel = specificModel || store.get('defaultOllamaModel', 'gemma3:4b');
 
+  // Get custom prompts (empty string = use Python defaults)
+  const customPrompts = store.get('customPrompts', {
+    standard: '',
+    prompt: '',
+    professional: '',
+    raw: ''
+  });
+
   const config: any = {
     provider: processingMode,
     mode: defaultMode,
     transMode: transMode,
-    defaultModel: defaultOllamaModel
+    defaultModel: defaultOllamaModel,
+    customPrompts: customPrompts
   };
 
   // Get API key if needed
@@ -608,10 +631,14 @@ async function syncPythonConfig(): Promise<void> {
   }
 
   try {
+    // Count non-empty custom prompts for logging
+    const customPromptCount = Object.values(config.customPrompts).filter((p: any) => p && p.length > 0).length;
+
     logger.info('MAIN', 'Syncing config to Python', {
       mode: config.mode,
       provider: config.provider,
-      model: config.defaultModel
+      model: config.defaultModel,
+      customPrompts: customPromptCount > 0 ? `${customPromptCount} custom` : 'none'
     });
     await pythonManager.setConfig(config);
 
@@ -741,6 +768,93 @@ function setupIpcHandlers(): void {
 // Settings get single value
 ipcMain.handle('settings:get', (_event, key: string) => {
   return store.get(key);
+});
+
+// ============================================
+// Custom Prompts IPC Handlers
+// ============================================
+
+// Get all custom prompts
+ipcMain.handle('settings:get-custom-prompts', async () => {
+  return store.get('customPrompts', {
+    standard: '',
+    prompt: '',
+    professional: '',
+    raw: ''
+  });
+});
+
+// Save custom prompt for a specific mode
+ipcMain.handle('settings:save-custom-prompt', async (_event, mode: string, promptText: string) => {
+  try {
+    // Validate mode
+    const validModes = ['standard', 'prompt', 'professional', 'raw'];
+    if (!validModes.includes(mode)) {
+      return { success: false, error: `Invalid mode: ${mode}` };
+    }
+
+    // Validate prompt length
+    if (promptText && promptText.length > 1000) {
+      return { success: false, error: 'Prompt too long (max 1000 characters)' };
+    }
+
+    // Validate {text} placeholder if prompt is not empty
+    if (promptText && !promptText.includes('{text}')) {
+      return { success: false, error: 'Prompt must include {text} placeholder where transcribed text will be inserted' };
+    }
+
+    // Sanitize backticks to prevent breaking prompt structure
+    const sanitized = promptText ? promptText.replace(/```/g, "'''") : '';
+
+    // Save to store
+    const customPrompts = store.get('customPrompts', {
+      standard: '',
+      prompt: '',
+      professional: '',
+      raw: ''
+    });
+    customPrompts[mode as keyof typeof customPrompts] = sanitized;
+    store.set('customPrompts', customPrompts);
+
+    logger.info('IPC', `Custom prompt saved for mode: ${mode} (${sanitized.length} chars)`);
+
+    // Trigger Python config sync to apply immediately
+    await syncPythonConfig();
+
+    return { success: true };
+  } catch (err) {
+    logger.error('IPC', `Failed to save custom prompt for ${mode}`, err);
+    return { success: false, error: String(err) };
+  }
+});
+
+// Reset custom prompt for a specific mode (back to default)
+ipcMain.handle('settings:reset-custom-prompt', async (_event, mode: string) => {
+  try {
+    const validModes = ['standard', 'prompt', 'professional', 'raw'];
+    if (!validModes.includes(mode)) {
+      return { success: false, error: `Invalid mode: ${mode}` };
+    }
+
+    const customPrompts = store.get('customPrompts', {
+      standard: '',
+      prompt: '',
+      professional: '',
+      raw: ''
+    });
+    customPrompts[mode as keyof typeof customPrompts] = '';
+    store.set('customPrompts', customPrompts);
+
+    logger.info('IPC', `Custom prompt reset to default for mode: ${mode}`);
+
+    // Trigger Python config sync
+    await syncPythonConfig();
+
+    return { success: true };
+  } catch (err) {
+    logger.error('IPC', `Failed to reset custom prompt for ${mode}`, err);
+    return { success: false, error: String(err) };
+  }
 });
 
 // Sound playback handler
@@ -1151,6 +1265,34 @@ function setupGlobalHotkey(): void {
       // Don't show notification for ask - it's a secondary feature
     } else {
       logger.info('HOTKEY', 'Ask hotkey registered', { hotkey: askHotkey });
+    }
+
+    // Register Translate hotkey (Ctrl+Alt+T)
+    const translateHotkey = store.get('translateHotkey', 'Ctrl+Alt+T');
+    const translateRet = globalShortcut.register(translateHotkey, () => {
+      logger.debug('HOTKEY', 'Translate hotkey pressed');
+
+      // Toggle translate mode
+      const currentTransMode = store.get('transMode', 'none');
+      const newTransMode = currentTransMode === 'none' ? 'es-en' : 'none';
+      store.set('transMode', newTransMode);
+
+      logger.info('HOTKEY', `Translation toggled: ${newTransMode}`);
+
+      // Sync with Python
+      syncPythonConfig();
+
+      // Show notification
+      const message = newTransMode === 'none'
+        ? 'Translation disabled'
+        : `Translation enabled (${newTransMode})`;
+      showNotification('Translate', message, false);
+    });
+
+    if (!translateRet) {
+      logger.warn('HOTKEY', 'Failed to register translate hotkey', { hotkey: translateHotkey });
+    } else {
+      logger.info('HOTKEY', 'Translate hotkey registered', { hotkey: translateHotkey });
     }
 
   } catch (error) {

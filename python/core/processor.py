@@ -43,12 +43,12 @@ class LocalProcessor:
         if model == self.model:
             logger.info(f"Model already set to {model}, skipping")
             return
-        
+
         old_model = self.model
         self.model = model
         self.prompt = get_prompt(self.mode, model)
         logger.info(f"Processor model switched from {old_model} to {model}")
-        
+
         # Warm up the new model
         try:
             logger.info(f"Warming up {model}...")
@@ -66,6 +66,24 @@ class LocalProcessor:
             logger.info(f"Model {model} ready")
         except Exception as e:
             logger.warning(f"Model warmup failed (will retry on first use): {e}")
+
+    def set_custom_prompt(self, custom_prompt: str) -> None:
+        """Set a custom system prompt (overrides mode defaults).
+
+        Args:
+            custom_prompt: The custom prompt template (must include {text} placeholder)
+        """
+        if not custom_prompt:
+            logger.warning("Attempted to set empty custom prompt, ignoring")
+            return
+
+        if "{text}" not in custom_prompt:
+            logger.error("Custom prompt missing {text} placeholder, ignoring")
+            return
+
+        self.prompt = custom_prompt
+        logger.info(f"Custom prompt set for {self.mode} mode ({len(custom_prompt)} chars)")
+        logger.debug(f"Custom prompt preview: {custom_prompt[:100]}...")
 
 
     def _verify_ollama(self) -> None:
@@ -173,6 +191,17 @@ class CloudProcessor:
         self.prompt = get_prompt(mode)
         logger.info(f"Cloud processor mode switched to: {mode}")
 
+    def set_custom_prompt(self, custom_prompt: str) -> None:
+        """Set a custom system prompt (overrides mode defaults)."""
+        if not custom_prompt:
+            logger.warning("Attempted to set empty custom prompt, ignoring")
+            return
+        if "{text}" not in custom_prompt:
+            logger.error("Custom prompt missing {text} placeholder, ignoring")
+            return
+        self.prompt = custom_prompt
+        logger.info(f"Custom prompt set for cloud processor ({len(custom_prompt)} chars)")
+
     def _sanitize_for_prompt(self, text: str) -> str:
         """Sanitize input text to prevent prompt injection (M1 security fix)."""
         text = text.replace("```", "'''")
@@ -250,6 +279,17 @@ class AnthropicProcessor:
         self.mode = mode
         self.prompt = get_prompt(mode)
         logger.info(f"Anthropic processor mode switched to: {mode}")
+
+    def set_custom_prompt(self, custom_prompt: str) -> None:
+        """Set a custom system prompt (overrides mode defaults)."""
+        if not custom_prompt:
+            logger.warning("Attempted to set empty custom prompt, ignoring")
+            return
+        if "{text}" not in custom_prompt:
+            logger.error("Custom prompt missing {text} placeholder, ignoring")
+            return
+        self.prompt = custom_prompt
+        logger.info(f"Custom prompt set for Anthropic processor ({len(custom_prompt)} chars)")
 
     def _sanitize_for_prompt(self, text: str) -> str:
         """Sanitize input text to prevent prompt injection (M1 security fix)."""

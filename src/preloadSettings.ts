@@ -46,6 +46,11 @@ const settingsAPI = {
     playSound: (soundName: string) => ipcRenderer.invoke('settings:play-sound', soundName),
     getSoundFiles: () => ipcRenderer.invoke('settings:get-sound-files'),
 
+    // Custom Prompts
+    getCustomPrompts: () => ipcRenderer.invoke('settings:get-custom-prompts'),
+    saveCustomPrompt: (mode: string, promptText: string) => ipcRenderer.invoke('settings:save-custom-prompt', mode, promptText),
+    resetCustomPrompt: (mode: string) => ipcRenderer.invoke('settings:reset-custom-prompt', mode),
+
     // Hardware testing
     runHardwareTest: () => ipcRenderer.invoke('settings:run-hardware-test'),
 

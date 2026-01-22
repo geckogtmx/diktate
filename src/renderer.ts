@@ -58,12 +58,14 @@ const perfInjectCell = document.getElementById('perf-inject-cell');
 // Toggle elements
 const toggleSound = document.getElementById('toggle-sound') as HTMLInputElement | null;
 const toggleCloud = document.getElementById('toggle-cloud') as HTMLInputElement | null;
+const toggleTranslate = document.getElementById('toggle-translate') as HTMLInputElement | null;
 
 // Personality selection elements
 const personalityBtns: Record<string, HTMLElement | null> = {
     standard: document.getElementById('mode-standard'),
     prompt: document.getElementById('mode-prompt'),
-    professional: document.getElementById('mode-professional')
+    professional: document.getElementById('mode-professional'),
+    raw: document.getElementById('mode-raw')
 };
 
 // Session statistics
@@ -232,6 +234,14 @@ function setupToggles() {
             addLogEntry('INFO', `Processing mode: ${mode.toUpperCase()}`);
         });
     }
+
+    if (toggleTranslate) {
+        toggleTranslate.addEventListener('change', () => {
+            const transMode = toggleTranslate.checked ? 'es-en' : 'none';
+            window.electronAPI?.setSetting?.('transMode', transMode);
+            addLogEntry('INFO', `Translation: ${toggleTranslate.checked ? 'ON (es-en)' : 'OFF'}`);
+        });
+    }
 }
 
 // Update personality toggle UI
@@ -245,10 +255,10 @@ function updatePersonalityUI(mode: string) {
 }
 
 // Make switchPersonality available globally for onclick handler
-(window as any).switchPersonality = function (mode: 'standard' | 'prompt' | 'professional') {
+(window as any).switchPersonality = function (mode: 'standard' | 'prompt' | 'professional' | 'raw') {
     updatePersonalityUI(mode);
     window.electronAPI?.setSetting?.('defaultMode', mode);
-    addLogEntry('INFO', `Personality switched to: ${mode.toUpperCase()}`);
+    addLogEntry('INFO', `Mode switched to: ${mode.toUpperCase()}`);
 };
 
 // Update metrics panel with recent data (A.2 observability)

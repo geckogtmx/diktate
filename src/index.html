@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>dIKtate Status</title>
+    <title>Control Panel</title>
     <style>
         :root {
             --ink-black: #002029ff;
@@ -564,6 +564,13 @@
                     <span class="toggle-slider"></span>
                 </label>
             </label>
+            <label class="toggle-item">
+                <span>Translate</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="toggle-translate">
+                    <span class="toggle-slider"></span>
+                </label>
+            </label>
         </div>
 
         <!-- PERSONALITY SELECTION -->
@@ -579,6 +586,10 @@
             <div class="mode-btn" id="mode-professional" onclick="switchPersonality('professional')">
                 <span>💼 Pro</span>
                 <span class="mode-desc">Polished</span>
+            </div>
+            <div class="mode-btn" id="mode-raw" onclick="switchPersonality('raw')">
+                <span>📜 Raw</span>
+                <span class="mode-desc">Literal</span>
             </div>
         </div>
 

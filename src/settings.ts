@@ -19,6 +19,10 @@ interface SettingsAPI {
     // Sound methods
     playSound: (soundName: string) => Promise<void>;
     getSoundFiles: () => Promise<string[]>;
+    // Custom Prompts
+    getCustomPrompts: () => Promise<Record<string, string>>;
+    saveCustomPrompt: (mode: string, promptText: string) => Promise<{ success: boolean; error?: string }>;
+    resetCustomPrompt: (mode: string) => Promise<{ success: boolean; error?: string }>;
     // Hardware testing
     runHardwareTest: () => Promise<{ gpu: string; vram: string; tier: string; speed: number }>;
     // App Control
@@ -54,6 +58,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         await populateSoundDropdowns();
 
         await loadApiKeyStatuses();
+
+        // Initialize Mode Configuration (Master-Detail)
+        await initializeModeConfiguration();
 
         // Capture initial model selections for change detection
         const defaultSelect = document.getElementById('default-model') as HTMLSelectElement;
@@ -1131,6 +1138,187 @@ async function warmupModel() {
     }
 }
 
+// ============================================
+// Mode Configuration (Master-Detail)
+// ============================================
+
+let currentSelectedMode = 'standard';
+let defaultPrompts: Record<string, string> = {};
+
+async function initializeModeConfiguration() {
+    try {
+        // Load available models for dropdowns
+        const modelSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
+        if (modelSelect && window.electronAPI) {
+            // Get available models from initial state or Ollama
+            const initialState = await window.electronAPI.getInitialState();
+            const defaultModel = initialState?.models?.processor || 'gemma3:4b';
+
+            // Populate with common models
+            const commonModels = ['gemma3:4b', 'llama2', 'mistral', 'neural-chat'];
+            modelSelect.innerHTML = '<option value="">Use default model</option>';
+
+            commonModels.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.text = model === defaultModel ? `${model} (current)` : model;
+                modelSelect.appendChild(option);
+            });
+        }
+
+        // Load custom prompts
+        await loadCustomPrompts();
+
+        // Load initial mode
+        selectMode('standard');
+
+    } catch (error) {
+        console.error('Failed to initialize mode configuration:', error);
+    }
+}
+
+async function loadCustomPrompts() {
+    try {
+        const customPrompts = await (window.settingsAPI as any).getCustomPrompts();
+        // Store in global for use in selectMode
+        (window as any).customPrompts = customPrompts || {};
+    } catch (error) {
+        console.error('Failed to load custom prompts:', error);
+    }
+}
+
+function selectMode(mode: string) {
+    currentSelectedMode = mode;
+
+    // Update list UI
+    const modeListItems = document.querySelectorAll('.mode-list-item');
+    modeListItems.forEach(item => {
+        item.classList.toggle('active', item.textContent?.includes(
+            mode === 'standard' ? 'Standard' :
+            mode === 'prompt' ? 'Prompt' :
+            mode === 'professional' ? 'Professional' :
+            'Raw'
+        ));
+    });
+
+    // Update detail view
+    const modeEmojis: Record<string, string> = {
+        'standard': '📝',
+        'prompt': '🤖',
+        'professional': '💼',
+        'raw': '📜'
+    };
+
+    const modeNames: Record<string, string> = {
+        'standard': 'Standard',
+        'prompt': 'Prompt',
+        'professional': 'Professional',
+        'raw': 'Raw'
+    };
+
+    const titleEl = document.getElementById('mode-detail-title');
+    if (titleEl) {
+        titleEl.textContent = `${modeEmojis[mode]} ${modeNames[mode]}`;
+    }
+
+    // Load prompt for this mode
+    const promptTextarea = document.getElementById('mode-detail-prompt') as HTMLTextAreaElement;
+    if (promptTextarea) {
+        const customPrompts = (window as any).customPrompts || {};
+        promptTextarea.value = customPrompts[mode] || '';
+    }
+
+    // Show/hide model selector for raw mode (raw doesn't use LLM)
+    const modelSection = document.querySelector('[id="mode-detail-model"]')?.parentElement;
+    if (modelSection) {
+        modelSection.style.display = mode === 'raw' ? 'none' : 'block';
+    }
+
+    // Update info text
+    const infoEl = document.getElementById('prompt-info');
+    if (infoEl) {
+        const customPrompts = (window as any).customPrompts || {};
+        const hasCustom = customPrompts[mode] && customPrompts[mode].length > 0;
+        infoEl.textContent = hasCustom ? `✓ Custom prompt in use` : 'No custom prompt (using default)';
+        infoEl.style.color = hasCustom ? '#4ade80' : '#888';
+    }
+}
+
+async function saveModeDetails() {
+    const promptTextarea = document.getElementById('mode-detail-prompt') as HTMLTextAreaElement;
+    const promptText = promptTextarea?.value?.trim() || '';
+
+    if (promptText && !promptText.includes('{text}')) {
+        alert('❌ Prompt must include {text} placeholder where the transcribed text will be inserted');
+        return;
+    }
+
+    if (promptText && promptText.length > 1000) {
+        alert('❌ Prompt is too long (max 1000 characters)');
+        return;
+    }
+
+    try {
+        const result = await (window.settingsAPI as any).saveCustomPrompt(currentSelectedMode, promptText);
+
+        if (result.success) {
+            // Reload custom prompts
+            await loadCustomPrompts();
+            selectMode(currentSelectedMode);
+
+            // Show success message
+            const promptEl = document.getElementById('prompt-info');
+            if (promptEl) {
+                promptEl.textContent = promptText ? '✓ Saved!' : '✓ Reset to default!';
+                promptEl.style.color = '#4ade80';
+                setTimeout(() => {
+                    selectMode(currentSelectedMode); // Refresh to show actual state
+                }, 2000);
+            }
+        } else {
+            alert(`❌ Failed to save: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('Failed to save mode details:', error);
+        alert(`❌ Error: ${error}`);
+    }
+}
+
+async function resetModeToDefault() {
+    if (!confirm(`Reset ${currentSelectedMode} mode to default prompt?`)) {
+        return;
+    }
+
+    try {
+        const result = await (window.settingsAPI as any).resetCustomPrompt(currentSelectedMode);
+
+        if (result.success) {
+            // Reload custom prompts
+            await loadCustomPrompts();
+            selectMode(currentSelectedMode);
+
+            // Show success message
+            const promptEl = document.getElementById('prompt-info');
+            if (promptEl) {
+                promptEl.textContent = '✓ Reset to default!';
+                promptEl.style.color = '#4ade80';
+                setTimeout(() => {
+                    selectMode(currentSelectedMode);
+                }, 2000);
+            }
+        } else {
+            alert(`❌ Failed to reset: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('Failed to reset mode:', error);
+        alert(`❌ Error: ${error}`);
+    }
+}
+
 // Expose to global scope
 (window as any).restartOllama = restartOllama;
 (window as any).warmupModel = warmupModel;
+(window as any).selectMode = selectMode;
+(window as any).saveModeDetails = saveModeDetails;
+(window as any).resetModeToDefault = resetModeToDefault;
+(window as any).initializeModeConfiguration = initializeModeConfiguration;

@@ -285,6 +285,8 @@ class IpcServer:
         self.session_stats = SessionStats()  # Session-level stats (A.2)
         self.trans_mode = "none"  # Translation mode: none, es-en, en-es
         self.consecutive_failures = 0  # Track consecutive processor failures for auto-recovery
+        self.custom_prompts = {}  # Custom prompts: mode -> prompt_text mapping
+        self.current_mode = "standard"  # Track current processing mode for raw bypass
 
         logger.info("Initializing IPC Server...")
         self._initialize_components()
@@ -296,6 +298,17 @@ class IpcServer:
         """Asynchronous startup warmup sequence"""
         try:
             self._ensure_ollama_ready()
+
+            # CRITICAL FIX: Re-initialize processor if it failed during __init__
+            if self.processor is None:
+                logger.info("[RECOVERY] Attempting to re-initialize processor after Ollama startup...")
+                try:
+                    self.processor = create_processor()
+                    logger.info("[OK] Processor initialized successfully after Ollama startup")
+                except Exception as e:
+                    logger.error(f"[RECOVERY] Failed to re-initialize processor: {e}")
+                    logger.warning("Text processing will use raw transcription fallback")
+
             logger.info("Startup warmup complete")
         except Exception as e:
             logger.warning(f"Startup warmup encountered issues: {e}")
@@ -522,42 +535,50 @@ class IpcServer:
                 self._set_state(State.IDLE)
                 return
 
-            # Process (clean up text) with automatic fallback on failure
-            logger.info("[PROCESS] Processing text...")
-            self.perf.start("processing")
-            processor_failed = False
-
-            if self.processor:
-                try:
-                    processed_text = self.processor.process(raw_text)
-                    # Success - reset consecutive failures counter
-                    if self.consecutive_failures > 0:
-                        logger.info(f"[RECOVERY] Processor recovered after {self.consecutive_failures} failures")
-                    self.consecutive_failures = 0
-                except Exception as e:
-                    # Processor failed - fall back to raw transcription
-                    logger.error(f"[FALLBACK] Processor failed: {e}")
-                    logger.info("[FALLBACK] Using raw transcription (no processing)")
-                    processed_text = raw_text
-                    processor_failed = True
-                    self.consecutive_failures += 1
-
-                    # Emit fallback notification
-                    self._emit_event("processor-fallback", {
-                        "reason": str(e),
-                        "consecutive_failures": self.consecutive_failures,
-                        "using_raw": True
-                    })
+            # RAW MODE BYPASS: Skip LLM processing entirely for raw mode
+            if self.current_mode == 'raw':
+                logger.info("[RAW] Raw mode enabled - skipping LLM processing (true passthrough)")
+                processed_text = raw_text  # Use literal Whisper output
+                self.perf.start("processing")
+                self.perf.end("processing")  # Log 0ms processing time
+                logger.info(f"[RESULT] Raw output: {redact_text(processed_text)}")
             else:
-                processed_text = raw_text
+                # Process (clean up text) with automatic fallback on failure
+                logger.info("[PROCESS] Processing text...")
+                self.perf.start("processing")
+                processor_failed = False
 
-            processing_time = self.perf.end("processing")
+                if self.processor:
+                    try:
+                        processed_text = self.processor.process(raw_text)
+                        # Success - reset consecutive failures counter
+                        if self.consecutive_failures > 0:
+                            logger.info(f"[RECOVERY] Processor recovered after {self.consecutive_failures} failures")
+                        self.consecutive_failures = 0
+                    except Exception as e:
+                        # Processor failed - fall back to raw transcription
+                        logger.error(f"[FALLBACK] Processor failed: {e}")
+                        logger.info("[FALLBACK] Using raw transcription (no processing)")
+                        processed_text = raw_text
+                        processor_failed = True
+                        self.consecutive_failures += 1
 
-            # Log inference time for model monitoring (A.1) - only if processing succeeded
-            if self.processor and not processor_failed:
-                processor_model = getattr(self.processor, 'model', 'unknown')
-                self.perf.log_inference_time(processor_model, processing_time, log_dir)
-            logger.info(f"[RESULT] Processed: {redact_text(processed_text)}")
+                        # Emit fallback notification
+                        self._emit_event("processor-fallback", {
+                            "reason": str(e),
+                            "consecutive_failures": self.consecutive_failures,
+                            "using_raw": True
+                        })
+                else:
+                    processed_text = raw_text
+
+                processing_time = self.perf.end("processing")
+
+                # Log inference time for model monitoring (A.1) - only if processing succeeded
+                if self.processor and not processor_failed:
+                    processor_model = getattr(self.processor, 'model', 'unknown')
+                    self.perf.log_inference_time(processor_model, processing_time, log_dir)
+                logger.info(f"[RESULT] Processed: {redact_text(processed_text)}")
 
             # Optional: Translate (post-processing)
             if self.trans_mode and self.trans_mode != "none":
@@ -783,11 +804,41 @@ YOUR ANSWER:"""
             mode = config.get("mode")
             if mode and self.processor:
                 logger.info(f"[CONFIG] Switching processing mode to: {mode}")
-                if hasattr(self.processor, "set_mode"):
-                    self.processor.set_mode(mode)
-                    updates.append(f"Mode: {mode}")
+                self.current_mode = mode  # Track for raw bypass
+
+                # Check if custom prompt exists for this mode
+                custom_prompt = self.custom_prompts.get(mode)
+                if custom_prompt:
+                    # Use custom prompt (overrides default mode prompt)
+                    logger.info(f"[CONFIG] Applying custom prompt for mode: {mode} ({len(custom_prompt)} chars)")
+                    if hasattr(self.processor, "prompt"):
+                        self.processor.prompt = custom_prompt
+                        updates.append(f"Mode: {mode} (custom prompt)")
+                    else:
+                        logger.warning("Processor does not support custom prompts (no .prompt attribute)")
                 else:
-                    logger.warning(f"Processor {type(self.processor)} does not support mode switching")
+                    # Use default mode prompt
+                    if hasattr(self.processor, "set_mode"):
+                        self.processor.set_mode(mode)
+                        updates.append(f"Mode: {mode}")
+                    else:
+                        logger.warning(f"Processor {type(self.processor)} does not support mode switching")
+
+            # 3b. Custom Prompts (store for later use)
+            custom_prompts = config.get("customPrompts")
+            if custom_prompts is not None:
+                # Filter out empty prompts (empty = use default)
+                filtered_prompts = {k: v for k, v in custom_prompts.items() if v}
+                self.custom_prompts = filtered_prompts
+                prompt_count = len(filtered_prompts)
+                logger.info(f"[CONFIG] Custom prompts updated: {prompt_count} custom, {4 - prompt_count} default")
+                if prompt_count > 0:
+                    logger.info(f"[CONFIG] Custom modes: {list(filtered_prompts.keys())}")
+
+                # Re-apply current mode's prompt if it was just updated
+                if self.current_mode in filtered_prompts and self.processor and hasattr(self.processor, "prompt"):
+                    self.processor.prompt = filtered_prompts[self.current_mode]
+                    logger.info(f"[CONFIG] Re-applied custom prompt for current mode: {self.current_mode}")
 
             # 4. Translation Mode (none, es-en, en-es)
             trans_mode = config.get("transMode")
