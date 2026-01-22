@@ -18,6 +18,7 @@ interface SettingsAPI {
     testApiKey: (provider: string, key: string) => Promise<{ success: boolean; error?: string }>;
     // Sound methods
     playSound: (soundName: string) => Promise<void>;
+    getSoundFiles: () => Promise<string[]>;
     // Hardware testing
     runHardwareTest: () => Promise<{ gpu: string; vram: string; tier: string; speed: number }>;
     // App Control
@@ -49,6 +50,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         await checkOllamaStatus();
 
         await populateModeModelDropdowns();
+
+        await populateSoundDropdowns();
 
         await loadApiKeyStatuses();
 
@@ -175,8 +178,10 @@ function loadSettings(settings: any) {
     setVal('processing-mode', settings.processingMode || 'local');
     setCheck('auto-start', settings.autoStart || false);
 
-    // Audio - new feedback sound selector
-    setVal('feedback-sound', settings.feedbackSound || 'click');
+    // Audio - sound selection
+    setVal('start-sound', settings.startSound || 'a');
+    setVal('stop-sound', settings.stopSound || 'a');
+    setVal('ask-sound', settings.askSound || 'c');
 
     // Audio - max recording duration (radio buttons)
     const maxDuration = settings.maxRecordingDuration !== undefined ? settings.maxRecordingDuration : 60;
@@ -383,6 +388,7 @@ async function testApiKey(provider: string) {
 (window as any).showRestartModal = showRestartModal;
 (window as any).hideRestartModal = hideRestartModal;
 (window as any).relaunchApp = relaunchApp;
+(window as any).previewSpecificSound = previewSpecificSound;
 
 
 // ============================================
@@ -440,11 +446,50 @@ function checkModelChanges() {
 
 
 // ============================================
-// Sound Preview Functions
+// Sound Management Functions
 // ============================================
 
-function previewSound() {
-    const select = document.getElementById('feedback-sound') as HTMLSelectElement;
+async function populateSoundDropdowns() {
+    try {
+        const soundFiles = await window.settingsAPI.getSoundFiles();
+        if (!soundFiles || soundFiles.length === 0) return;
+
+        const ids = ['start-sound', 'stop-sound', 'ask-sound'];
+
+        ids.forEach(id => {
+            const select = document.getElementById(id) as HTMLSelectElement;
+            if (!select) return;
+
+            // Save current value
+            const currentVal = select.value;
+
+            // Clear except for "None"
+            select.innerHTML = '<option value="none">🔇 None (Silent)</option>';
+
+            soundFiles.forEach(sound => {
+                const option = document.createElement('option');
+                option.value = sound;
+                option.text = `🔊 ${sound}`;
+                select.appendChild(option);
+            });
+
+            // Restore value
+            select.value = currentVal;
+        });
+
+        // Re-load settings to ensure correct values are set after population
+        const settings = await window.settingsAPI.getAll();
+        setVal('start-sound', settings.startSound || 'a');
+        setVal('stop-sound', settings.stopSound || 'a');
+        setVal('ask-sound', settings.askSound || 'c');
+
+    } catch (e) {
+        console.error('Failed to populate sound dropdowns:', e);
+    }
+}
+
+function previewSpecificSound(selectId: string) {
+    const select = document.getElementById(selectId) as HTMLSelectElement;
     const sound = select?.value;
     if (sound && sound !== 'none') {
         window.settingsAPI.playSound(sound).catch(err => {

@@ -32,6 +32,9 @@ interface UserSettings {
   autoStart: boolean;
   soundFeedback: boolean;
   feedbackSound: string;
+  startSound: string;
+  stopSound: string;
+  askSound: string;
   defaultMode: string;
   transMode: string;
   hotkey: string;
@@ -49,7 +52,10 @@ const store = new Store<UserSettings>({
     processingMode: 'local',
     autoStart: false,
     soundFeedback: true,
-    feedbackSound: 'click',
+    feedbackSound: 'a', // Deprecated, but keeping for migration/fallback
+    startSound: 'a',
+    stopSound: 'a',
+    askSound: 'c',
     defaultMode: 'standard',
     transMode: 'none',
     hotkey: 'Ctrl+Alt+D',
@@ -742,6 +748,25 @@ ipcMain.handle('settings:play-sound', async (_event, soundName: string) => {
   playSound(soundName);
 });
 
+// Get available sound files
+ipcMain.handle('settings:get-sound-files', async () => {
+  try {
+    const soundsDir = path.join(__dirname, '..', 'assets', 'sounds');
+    if (!fs.existsSync(soundsDir)) return [];
+
+    const files = fs.readdirSync(soundsDir);
+    // Filter for common audio formats and remove extensions
+    return files
+      .filter(f => f.endsWith('.wav') || f.endsWith('.mp3'))
+      .map(f => path.parse(f).name)
+      // Remove duplicates (e.g. if we have a.wav and a.mp3)
+      .filter((v, i, a) => a.indexOf(v) === i);
+  } catch (err) {
+    logger.error('MAIN', 'Failed to list sound files', err);
+    return [];
+  }
+});
+
 // Hardware test handler
 ipcMain.handle('settings:run-hardware-test', async () => {
   try {
@@ -1011,7 +1036,7 @@ async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<voi
   if (isRecording) {
     // Play feedback sound
     if (store.get('soundFeedback')) {
-      const sound = store.get('feedbackSound');
+      const sound = recordingMode === 'ask' ? store.get('askSound') : store.get('stopSound');
       playSound(sound);
     }
 
@@ -1031,7 +1056,7 @@ async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<voi
   } else {
     // Play feedback sound
     if (store.get('soundFeedback')) {
-      const sound = store.get('feedbackSound');
+      const sound = mode === 'ask' ? store.get('askSound') : store.get('startSound');
       playSound(sound);
     }
 

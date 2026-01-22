@@ -8,46 +8,49 @@
 
 ## ✅ Completed This Session
 
-### 📚 Documentation Restructure (Complete)
-- **Repo Structure**:
-  - `docs/user_guide/` (User Manual)
-  - `docs/developer_guide/` (Dev Manual)
-  - `docs/internal/` (Specs, Reports, Archive)
-- **README Audit**:
-  - Synced features with code (Ask Mode = Beta/Text-only).
-  - Removed fictional timelines/hours.
-  - Confirmed Active GPU support.
-  - Pushed to new **private GitHub repo** (`origin/master`).
+### 🧪 Audio Feeder Suite (v1.0)
+- **Architecture Shift**: Moved from unreliable simulated hotkeys to **Direct TCP Control**.
+    - **IPC Server**: Now hosts a TCP Command Server on `localhost:5005`.
+    - **Audio Feeder**: Connects as a client to send precise `START`/`STOP` commands.
+- **Components Built**:
+    - `python/tools/fetch_test_data.py`: Smart YouTube downloader (auto-detects subtitles).
+    - `python/tools/audio_feeder.py`: The "player" script driving the stress tests.
+    - `tests/ui/`: A Node.js + HTML control panel (`http://localhost:3000`).
+- **Features**:
+    - **Smart Mode**: Slices audio by subtitle timestamps.
+    - **Resume Support**: Can start test at specific line index.
+    - **Ground Truth**: Logs expected text vs. actual input.
 
-### 🛠️ Feature Sync
-- **Codebase Check**:
-  - `Ask Mode` logic exists in `main.ts` and `ipc_server.py`.
-  - `CUDA` logic exists in `transcriber.py`.
-- **Status**: Documentation now ACCURATELY reflects the code state.
+### 📚 Documentation & Cleanup
+- **Repo Structure**: Organized docs into User/Dev/Internal.
+- **Audits**: Removed fictional timelines, verified GPU support.
+- **Artifacts**: Updated `implementation_plan.md` with new TCP architecture.
 
 ---
 
 ## 📋 Instructions for Next Model
 
+### 🛑 Critical First Step
+**YOU MUST RESTART THE MAIN DIKTATE APP.**
+The `ipc_server.py` changes (TCP Server on Port 5005) only load on app startup. If you don't restart, `audio_feeder.py` will fail to connect.
+
 ### Priority Order
-1.  **EXECUTE v1.0 Mandate (Highest Priority)**:
-    - **Goal:** Implement **TTS for Ask Mode** & **Injection Recall**.
-    - **Ref:** `docs/internal/specs/SPEC_001_TTS_AND_REINJECT.md`.
-    - **Tasks:**
-        - Install `pyttsx3`.
-        - Implement `dictate:speak` in Python.
-        - Implement `dictate:reinject-last` logic.
+1.  **VERIFY Stress Test Bug Fix (TCP Control)**:
+    -   **Context**: The previous session fixed a "Start but no Stop" bug by moving to TCP.
+    -   **Action**:
+        1.  Start dIKtate (reloads `ipc_server.py`).
+        2.  `cd tests/ui && npm run dev`.
+        3.  Run the test.
+    -   **Success Condition**: `audio_feeder.py` successfully connects to Port 5005 and dIKtate stops recording *automatically* after each phrase.
+2.  **Analyze Results**: Compare the "Expected" text logs with the actual output.
+3.  **EXECUTE v1.0 Features**:
+    -   **TTS for Ask Mode**: Implement `pyttsx3` (See `SPEC_001`).
+    -   **Injection Recall**: Implement "Paste Last" feature.
 
-### Context Needed
-- **Repo is now Private**: We have a remote `origin`. Use `git push` freely.
-- **Docs are Clean**: Do not reorganize docs further. Focus on **CODE**.
-- **Ask Mode**: Currently text-only (clipboard/typing). User wants TTS.
-
----
-
-## 🔄 Context & State
-- **Repo State**: Clean, documented, pushed to `master`.
-- **Git**: Linked to `https://github.com/geckogtmx/diktate.git`.
+### 🔄 Context & State
+- **Repo**: Private GitHub specific.
+- **Mode**: Planning/Execution.
+- **Docs**: Up to date. Do not move files unnecessarily.
 
 ---
 

@@ -458,9 +458,11 @@ class IpcServer:
     def stop_recording(self) -> dict:
         """Stop recording and process the audio"""
         if self.state != State.RECORDING:
-            error_msg = f"Cannot stop recording in {self.state.value} state"
-            logger.warning(error_msg)
-            return {"success": False, "error": error_msg}
+            # If we are already stopped/processing, consider this a success (idempotent)
+            # This prevents the "Cannot stop recording in X state" error from breaking the flow
+            msg = f"Stop requested but state is {self.state.value} (not RECORDING). Treating as success."
+            logger.info(msg)
+            return {"success": True, "warning": msg}
 
         self.recording = False
         try:
@@ -895,45 +897,113 @@ YOUR ANSWER:"""
         except Exception as e:
             logger.error(f"Failed to send JSON: {e}")
 
-    def run(self) -> None:
-        """Run the IPC server"""
+    def _handle_message(self, line: str) -> None:
+        """Process a single line (command) from stdin"""
+        line = line.strip()
+        if not line:
+            return
+
         try:
-            logger.info("=" * 60)
-            logger.info("dIKtate IPC Server is running")
-            logger.info("Waiting for commands from Electron...")
-            logger.info("=" * 60)
+            command = json.loads(line)
+            response = self.handle_command(command)
 
-            # Read commands from stdin
-            for line in sys.stdin:
-                line = line.strip()
-                if not line:
-                    continue
+            # Send response
+            response["id"] = command.get("id")
+            self._send_json(response)
 
-                try:
-                    command = json.loads(line)
-                    response = self.handle_command(command)
+            # Check for shutdown
+            if command.get("command") == "shutdown":
+                # This break will be handled by the calling loop
+                pass 
 
-                    # Send response
-                    response["id"] = command.get("id")
-                    self._send_json(response)
-
-                    # Check for shutdown
-                    if command.get("command") == "shutdown":
-                        break
-
-                except json.JSONDecodeError as e:
-                    logger.error(f"Invalid JSON received: {e}")
-                    self._send_error(f"Invalid JSON: {e}")
-                except Exception as e:
-                    logger.error(sanitize_log_message(f"Error processing command: {e}"))
-                    self._send_error(f"Error: {e}")
-
-        except KeyboardInterrupt:
-            logger.info("Received keyboard interrupt, shutting down...")
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON received: {e}")
+            self._send_error(f"Invalid JSON: {e}")
         except Exception as e:
-            logger.error(f"Runtime error: {e}")
-        finally:
-            self.shutdown()
+            logger.error(sanitize_log_message(f"Error processing command: {e}"))
+            self._send_error(f"Error: {e}")
+
+    def _start_command_server(self):
+        """Start a simple TCP server for external control (Audio Feeder)"""
+        def handle_client(conn):
+            try:
+                data = conn.recv(1024).decode().strip().upper()
+                logger.info(f"[CMD] Received external command: {data}")
+                
+                if data == "START":
+                    # Force start even if in other states? No, use standard logic
+                    # But we can force IDLE first if needed.
+                    if self.state != State.IDLE:
+                         # Attempt to stop first?
+                         pass
+                    res = self.start_recording(mode="dictate")
+                    conn.send(b"OK" if res.get("success") else b"FAIL")
+                    
+                elif data == "STOP":
+                    res = self.stop_recording()
+                    conn.send(b"OK" if res.get("success") else b"FAIL")
+                
+                elif data == "STATUS":
+                    conn.send(self.state.value.encode())
+                    
+                else:
+                    conn.send(b"UNKNOWN")
+            except Exception as e:
+                logger.error(f"[CMD] Error handling client: {e}")
+            finally:
+                conn.close()
+
+        def server_loop():
+            host = '127.0.0.1'
+            port = 5005
+            server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # Allow reuse
+            server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            
+            try:
+                server.bind((host, port))
+                server.listen(1)
+                logger.info(f"[CMD] Command server listening on {host}:{port}")
+                
+                while True: # Daemon thread, will die with main
+                    try:
+                        conn, addr = server.accept()
+                        t = threading.Thread(target=handle_client, args=(conn,))
+                        t.daemon = True
+                        t.start()
+                    except Exception as e:
+                        logger.error(f"[CMD] Accept error: {e}")
+            except Exception as e:
+                logger.error(f"[CMD] Failed to bind command server: {e}")
+
+        t = threading.Thread(target=server_loop, daemon=True)
+        t.start()
+
+    def start(self):
+        """Start the IPC server"""
+        # Start the external command server
+        self._start_command_server()
+        
+        logger.info("Starting IPC server...")
+        print(json.dumps({"type": "ready"}))
+        sys.stdout.flush()
+
+        while True:
+            try:
+                # Read line from stdin (blocking)
+                line = sys.stdin.readline()
+                if not line:
+                    break
+                
+                self._handle_message(line)
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                logger.error(f"Error in main loop: {e}")
+            except Exception as e:
+                logger.error(f"Error in main loop: {e}")
+        
+        self.shutdown()
 
     def shutdown(self) -> None:
         """Clean up and shutdown"""

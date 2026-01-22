@@ -44,6 +44,7 @@ const settingsAPI = {
 
     // Sound playback
     playSound: (soundName: string) => ipcRenderer.invoke('settings:play-sound', soundName),
+    getSoundFiles: () => ipcRenderer.invoke('settings:get-sound-files'),
 
     // Hardware testing
     runHardwareTest: () => ipcRenderer.invoke('settings:run-hardware-test'),

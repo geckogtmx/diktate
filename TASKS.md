@@ -27,6 +27,7 @@
 
 ### 📦 Phase D: Distribution Prep (NEXT)
 - [ ] **Packaging**: Configure `electron-builder` for Windows NSIS
+- [ ] **Security Audit**: Verify `DIKTATE_DEBUG` is DISABLED in production builds (Privacy Check)
 - [ ] **Python Bundling**: Set up `PyInstaller` to bundle the engine
 - [ ] **First-Run**: Implement "Embedded Sidecar" detection for Ollama
 - [ ] **Hardware Tiering**: Refine auto-detection suggestions

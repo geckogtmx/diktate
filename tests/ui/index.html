@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dIKtate Stress Test Runner</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1e1e1e;
+            color: #fff;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .card {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"],
+        select {
+            flex: 1;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #333;
+            color: #fff;
+        }
+
+        button {
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button.primary {
+            background: #0078d4;
+            color: white;
+        }
+
+        button.primary:hover {
+            background: #0088ff;
+        }
+
+        button.secondary {
+            background: #444;
+            color: #ccc;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #logs {
+            background: #111;
+            color: #00ff00;
+            font-family: 'Consolas', monospace;
+            padding: 15px;
+            border-radius: 4px;
+            height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid #333;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: #2d2d2d;
+            cursor: pointer;
+            border-radius: 4px;
+            opacity: 0.7;
+        }
+
+        .tab.active {
+            background: #0078d4;
+            opacity: 1;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>dIKtate Stress Test Runner</h1>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('youtube')">📺 YouTube Test</div>
+        <div class="tab" onclick="switchTab('local')">📂 Local/Setup Test</div>
+    </div>
+
+    <!-- YouTube Section -->
+    <div id="tab-youtube" class="card">
+        <h3>Step 1: Fetch Content</h3>
+        <label>YouTube URL</label>
+        <div class="row">
+            <input type="text" id="yt-url" placeholder="https://www.youtube.com/watch?v=..."
+                value="https://www.youtube.com/watch?v=hDpjMJw3flk">
+            <button class="primary" id="fetch-btn" onclick="fetchData()">Download</button>
+        </div>
+        <div id="fetch-status" style="margin-top: 10px; font-weight: bold;"></div>
+        <p style="font-size: 0.9em; color: #aaa;">This will download audio (WAV) and subtitles (SRT) locally.</p>
+
+        <hr style="border-color: #444; margin: 20px 0;">
+
+        <h3>Step 2: Run Test</h3>
+        <button class="primary" id="run-last-btn" onclick="runTest('last')" disabled>Run with Last Download</button>
+        <div id="sub-check-warning" class="hidden" style="color: #ffcc00; margin-top: 10px; font-size: 0.9em;">
+            ⚠️ <b>Note:</b> No subtitles found. Running in "Fixed-Chunk" mode (no ground truth).
+        </div>
+    </div>
+
+    <!-- Local Section -->
+    <div id="tab-local" class="hidden card">
+        <h3>Run Existing File</h3>
+        <label>Select Audio File (from tests/fixtures/downloads)</label>
+        <div class="row">
+            <select id="file-select">
+                <option>Loading...</option>
+            </select>
+            <button class="secondary" onclick="refreshFiles()">Refresh</button>
+        </div>
+        <button class="primary" onclick="runTest('file')">Run Selected File</button>
+    </div>
+
+    <!-- Common Controls -->
+    <div class="card">
+        <h3>Options</h3>
+        <div class="row" style="align-items: center;">
+            <label><input type="checkbox" id="opt-loop"> Loop Infinitely</label>
+            <span style="width: 20px;"></span>
+            <label>Limit Lines: <input type="number" id="opt-count" value="0" style="width: 60px; padding: 5px;"> (0 =
+                All)</label>
+            <span style="width: 20px;"></span>
+            <label>Start At Line: <input type="number" id="opt-start" value="0"
+                    style="width: 60px; padding: 5px;"></label>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Console Output</h3>
+        <div id="logs">Ready...</div>
+        <div class="row" style="margin-top: 10px; justify-content: flex-end;">
+            <button class="secondary" onclick="document.getElementById('logs').innerHTML = ''">Clear Logs</button>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+
+            document.getElementById('tab-youtube').classList.toggle('hidden', tab !== 'youtube');
+            document.getElementById('tab-local').classList.toggle('hidden', tab !== 'local');
+
+            if (tab === 'local') refreshFiles();
+        }
+
+        async function refreshFiles() {
+            const res = await fetch('/api/files');
+            const files = await res.json();
+            const select = document.getElementById('file-select');
+            select.innerHTML = files.map(f => `<option value="${f.name}">${f.name} (${new Date(f.mtime).toLocaleString()})</option>`).join('');
+            if (files.length === 0) select.innerHTML = '<option>No files found</option>';
+        }
+
+        async function fetchData() {
+            const url = document.getElementById('yt-url').value;
+            if (!url) return alert('Please enter a URL');
+
+            document.getElementById('fetch-btn').disabled = true;
+            document.getElementById('fetch-status').innerHTML = '⏳ Fetching...';
+            document.getElementById('fetch-status').style.color = 'inherit';
+            document.getElementById('sub-check-warning').classList.add('hidden');
+
+            log(`Fetching data from ${url}...\n`);
+            try {
+                const response = await fetch('/api/fetch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                await readStream(response, (totalText) => {
+                    if (totalText.includes('[RESULT: SMART_MODE_READY]')) {
+                        document.getElementById('fetch-status').innerHTML = '✅ Ready (Smart Mode)';
+                        document.getElementById('fetch-status').style.color = '#00ff00';
+                        document.getElementById('run-last-btn').disabled = false;
+                    } else if (totalText.includes('[RESULT: DUMB_MODE_ONLY]')) {
+                        document.getElementById('fetch-status').innerHTML = '⚠️ Audio Only';
+                        document.getElementById('fetch-status').style.color = '#ffcc00';
+                        document.getElementById('sub-check-warning').classList.remove('hidden');
+                        document.getElementById('run-last-btn').disabled = false;
+                    }
+                });
+            } catch (e) {
+                log(`Error: ${e.message}\n`);
+                document.getElementById('fetch-status').innerHTML = '❌ Failed';
+                document.getElementById('fetch-status').style.color = '#ff0000';
+            } finally {
+                document.getElementById('fetch-btn').disabled = false;
+            }
+        }
+
+        async function runTest(mode) {
+            const loop = document.getElementById('opt-loop').checked;
+            const count = document.getElementById('opt-count').value;
+            const start_at = document.getElementById('opt-start').value;
+            const file = document.getElementById('file-select').value;
+
+            log(`\nStarting Test (Mode: ${mode})...\n`);
+            log(`IMPORTANT: Please focus the target application (Notepad) NOW!\n`);
+
+            try {
+                const response = await fetch('/api/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode, file, loop, count, start_at })
+                });
+                readStream(response);
+            } catch (e) {
+                log(`Error: ${e.message}\n`);
+            }
+        }
+
+        async function readStream(response, onFinish) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            const logsDiv = document.getElementById('logs');
+            let totalText = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const text = decoder.decode(value);
+                totalText += text;
+                logsDiv.innerHTML += text;
+                logsDiv.scrollTop = logsDiv.scrollHeight;
+            }
+            if (onFinish) onFinish(totalText);
+        }
+
+        function log(text) {
+            const logsDiv = document.getElementById('logs');
+            logsDiv.innerHTML += text;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        // Initial load
+        refreshFiles();
+    </script>
+</body>
+
+</html>

@@ -399,17 +399,40 @@
                 </select>
             </div>
 
-            <div class="setting-group">
-                <label>Feedback Sound</label>
-                <span class="sub-label">Sound to play when recording starts/stops</span>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <select id="feedback-sound" style="flex: 1;" onchange="saveSetting('feedbackSound', this.value)">
-                        <option value="none">🔇 None (Silent)</option>
-                        <option value="a" selected>🔊 Soft Click</option>
-                        <option value="b">🔊 Notification</option>
-                        <option value="c">🔊 Chime</option>
-                    </select>
-                    <button class="btn btn-secondary" onclick="previewSound()">▶ Preview</button>
+            <div class="setting-group" id="sound-settings-group">
+                <label>Sound Effects</label>
+                <span class="sub-label">Choose sounds for different recording states</span>
+
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                    <!-- Start Sound -->
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span style="width: 100px; font-size: 0.9em; color: #888;">🏁 Start:</span>
+                        <select id="start-sound" style="flex: 1;" onchange="saveSetting('startSound', this.value)">
+                            <option value="none">🔇 None (Silent)</option>
+                        </select>
+                        <button class="btn btn-secondary" style="padding: 4px 10px;"
+                            onclick="previewSpecificSound('start-sound')">▶</button>
+                    </div>
+
+                    <!-- Stop Sound -->
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span style="width: 100px; font-size: 0.9em; color: #888;">🛑 Stop:</span>
+                        <select id="stop-sound" style="flex: 1;" onchange="saveSetting('stopSound', this.value)">
+                            <option value="none">🔇 None (Silent)</option>
+                        </select>
+                        <button class="btn btn-secondary" style="padding: 4px 10px;"
+                            onclick="previewSpecificSound('stop-sound')">▶</button>
+                    </div>
+
+                    <!-- Ask Sound -->
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span style="width: 100px; font-size: 0.9em; color: #888;">❓ Ask:</span>
+                        <select id="ask-sound" style="flex: 1;" onchange="saveSetting('askSound', this.value)">
+                            <option value="none">🔇 None (Silent)</option>
+                        </select>
+                        <button class="btn btn-secondary" style="padding: 4px 10px;"
+                            onclick="previewSpecificSound('ask-sound')">▶</button>
+                    </div>
                 </div>
             </div>
 
