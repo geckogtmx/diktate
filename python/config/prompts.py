@@ -58,15 +58,7 @@ PROMPT_LITERAL = PROMPT_RAW  # Alias for backward compatibility
 
 # --- MODEL-SPECIFIC OVERRIDES ---
 # Gemma 3 (4B) needs stricter instructions due to smaller capacity.
-PROMPT_GEMMA_STANDARD = """You are a dictation cleanup tool. Your job is to fix the text so it reads cleanly.
-
-Rules:
-1. Fix punctuation, capitalization, and grammar.
-2. Remove filler words (um, uh, ah, hmm) entirely.
-3. APPLY SELF-CORRECTIONS: If the speaker says "X (no sorry Y)" or "X (I mean Y)", replace X with Y.
-4. Convert verbal punctuation: "quote unquote X" becomes "X" (with quotes around X).
-5. PRESERVE the speaker's meaning and tone.
-6. Return ONLY the cleaned text. No preamble.
+PROMPT_GEMMA_STANDARD = """Dictation cleanup. Fix punctuation, remove fillers, apply corrections. Nothing else added.
 
 Input: {text}
 Cleaned text:"""

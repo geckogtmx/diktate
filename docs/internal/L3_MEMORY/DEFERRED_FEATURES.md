@@ -395,6 +395,79 @@ These features were mentioned in detailed docs but are not planned for any near-
 
 ---
 
+## V2.0: Meeting Intelligence & Long-Form Processing
+
+> **UPDATE 2026-01-21:** This research initiative has been moved to the master roadmap.
+> **See:** [DEVELOPMENT_ROADMAP.md](../../DEVELOPMENT_ROADMAP.md) Section 2.5 for complete details.
+
+**Status:** Research Queue (Post-v1.0)
+**Reference:** Granola.ai-style meeting intelligence
+**Complexity:** Very High
+
+### Concept: Meeting Companion Mode
+
+Transform dIKtate from real-time dictation tool to intelligent meeting assistant that can:
+1. Record entire meetings (30-60 minutes continuous)
+2. Generate accurate transcripts
+3. Cross-reference with user notes
+4. Execute automated workflows based on meeting content
+
+**Key Technical Challenges:**
+
+#### Long-Duration Recording Stress Testing
+**Status:** Infrastructure Ready (2026-01-21)
+**Action Required:** Leverage automated stress test suite to validate long-form scenarios
+
+The current stress test infrastructure (`audio_feeder.py`) can now simulate extended recordings:
+
+```bash
+# Test 30-minute meeting simulation
+python python/tools/audio_feeder.py --file meeting.wav --no-simpleaudio
+
+# Test 60-minute continuous recording
+python python/tools/audio_feeder.py --last-download --no-simpleaudio --count 200
+```
+
+**Research Questions:**
+1. **Model Capacity**: Can Gemma 3:4b handle 30-60 minute context windows?
+   - Current: ~18s per phrase (8-10s audio chunks)
+   - Meeting: Need to process 180-360 chunks
+   - Test: Does the model choke on cumulative context?
+
+2. **Memory Management**: Does Python backend maintain stability over extended sessions?
+   - Current: Tested up to 100 phrases successfully
+   - Meeting: Need 200-400 phrase capacity
+   - Test: Monitor memory usage during extended runs
+
+3. **Model Fallback Strategy**: When to switch from local (Gemma) to cloud (GPT-4, Claude)?
+   - Hypothesis: Local models may struggle with long-context reasoning
+   - Test: Compare output quality at 5min, 15min, 30min, 60min marks
+   - Decision: Define threshold for automatic cloud fallback
+
+4. **Workflow Automation**: Post-meeting action items
+   - Parse meeting transcript for action items
+   - Cross-reference with user notes (priority markers)
+   - Generate follow-up emails, calendar events, task tickets
+   - Integration: Granola-style "smart summaries"
+
+**Proposed Testing Strategy:**
+- [ ] Use existing YouTube videos (1-hour conference talks) as test data
+- [ ] Run stress tests measuring: transcription quality, processing latency, memory usage
+- [ ] Compare local (Gemma) vs cloud (GPT-4/Claude) on same content
+- [ ] Document performance degradation thresholds
+- [ ] Define when local → cloud fallback is necessary
+
+**Dependencies:**
+- ✅ Automated stress test infrastructure (RESOLVED 2026-01-21)
+- ✅ TCP control protocol with state synchronization
+- ⏳ Extended context window support in processing layer
+- ⏳ Action item extraction pipeline
+- ⏳ Workflow orchestration system
+
+**Timeline:** Post-v1.0 launch, research phase
+
+---
+
 ## Migration Strategy
 
 ### From MVP to Phase 2
