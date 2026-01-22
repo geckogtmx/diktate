@@ -294,7 +294,12 @@ Document any app-specific issues.
 - [ ] Auto-pull recommended models
 - [ ] Save tier to settings
 
-**Exit Criteria:** Fresh Windows install can run diktate with guided setup, hardware detected, appropriate models recommended.
+### D.6 Web Infrastructure (NEW)
+- [ ] **Marketing Site Split:** Extract `sitex/` into a dedicated repository (`diktate-web`)
+- [ ] **Vercel Deployment:** Configure automated CI/CD for `dikta.me` via Vercel
+- [ ] **Domain Setup:** Point `dikta.me` production traffic to Vercel
+
+**Exit Criteria:** Fresh Windows install can run diktate with guided setup, hardware detected, appropriate models recommended, and marketing site is live/independent.
 
 ---
 

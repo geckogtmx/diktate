@@ -218,7 +218,10 @@ const vsRows = [
   document.getElementById('vs-row-1'),
   document.getElementById('vs-row-2'),
   document.getElementById('vs-row-3'),
-  document.getElementById('vs-row-4')
+  document.getElementById('vs-row-4'),
+  document.getElementById('vs-row-5'),
+  document.getElementById('vs-row-6'),
+  document.getElementById('vs-row-7')
 ];
 
 function updateVersusScroll() {
@@ -235,18 +238,14 @@ function updateVersusScroll() {
   }
 
   if (scrolled > totalDistance) {
-    activateVsRows(4);
+    activateVsRows(7);
     return;
   }
 
   const progress = scrolled / totalDistance;
 
-  // 4 rows, reveal them one by one. 
-  // 0-0.25 -> 1st row
-  // 0.25-0.5 -> 2nd row
-  // 0.5-0.75 -> 3rd row
-  // 0.75-1.0 -> 4th row
-  let count = Math.min(Math.floor(progress * 4) + 1, 4);
+  // 7 rows, reveal them one by one. 
+  let count = Math.min(Math.floor(progress * 7) + 1, 7);
   activateVsRows(count);
 }
 
@@ -319,6 +318,43 @@ function updateAskScroll() {
   askOutput.style.borderRightColor = (progress > 0.55 && progress < 1.0) ? 'var(--color-primary)' : 'transparent';
 }
 
+// ---------------------------------------------------------
+// Tokens scrollytelling
+// ---------------------------------------------------------
+const tokensTrack = document.getElementById('tokens-track');
+const tokenModelDisplay = document.getElementById('token-model-display');
+const tokenAnthropic = document.getElementById('token-anthropic');
+const tokenGoogle = document.getElementById('token-google');
+
+function updateTokensScroll() {
+  if (!tokensTrack) return;
+  const rect = tokensTrack.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const totalDistance = rect.height - viewportHeight;
+  const scrolled = -rect.top;
+
+  let progress = 0;
+  if (scrolled > 0) {
+    progress = Math.min(scrolled / totalDistance, 1);
+  }
+
+  const modelSpan = tokenModelDisplay.querySelector('span:first-child');
+
+  if (progress < 0.33) {
+    modelSpan.innerText = 'gemma3:4b (Local)';
+    tokenAnthropic.style.opacity = '0.4';
+    tokenGoogle.style.opacity = '0.4';
+  } else if (progress < 0.66) {
+    modelSpan.innerText = 'Claude 3.5 Sonnet';
+    tokenAnthropic.style.opacity = '1';
+    tokenGoogle.style.opacity = '0.4';
+  } else {
+    modelSpan.innerText = 'Gemini 2.0 Flash';
+    tokenAnthropic.style.opacity = '0.4';
+    tokenGoogle.style.opacity = '1';
+  }
+}
+
 // Master Scroll Listener
 window.addEventListener('scroll', () => {
   updateManifestoScroll();
@@ -327,6 +363,7 @@ window.addEventListener('scroll', () => {
   updateVersusScroll();
   updateBilingScroll();
   updateAskScroll();
+  updateTokensScroll();
 });
 
 // Initial Init
@@ -336,6 +373,7 @@ updateSpecsScroll();
 updateVersusScroll();
 updateBilingScroll();
 updateAskScroll();
+updateTokensScroll();
 
 // ---------------------------------------------------------
 // Feature Modal Logic

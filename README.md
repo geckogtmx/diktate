@@ -27,8 +27,10 @@ A high-performance, local-first voice dictation tool for Windows. Speak naturall
 
 Commercial voice tools send your audio to the cloud. dIKtate runs entirely on your hardware:
 
-- **Fast** — 15-30 seconds (CPU) or **<5 seconds** (GPU) latency from speech to text
+- **Fast** — **~3 seconds** (Local GPU) vs 6-12s for Cloud APIs
 - **Private** — Audio never leaves your machine
+- **Unfiltered** — Zero censorship or corporate guardrails
+- **Stable** — Deterministic hardware performance (no peak-hour slowdowns)
 - **Intelligent** — Not just transcription, but transformation (grammar fixes, filler removal, cleanup)
 - **Offline** — 100% local operation, no internet required
 
@@ -83,7 +85,7 @@ Commercial voice tools send your audio to the cloud. dIKtate runs entirely on yo
 dIKtate automatically detects and uses your NVIDIA GPU if available.
 - **Requirement:** NVIDIA GPU with 4GB+ VRAM
 - **Driver:** Make sure you have the latest NVIDIA drivers installed.
-- **Benefit:** 3-5x faster performance compared to CPU.
+- **Benefit:** ~10x faster than CPU; **4x faster than Cloud APIs** (~3s inference).
 
 
 ---
