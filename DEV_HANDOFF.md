@@ -1,12 +1,54 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-22 12:35
-> **Last Model:** Gemini (Antigravity)
-> **Session Focus:** Debugging Recording & Cloud Issues (Investigation Complete)
+> **Last Updated:** 2026-01-22 16:00
+> **Last Model:** Claude (Haiku 4.5)
+> **Session Focus:** Pre-Recording Mute Detection Implementation (COMPLETE)
 
 ---
 
-## ✅ Completed This Session
+## ✅ Completed This Session (2026-01-22 Claude - Haiku 4.5)
+
+### Pre-Recording Mute Detection - COMPLETE ✅
+**Problem**: Users could attempt to dictate with muted microphone, wasting time recording silence (Whisper transcribes as `[Thank You]`, `[Music]` hallucinations).
+
+**Solution Implemented**:
+1. **New Module**: `python/core/mute_detector.py`
+   - Uses Windows Core Audio API (pycaw) to detect mute state
+   - Fuzzy matches user's selected device (not system default)
+   - Caches device reference for performance
+
+2. **Background Monitoring** (ipc_server.py):
+   - Background thread checks mute state every 3 seconds
+   - Immediate first check on startup (eliminates delay)
+   - Emits `mic-status` events on state changes
+   - Recording gate blocks if muted
+
+3. **UI Integration** (main.ts):
+   - Listens for `mic-status` events
+   - Updates tray tooltip: "⚠️ Microphone Muted"
+   - Shows notification if user tries to record while muted
+
+4. **Bug Fixes** (recorder.py, ipc_server.py):
+   - Removed old `_check_microphone_muted()` from recorder.py (checked wrong device)
+   - Fixed COM threading issue (CoInitialize per thread)
+   - Fixed initial state initialization (was hardcoded, now actual check)
+
+**Testing Results**: ✅ PASSED
+- Correctly detects mute on startup
+- Blocks recording when muted
+- Allows recording immediately when unmuted
+- No false positives
+- No legacy errors in logs
+
+**Files Changed**:
+- `python/core/mute_detector.py` (NEW)
+- `python/core/recorder.py` (CLEANED)
+- `python/ipc_server.py` (UPDATED)
+- `src/main.ts` (UPDATED)
+
+---
+
+## ✅ Previously Completed
 
 ### Investigation & Planning (Code Execution Blocked)
 - **Mute Detection (Silence Hallucinations)**:

@@ -50,6 +50,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from core import Recorder, Transcriber, Injector
 from core.processor import create_processor
+from core.mute_detector import MuteDetector
 from config.prompts import get_translation_prompt
 from utils.security import redact_text, sanitize_log_message
 
@@ -288,9 +289,15 @@ class IpcServer:
         self.custom_prompts = {}  # Custom prompts: mode -> prompt_text mapping
         self.current_mode = "standard"  # Track current processing mode for raw bypass
 
+        # Mute detection
+        self.mute_detector: Optional[MuteDetector] = None
+        self.mute_monitor_thread: Optional[threading.Thread] = None
+        self.mute_monitor_active = False
+        self.last_known_mute_state = None  # Will be set by first check in monitor loop
+
         logger.info("Initializing IPC Server...")
         self._initialize_components()
-        
+
         # Start warmup in background thread to allow Electron to connect immediately
         threading.Thread(target=self._startup_warmup, daemon=True).start()
 
@@ -379,6 +386,76 @@ class IpcServer:
         except Exception as e:
             logger.warning(f"[STARTUP] Ollama startup check failed (non-fatal): {e}")
 
+    def _start_mute_monitoring(self):
+        """Start background thread to monitor microphone mute state."""
+        # Get selected device label from config
+        device_label = os.environ.get("AUDIO_DEVICE_LABEL", "Default")
+
+        self.mute_detector = MuteDetector(device_label=device_label)
+        self.mute_monitor_active = True
+
+        self.mute_monitor_thread = threading.Thread(
+            target=self._mute_monitor_loop,
+            daemon=True
+        )
+        self.mute_monitor_thread.start()
+        logger.info(f"[MUTE_MONITOR] Started monitoring device: {device_label}")
+
+    def _mute_monitor_loop(self):
+        """Background loop to check mute state every 3 seconds."""
+        # Initialize COM for this thread (required for pycaw/Windows COM)
+        try:
+            from comtypes import CoInitialize, CoUninitialize
+            CoInitialize()
+            logger.info("[MUTE_MONITOR] COM initialized for monitoring thread")
+        except Exception as e:
+            logger.error(f"[MUTE_MONITOR] Failed to initialize COM: {e}")
+            return
+
+        try:
+            # IMMEDIATE FIRST CHECK (don't wait 3 seconds)
+            mute_state = self.mute_detector.check_mute_state()
+
+            if mute_state is not None:
+                self.last_known_mute_state = mute_state
+                logger.info(f"[MUTE_MONITOR] Initial mute state: {mute_state}")
+                self._emit_event("mic-status", {
+                    "muted": mute_state,
+                    "timestamp": time.time()
+                })
+            else:
+                # If check fails, assume unmuted (safe default)
+                self.last_known_mute_state = False
+                logger.warning("[MUTE_MONITOR] Initial check failed - assuming unmuted")
+
+            # Continue with normal loop
+            while self.mute_monitor_active:
+                try:
+                    mute_state = self.mute_detector.check_mute_state()
+
+                    if mute_state is not None and mute_state != self.last_known_mute_state:
+                        # Mute state changed - emit event
+                        self.last_known_mute_state = mute_state
+                        logger.info(f"[MUTE_MONITOR] Mute state changed: {mute_state}")
+
+                        self._emit_event("mic-status", {
+                            "muted": mute_state,
+                            "timestamp": time.time()
+                        })
+
+                    time.sleep(3)  # Check every 3 seconds
+
+                except Exception as e:
+                    logger.error(f"[MUTE_MONITOR] Error in monitor loop: {e}")
+                    time.sleep(5)  # Back off on error
+        finally:
+            # Uninitialize COM when thread exits
+            try:
+                CoUninitialize()
+                logger.info("[MUTE_MONITOR] COM uninitialized")
+            except Exception:
+                pass
+
     def _initialize_components(self) -> None:
         """Initialize all pipeline components"""
         try:
@@ -444,6 +521,14 @@ class IpcServer:
             logger.warning(error_msg)
             return {"success": False, "error": error_msg}
 
+        # Check mute state before attempting to record
+        if self.last_known_mute_state:
+            logger.warning("[REC] Blocked: Microphone is muted")
+            self._emit_event("mic-muted", {
+                "message": "Microphone is muted. Please unmute and try again."
+            })
+            return {"success": False, "error": "Microphone is muted", "code": "MIC_MUTED"}
+
         try:
             # Reset metrics for new session
             self.perf.reset()
@@ -465,9 +550,17 @@ class IpcServer:
             self.recording = True
             return {"success": True}
         except Exception as e:
-            logger.error(sanitize_log_message(f"Failed to start recording: {e}"))
-            self._set_state(State.ERROR)
-            return {"success": False, "error": str(e)}
+            error_msg = str(e)
+            # Check if error is due to muted microphone
+            if "muted" in error_msg.lower():
+                logger.warning(f"[REC] Microphone muted: {error_msg}")
+                self._emit_event("mic-muted", {"message": "Microphone is muted. Please unmute and try again."})
+                self._set_state(State.IDLE)  # Don't go to ERROR state for mute
+                return {"success": False, "error": error_msg, "code": "MIC_MUTED"}
+            else:
+                logger.error(sanitize_log_message(f"Failed to start recording: {e}"))
+                self._set_state(State.ERROR)
+                return {"success": False, "error": error_msg}
 
     def stop_recording(self) -> dict:
         """Stop recording and process the audio"""
@@ -862,6 +955,12 @@ YOUR ANSWER:"""
                 else:
                     logger.warning(f"Processor {type(self.processor).__name__} does not support model switching (not LocalProcessor)")
 
+            # 6. Audio Device Label (for mute detection)
+            device_label = config.get("audioDeviceLabel")
+            if device_label and self.mute_detector:
+                logger.info(f"[CONFIG] Updating mute detector device to: {device_label}")
+                self.mute_detector.update_device_label(device_label)
+                updates.append(f"AudioDevice: {device_label}")
 
             if updates:
                 return {"success": True, "message": f"Updated: {', '.join(updates)}"}
@@ -1070,10 +1169,13 @@ YOUR ANSWER:"""
         t.start()
 
     def start(self):
-        """Start the IPC server"""
+        """Start the IPC server and begin mute monitoring."""
         # Start the external command server
         self._start_command_server()
-        
+
+        # Start mute monitoring
+        self._start_mute_monitoring()
+
         logger.info("Starting IPC server...")
         print(json.dumps({"type": "ready"}))
         sys.stdout.flush()

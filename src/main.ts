@@ -268,6 +268,13 @@ function buildTrayMenu(state: string = 'Idle'): Electron.MenuItemConstructorOpti
       click: () => createSettingsWindow()
     },
     {
+      label: 'Control Panel',
+      click: () => {
+        if (!debugWindow) createDebugWindow();
+        debugWindow?.show();
+      }
+    },
+    {
       label: 'Show Logs',
       click: () => {
         const logDir = path.join(app.getPath('home'), '.diktate', 'logs');
@@ -292,14 +299,6 @@ function buildTrayMenu(state: string = 'Idle'): Electron.MenuItemConstructorOpti
           app.relaunch();
           app.exit(0);
         }, 500);
-      }
-    },
-    { type: 'separator' },
-    {
-      label: 'Show Debug Console',
-      click: () => {
-        if (!debugWindow) createDebugWindow();
-        debugWindow?.show();
       }
     },
     { type: 'separator' },
@@ -578,6 +577,37 @@ function setupPythonEventHandlers(): void {
       false
     );
   });
+
+  pythonManager.on('mic-muted', (data: any) => {
+    const { message } = data;
+
+    logger.warn('MAIN', 'Microphone muted detected');
+
+    // Force stop recording state
+    isRecording = false;
+    updateTrayIcon('idle');
+    updateTrayState('Ready');
+
+    // Show notification
+    showNotification(
+      '🔇 Microphone Muted',
+      message || 'Your microphone is muted. Please unmute and try again.',
+      true
+    );
+  });
+
+  pythonManager.on('mic-status', (data: any) => {
+    const { muted } = data;
+
+    logger.info('MAIN', `Microphone status: ${muted ? 'MUTED' : 'ACTIVE'}`);
+
+    // Update tray tooltip
+    if (muted) {
+      tray?.setToolTip('dIKtate - ⚠️ Microphone Muted');
+    } else {
+      updateTrayTooltip();
+    }
+  });
 }
 
 /**
@@ -602,12 +632,15 @@ async function syncPythonConfig(): Promise<void> {
     raw: ''
   });
 
+  const audioDeviceLabel = store.get('audioDeviceLabel', 'Default');
+
   const config: any = {
     provider: processingMode,
     mode: defaultMode,
     transMode: transMode,
     defaultModel: defaultOllamaModel,
-    customPrompts: customPrompts
+    customPrompts: customPrompts,
+    audioDeviceLabel: audioDeviceLabel
   };
 
   // Get API key if needed
@@ -644,7 +677,17 @@ async function syncPythonConfig(): Promise<void> {
 
     // Update badge in status window
     if (debugWindow && !debugWindow.isDestroyed()) {
-      debugWindow.webContents.send('badge-update', { processor: config.defaultModel });
+      // Determine processor name based on provider
+      let processorDisplay = config.defaultModel; // Default to Ollama model
+      if (config.provider === 'cloud' || config.provider === 'gemini') {
+        processorDisplay = 'Gemini 1.5 Flash';
+      } else if (config.provider === 'anthropic') {
+        processorDisplay = 'Claude 3.5 Haiku';
+      } else if (config.provider === 'openai') {
+        processorDisplay = 'GPT-4o Mini';
+      }
+
+      debugWindow.webContents.send('badge-update', { processor: processorDisplay });
       debugWindow.webContents.send('mode-update', config.mode);
       debugWindow.webContents.send('provider-update', config.provider);
     }

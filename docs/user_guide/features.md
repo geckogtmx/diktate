@@ -5,7 +5,8 @@
 ### 🎙️ Push-to-Talk Dictation
 - **Hotkey**: `Ctrl+Alt+D` (Default)
 - **Behavior**: Hold to record, release to stop (or toggle, depending on settings).
-- **Auto-Injection**: The Text is automatically typed into your active window.
+- **Auto-Injection**: The text is automatically typed into your active window.
+- **Mute Detection**: dIKtate automatically detects if your microphone is muted and prevents wasted recordings.
 
 ### 🧠 Ask Mode
 - **Hotkey**: `Ctrl+Alt+A`

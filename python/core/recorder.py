@@ -60,7 +60,7 @@ class Recorder:
             self.auto_stop_callback = auto_stop_callback
             self.start_time = time.time()
             self.p = pyaudio.PyAudio()
-            
+
             # Resolve device index
             input_device_index = None
             
