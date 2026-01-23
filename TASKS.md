@@ -36,6 +36,9 @@
 - [ ] **Python Bundling**: Set up `PyInstaller` for a single-executable engine
 - [ ] **Web Assistant (CRM)**: Deploy floating chatbot + Google Sheets bridge to `dikta.me`
 - [ ] **Security Audit**: Verify `DIKTATE_DEBUG` is DISABLED in production
+- [ ] **Ko-fi Membership**: 
+  - [ ] Set up Ko-fi tiers for **Auto-Updates** & **Ecosystem Access**.
+  - [ ] Integrate "Stay Updated" buttons on landing page.
 
 ---
 

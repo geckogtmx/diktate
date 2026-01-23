@@ -280,7 +280,16 @@ Document any app-specific issues.
   - [ ] **Code Signing**: Azure Trusted Signing to clear SmartScreen warnings.
   - [ ] **Source Available License**: draft for transparency without unauthorized redistribution.
 
-### D.3 First-Run Experience (Embedded Sidecar Strategy) ✅ DECIDED
+### D.3 Ko-fi Subscription (Updates & Ecosystem) ✅ NEW
+> **Goal**: Provide a recurring support model for power users who want automatic updates and access to the broader "Department of One" software ecosystem.
+
+- [ ] **Ko-fi Membership Strategy**:
+  - [ ] Set up **Ko-fi Membership Tiers** for recurring support.
+  - [ ] Define **Automatic Updates Logic**: Exclusive access to the auto-update branch for members.
+  - [ ] **Ecosystem Access**: Provide members with access to other apps and experimental software from the developer.
+  - [ ] Integrate "Stay Updated" Ko-fi buttons across `dikta.me` and documentation.
+
+### D.4 First-Run Experience (Embedded Sidecar Strategy) ✅ DECIDED
 - [ ] **Bundle `ollama.exe`** inside Electron app resources (~300MB)
 - [ ] **Detection Logic:**
   - [ ] Check if user has Ollama running (port 11434) → Use it
@@ -289,19 +298,6 @@ Document any app-specific issues.
   - [ ] Show "Initializing AI Engine..." progress bar on first launch
   - [ ] Auto-pull `gemma3:4b` using the active Ollama instance
   - [ ] Verify model checksum matches expected
-
-### D.4 Update Mechanism
-- [ ] Plan for auto-updates (or manual download)
-- [ ] Version checking
-- [ ] Changelog display
-
-### D.5 Basic History Panel (NEW)
-- [ ] Store last 10 transcriptions in memory
-- [ ] Add "History" tab or panel to status window
-- [ ] Show timestamp, raw text, processed text
-- [ ] Click to copy to clipboard
-- [ ] Click to re-inject into active app
-- [ ] Clear history button
 
 ### D.5 Hardware Auto-Detection (NEW)
 - [ ] Detect NVIDIA GPU presence on first launch
@@ -316,7 +312,20 @@ Document any app-specific issues.
 - [ ] Auto-pull recommended models
 - [ ] Save tier to settings
 
-### D.6 Web Infrastructure (NEW)
+### D.6 Update Mechanism
+- [ ] Plan for auto-updates (or manual download)
+- [ ] Version checking
+- [ ] Changelog display
+
+### D.7 Basic History Panel (NEW)
+- [ ] Store last 10 transcriptions in memory
+- [ ] Add "History" tab or panel to status window
+- [ ] Show timestamp, raw text, processed text
+- [ ] Click to copy to clipboard
+- [ ] Click to re-inject into active app
+- [ ] Clear history button
+
+### D.8 Marketing & Web Infrastructure ✅ UPDATED
 - [ ] **Marketing Site Split:** Extract `sitex/` into a dedicated repository (`diktate-web`)
 - [ ] **Vercel Deployment:** Configure automated CI/CD for `dikta.me` via Vercel
 - [ ] **Domain Setup:** Point `dikta.me` production traffic to Vercel
@@ -325,7 +334,7 @@ Document any app-specific issues.
   - Implement simple conversion tracking models to measure landing page effectiveness.
   - Use short-to-mid term data to fine-tune marketing messaging and onboarding flow.
 
-### D.7 Simplified Web Assistant (CRM) ✅ NEW
+### D.9 Simplified Web Assistant (CRM) ✅ NEW
 > **Goal:** Deploy a v1.0 lead-capture and FAQ support bot on `dikta.me`.
 
 - [ ] **Technical Implementation:**
