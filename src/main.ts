@@ -85,6 +85,7 @@ const store = new Store<UserSettings>({
 let tray: Tray | null = null;
 let pythonManager: PythonManager | null = null;
 let isRecording: boolean = false;
+let isWarmupLock: boolean = true; // NEW: Lock interaction until fully initialized
 let recordingMode: 'dictate' | 'ask' = 'dictate';
 let settingsWindow: BrowserWindow | null = null;
 
@@ -409,6 +410,14 @@ function setupPythonEventHandlers(): void {
 
   pythonManager.on('state-change', (state: string) => {
     logger.info('MAIN', 'Python state changed', { state });
+    
+    // Release lock on first transition to idle after warmup
+    if (isWarmupLock && state === 'idle') {
+      isWarmupLock = false;
+      logger.info('MAIN', 'Warmup lock released - App is fully ready');
+      showNotification('dIKtate Ready', 'Models loaded. Press Ctrl+Alt+D to start.', false);
+    }
+
     updateTrayState(state);
     updateTrayIcon(state);
   });
@@ -1255,6 +1264,11 @@ ipcMain.handle('ollama:warmup', async () => {
  * @param mode - 'dictate' for normal dictation, 'ask' for Q&A mode
  */
 async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<void> {
+  if (isWarmupLock) {
+    logger.warn('MAIN', 'Recording blocked: App is still warming up');
+    return;
+  }
+
   if (!pythonManager) {
     logger.warn('MAIN', 'Python manager not initialized');
     return;
