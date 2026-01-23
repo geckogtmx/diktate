@@ -6,11 +6,11 @@ A high-performance, local-first voice dictation tool for Windows. Speak naturall
 
 ---
 
-## 🎯 Project Status: MVP Development
+## 🎯 Project Status: v1.0 Feature Lock 🔒
 
-**Current Phase:** Phase 4 - Validation & Verification 🧪
-**Progress:** 65% complete (Core pipeline done, Ask Mode in Beta)
-**Target:** Working V1.0 in 1-2 weeks
+**Current Phase:** Phase F - Methodical Validation 🧪
+**Status:** Feature Locked — transitioning from development to quality hardening.
+**Target Release:** v1.0 Stable
 
 ### What the MVP Will Do
 1. Press **Ctrl+Alt+D** (default hotkey) to start recording.
@@ -59,7 +59,7 @@ Commercial voice tools send your audio to the cloud. dIKtate runs entirely on yo
 | `Ctrl+Alt+A` | Ask - transcribe, ask LLM, reply to clipboard/notification |
 
 
-**See:** `docs/L3_MEMORY/DEFERRED_FEATURES.md` for complete list
+**See:** [DEFERRED_FEATURES.md](./docs/internal/L3_MEMORY/DEFERRED_FEATURES.md) for future vision.
 
 ---
 
@@ -107,8 +107,9 @@ dIKtate automatically detects and uses your NVIDIA GPU if available.
 - **Troubleshooting** — Common issues and solutions
 
 ### For Developers
-- **[TASKS.md](./TASKS.md)** — MVP task checklist (47 tasks, 6 phases)
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — Current technical design
+- **[TASKS.md](./TASKS.md)** — Sprint checklist
+- **[DEVELOPMENT_ROADMAP.md](./DEVELOPMENT_ROADMAP.md)** — Master guide for v1.0 release.
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — Technical design
 - **[DEV_HANDOFF.md](./DEV_HANDOFF.md)** — Development status and next steps
 
 ### Commercial Launch (V1.0)
@@ -116,9 +117,9 @@ dIKtate automatically detects and uses your NVIDIA GPU if available.
 - **[docs/internal/V1_LAUNCH_SPRINT.md](./docs/internal/V1_LAUNCH_SPRINT.md)** — 4-week sprint plan
 
 ### Knowledge Base (L3 Memory)
-- **[docs/internal/PHASE_ROADMAP.md](./docs/internal/L3_MEMORY/PHASE_ROADMAP.md)** — MVP → v1.0 evolution
-- **[docs/internal/DEFERRED_FEATURES.md](./docs/internal/L3_MEMORY/DEFERRED_FEATURES.md)** — Features not in MVP
-- **[docs/internal/FULL_VISION/](./docs/internal/L3_MEMORY/FULL_VISION/)** — Detailed specs for future phases
+- **[ROADMAP.md](./DEVELOPMENT_ROADMAP.md)** — v1.0 execution plan
+- **[DEFERRED_FEATURES.md](./docs/internal/L3_MEMORY/DEFERRED_FEATURES.md)** — The 💎 v1.1 and 🚀 v2.0 vision
+- **[FULL_VISION/](./docs/internal/L3_MEMORY/FULL_VISION/)** — Detailed technical specs
 
 ---
 
@@ -152,44 +153,23 @@ dIKtate automatically detects and uses your NVIDIA GPU if available.
 - [x] Comprehensive error handling and logging
 - [x] Performance metrics tracking
 
-### Performance Criteria (CPU Mode)
-- [x] End-to-end latency < 30 seconds for 3-5 second utterance (target)
-- [ ] Zero crashes in 30-minute session (requires UAT in Phase 4)
-- [ ] Baseline performance metrics established (Phase 4)
-
-### Implementation Status
+**Implementation Status:**
 - **Core Pipeline:** ✅ Complete
-- **Error Handling:** ✅ Complete
-- **Testing:** ⏳ Phase 4 (UAT)
-- **Documentation:** ⏳ Phase 5
-- **Packaging:** ⏳ Phase 6
+- **UI & Multi-Provider:** ✅ Complete
+- **Final Validation:** ⏳ Phase F (Active)
+- **Packaging:** ⏳ Phase D/F
 
-**Note:** GPU acceleration deferred to Phase 2+
+**Note:** Hardware acceleration is fully supported (CUDA).
 
 ---
 
-## Roadmap
+### v1.0 (The Horizon 🔒)
+Oops Feature, Mini Mode, Sidecar Detection, Hardware Auto-Tiering, Basic History.
 
-### MVP (v0.1.0)
-Core functionality: dictation works, 100% offline
+### v1.1+ (The Premium Expansion 💎)
+The Pill UI, Cloud Wallet, Scribe Mode, Visionary Module, and more.
 
-### Phase 2 (v0.2.0)
-Enhanced UX: context modes, hotkey config, settings window
-
-### Phase 3 (v0.3.0)
-Advanced features: Gemini fallback, IPC validation, Zustand stores
-
-### Phase 4 (v0.4.0)
-Premium UI: floating pill, design system, animations
-
-### Phase 5 (v1.0.0)
-Power features: custom prompts, model selection, history
-
-### Phase 6 (v2.0) - Future
-**Mobile Expansion:** iOS/Android companion app (Cloud-First strategy).
-**Browser Agent:** Hands-free web navigation.
-
-**See:** `docs/L3_MEMORY/PHASE_ROADMAP.md` for details
+**Full details in:** [DEFERRED_FEATURES.md](./docs/internal/L3_MEMORY/DEFERRED_FEATURES.md)
 
 ---
 

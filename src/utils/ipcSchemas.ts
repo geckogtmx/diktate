@@ -15,8 +15,12 @@ export const SettingsKeySchema = z.enum([
     'autoStart',
     'soundFeedback',
     'feedbackSound',
+    'startSound',
+    'stopSound',
+    'askSound',
     'hotkey',
     'askHotkey',
+    'translateHotkey',
     'askOutputMode',
     'defaultMode',
     'transMode',
@@ -26,7 +30,8 @@ export const SettingsKeySchema = z.enum([
     'maxRecordingDuration',
     'modeModel_standard',
     'modeModel_prompt',
-    'modeModel_professional'
+    'modeModel_professional',
+    'customPrompts'
 ]);
 
 // API key provider schema

@@ -2,7 +2,7 @@
 
 > **Status:** DRAFT v0.3
 > **Feature:** Offline Documentation Chatbot + Web Support Bot
-> **Target Version:** v0.4.0 (App) / Web Launch
+> **Target Version:** v1.0 (Web) / v1.1+ (App)
 
 ---
 
@@ -98,5 +98,28 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
 
 ## 6. Dependencies
 - **App:** `beautifulsoup4`, `numpy`.
-- **Web:** Vercel SDK, Pinecone/Supabase client.
+- **Web:** Vercel SDK, `google-generative-ai` SDK, Google Sheets API.
+
+---
+
+## 7. Simplified Site Assistant (Phase 0)
+*For immediate lead capture and FAQ on `dikta.me`.*
+
+### A. The "Conversational CRM" Strategy
+Instead of a full vector DB, we use a **Long-Context System Instruction** containing the core FAQ and links.
+
+### B. CRM Capabilities (Google Suite)
+- **Product:** Use Gemini Flash 1.5.
+- **Tools:** Use **Gemini Function Calling**.
+  - `log_interest(name, email, use_case)`: Triggers a POST to a Google Apps Script that appends a row to a Google Sheet.
+- **Fallback**: If a question isn't in the context, hand out the link to `dikta.me/docs` and offer to log a follow-up request.
+
+### C. Effort Estimation
+| Task | Effort | Complexity |
+| :--- | :--- | :--- |
+| UI: Floating chat bubble (Tailwind) | 0.5 Day | Low |
+| Backend: Vercel Function + Gemini Proxy | 0.5 Day | Medium |
+| CRM: Google Sheets/Apps Script Hook | 0.5 Day | Low |
+| Context: System Prompt + Link Manifest | 0.5 Day | Low |
+| **Total Deployment** | **2.0 Days** | **Low-Medium** |
 

@@ -49,7 +49,7 @@ This project utilizes a multi-model collaboration strategy. Each agent has disti
 - **Pre-Release:** Run `pnpm audit` and resolve HIGH/CRITICAL before any release.
     
 ### E. Quality Assurance
-- **Manual Testing:** All core changes (processor/transcriber) REQUIRE a run of the [Standard Manual Test](./docs/qa/TEST_DRILL.md).
+- **Manual Testing:** All core changes (processor/transcriber) REQUIRE a run of the [Standard Manual Test](./docs/internal/qa/TEST_DRILL.md).
 - **Performance:** Latency must remain < 7s for standard hardware.
 - **Verification:** Use the `/test-diktate` workflow to verify logs.
 

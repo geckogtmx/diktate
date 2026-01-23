@@ -1,8 +1,8 @@
 # Development Roadmap
 
-> **Status:** ACTIVE - Post-MVP Development
-> **Last Updated:** 2026-01-17
-> **Current Phase:** Stability & Monitoring
+> **Status:** ACTIVE - Feature Locked for v1.0
+> **Last Updated:** 2026-01-22
+> **Current Phase:** Lubricant & Distribution (Locking)
 > **Model:** gemma3:4b (stable, 350-750ms processing)
 
 ---
@@ -28,21 +28,22 @@
 
 ## Phase Structure
 
-### v1.0 (Current Development)
+### v1.0 (Feature Locked 🔒)
 | Phase | Focus | Status |
 |-------|-------|--------|
-| **A: Stability** | Model monitoring, model selection, error recovery | **CURRENT** |
+| **A: Stability** | Model monitoring, model selection, error recovery | ✅ |
 | **B: Testing** | Automated + manual test suites | NEXT |
 | **C: Hardening** | Fallback, retry logic, tray actions, safety | PENDING |
-| **D: Distribution** | Packaging, installer, history panel | PENDING |
-| **E: Polish** | Snippets, dictionary, final QA | PENDING |
+| **D: Distribution** | **Ollama Sidecar**, **Auto-Tiering**, **Web Assistant (CRM)** | PENDING |
+| **E: Polish** | **Mini Mode**, snippets, final QA | PENDING |
+| **F: Validation** | **Methodical UI Audit**, **YouTube Stress Loop**, **Edge Cases** | PENDING |
 
-### v1.1 (Post-Release Priority)
+| **v1.1 (Premium Expansion)**
 | Phase | Focus | Status |
 |-------|-------|--------|
-| **F: Wallet Backend** | Stripe, wallet credits, cloud API proxy | PLANNED |
-| **1.1-A: Premium UI** | Floating pill, design system, waveform | PLANNED |
-| **1.1-B: Power Features** | Custom prompts, advanced audio, extended history | PLANNED |
+| **F: Cloud Wallet** | **The Fuel**: Stripe + 20% Margin API Proxy | **DIAMOND** |
+| **1.1-A: Premium UI** | **The Pill UI (The Cherry)**, Design System, Waveform | PLANNED |
+| **1.1-B: Smart Assistant** | **TTS**, Advanced Audio, Extended History | PLANNED |
 | **1.1-C: Architecture** | WebSocket, Zustand, enhanced IPC | PLANNED |
 | **1.1-D: Research** | New speech/LLM models, benchmarking | PLANNED |
 | **1.1-E: Backlog** | Mobile, browser extension, plugins | FUTURE |
@@ -82,18 +83,18 @@
 - [ ] Test with various input lengths (1s, 5s, 10s, 30s utterances)
 - [ ] Compare output quality: raw vs processed
 
-### A.5 Model Selection UI (NEW)
-- [ ] Add Ollama model dropdown to Settings window
-- [ ] Query Ollama API for installed models (`ollama list`)
-- [ ] Display model metadata (size, parameter count)
-- [ ] Hot-swap model without app restart
-- [ ] Persist selected model to settings
+### A.5 Model Selection UI
+- [x] Add Ollama model dropdown to Settings window
+- [x] Query Ollama API for installed models (`ollama list`)
+- [x] Display model metadata (size, parameter count)
+- [x] Hot-swap model without app restart
+- [x] Persist selected model to settings
 
-### A.6 Whisper Model Selection (NEW)
-- [ ] Add Whisper model size selector (tiny/base/small/medium/large)
-- [ ] Show speed vs accuracy tradeoff info
-- [ ] Persist selected Whisper model to settings
-- [ ] Apply on next recording (no restart needed)
+### A.6 Whisper Model Selection
+- [x] Add Whisper model size selector (tiny/base/small/medium/large)
+- [x] Show speed vs accuracy tradeoff info
+- [x] Persist selected Whisper model to settings
+- [x] Apply on next recording (no restart needed)
 
 ### A.7 Audio Encoder/Transcriber Testing (NEW)
 
@@ -252,28 +253,29 @@ Document any app-specific issues.
 
 **Goal:** Package for clean Windows install.
 
-### D.1 Packaging
-- [ ] Configure electron-builder for Windows NSIS
-- [ ] Bundle Python with PyInstaller
-- [ ] Create single installer (.exe)
-- [ ] Test on clean Windows VM
+### D.1 Packaging & Portable Engine
+- [ ] Configure electron-builder for Windows NSIS installer
+- [ ] Bundle standalone Python engine with PyInstaller/Nuitka
+- [ ] Create signed single installer (.exe)
+- [ ] **Distribution Test**: Run installer on a "Virgin" machine (no previous Python/Ollama)
+- [ ] **Sidecar Validation**: Verify Ollama is spawned and models pulled automatically
 
-### D.2 App Protection & Licensing (Lemon Squeezy) ✅ NEW
-> **Goal:** Secure the app with a "Soft-DRM" and handle international taxes via Lemon Squeezy.
+### D.2 App Protection & Licensing (Lemon Squeezy) ✅ UPDATED
+> **Goal**: Secure the app with hardware-locked licensing and handle logic for multiple devices.
 
-- [ ] **Business & Tax Setup:**
-  - [ ] Create account on **Lemon Squeezy** (Merchant of Record).
-  - [ ] Set up "Voice Dictation App" as a **Pay What You Want** digital product ($20 min).
-  - [ ] Enable "Generate License Keys" in product settings.
-  - [ ] Set "Thank You" page to the Windows .exe download link.
-- [ ] **Technical Implementation (Electron):**
-  - [ ] **Fingerprinting:** Install `node-machine-id` to identify unique user PCs.
-  - [ ] **Activation UI:** Build a simple "Enter License Key" splash screen/check on first boot.
-  - [ ] **API Sync:** Connect UI to the [Lemon Squeezy License API](https://api.lemonsqueezy.com/v1/licenses/activate).
-  - [ ] **Local Storage:** Store successful activation tokens locally for persistent access.
-- [ ] **Security & Trust:**
-  - [ ] **Code Signing:** Purchase Windows Code Signing Certificate (Azure Trusted Signing) to clear SmartScreen.
-  - [ ] **Source Available License:** Draft license text (transparency without redistribution rights).
+- [ ] **Lemon Squeezy Integration**:
+  - [ ] Configure product with license key generation.
+  - [ ] Implement **License Verification** on startup via LS API.
+  - [ ] Store encrypted activation token locally for offline grace periods.
+- [ ] **Hardware Fingerprinting ("PC Image")**:
+  - [ ] Use `node-machine-id` or custom HWID script (CPU + Disk + Motherboard).
+  - [ ] Record device ID on first activation.
+- [ ] **Multi-Device Logic**:
+  - [ ] Implement **3-Device Limit** per license key.
+  - [ ] Allow users to manage/deactivate devices (via LS portal or custom API).
+- [ ] **Security & Trust**:
+  - [ ] **Code Signing**: Azure Trusted Signing to clear SmartScreen warnings.
+  - [ ] **Source Available License**: draft for transparency without unauthorized redistribution.
 
 ### D.3 First-Run Experience (Embedded Sidecar Strategy) ✅ DECIDED
 - [ ] **Bundle `ollama.exe`** inside Electron app resources (~300MB)
@@ -315,6 +317,19 @@ Document any app-specific issues.
 - [ ] **Marketing Site Split:** Extract `sitex/` into a dedicated repository (`diktate-web`)
 - [ ] **Vercel Deployment:** Configure automated CI/CD for `dikta.me` via Vercel
 - [ ] **Domain Setup:** Point `dikta.me` production traffic to Vercel
+
+### D.7 Simplified Web Assistant (CRM) ✅ NEW
+> **Goal:** Deploy a v1.0 lead-capture and FAQ support bot on `dikta.me`.
+
+- [ ] **Technical Implementation:**
+  - [ ] Deploy Vercel Edge Function with `google-generative-ai` SDK.
+  - [ ] Configure System Instructions with full product/FAQ context (~20k tokens).
+  - [ ] Implement Function Calling for `log_interest` to capture lead data.
+- [ ] **CRM Bridge:**
+  - [ ] Set up Google Apps Script/Sheets to receive lead data via POST.
+- [ ] **Frontend:**
+  - [ ] Standard Tailwind floating chat bubble in `sitex/`.
+  - [ ] Navigation Link handing (Direct users to `/docs.html`).
 
 **Exit Criteria:** Fresh Windows install can run diktate with guided setup, hardware detected, appropriate models recommended, and marketing site is live/independent.
 
@@ -380,405 +395,52 @@ Document any app-specific issues.
 
 **Exit Criteria:** All v1.0 features complete, documentation ready, ready for public release.
 
----
-
-## Phase F: Cloud Wallet Infrastructure (v1.1 Priority)
-
-**Goal:** Backend infrastructure for wallet-based cloud credits (anti-subscription model).
-
-> ⚠️ **Note:** v1.0 ships with BYOK (Bring Your Own Key) for Pro tier. Wallet is v1.1.
-
-### F.1 Backend Setup
-- [ ] Set up edge API project (Cloudflare Workers or Vercel Edge)
-- [ ] Configure database (Supabase or PlanetScale)
-- [ ] Implement Stripe webhook handlers for one-time payments
-- [ ] Create license key generation/validation system
-- [ ] Set up usage logging and analytics
-
-### F.2 API Endpoints
-- [ ] `/api/auth` - License key validation
-- [ ] `/api/wallet` - Balance checking, top-up history
-- [ ] `/api/transcribe` - Whisper proxy with credit deduction
-- [ ] `/api/process` - LLM proxy with credit deduction
-- [ ] `/api/usage` - Usage tracking, deduction logging
-
-### F.3 Cloud Provider Integration
-- [ ] Evaluate provider SDKs (Groq, DeepSeek, Cerebras, Gemini)
-- [ ] Select primary provider (easiest integration wins)
-- [ ] Implement fallback order for reliability
-- [ ] Configure 25% margin pricing per provider
-
-### F.4 Desktop App Integration
-- [ ] Add license key input in Settings
-- [ ] Add wallet balance display in status window
-- [ ] Implement "Top Up Credits" → opens browser
-- [ ] Show credit usage after each cloud transcription
-- [ ] Graceful degradation when credits exhausted
-
-**Exit Criteria:** User can purchase Pro, enter license key, top up wallet credits, use cloud transcription with balance tracking.
 
 ---
 
-# Version 1.1 Roadmap (POST-RELEASE)
+## Phase F: Methodical Validation (The "Final Stretch")
 
-> **Status:** PLANNED - Do not start until v1.0 is shipped
-> **Target:** After v1.0 stable release
-> **Note:** These features are documented here to preserve knowledge. Full specs in `docs/L3_MEMORY/`.
+**Goal:** Exhaustive manual and automated validation to ensure dIKtate is "bulletproof" for public release.
 
----
+### F.1 UI/UX "Surface" Audit
+- **Checklist**: See [METHODICAL_UI_CHECKLIST.md](./docs/internal/qa/METHODICAL_UI_CHECKLIST.md)
+- **Focus**: Every button, every toggle, every state transition (Mini/Full).
+- **Goal**: 100% functional coverage of the Electron interface.
 
-## v1.1-A: Premium UI/UX
+### F.2 The "YouTube Content Creator" Stress Test
+- **The Story**: We bypassed the need for expensive human testers by using automated loops of high-diversity YouTube content. 
+- **Method**: Using `audio_feeder.py` to pipe 60+ minutes of varied speech (tech vlogs, fast talkers, interviews) directly into the engine.
+- **Goal**: Verify endurance, ensure no memory leaks, and validate Whisper accuracy across 50+ different voices/accents.
 
-**Goal:** Elevate the visual experience beyond MVP.
-
-### Floating Pill UI
-*Spec: `docs/L3_MEMORY/FULL_VISION/DESIGN_SYSTEM_FULL.md`*
-- [ ] Minimal presence (12px dot when idle)
-- [ ] Expands to pill when recording (160px × 44px)
-- [ ] State-based animations (breath pulse, shimmer, success burst)
-- [ ] Waveform visualization (5 bars, center-weighted)
-- [ ] Draggable, position persists
-- [ ] Success state with text preview
-
-### Design System Overhaul
-*Spec: `docs/L3_MEMORY/FULL_VISION/DESIGN_SYSTEM_FULL.md` (1,691 lines)*
-- [ ] Obsidian Minimalism aesthetic
-- [ ] Custom color palette (Void, Smoke, Ash, Ember, Breath Spectrum)
-- [ ] Typography system (JetBrains Mono + Plus Jakarta Sans)
-- [ ] Component library (buttons, toggles, selects, radios)
-- [ ] Animation library (breath pulse, shimmer, success burst)
-- [ ] Micro-interactions throughout
-
-### System Tray Enhancements
-- [ ] Animated tray icons (pulse during recording, rotation during processing)
-- [ ] Rich context menu with submenus
-- [ ] Notification balloons with actions
-
-### Waveform Visualization
-- [ ] Real-time audio level display during recording
-- [ ] 5-bar waveform with center weighting
-- [ ] Animated bars (wave-bar keyframes)
-- [ ] Audio level normalization
+### F.3 Human Edge-Case ("Weird Dictation")
+- **Protocol**: Manual runs specifically designed to break the model:
+  - Long silences (10s+) in the middle of a sentence.
+  - Whispering then shouting.
+  - Intentional "hallucination bait" (speaking nonsense or contradictory commands).
+- **Goal**: Confirm fallback safety and internal consistency.
 
 ---
 
-## v1.1-B: Power User Features
+---
 
-**Goal:** Features for advanced users and power workflows.
+## Future Vision & Deferred Features
 
-### Custom Prompts
-*Spec: `docs/L3_MEMORY/FULL_VISION/STATE_MANAGEMENT_FULL.md`*
-- [ ] User-defined prompts per context mode
-- [ ] Prompt template editor in settings
-- [ ] Prompt variables (e.g., {raw_text}, {language})
-- [ ] Prompt library/sharing (import/export)
-- [ ] Reset to defaults option
+All features planned for **v1.1**, **v2.0**, and beyond are documented in [DEFERRED_FEATURES.md](./docs/internal/L3_MEMORY/DEFERRED_FEATURES.md). This includes:
 
-### Advanced Audio Settings
-*Spec: `docs/L3_MEMORY/FULL_VISION/STATE_MANAGEMENT_FULL.md`*
-- [ ] Sample rate configuration (16kHz, 44.1kHz, 48kHz)
-- [ ] Silence threshold tuning
-- [ ] Voice activity detection (VAD) for auto-stop
-- [ ] Real-time audio level meter in settings
-- [ ] Noise gate threshold configuration
-
-### Extended History
-- [ ] Store 50+ transcriptions (configurable)
-- [ ] Search/filter history
-- [ ] Export history to file (JSON, TXT, CSV)
-- [ ] Pin important transcriptions
-- [ ] Sync history across sessions (persist to disk)
-
-### Keyboard Shortcuts
-- [ ] Mode switching via hotkey (Ctrl+Shift+M cycles modes)
-- [ ] Quick settings hotkey
-- [ ] History panel hotkey
-- [ ] Customizable shortcuts in settings
+- **The Floating Pill UI** (Premium Animation)
+- **Cloud Wallet** (Pay-as-you-go proxy)
+- **Scribe Mode** (Meeting Intelligence)
+- **Visionary Module** (Multimodal Screenshot Q&A)
+- **Mobile Companion** (iOS/Android Dictation)
 
 ---
 
-## v1.1-C: Architecture Upgrades
-
-**Goal:** Technical improvements for scalability and real-time features.
-
-### WebSocket Communication
-*Spec: `docs/L3_MEMORY/FULL_VISION/IPC_DESIGN_FULL.md`*
-- [ ] Replace stdin/stdout with WebSocket
-- [ ] Real-time bidirectional communication
-- [ ] Streaming transcription progress
-- [ ] Connection health monitoring
-- [ ] Auto-reconnect on disconnect
-
-### State Management (Zustand)
-*Spec: `docs/L3_MEMORY/FULL_VISION/STATE_MANAGEMENT_FULL.md`*
-- [ ] 5 domain-driven stores (Recording, Transcription, Settings, UI, Provider)
-- [ ] Middleware stack (devtools, persist, immer, subscribeWithSelector)
-- [ ] Memoized selectors for performance
-- [ ] State persistence across restarts
-- [ ] Subscriptions for real-time UI updates
-
-### Enhanced IPC
-- [ ] Full error sanitization (user-friendly messages)
-- [ ] Request/response correlation IDs
-- [ ] Message queuing for reliability
-- [ ] Structured logging with trace IDs
-
----
-
-### v1.1-F: Docs Chatbot ("Neural Help")
-*Spec: `docs/specs/SPEC_002_DOCS_CHATBOT.md`*
-- [ ] **Dual Deployment Strategy (Local + Cloud)**
-- [ ] **App:** RAG-based help system using local Gemma + SQLite + Nomic Embeddings
-- [ ] **Web:** Gemini Flash API powered support bot on `dikta.me`
-- [ ] **CI/CD:** Github Action to sync repo docs to cloud vector DB
-
----
-
-## v1.1-D: Research & Experimental
-
-**Goal:** Evaluate next-generation models and technologies.
-
-### Speech Model Candidates
-| Model | Type | Potential |
-|-------|------|-----------|
-| NVIDIA Canary Qwen 2.5B | Speech-to-Text | Whisper replacement, faster? |
-| Granite Speech 3.3 (IBM) | Speech-to-Text | Enterprise-grade, open weights |
-| Whisper Large V3 Turbo | Speech-to-Text | Latest OpenAI, accuracy focus |
-
-### LLM Candidates
-| Model | Size | Potential |
-|-------|------|-----------|
-| gemma3:12b | 12B | Higher quality text cleanup |
-| llama3.1:8b | 8B | Updated Llama with better context |
-| mistral-nemo | 12B | Strong multilingual support |
-| phi4 | ~4B | Microsoft's latest small model |
-
-### Research Tasks
-- [ ] Create benchmarking script (latency, VRAM, quality)
-- [ ] Compare against Whisper V3 Turbo baseline
-- [ ] Evaluate license compatibility for commercial use
-- [ ] Test on consumer hardware (RTX 4060 Ti 8GB)
-- [ ] Document findings in `docs/BENCHMARKS.md`
-
----
-
-## v1.1-E: Future Consideration (Backlog)
-
-**Goal:** Ideas captured but not yet planned.
-
-These are not committed to v1.1 but preserved for future consideration:
-
-| Feature | Notes |
-|---------|-------|
-| Multi-language UI | Localization (ES, DE, FR, etc.) |
-| Cloud sync | Settings, history sync across devices |
-| Team features | Shared prompts, admin dashboard |
-| Mobile companion | iOS/Android app for remote control |
-| Browser extension | Chrome/Firefox for web dictation |
-| API/CLI | Programmatic access for automation |
-| Plugins/extensions | Third-party integrations |
-| Voice commands | Beyond dictation (app control) |
-| Speaker diarization | Multi-speaker transcription |
-| Real-time collab | Shared dictation sessions |
-
-### Ask Mode (v1.0.5) ✅ IN PROGRESS
-
-**Status:** Phase 1 & 3 Complete (2026-01-18)
-
-Voice Q&A feature - "The Workflow Crutch" for micro-queries.
-
-| Phase | Scope | Status |
-|-------|-------|--------|
-| Phase 1 | Core infrastructure (hotkey, Python handler) | ✅ Complete |
-| Phase 2 | Status window mode toggle UI | ⏳ Pending |
-| Phase 3 | Settings page integration (Output toggle) | ✅ Complete |
-| Phase 4 | Optimizations (Calculator, Feedback Loop) | 📅 Planned |
-
-**How it works:**
-- `Ctrl+Alt+D` = Dictate (transcribe → clean → type)
-- `Ctrl+Alt+A` = Ask (transcribe → ask LLM → clipboard/notify/type)
-
-**Strategy:** "Quick Reference Crutch" - faster than Google for math, dates, facts.
-**Planned Optimization:** Calculator Mode (skip LLM for pure math).
-
-**Output options:** Clipboard, **Type (Default)**, Voice TTS, Notification
-
----
-
-## 🎮 Satellite Product Idea: Streamer AI Co-Host
-
-> **Status:** CONCEPT - Not yet planned
-> **Added:** 2026-01-18
-
-**Concept:** Repurpose diktate's local voice + LLM stack for streamers to have an AI co-host/moderator using local models (no expensive cloud subscriptions).
-
-### Use Cases
-
-| Feature | Description |
-|---------|-------------|
-| **AI Chat Responder** | LLM types in Twitch/YouTube chat based on streamer's voice commands |
-| **TTS with Personality** | Local text-to-speech with custom voice/personality for reading donations |
-| **Moderation Bot** | Local LLM monitors chat for toxicity, auto-responds or mutes |
-| **Sound Board AI** | Voice-activated sound effects ("play sad trombone") |
-| **Stream Recap** | Summarizes stream highlights using transcription |
-
-### Integration Targets
-
-- **StreamerBot** - For event handling and OBS control
-- **OBS WebSocket** - Direct scene/source control
-- **Twitch API** - Read/write chat
-- **YouTube Live API** - Chat interaction
-
-### Advantages Over Competitors
-
-- 100% local = no API costs, no subscription
-- Privacy = chat/audio never leaves machine
-- Customizable = train personalities on local models
-- Offline = works without internet
-
-### MVP for Streamers
-
-1. Voice command → LLM generates chat message → sends to StreamerBot
-2. Donation alert → TTS reads with AI personality
-3. Chat toxicity → local moderation (no OpenAI costs)
-
----
-
-## 🚀 V2.0 Mobile & Browser Expansion (Concept)
-
-> **Strategy Change:** For mobile, we pivot from "Local-First" to "Cloud-First" to compete with Wispr Flow's dedicated keyboard.
-
-### 2.1 The Scribe Layer ("Granola Module")
-*Spec: `docs/specs/SPEC_003_SCRIBE_LAYER.md`*
-- **Concept:** Persistent meeting intelligence workspace.
-- **Workflow:** Long-form Audio + User Notes + Template -> AI Synthesis.
-- **Goal:** Move beyond dictation to full session management.
-- **Tech:** Streaming recorder, Sliding window summarization, SQLite session store.
-
-### 2.2 Mobile Companion App (Cloud-First)
-**Architecture:**
-- **Core App:** React Native (iOS/Android)
-- **Engine:** Google Gemini Flash API (Multimodal Audio → Text) - *BYO Key or Free Tier*
-- **Auth:** Google Sign-In
-- **Input Method:** Native Keyboard Extension (Swift/Kotlin) needed for "Type Anywhere" injection.
-- **Why Cloud?** Battery life, implementation speed (1 month vs 6 months), and instant multimodal capabilities.
-
-### 2.3 The Visionary ("Multimodal Eyes")
-*Spec: `docs/specs/SPEC_004_VISIONARY_MODULE.md`*
-- **Concept:** "You talk, dIKtate looks."
-- **Workflow:** Screenshot/Region + Voice Command -> AI Answer.
-- **Tech:** Hybrid Architecture.
-    - **Local:** `moondream:2b` for fast OCR/UI description (< 8GB VRAM friendly).
-    - **Cloud:** `gemini-1.5-flash` for complex reasoning/math/coding.
-
----
-
-### 2.4 Browser Ghost Pilot
-**Concept:** "You talk, dIKtate drives."
-- **Feature:** User speaks navigation commands ("Go to Reddit, find the latest thread on Llama 3").
-- **Tech:** Playwright/Puppeteer driven by local LLM agent.
-- **Goal:** Hands-free web navigation.
-
----
-
-### 2.5 Meeting Intelligence & Long-Form Processing (Research Phase)
-
-> **Status:** Research Queue (Post-v1.0)
-> **Inspiration:** Granola.ai-style meeting intelligence
-> **Added:** 2026-01-21
-
-**Concept:** Transform dIKtate from real-time dictation tool to intelligent meeting assistant that can:
-1. Record entire meetings (30-60 minutes continuous)
-2. Generate accurate transcripts
-3. Cross-reference with user notes
-4. Execute automated workflows based on meeting content
-
-#### Key Technical Challenges
-
-**Long-Duration Recording Stress Testing:**
-- **Status:** Infrastructure Ready (2026-01-21)
-- **Tool:** Automated stress test suite (`audio_feeder.py`) now supports extended recordings
-- **Capability:** Can simulate 30-60 minute meetings using YouTube video downloads
-
-**Testing Commands:**
-```bash
-# Test 30-minute meeting simulation
-python python/tools/audio_feeder.py --last-download --no-simpleaudio --count 100
-
-# Test 60-minute continuous recording
-python python/tools/audio_feeder.py --last-download --no-simpleaudio --count 200
-```
-
-**Research Questions:**
-
-1. **Model Capacity:** Can Gemma 3:4b handle 30-60 minute context windows?
-   - Current: ~18s per phrase (8-10s audio chunks)
-   - Meeting: Need to process 180-360 chunks
-   - Test: Does the model choke on cumulative context?
-
-2. **Memory Management:** Does Python backend maintain stability over extended sessions?
-   - Current: Tested up to 100 phrases successfully
-   - Meeting: Need 200-400 phrase capacity
-   - Test: Monitor memory usage during extended runs
-
-3. **Model Fallback Strategy:** When to switch from local (Gemma) to cloud (GPT-4, Claude)?
-   - Hypothesis: Local models may struggle with long-context reasoning
-   - Test: Compare output quality at 5min, 15min, 30min, 60min marks
-   - Decision: Define threshold for automatic cloud fallback
-
-4. **Workflow Automation:** Post-meeting action items
-   - Parse meeting transcript for action items
-   - Cross-reference with user notes (priority markers)
-   - Generate follow-up emails, calendar events, task tickets
-   - Integration: Granola-style "smart summaries"
-
-**Proposed Testing Strategy:**
-- [ ] Use existing YouTube videos (1-hour conference talks) as test data
-- [ ] Run stress tests measuring: transcription quality, processing latency, memory usage
-- [ ] Compare local (Gemma) vs cloud (GPT-4/Claude) on same content
-- [ ] Document performance degradation thresholds
-- [ ] Define when local → cloud fallback is necessary
-
-**Dependencies:**
-- ✅ Automated stress test infrastructure (RESOLVED 2026-01-21)
-- ✅ TCP control protocol with state synchronization
-- ⏳ Extended context window support in processing layer
-- ⏳ Action item extraction pipeline
-- ⏳ Workflow orchestration system
-
-**Timeline:** Post-v1.0 launch, research phase
-
-**Reference:** See `docs/internal/L3_MEMORY/DEFERRED_FEATURES.md` lines 398-466 for detailed V2.0 notes.
-
----
-
-## 🏗️ Architecture Strategy: Open Core
-
-To support the community while building a viable product, we will adopt an **Open Core** model (Splitting the "Engine" from the "App").
-
-### 1. `diktate-engine` (The Core / SDK)
-- **Repo:** Public / MIT
-- **Scope:** Headless Python library.
-- **Features:** Audio Capture → Whisper → Ollama → Text Injection.
-- **Audience:** Developers, Hackers, Plugin Creators.
-- **Goal:** The standard open-source library for local voice control.
-
-### 2. `dIKtate Libre` (The FOSS App)
-- **Repo:** Public
-- **Scope:** Minimal Electron wrapper around the engine.
-- **Features:** 100% Local. No Cloud APIs. Basic Dictation only.
-- **Audience:** Privacy absolutists, minimalists.
-
-### 3. `dIKtate Pro` (The Power App)
-- **Repo:** Source Available
-- **Scope:** Productivity features for professionals.
-- **Features:** Ask Mode UI, Cloud APIs (Gemini/Claude), Mobile Sync.
-
-### 4. `dIKtate Streamer` (The Studio App)
-- **Repo:** Source Available
-- **Scope:** Specialized for content creators.
-- **Features:** Voice-to-Action (WebSocket), Giveaway Manager, Toxicity AI, Persona TTS.
-- **Audience:** Streamers, Youtubers, Podcasters.
+## Version Reference
+
+| Version | Focus | Status |
+|---------|-------|--------|
+| **v1.0** | Stability, Local-First, Hardening | **ACTIVE** |
+| **v1.1+** | Premium UX, Cloud Services | Planned |
 
 ---
 

@@ -1,4 +1,7 @@
 # Fix: Cloud/Local Switch Badge Not Updating in UI
+> **Status:** COMPLETED ✅ (Verified by user)
+> **Date:** 2026-01-22
+
 
 ## Problem
 When user switches from Local → Cloud (or other providers) in settings, the backend successfully switches to the correct provider (Gemini API, Claude API, etc.). However, **the UI badge in the top-right doesn't update** to reflect the change.
