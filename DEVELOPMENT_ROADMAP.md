@@ -595,4 +595,9 @@ AI_CODEX.md             ← Governance rules (stable)
 
 ---
 
+## 🤖 AI-Augmented Development
+This project was co-authored by human and machine. It was developed using a multi-layered AI workflow including **Google AI Studio**, **Antigravity**, **Claude Code**, and **OpenCode**.
+
+---
+
 *This document is the single source of truth for development direction. Update it as phases complete.*

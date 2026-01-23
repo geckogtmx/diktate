@@ -181,6 +181,20 @@ The Pill UI, Cloud Wallet, Scribe Mode, Visionary Module, and more.
 
 ---
 
+---
+
+## 🤖 AI-Augmented Development
+
+This project was built using a multi-layered AI-assisted workflow. Development involved the extensive use of:
+- **Google AI Studio / Gemini 2.0 / Flash**
+- **Antigravity** (Agentic AI Assistant)
+- **Claude Code & OpenCode** (Terminal-based AI Agents)
+- Numerous web-based chat consultations
+
+The architecture, code, and documentation were co-authored by human and machine in a collaborative session.
+
+---
+
 ## License
 
 MIT
