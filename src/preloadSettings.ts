@@ -48,6 +48,8 @@ const settingsAPI = {
 
     // Custom Prompts
     getCustomPrompts: () => ipcRenderer.invoke('settings:get-custom-prompts'),
+    getDefaultPrompts: () => ipcRenderer.invoke('settings:get-default-prompts'),
+    getDefaultPrompt: (mode: string, model: string) => ipcRenderer.invoke('settings:get-default-prompt', mode, model),
     saveCustomPrompt: (mode: string, promptText: string) => ipcRenderer.invoke('settings:save-custom-prompt', mode, promptText),
     resetCustomPrompt: (mode: string) => ipcRenderer.invoke('settings:reset-custom-prompt', mode),
 

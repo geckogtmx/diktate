@@ -616,10 +616,13 @@ class IpcServer:
                 except Exception as e:
                     logger.warning(f"Could not read audio metadata: {e}")
 
-            # Transcribe
+            # Transcribe - uses trans_mode to determine if auto-detection is needed
             logger.info("[TRANSCRIBE] Transcribing audio...")
             self.perf.start("transcription")
-            raw_text = self.transcriber.transcribe(self.audio_file)
+            
+            # Pass None for language if we are in auto translation mode to allow Whisper to detect
+            target_lang = None if self.trans_mode == 'auto' else 'en'
+            raw_text = self.transcriber.transcribe(self.audio_file, language=target_lang)
             self.perf.end("transcription")
             logger.info(f"[RESULT] Transcribed: {redact_text(raw_text)}")
 

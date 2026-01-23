@@ -66,13 +66,13 @@ class Transcriber:
             logger.error(f"Failed to load Whisper model: {e}")
             raise
 
-    def transcribe(self, audio_path: str, language: str = "en") -> str:
+    def transcribe(self, audio_path: str, language: Optional[str] = None) -> str:
         """
         Transcribe audio file to text.
 
         Args:
             audio_path: Path to audio file
-            language: Language code (default: en)
+            language: Language code (default: None for auto-detection)
 
         Returns:
             Transcribed text

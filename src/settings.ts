@@ -21,12 +21,16 @@ interface SettingsAPI {
     getSoundFiles: () => Promise<string[]>;
     // Custom Prompts
     getCustomPrompts: () => Promise<Record<string, string>>;
+    getDefaultPrompts: () => Promise<Record<string, string>>;
+    getDefaultPrompt: (mode: string, model: string) => Promise<string>;
     saveCustomPrompt: (mode: string, promptText: string) => Promise<{ success: boolean; error?: string }>;
     resetCustomPrompt: (mode: string) => Promise<{ success: boolean; error?: string }>;
     // Hardware testing
     runHardwareTest: () => Promise<{ gpu: string; vram: string; tier: string; speed: number }>;
     // App Control
     relaunchApp: () => void;
+    // Ollama Warmup
+    warmupOllamaModel: () => Promise<{ success: boolean; model: string; error?: string }>;
 }
 
 interface Window {
@@ -37,6 +41,8 @@ interface Window {
 let isRecordingHotkey = false;
 let initialModels: Record<string, string> = {};
 let hasModelChanges = false;
+let availableModels: any[] = [];
+let defaultPrompts: Record<string, string> = {};
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -66,10 +72,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const defaultSelect = document.getElementById('default-model') as HTMLSelectElement;
         if (defaultSelect) initialModels['default'] = defaultSelect.value;
 
-        const modes = ['standard', 'prompt', 'professional'];
+        const modes = ['standard', 'prompt', 'professional', 'raw'];
         for (const mode of modes) {
-            const select = document.getElementById(`model-${mode}`) as HTMLSelectElement;
-            if (select) initialModels[`modeModel_${mode}`] = select.value;
+            initialModels[`modeModel_${mode}`] = settings[`modeModel_${mode}`] || '';
         }
 
     } catch (e) {
@@ -203,7 +208,6 @@ function loadSettings(settings: any) {
 
     // Modes
     setVal('default-mode', settings.defaultMode || 'standard');
-    setVal('trans-mode', settings.transMode || 'none');
     setVal('ask-output-mode', settings.askOutputMode || 'type');
 
     // Hotkeys
@@ -214,6 +218,10 @@ function loadSettings(settings: any) {
     if (settings.askHotkey) {
         const askHotkeyDisplay = document.getElementById('ask-hotkey-display');
         if (askHotkeyDisplay) askHotkeyDisplay.textContent = settings.askHotkey;
+    }
+    if (settings.translateHotkey) {
+        const translateHotkeyDisplay = document.getElementById('translate-hotkey-display');
+        if (translateHotkeyDisplay) translateHotkeyDisplay.textContent = settings.translateHotkey;
     }
 }
 
@@ -236,13 +244,19 @@ function saveSetting(key: string, value: any) {
 }
 
 // Hotkey Recording
-function recordHotkey(mode: 'dictate' | 'ask' = 'dictate') {
-    const displayId = mode === 'ask' ? 'ask-hotkey-display' : 'hotkey-display';
-    const settingKey = mode === 'ask' ? 'askHotkey' : 'hotkey';
+function recordHotkey(mode: 'dictate' | 'ask' | 'translate' = 'dictate') {
+    const configMap = {
+        dictate: { displayId: 'hotkey-display', settingKey: 'hotkey', label: 'Dictate' },
+        ask: { displayId: 'ask-hotkey-display', settingKey: 'askHotkey', label: 'Ask Mode' },
+        translate: { displayId: 'translate-hotkey-display', settingKey: 'translateHotkey', label: 'Translate' }
+    };
+
+    const { displayId, settingKey, label } = configMap[mode];
     const display = document.getElementById(displayId);
     if (isRecordingHotkey || !display) return;
 
     isRecordingHotkey = true;
+    const originalText = display.textContent;
     display.textContent = 'Press new hotkey...';
     display.classList.add('recording');
 
@@ -262,16 +276,23 @@ function recordHotkey(mode: 'dictate' | 'ask' = 'dictate') {
         const key = e.key.toUpperCase();
         const shortcut = [...modifiers, key].join('+');
 
-        // Check for conflict with the other hotkey
-        const otherDisplayId = mode === 'ask' ? 'hotkey-display' : 'ask-hotkey-display';
-        const otherDisplay = document.getElementById(otherDisplayId);
-        if (otherDisplay && otherDisplay.textContent === shortcut) {
-            alert(`⚠️ This hotkey is already used for ${mode === 'ask' ? 'Dictate' : 'Ask'} mode. Please choose a different one.`);
-            display.textContent = mode === 'ask' ? 'Ctrl + Alt + A' : 'Ctrl + Alt + D';
-            display.classList.remove('recording');
-            isRecordingHotkey = false;
-            document.removeEventListener('keydown', handler);
-            return;
+        // Conflict check against ALL other hotkeys
+        const conflicts: { id: string, name: string }[] = [
+            { id: 'hotkey-display', name: 'Dictate' },
+            { id: 'ask-hotkey-display', name: 'Ask Mode' },
+            { id: 'translate-hotkey-display', name: 'Translate' }
+        ].filter(item => item.id !== displayId);
+
+        for (const other of conflicts) {
+            const otherDisplay = document.getElementById(other.id);
+            if (otherDisplay && otherDisplay.textContent === shortcut) {
+                alert(`⚠️ Conflict: This hotkey is already used for ${other.name}.`);
+                display.textContent = originalText;
+                display.classList.remove('recording');
+                isRecordingHotkey = false;
+                document.removeEventListener('keydown', handler);
+                return;
+            }
         }
 
         // Update UI
@@ -289,13 +310,19 @@ function recordHotkey(mode: 'dictate' | 'ask' = 'dictate') {
     document.addEventListener('keydown', handler);
 }
 
-function resetHotkey(mode: 'dictate' | 'ask' = 'dictate') {
+function resetHotkey(mode: 'dictate' | 'ask' | 'translate' = 'dictate') {
     const defaults = {
         dictate: 'Ctrl+Alt+D',
-        ask: 'Ctrl+Alt+A'
+        ask: 'Ctrl+Alt+A',
+        translate: 'Ctrl+Alt+T'
     };
-    const displayId = mode === 'ask' ? 'ask-hotkey-display' : 'hotkey-display';
-    const settingKey = mode === 'ask' ? 'askHotkey' : 'hotkey';
+    const configMap = {
+        dictate: { displayId: 'hotkey-display', settingKey: 'hotkey' },
+        ask: { displayId: 'ask-hotkey-display', settingKey: 'askHotkey' },
+        translate: { displayId: 'translate-hotkey-display', settingKey: 'translateHotkey' }
+    };
+
+    const { displayId, settingKey } = configMap[mode];
     const defaultHotkey = defaults[mode];
 
     const display = document.getElementById(displayId);
@@ -416,32 +443,35 @@ function relaunchApp() {
     window.settingsAPI.relaunchApp();
 }
 
-function checkModelChanges() {
+async function checkModelChanges() {
     const banner = document.getElementById('restart-banner');
     if (!banner) return;
 
-    // Check default model
-    const defaultSelect = document.getElementById('default-model') as HTMLSelectElement;
-    let changed = false;
+    try {
+        const settings = await window.settingsAPI.getAll();
+        let changed = false;
 
-    if (defaultSelect && initialModels['default'] !== defaultSelect.value) {
-        changed = true;
-    }
+        // Check default model
+        if (initialModels['default'] !== settings.defaultOllamaModel) {
+            changed = true;
+        }
 
-    // Check mode models
-    if (!changed) {
-        const modes = ['standard', 'prompt', 'professional'];
-        for (const mode of modes) {
-            const select = document.getElementById(`model-${mode}`) as HTMLSelectElement;
-            if (select && initialModels[`modeModel_${mode}`] !== select.value) {
-                changed = true;
-                break;
+        // Check mode models
+        if (!changed) {
+            const modes = ['standard', 'prompt', 'professional'];
+            for (const mode of modes) {
+                if (initialModels[`modeModel_${mode}`] !== (settings[`modeModel_${mode}`] || '')) {
+                    changed = true;
+                    break;
+                }
             }
         }
-    }
 
-    hasModelChanges = changed;
-    banner.style.display = changed ? 'flex' : 'none';
+        hasModelChanges = changed;
+        banner.style.display = changed ? 'flex' : 'none';
+    } catch (e) {
+        console.error('Failed to check model changes:', e);
+    }
 }
 // Ollama tab functions
 (window as any).refreshOllamaStatus = refreshOllamaStatus;
@@ -1143,70 +1173,70 @@ async function warmupModel() {
 // ============================================
 
 let currentSelectedMode = 'standard';
-let defaultPrompts: Record<string, string> = {};
 
 async function initializeModeConfiguration() {
     try {
         // Load available models for dropdowns
-        const modelSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
-        if (modelSelect && window.electronAPI) {
-            // Get available models from initial state or Ollama
-            const initialState = await window.electronAPI.getInitialState();
-            const defaultModel = initialState?.models?.processor || 'gemma3:4b';
-
-            // Populate with common models
-            const commonModels = ['gemma3:4b', 'llama2', 'mistral', 'neural-chat'];
-            modelSelect.innerHTML = '<option value="">Use default model</option>';
-
-            commonModels.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model;
-                option.text = model === defaultModel ? `${model} (current)` : model;
-                modelSelect.appendChild(option);
-            });
+        const response = await fetch('http://localhost:11434/api/tags').catch(() => null);
+        if (response && response.ok) {
+            const data = await response.json();
+            availableModels = data.models || [];
         }
 
-        // Load custom prompts
-        await loadCustomPrompts();
+        const modelSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
+        if (modelSelect) {
+            modelSelect.innerHTML = ''; // No "Use default model"
+            availableModels.forEach((model: any) => {
+                const option = document.createElement('option');
+                option.value = model.name;
+                option.text = model.name;
+                modelSelect.appendChild(option);
+            });
 
-        // Load initial mode
-        selectMode('standard');
+            // On model change, refresh the prompt preview
+            modelSelect.onchange = () => {
+                updatePromptDisplay(currentSelectedMode, modelSelect.value);
+            };
+        }
+
+        // Load prompts and initial mode
+        await loadPrompts();
+        await selectMode('standard');
 
     } catch (error) {
         console.error('Failed to initialize mode configuration:', error);
     }
 }
 
-async function loadCustomPrompts() {
+async function loadPrompts() {
     try {
-        const customPrompts = await (window.settingsAPI as any).getCustomPrompts();
-        // Store in global for use in selectMode
+        const customPrompts = await window.settingsAPI.getCustomPrompts();
+        const defaults = await window.settingsAPI.getDefaultPrompts();
+
+        // Store in global
         (window as any).customPrompts = customPrompts || {};
+        defaultPrompts = defaults || {};
     } catch (error) {
-        console.error('Failed to load custom prompts:', error);
+        console.error('Failed to load prompts:', error);
     }
 }
 
-function selectMode(mode: string) {
+async function selectMode(mode: string) {
     currentSelectedMode = mode;
 
     // Update list UI
     const modeListItems = document.querySelectorAll('.mode-list-item');
     modeListItems.forEach(item => {
-        item.classList.toggle('active', item.textContent?.includes(
-            mode === 'standard' ? 'Standard' :
-            mode === 'prompt' ? 'Prompt' :
-            mode === 'professional' ? 'Professional' :
-            'Raw'
-        ));
+        const content = item.textContent?.trim().toLowerCase();
+        item.classList.toggle('active', content?.includes(mode));
     });
 
-    // Update detail view
+    // Update detail view headers
     const modeEmojis: Record<string, string> = {
-        'standard': '📝',
-        'prompt': '🤖',
-        'professional': '💼',
-        'raw': '📜'
+        'standard': '',
+        'prompt': '',
+        'professional': '',
+        'raw': ''
     };
 
     const modeNames: Record<string, string> = {
@@ -1221,62 +1251,149 @@ function selectMode(mode: string) {
         titleEl.textContent = `${modeEmojis[mode]} ${modeNames[mode]}`;
     }
 
-    // Load prompt for this mode
-    const promptTextarea = document.getElementById('mode-detail-prompt') as HTMLTextAreaElement;
-    if (promptTextarea) {
-        const customPrompts = (window as any).customPrompts || {};
-        promptTextarea.value = customPrompts[mode] || '';
+    // Set model dropdown selection
+    const modelSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
+    if (modelSelect) {
+        const settings = await window.settingsAPI.getAll();
+        const savedModel = settings[`modeModel_${mode}`];
+
+        // If no saved override, pre-select the global default model
+        modelSelect.value = savedModel || settings.defaultOllamaModel || 'gemma3:4b';
     }
 
-    // Show/hide model selector for raw mode (raw doesn't use LLM)
+    // Show/hide sections and update info message for Raw mode
     const modelSection = document.querySelector('[id="mode-detail-model"]')?.parentElement;
-    if (modelSection) {
-        modelSection.style.display = mode === 'raw' ? 'none' : 'block';
+    const promptSection = document.querySelector('[id="mode-detail-prompt"]')?.parentElement;
+    const infoEl = document.getElementById('prompt-info');
+
+    if (mode === 'raw') {
+        const modelSection = document.getElementById('mode-detail-model')?.parentElement;
+        const promptTextarea = document.getElementById('mode-detail-prompt') as HTMLTextAreaElement;
+        const promptLabel = promptTextarea?.previousElementSibling as HTMLElement;
+        const buttonContainer = document.querySelector('button[onclick="saveModeDetails()"]')?.parentElement;
+        const infoEl = document.getElementById('prompt-info');
+
+        if (modelSection) modelSection.style.display = 'none';
+        if (promptTextarea) promptTextarea.style.display = 'none';
+        if (promptLabel) promptLabel.style.display = 'none';
+        if (buttonContainer) buttonContainer.style.display = 'none';
+
+        if (infoEl) {
+            infoEl.style.marginTop = '0';
+            infoEl.innerHTML = `
+                <div style="color: #e0e0e0; font-family: sans-serif; line-height: 1.6;">
+                    <p style="margin-top: 0;">Raw mode injects text directly from Whisper with <strong>zero latency</strong>. No LLM processing or prompting is applied.</p>
+                    
+                    <div style="margin-top: 20px;">
+                        <strong style="font-size: 0.9em; display: block; margin-bottom: 8px; color: #888; text-transform: uppercase; letter-spacing: 0.05em;">What to expect:</strong>
+                        <ul style="margin: 0; padding-left: 18px; color: #bbb; font-size: 0.95em; line-height: 1.8;">
+                            <li>Includes all filler words (um, uh, etc.)</li>
+                            <li>May contain audio artifacts (e.g. [Music])</li>
+                            <li>Preserves every stutter and false start</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            infoEl.style.color = 'inherit';
+        }
+    } else {
+        const modelSection = document.getElementById('mode-detail-model')?.parentElement;
+        const promptTextarea = document.getElementById('mode-detail-prompt') as HTMLTextAreaElement;
+        const promptLabel = promptTextarea?.previousElementSibling as HTMLElement;
+        const buttonContainer = document.querySelector('button[onclick="saveModeDetails()"]')?.parentElement;
+        const infoEl = document.getElementById('prompt-info');
+
+        if (modelSection) modelSection.style.display = 'block';
+        if (promptTextarea) promptTextarea.style.display = 'block';
+        if (promptLabel) promptLabel.style.display = 'block';
+        if (buttonContainer) buttonContainer.style.display = 'flex';
+
+        if (infoEl) {
+            infoEl.style.marginTop = '4px';
+        }
+
+        const modelSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
+        // Load prompt display for non-raw modes
+        await updatePromptDisplay(mode, modelSelect?.value);
+    }
+}
+
+/**
+ * Updates the prompt display based on mode and model
+ */
+async function updatePromptDisplay(mode: string, model: string) {
+    const promptTextarea = document.getElementById('mode-detail-prompt') as HTMLTextAreaElement;
+    if (!promptTextarea) return;
+
+    const customPrompts = (window as any).customPrompts || {};
+    const customPrompt = customPrompts[mode];
+
+    if (customPrompt && customPrompt.length > 0) {
+        promptTextarea.value = customPrompt;
+    } else {
+        // Fetch exact default from backend based on Mode + Model
+        try {
+            const defaultPrompt = await window.settingsAPI.getDefaultPrompt(mode, model);
+            promptTextarea.value = defaultPrompt;
+        } catch (e) {
+            console.error('Failed to fetch default prompt:', e);
+            promptTextarea.value = '';
+        }
     }
 
     // Update info text
     const infoEl = document.getElementById('prompt-info');
     if (infoEl) {
-        const customPrompts = (window as any).customPrompts || {};
-        const hasCustom = customPrompts[mode] && customPrompts[mode].length > 0;
-        infoEl.textContent = hasCustom ? `✓ Custom prompt in use` : 'No custom prompt (using default)';
+        const hasCustom = customPrompt && customPrompt.length > 0;
+        infoEl.textContent = hasCustom ? `✓ Custom prompt in use` : 'No custom prompt (showing current default)';
         infoEl.style.color = hasCustom ? '#4ade80' : '#888';
     }
 }
 
 async function saveModeDetails() {
     const promptTextarea = document.getElementById('mode-detail-prompt') as HTMLTextAreaElement;
-    const promptText = promptTextarea?.value?.trim() || '';
+    const modelSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
+    let promptText = promptTextarea?.value?.trim() || '';
+
+    // Check if the prompt is identical to the default for this specific (Mode, Model)
+    // if so, we clear the custom prompt to avoid redundant storage
+    const currentDefaultPrompt = await window.settingsAPI.getDefaultPrompt(currentSelectedMode, modelSelect?.value || '');
+    if (promptText === currentDefaultPrompt) {
+        promptText = '';
+    }
 
     if (promptText && !promptText.includes('{text}')) {
         alert('❌ Prompt must include {text} placeholder where the transcribed text will be inserted');
         return;
     }
 
-    if (promptText && promptText.length > 1000) {
-        alert('❌ Prompt is too long (max 1000 characters)');
-        return;
-    }
-
     try {
-        const result = await (window.settingsAPI as any).saveCustomPrompt(currentSelectedMode, promptText);
+        // Save prompt
+        const promptResult = await window.settingsAPI.saveCustomPrompt(currentSelectedMode, promptText);
 
-        if (result.success) {
-            // Reload custom prompts
-            await loadCustomPrompts();
+        // Save model override
+        const modelSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
+        if (modelSelect && currentSelectedMode !== 'raw') {
+            await window.settingsAPI.set(`modeModel_${currentSelectedMode}`, modelSelect.value);
+            checkModelChanges();
+        }
+
+        if (promptResult.success) {
+            // Reload prompts
+            await loadPrompts();
             selectMode(currentSelectedMode);
 
             // Show success message
             const promptEl = document.getElementById('prompt-info');
             if (promptEl) {
-                promptEl.textContent = promptText ? '✓ Saved!' : '✓ Reset to default!';
+                promptEl.textContent = '✓ Saved changes!';
                 promptEl.style.color = '#4ade80';
                 setTimeout(() => {
-                    selectMode(currentSelectedMode); // Refresh to show actual state
+                    selectMode(currentSelectedMode);
                 }, 2000);
             }
         } else {
-            alert(`❌ Failed to save: ${result.error}`);
+            alert(`❌ Failed to save: ${promptResult.error}`);
         }
     } catch (error) {
         console.error('Failed to save mode details:', error);
@@ -1290,11 +1407,11 @@ async function resetModeToDefault() {
     }
 
     try {
-        const result = await (window.settingsAPI as any).resetCustomPrompt(currentSelectedMode);
+        const result = await window.settingsAPI.resetCustomPrompt(currentSelectedMode);
 
         if (result.success) {
-            // Reload custom prompts
-            await loadCustomPrompts();
+            // Reload prompts
+            await loadPrompts();
             selectMode(currentSelectedMode);
 
             // Show success message

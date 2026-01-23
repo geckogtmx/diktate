@@ -58,10 +58,9 @@ const perfInjectCell = document.getElementById('perf-inject-cell');
 // Toggle elements
 const toggleSound = document.getElementById('toggle-sound') as HTMLInputElement | null;
 const toggleCloud = document.getElementById('toggle-cloud') as HTMLInputElement | null;
-const toggleTranslate = document.getElementById('toggle-translate') as HTMLInputElement | null;
 
-// Personality selection elements
-const personalityBtns: Record<string, HTMLElement | null> = {
+// Mode selection elements
+const modeBtns: Record<string, HTMLElement | null> = {
     standard: document.getElementById('mode-standard'),
     prompt: document.getElementById('mode-prompt'),
     professional: document.getElementById('mode-professional'),
@@ -226,7 +225,6 @@ function setupToggles() {
             addLogEntry('INFO', `Sound feedback: ${toggleSound.checked ? 'ON' : 'OFF'}`);
         });
     }
-
     if (toggleCloud) {
         toggleCloud.addEventListener('change', () => {
             const mode = toggleCloud.checked ? 'cloud' : 'local';
@@ -234,29 +232,21 @@ function setupToggles() {
             addLogEntry('INFO', `Processing mode: ${mode.toUpperCase()}`);
         });
     }
-
-    if (toggleTranslate) {
-        toggleTranslate.addEventListener('change', () => {
-            const transMode = toggleTranslate.checked ? 'es-en' : 'none';
-            window.electronAPI?.setSetting?.('transMode', transMode);
-            addLogEntry('INFO', `Translation: ${toggleTranslate.checked ? 'ON (es-en)' : 'OFF'}`);
-        });
-    }
 }
 
-// Update personality toggle UI
-function updatePersonalityUI(mode: string) {
-    Object.keys(personalityBtns).forEach(k => {
-        const btn = personalityBtns[k];
+// Update mode toggle UI
+function updateModeUI(mode: string) {
+    Object.keys(modeBtns).forEach(k => {
+        const btn = modeBtns[k];
         if (btn) {
             btn.classList.toggle('active', k === mode);
         }
     });
 }
 
-// Make switchPersonality available globally for onclick handler
-(window as any).switchPersonality = function (mode: 'standard' | 'prompt' | 'professional' | 'raw') {
-    updatePersonalityUI(mode);
+// Make switchExecutionMode available globally for onclick handler
+(window as any).switchExecutionMode = function (mode: 'standard' | 'prompt' | 'professional' | 'raw') {
+    updateModeUI(mode);
     window.electronAPI?.setSetting?.('defaultMode', mode);
     addLogEntry('INFO', `Mode switched to: ${mode.toUpperCase()}`);
 };
@@ -362,9 +352,9 @@ if (window.electronAPI) {
                 toggleCloud.checked = state.processingMode === 'cloud';
             }
 
-            // Restore personality selection
+            // Restore mode selection
             if (state.defaultMode) {
-                updatePersonalityUI(state.defaultMode);
+                updateModeUI(state.defaultMode);
             }
 
             // Load metrics panel

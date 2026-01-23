@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 // Settings schemas
 export const ProcessingModeSchema = z.enum(['local', 'cloud', 'google', 'anthropic', 'openai']);
-export const PersonalityModeSchema = z.enum(['standard', 'prompt', 'professional', 'raw']);
+export const ExecutionModeSchema = z.enum(['standard', 'prompt', 'professional', 'raw']);
 export const TransModeSchema = z.enum(['none', 'es-en', 'en-es']);
 
 export const SettingsKeySchema = z.enum([

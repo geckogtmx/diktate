@@ -817,6 +817,55 @@ ipcMain.handle('settings:get', (_event, key: string) => {
 // Custom Prompts IPC Handlers
 // ============================================
 
+// Default Prompts (mirrored from python/config/prompts.py for UI availability)
+const DEFAULT_PROMPTS = {
+  standard: `You are a text cleanup tool. Fix punctuation and capitalization. Remove filler words (um, uh) only if hesitations. PRESERVE slang/emphasis. Return ONLY cleaned text. Do not include introductory text.
+
+Input: {text}
+Cleaned text:`,
+  prompt: `You are a prompt engineer. Your job is to clean up spoken text into a clear, structured prompt for an AI model.
+
+Rules:
+1. Remove ALL filler words, hesitations, and false starts.
+2. Fix punctuation, capitalization, and grammar.
+3. Preserve technical terms and specific instructions exactly.
+4. Structure the output clearly (use bullet points if appropriate).
+5. Return ONLY the cleaned prompt text.
+
+Input: {text}
+Cleaned text:`,
+  professional: `You are a professional editor. Your job is to polish the text for a business context.
+
+Rules:
+1. Remove ALL filler words, hesitations, and false starts.
+2. Fix punctuation, capitalization, and grammar.
+3. Remove profanity.
+4. Ensure the tone is polite and clear.
+5. Return ONLY the cleaned text.
+
+Input: {text}
+Cleaned text:`,
+  raw: `You are a transcriber. Your job is to format the text with punctuation while changing as little as possible.
+
+Rules:
+1. Preserve ALL words, including fillers and stutters.
+2. Add necessary punctuation and capitalization.
+3. DO NOT remove profanity or slang.
+4. Return ONLY the processed text.
+
+Input: {text}
+Cleaned text:`,
+  // Model-specific overrides (mirrored from python/config/prompts.py)
+  modelOverrides: {
+    'gemma3:4b': {
+      standard: `Dictation cleanup. Fix punctuation, remove fillers, apply corrections. Nothing else added.
+
+Input: {text}
+Cleaned text:`
+    }
+  }
+};
+
 // Get all custom prompts
 ipcMain.handle('settings:get-custom-prompts', async () => {
   return store.get('customPrompts', {
@@ -825,6 +874,27 @@ ipcMain.handle('settings:get-custom-prompts', async () => {
     professional: '',
     raw: ''
   });
+});
+
+// Get all default prompts (plural for backward compatibility/global load)
+ipcMain.handle('settings:get-default-prompts', async () => {
+  return DEFAULT_PROMPTS;
+});
+
+// Get specific default prompt based on mode and model
+ipcMain.handle('settings:get-default-prompt', async (_event, mode: string, model: string) => {
+  const modeLower = mode.toLowerCase();
+
+  // 1. Check for model-specific override first
+  if (model && DEFAULT_PROMPTS.modelOverrides[model as keyof typeof DEFAULT_PROMPTS.modelOverrides]) {
+    const overrides = DEFAULT_PROMPTS.modelOverrides[model as keyof typeof DEFAULT_PROMPTS.modelOverrides];
+    if (overrides[modeLower as keyof typeof overrides]) {
+      return overrides[modeLower as keyof typeof overrides];
+    }
+  }
+
+  // 2. Fall back to base mode prompt
+  return DEFAULT_PROMPTS[modeLower as keyof typeof DEFAULT_PROMPTS] || DEFAULT_PROMPTS.standard;
 });
 
 // Save custom prompt for a specific mode
@@ -1317,7 +1387,7 @@ function setupGlobalHotkey(): void {
 
       // Toggle translate mode
       const currentTransMode = store.get('transMode', 'none');
-      const newTransMode = currentTransMode === 'none' ? 'es-en' : 'none';
+      const newTransMode = currentTransMode === 'none' ? 'auto' : 'none';
       store.set('transMode', newTransMode);
 
       logger.info('HOTKEY', `Translation toggled: ${newTransMode}`);
@@ -1328,7 +1398,7 @@ function setupGlobalHotkey(): void {
       // Show notification
       const message = newTransMode === 'none'
         ? 'Translation disabled'
-        : `Translation enabled (${newTransMode})`;
+        : 'Auto-Translation enabled (ES ↔ EN)';
       showNotification('Translate', message, false);
     });
 

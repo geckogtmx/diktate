@@ -385,7 +385,8 @@
                 <div class="setting-group">
                     <label>Translate Hotkey</label>
                     <span class="sub-label">Press to toggle translation mode (on/off)</span>
-                    <div id="translate-hotkey-display" class="hotkey-display-box" onclick="recordHotkey('translate')">Ctrl + Alt + T
+                    <div id="translate-hotkey-display" class="hotkey-display-box" onclick="recordHotkey('translate')">
+                        Ctrl + Alt + T
                     </div>
                     <div style="text-align: right; margin-top: 5px;">
                         <button class="btn btn-secondary" onclick="resetHotkey('translate')">Reset Default</button>
@@ -625,37 +626,29 @@
 
         <!-- MODES TAB -->
         <div id="modes" class="tab-content">
-            <h2>Personality Modes</h2>
+            <h2>Execution Modes</h2>
 
             <div class="setting-group">
                 <label>Default Mode</label>
                 <span class="sub-label">Mode used when you start dictating</span>
                 <select id="default-mode" onchange="saveSetting('defaultMode', this.value)">
-                    <option value="standard">📝 Standard (General Purpose)</option>
-                    <option value="prompt">🤖 Prompt (For LLM Prompts)</option>
-                    <option value="professional">💼 Professional (Business)</option>
-                    <option value="raw">📜 Raw (Literal, Minimal)</option>
+                    <option value="standard">Standard (General Purpose)</option>
+                    <option value="prompt">Prompt (For LLM Prompts)</option>
+                    <option value="professional">Professional (Business)</option>
+                    <option value="raw">Raw (Literal, Minimal)</option>
                 </select>
             </div>
 
-            <div class="setting-group">
-                <label>Translation Mode</label>
-                <select id="trans-mode" onchange="saveSetting('transMode', this.value)">
-                    <option value="none">Disabled</option>
-                    <option value="es-en">Spanish → English</option>
-                    <option value="en-es">English → Spanish</option>
-                </select>
-            </div>
 
             <!-- Ask Mode Output -->
             <div class="setting-group">
                 <label>Ask Mode Output</label>
                 <span class="sub-label">How to deliver answers when using Ask Mode (Ctrl+Alt+A)</span>
                 <select id="ask-output-mode" onchange="saveSetting('askOutputMode', this.value)">
-                    <option value="type">⌨️ Type (Inject text)</option>
-                    <option value="clipboard">📋 Clipboard Only</option>
-                    <option value="notification">🔔 Notification Only</option>
-                    <option value="clipboard+notify">📋 + 🔔 Both</option>
+                    <option value="type">Type (Inject text)</option>
+                    <option value="clipboard">Clipboard Only</option>
+                    <option value="notification">Notification Only</option>
+                    <option value="clipboard+notify">Clipboard + Notification Both</option>
                 </select>
             </div>
 
@@ -664,34 +657,38 @@
                 <span class="sub-label">Customize model and system prompt for each mode</span>
 
                 <!-- Master-Detail Layout -->
-                <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; margin-top: 15px; min-height: 400px;">
+                <div
+                    style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; margin-top: 15px; min-height: 400px;">
                     <!-- LEFT: Mode List -->
                     <div id="mode-list" style="display: flex; flex-direction: column; gap: 8px;">
                         <div class="mode-list-item active" onclick="selectMode('standard')">
-                            📝 Standard
+                            Standard
                         </div>
                         <div class="mode-list-item" onclick="selectMode('prompt')">
-                            🤖 Prompt
+                            Prompt
                         </div>
                         <div class="mode-list-item" onclick="selectMode('professional')">
-                            💼 Professional
+                            Professional
                         </div>
                         <div class="mode-list-item" onclick="selectMode('raw')">
-                            📜 Raw
+                            Raw
                         </div>
                     </div>
 
                     <!-- RIGHT: Mode Details -->
-                    <div id="mode-detail" style="background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
-                        <h3 id="mode-detail-title" style="margin: 0 0 20px 0;">📝 Standard</h3>
+                    <div id="mode-detail"
+                        style="background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <h3 id="mode-detail-title" style="margin: 0 0 20px 0;">Standard</h3>
 
                         <!-- Model Selection -->
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; margin-bottom: 8px; font-weight: 500;">Model Override</label>
-                            <select id="mode-detail-model" style="width: 100%; padding: 8px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0;">
+                            <select id="mode-detail-model"
+                                style="width: 100%; padding: 8px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0;">
                                 <option value="">Use default model</option>
                             </select>
-                            <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;">Leave empty to use app default model</span>
+                            <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;">Leave empty
+                                to use app default model</span>
                         </div>
 
                         <!-- System Prompt -->
@@ -701,16 +698,18 @@
                                 placeholder="Leave empty to use default prompt. Must contain {text} placeholder."
                                 style="width: 100%; height: 200px; padding: 10px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0; font-family: 'Courier New', monospace; font-size: 0.9em; resize: vertical;">
                             </textarea>
-                            <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;" id="prompt-info">Custom prompt (leave empty for default)</span>
+                            <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;"
+                                id="prompt-info">Custom prompt (leave empty for default)</span>
                         </div>
 
                         <!-- Action Buttons -->
-                        <div style="display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                        <div
+                            style="display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
                             <button class="btn" onclick="saveModeDetails()" style="flex: 1; background: #059669;">
-                                ✓ Save Changes
+                                Save Changes
                             </button>
                             <button class="btn btn-secondary" onclick="resetModeToDefault()" style="flex: 1;">
-                                ↻ Reset to Default
+                                Reset to Default
                             </button>
                         </div>
                     </div>
