@@ -68,8 +68,21 @@
         }
 
         .state-warmup {
-            background-color: rgba(255, 200, 0, 0.1);
+            background-color: rgba(255, 200, 0, 0.15);
             border-left-color: #ffc800;
+            animation: panel-warmup-pulse 2s infinite ease-in-out;
+        }
+
+        @keyframes panel-warmup-pulse {
+
+            0%,
+            100% {
+                background-color: rgba(255, 200, 0, 0.1);
+            }
+
+            50% {
+                background-color: rgba(255, 200, 0, 0.25);
+            }
         }
 
         @keyframes recording-pulse {
@@ -302,6 +315,15 @@
             box-shadow: 0 0 8px rgba(0, 96, 122, 0.5);
         }
 
+        /* WARMUP LOCK */
+        .state-warmup #toggles-bar,
+        .state-warmup #mode-toggle-bar {
+            pointer-events: none;
+            opacity: 0.5;
+            filter: grayscale(0.5);
+            transition: all 0.5s ease;
+        }
+
         .mode-btn .mode-desc {
             display: block;
             font-size: 0.6rem;
@@ -507,12 +529,12 @@
 </head>
 
 <body>
-    <div id="status-panel" class="state-idle">
+    <div id="status-panel" class="state-warmup">
         <!-- HEADER -->
         <div id="header-bar">
             <div id="status-indicator">
                 <span id="status-dot"></span>
-                <span id="status-text">READY</span>
+                <span id="status-text">WARMING UP</span>
             </div>
             <div id="badges">
                 <span class="badge" id="badge-transcriber">Turbo</span>
@@ -522,7 +544,7 @@
 
         <!-- LIVE STATUS -->
         <div id="live-status">
-            <span id="live-message">Waiting for input...</span>
+            <span id="live-message" class="typing-dots">Loading model into memory...</span>
         </div>
 
         <!-- STATS GRID -->
