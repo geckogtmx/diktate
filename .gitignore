@@ -70,3 +70,12 @@ settings.json
 # OS
 Thumbs.db
 .DS_Store
+
+# Internal Governance & Development (Local-Only)
+AI_CODEX.md
+DEV_HANDOFF.md
+TASKS.md
+CLAUDE.md
+GEMINI.md
+docs/internal/
+.agent/
