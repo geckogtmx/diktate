@@ -10,6 +10,7 @@ A high-performance, local-first voice dictation tool for Windows. Speak naturall
 
 **Current Phase:** Phase F - Methodical Validation 🧪
 **Status:** Feature Locked — transitioning from development to quality hardening.
+**Last Security Audit:** 2026-01-22 (0 Critical, 0 High) 🔒
 **Target Release:** v1.0 Stable
 
 ### What the MVP Will Do
@@ -46,7 +47,7 @@ Commercial voice tools send your audio to the cloud. dIKtate runs entirely on yo
 ✅ **Settings:** Full settings window with audio, models, modes, API keys - **Complete**
 ✅ **Error Handling:** Comprehensive logging + native notifications - **Complete**
 ✅ **Performance Tracking:** Full pipeline metrics tracking - **Complete**
-✅ **Offline:** 100% local operation - **Complete**
+✅ **Security Audit:** High-severity Electron and `tar` fixes implemented - **Complete**
 🚧 **Ask Mode:** Voice Q&A with LLM (`Ctrl+Alt+A`) - **Beta (Text response only, TTS coming soon)**
 
 **Status:** Active Development

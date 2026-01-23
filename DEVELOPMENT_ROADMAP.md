@@ -245,7 +245,17 @@ Document any app-specific issues.
 - [x] Auto-stop with notification when limit reached
 - [x] Prevent runaway recordings
 
-**Exit Criteria:** 1-hour stability session, all target apps tested, fallback working, no critical bugs.
+### C.9 Security & Dependency Hygiene (NEW)
+> **Goal:** Maintain a secure and modern codebase by proactively patching vulnerabilities.
+
+- [x] **2026-01-22 Security Audit**: Found 0 Critical, 2 High (`node-tar`, Electron ASAR), 1 Moderate (`lodash`).
+- [ ] **Remediation**:
+  - [ ] Upgrade Electron to `^35.7.5` (ASAR integrity fix).
+  - [ ] Update `electron-builder` to patch `node-tar` to v7+.
+  - [ ] Implement `security_audit.py` for Python dependency management.
+- [ ] **Verification**: Pass `pnpm audit --moderate`, `pip-audit`, and manual IPC/SafeStorage checklist.
+
+**Exit Criteria:** 1-hour stability session, all target apps tested, fallback working, no critical bugs, and zero high-severity vulnerabilities.
 
 ---
 
@@ -409,7 +419,12 @@ Document any app-specific issues.
 - [ ] Structure: Getting Started → User Guide → Troubleshooting → Developers
 - [ ] Spanish translations for key pages
 
-**Exit Criteria:** All v1.0 features complete, documentation ready, ready for public release.
+#### E.3.5 Pre-release Security Hardening
+- [ ] Final dependency audit (`pnpm audit`)
+- [ ] Python engine vulnerability scan (`security_audit.py`)
+- [ ] Verify production build disables all debug interfaces
+
+**Exit Criteria:** All v1.0 features complete, documentation ready, zero high-severity vulnerabilities, and ready for public release.
 
 
 ---
@@ -577,6 +592,12 @@ AI_CODEX.md             ← Governance rules (stable)
 ---
 
 ## Changelog
+
+### 2026-01-22 (Update 5)
+- 🔒 **Security Audit**: Completed comprehensive scan of JS and Python dependencies.
+- ✅ **Remediation Plan**: Approved plan to jump Electron v28 → v35.7.5 to fix ASAR bypass.
+- ✅ **Infrastructure**: Added requirement for `npm test` and `python/tools/security_audit.py`.
+- ✅ **Roadmap Sync**: Integrated security hygiene into Phase C (Hardening).
 
 ### 2026-01-17 (Update 4 - Session 2)
 - ✅ Cloud/Local toggle fully implemented and tested

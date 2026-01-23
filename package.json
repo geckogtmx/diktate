@@ -8,7 +8,8 @@
     "start": "electron .",
     "build": "tsc && electron .",
     "dist": "pnpm run package-python && electron-builder",
-    "package-python": "cd python && build_backend.bat"
+    "package-python": "cd python && build_backend.bat",
+    "test": "node tests/smoke-test.cjs && pytest python/"
   },
   "keywords": [
     "dictation",
@@ -19,14 +20,14 @@
   "author": "dIKtate Contributors",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "electron": "^28.3.3",
-    "electron-builder": "^24.13.3",
+    "@types/node": "^20.17.15",
+    "electron": "^35.7.5",
+    "electron-builder": "^25.1.8",
     "typescript": "^5.3.0"
   },
   "dependencies": {
-    "electron-store": "^8.1.0",
-    "zod": "^4.3.5"
+    "electron-store": "^8.2.0",
+    "zod": "^4.3.6"
   },
   "build": {
     "appId": "com.diktate.app",
@@ -53,5 +54,11 @@
         "to": "bin/diktate-engine.exe"
       }
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "tar": "^7.5.4",
+      "lodash": "^4.17.23"
+    }
   }
 }
