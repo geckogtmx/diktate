@@ -317,6 +317,10 @@ Document any app-specific issues.
 - [ ] **Marketing Site Split:** Extract `sitex/` into a dedicated repository (`diktate-web`)
 - [ ] **Vercel Deployment:** Configure automated CI/CD for `dikta.me` via Vercel
 - [ ] **Domain Setup:** Point `dikta.me` production traffic to Vercel
+- [ ] **A/B Testing Strategy**: 
+  - Leverage `site/` and `sitex/` directories for differential content testing.
+  - Implement simple conversion tracking models to measure landing page effectiveness.
+  - Use short-to-mid term data to fine-tune marketing messaging and onboarding flow.
 
 ### D.7 Simplified Web Assistant (CRM) ✅ NEW
 > **Goal:** Deploy a v1.0 lead-capture and FAQ support bot on `dikta.me`.
