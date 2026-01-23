@@ -264,8 +264,11 @@ Document any app-specific issues.
 > **Goal**: Secure the app with hardware-locked licensing and handle logic for multiple devices.
 
 - [ ] **Lemon Squeezy Integration**:
-  - [ ] Configure product with license key generation.
-  - [ ] Implement **License Verification** on startup via LS API.
+  - [ ] **App Integration**: Implement startup license verification via LS API.
+  - [ ] **Website Flow**:
+    - [ ] Integrate **Lemon Squeezy Checkout** (Overlay/Link) on `dikta.me`.
+    - [ ] Implement post-purchase **Redirection & Key Delivery** logic.
+    - [ ] Set up **Webhooks** for license deactivation/refund handling.
   - [ ] Store encrypted activation token locally for offline grace periods.
 - [ ] **Hardware Fingerprinting ("PC Image")**:
   - [ ] Use `node-machine-id` or custom HWID script (CPU + Disk + Motherboard).

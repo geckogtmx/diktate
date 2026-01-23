@@ -28,7 +28,10 @@
 ### 📦 Phase D: Distribution & Hardware (Locked)
 - [ ] **Ollama Sidecar**: Automatic detection & background spawning of bundled Ollama
 - [ ] **Hardware Auto-Tiering**: Detect GPU/VRAM and auto-select best Whisper/LLM models
-- [ ] **License Check**: Implement LemonSqueezy API verification + 3-device limit
+- [ ] **License Check**: 
+  - [ ] Implement LemonSqueezy API verification + 3-device limit inside the app.
+  - [ ] Integrate LS Checkout overlay/link on `dikta.me`.
+  - [ ] Configure post-purchase redirection to download/key page.
 - [ ] **Packaging**: Configure `electron-builder` for Windows NSIS (Signed EXE)
 - [ ] **Python Bundling**: Set up `PyInstaller` for a single-executable engine
 - [ ] **Web Assistant (CRM)**: Deploy floating chatbot + Google Sheets bridge to `dikta.me`
