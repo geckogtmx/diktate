@@ -21,7 +21,7 @@ def redact_text(text: str, max_visible: int = 20, show_length: bool = True) -> s
         Redacted string like "Hello world...[REDACTED 150 chars]"
     """
     import os
-    if os.environ.get("DIKTATE_DEBUG") == "1":
+    if os.environ.get("DIKTATE_DEBUG_UNSAFE") == "1":
         return text
 
     if not text:
