@@ -184,9 +184,35 @@ class Injector:
                         if current_clipboard and current_clipboard.strip():
                             elapsed_ms = (time.time() - start_time) * 1000
                             logger.info(f"[CAPTURE] Captured {len(current_clipboard)} chars in {elapsed_ms:.0f}ms")
+
+                            # ✅ FIX: Restore original clipboard before returning
+                            # This ensures paste_text() receives the user's real clipboard, not the selected text
+                            try:
+                                if original_clipboard:
+                                    pyperclip.copy(original_clipboard)
+                                    logger.debug(f"[CAPTURE] Restored original clipboard ({len(original_clipboard)} chars)")
+                                else:
+                                    # If original was empty, clear clipboard
+                                    pyperclip.copy("")
+                                    logger.debug("[CAPTURE] Cleared clipboard (original was empty)")
+                            except Exception as e:
+                                logger.warning(f"[CAPTURE] Failed to restore clipboard: {e}")
+                                # Non-fatal - continue with return
+
                             return current_clipboard
                         else:
                             logger.warning("[CAPTURE] Clipboard changed but content is empty")
+
+                            # ✅ FIX: Restore original clipboard on empty capture
+                            try:
+                                if original_clipboard:
+                                    pyperclip.copy(original_clipboard)
+                                    logger.debug("[CAPTURE] Restored original clipboard (empty capture)")
+                                else:
+                                    pyperclip.copy("")
+                            except Exception as e:
+                                logger.warning(f"[CAPTURE] Failed to restore clipboard after empty capture: {e}")
+
                             return None
 
                     time.sleep(poll_interval)
@@ -198,6 +224,9 @@ class Injector:
             # 4. Timeout - no selection detected
             logger.warning(f"[CAPTURE] Timeout after {timeout_ms}ms ({polls} polls) - no selection detected")
             logger.debug(f"[CAPTURE] Current clipboard length: {len(current_clipboard)}")
+
+            # ✅ FIX: Clipboard is already in original state if no change detected
+            # No restoration needed - if clipboard never changed, it's in the original state
             return None
 
         except Exception as e:

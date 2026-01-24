@@ -69,7 +69,7 @@ PROMPT_GEMMA_STANDARD = """Dictation cleanup. Fix punctuation, remove fillers, a
 Input: {text}
 Cleaned text:"""
 
-PROMPT_GEMMA_REFINE = """Fix grammar. Improve clarity. Output only.
+PROMPT_GEMMA_REFINE = """Fix all grammar, spelling, and punctuation. Resolve logical ambiguities, verify subjects, and improve clarity. Output only.
 
 Input: {text}
 Cleaned text:"""

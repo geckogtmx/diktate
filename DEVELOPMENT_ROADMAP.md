@@ -594,6 +594,15 @@ AI_CODEX.md             ← Governance rules (stable)
 
 ## Changelog
 
+### 2026-01-24 (Update 8 - Clipboard Preservation Fix)
+- ✅ **Clipboard Bug Fixed**: Resolved issue where original clipboard was not preserved
+  - **Root Cause**: `capture_selection()` saved original clipboard but never restored it
+  - **Solution**: Added restoration logic in 3 code paths (success, empty, timeout)
+  - **Files Modified**: `python/core/injector.py` (~40 LOC added)
+- ✅ **Documentation Updated**: Removed clipboard conflict from known issues list
+- 🧪 **Status**: Ready for manual testing (5 test scenarios defined)
+- 📋 **Next Steps**: User testing, multi-app validation, final polish before v1.0
+
 ### 2026-01-24 (Update 7)
 - 🚀 **Phase G (Refine Mode)**: MVP implementation complete - feature is functional
 - ✅ **Backend Implementation**: All 3 backend files modified (~275 LOC)
@@ -605,8 +614,8 @@ AI_CODEX.md             ← Governance rules (stable)
   - Added `handleRefineSelection()` and `handleRefineError()` handlers
   - Integrated with tray icon state system and audio feedback
 - ✅ **Window Focus Fix**: Resolved critical focus issue by extending settle time to 1 second
-- ⚠️ **Known Issue**: Clipboard restoration conflicts need investigation
-- 🧪 **Next Steps**: Multi-app testing, error scenario testing, clipboard conflict resolution
+- ⚠️ **Known Issue**: Clipboard restoration conflicts (FIXED in Update 8)
+- 🧪 **Next Steps**: Multi-app testing, error scenario testing
 
 ### 2026-01-23 (Update 6)
 - 📝 **Phase G (Refine Mode)**: Documentation phase complete - 7 comprehensive design docs created

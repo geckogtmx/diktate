@@ -13,6 +13,12 @@
 - **Behavior**: Ask a question, and the local AI will answer.
 - **Output**: Answers are copied to your clipboard automatically.
 
+### 📝 Refine Mode (AI Editor)
+- **Hotkey**: `Ctrl+Alt+R`
+- **Behavior**: Instantly polish email drafts, fix grammar, and professionally rewrite text in any application.
+- **Usage**: Select text -> Press `Ctrl+Alt+R` -> Watch it transform.
+- **Tip**: Works best on 1-3 sentences. Great for Slack messages and quick emails.
+
 ### ⚡ Performance Dashboard
 The Status Window (visible during recording) shows real-time metrics:
 - **Latency**: How fast your speech is converted.
