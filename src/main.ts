@@ -802,7 +802,7 @@ function setupIpcHandlers(): void {
     store.set(key, value);
 
     // If hotkey changed, re-register
-    if (key === 'hotkey') {
+    if (['hotkey', 'askHotkey', 'translateHotkey', 'refineHotkey', 'oopsHotkey'].includes(key)) {
       setupGlobalHotkey(); // Re-register with new key
     }
 

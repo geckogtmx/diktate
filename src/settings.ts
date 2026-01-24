@@ -223,6 +223,14 @@ function loadSettings(settings: any) {
         const translateHotkeyDisplay = document.getElementById('translate-hotkey-display');
         if (translateHotkeyDisplay) translateHotkeyDisplay.textContent = settings.translateHotkey;
     }
+    if (settings.refineHotkey) {
+        const refineHotkeyDisplay = document.getElementById('refine-hotkey-display');
+        if (refineHotkeyDisplay) refineHotkeyDisplay.textContent = settings.refineHotkey;
+    }
+    if (settings.oopsHotkey) {
+        const oopsHotkeyDisplay = document.getElementById('oops-hotkey-display');
+        if (oopsHotkeyDisplay) oopsHotkeyDisplay.textContent = settings.oopsHotkey;
+    }
 }
 
 
@@ -244,11 +252,13 @@ function saveSetting(key: string, value: any) {
 }
 
 // Hotkey Recording
-function recordHotkey(mode: 'dictate' | 'ask' | 'translate' = 'dictate') {
+function recordHotkey(mode: 'dictate' | 'ask' | 'translate' | 'refine' | 'oops' = 'dictate') {
     const configMap = {
         dictate: { displayId: 'hotkey-display', settingKey: 'hotkey', label: 'Dictate' },
         ask: { displayId: 'ask-hotkey-display', settingKey: 'askHotkey', label: 'Ask Mode' },
-        translate: { displayId: 'translate-hotkey-display', settingKey: 'translateHotkey', label: 'Translate' }
+        translate: { displayId: 'translate-hotkey-display', settingKey: 'translateHotkey', label: 'Translate' },
+        refine: { displayId: 'refine-hotkey-display', settingKey: 'refineHotkey', label: 'Refine' },
+        oops: { displayId: 'oops-hotkey-display', settingKey: 'oopsHotkey', label: 'Oops' }
     };
 
     const { displayId, settingKey, label } = configMap[mode];
@@ -280,7 +290,9 @@ function recordHotkey(mode: 'dictate' | 'ask' | 'translate' = 'dictate') {
         const conflicts: { id: string, name: string }[] = [
             { id: 'hotkey-display', name: 'Dictate' },
             { id: 'ask-hotkey-display', name: 'Ask Mode' },
-            { id: 'translate-hotkey-display', name: 'Translate' }
+            { id: 'translate-hotkey-display', name: 'Translate' },
+            { id: 'refine-hotkey-display', name: 'Refine' },
+            { id: 'oops-hotkey-display', name: 'Oops' }
         ].filter(item => item.id !== displayId);
 
         for (const other of conflicts) {
@@ -310,16 +322,20 @@ function recordHotkey(mode: 'dictate' | 'ask' | 'translate' = 'dictate') {
     document.addEventListener('keydown', handler);
 }
 
-function resetHotkey(mode: 'dictate' | 'ask' | 'translate' = 'dictate') {
+function resetHotkey(mode: 'dictate' | 'ask' | 'translate' | 'refine' | 'oops' = 'dictate') {
     const defaults = {
         dictate: 'Ctrl+Alt+D',
         ask: 'Ctrl+Alt+A',
-        translate: 'Ctrl+Alt+T'
+        translate: 'Ctrl+Alt+T',
+        refine: 'Ctrl+Alt+R',
+        oops: 'Ctrl+Alt+V'
     };
     const configMap = {
         dictate: { displayId: 'hotkey-display', settingKey: 'hotkey' },
         ask: { displayId: 'ask-hotkey-display', settingKey: 'askHotkey' },
-        translate: { displayId: 'translate-hotkey-display', settingKey: 'translateHotkey' }
+        translate: { displayId: 'translate-hotkey-display', settingKey: 'translateHotkey' },
+        refine: { displayId: 'refine-hotkey-display', settingKey: 'refineHotkey' },
+        oops: { displayId: 'oops-hotkey-display', settingKey: 'oopsHotkey' }
     };
 
     const { displayId, settingKey } = configMap[mode];
