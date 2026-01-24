@@ -604,6 +604,15 @@ class IpcServer:
         try:
             self._set_state(State.PROCESSING)
 
+            # Determine if translation is requested for this specific session
+            is_translate_session = self.recording_mode == 'translate'
+            
+            # Trigger mode takes precedence; otherwise use global trans_mode 
+            # but EXCLUDE 'auto' from global dictation (auto is trigger-only now)
+            effective_trans_mode = 'auto' if is_translate_session else (
+                self.trans_mode if self.trans_mode != 'auto' else 'none'
+            )
+
             # Log audio file metadata (A.2 observability)
             if self.audio_file:
                 try:
@@ -625,7 +634,7 @@ class IpcServer:
             self.perf.start("transcription")
             
             # Pass None for language if we are in auto translation mode to allow Whisper to detect
-            target_lang = None if self.trans_mode == 'auto' else 'en'
+            target_lang = None if effective_trans_mode == 'auto' else 'en'
             raw_text = self.transcriber.transcribe(self.audio_file, language=target_lang)
             self.perf.end("transcription")
             logger.info(f"[RESULT] Transcribed: {redact_text(raw_text)}")
@@ -681,10 +690,10 @@ class IpcServer:
                 logger.info(f"[RESULT] Processed: {redact_text(processed_text)}")
 
             # Optional: Translate (post-processing)
-            if self.trans_mode and self.trans_mode != "none":
-                trans_prompt = get_translation_prompt(self.trans_mode)
+            if effective_trans_mode and effective_trans_mode != "none":
+                trans_prompt = get_translation_prompt(effective_trans_mode)
                 if trans_prompt and self.processor:
-                    logger.info(f"[TRANSLATE] Translating ({self.trans_mode})...")
+                    logger.info(f"[TRANSLATE] Translating ({effective_trans_mode})...")
                     self.perf.start("translation")
                     # Use the processor to translate with a custom prompt
                     original_prompt = self.processor.prompt

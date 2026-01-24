@@ -88,7 +88,7 @@ let tray: Tray | null = null;
 let pythonManager: PythonManager | null = null;
 let isRecording: boolean = false;
 let isWarmupLock: boolean = true; // NEW: Lock interaction until fully initialized
-let recordingMode: 'dictate' | 'ask' = 'dictate';
+let recordingMode: 'dictate' | 'ask' | 'translate' = 'dictate';
 let settingsWindow: BrowserWindow | null = null;
 
 /**
@@ -412,7 +412,7 @@ function setupPythonEventHandlers(): void {
 
   pythonManager.on('state-change', (state: string) => {
     logger.info('MAIN', 'Python state changed', { state });
-    
+
     // Release lock on first transition to idle after warmup
     if (isWarmupLock && state === 'idle') {
       isWarmupLock = false;
@@ -1285,9 +1285,9 @@ ipcMain.handle('ollama:warmup', async () => {
 
 /**
  * Toggle recording state
- * @param mode - 'dictate' for normal dictation, 'ask' for Q&A mode
+ * @param mode - 'dictate' for normal dictation, 'ask' for Q&A mode, 'translate' for bidirectional translation
  */
-async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<void> {
+async function toggleRecording(mode: 'dictate' | 'ask' | 'translate' = 'dictate'): Promise<void> {
   if (isWarmupLock) {
     logger.warn('MAIN', 'Recording blocked: App is still warming up');
     return;
@@ -1301,7 +1301,7 @@ async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<voi
   if (isRecording) {
     // Play feedback sound
     if (store.get('soundFeedback')) {
-      const sound = recordingMode === 'ask' ? store.get('askSound') : store.get('stopSound');
+      const sound = recordingMode === 'ask' || recordingMode === 'translate' ? store.get('askSound') : store.get('stopSound');
       playSound(sound);
     }
 
@@ -1309,7 +1309,7 @@ async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<voi
     logger.info('MAIN', 'Stopping recording', { mode: recordingMode });
     isRecording = false;
     updateTrayIcon('processing');
-    updateTrayState(recordingMode === 'ask' ? 'Thinking...' : 'Processing');
+    updateTrayState(recordingMode === 'ask' ? 'Thinking...' : recordingMode === 'translate' ? 'Translating...' : 'Processing');
 
     try {
       await pythonManager.sendCommand('stop_recording');
@@ -1321,7 +1321,7 @@ async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<voi
   } else {
     // Play feedback sound
     if (store.get('soundFeedback')) {
-      const sound = mode === 'ask' ? store.get('askSound') : store.get('startSound');
+      const sound = mode === 'ask' || mode === 'translate' ? store.get('askSound') : store.get('startSound');
       playSound(sound);
     }
 
@@ -1330,7 +1330,7 @@ async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<voi
     logger.info('MAIN', 'Starting recording', { mode });
     isRecording = true;
     updateTrayIcon('recording');
-    updateTrayState(mode === 'ask' ? 'Listening (Ask)' : 'Recording');
+    updateTrayState(mode === 'ask' ? 'Listening (Ask)' : mode === 'translate' ? 'Listening (Translate)' : 'Recording');
 
     // Notify status window of mode change
     if (debugWindow && !debugWindow.isDestroyed()) {
@@ -1499,24 +1499,16 @@ function setupGlobalHotkey(): void {
 
     // Register Translate hotkey (Ctrl+Alt+T)
     const translateHotkey = store.get('translateHotkey', 'Ctrl+Alt+T');
-    const translateRet = globalShortcut.register(translateHotkey, () => {
-      logger.debug('HOTKEY', 'Translate hotkey pressed');
+    const translateRet = globalShortcut.register(translateHotkey, async () => {
+      const now = Date.now();
+      if (now - lastHotkeyPress < HOTKEY_DEBOUNCE_MS) {
+        logger.debug('HOTKEY', 'Ignoring debounce translate hotkey press');
+        return;
+      }
+      lastHotkeyPress = now;
 
-      // Toggle translate mode
-      const currentTransMode = store.get('transMode', 'none');
-      const newTransMode = currentTransMode === 'none' ? 'auto' : 'none';
-      store.set('transMode', newTransMode);
-
-      logger.info('HOTKEY', `Translation toggled: ${newTransMode}`);
-
-      // Sync with Python
-      syncPythonConfig();
-
-      // Show notification
-      const message = newTransMode === 'none'
-        ? 'Translation disabled'
-        : 'Auto-Translation enabled (ES ↔ EN)';
-      showNotification('Translate', message, false);
+      logger.debug('HOTKEY', 'Translate hotkey pressed', { isRecording, mode: 'translate' });
+      await toggleRecording('translate');
     });
 
     if (!translateRet) {

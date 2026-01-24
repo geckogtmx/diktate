@@ -116,9 +116,19 @@ Rules:
 English: {text}
 Spanish:"""
 
+# AUTO (BIDIRECTIONAL): Spanish <-> English
+PROMPT_TRANSLATE_AUTO = """You are a bilingual translator. 
+If the text is in Spanish, translate it to English. 
+If the text is in English, translate it to Spanish. 
+Return ONLY the translated text.
+
+Input: {text}
+Translation:"""
+
 TRANSLATION_MAP = {
     "es-en": PROMPT_TRANSLATE_ES_EN,
     "en-es": PROMPT_TRANSLATE_EN_ES,
+    "auto": PROMPT_TRANSLATE_AUTO,
     "none": None,
 }
 
