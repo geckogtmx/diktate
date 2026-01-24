@@ -1,32 +1,33 @@
-# DEV_HANDOFF.md
+# Developer Handoff
 
 ## Session Summary: 2026-01-24
 
 ### ✅ Completed
-- Reverted vulnerable code changes in `src/main.ts` and deleted `tests/test_sound_security.js` (per user "Planning Only" request).
-- **Consolidated Refine Mode Specs**: Merged multiple files into `SPEC_005_REFINE_MODE.md` and archived old `REFINE_*` files.
-- **Spec Cleanup**: Renamed `SPEC_002_DOCS_CHATBOT` to `SPEC_011` to resolve duplication.
-- **Created Deferred Security Specs**:
-    - `SPEC_008_SOUND_SECURITY.md`: For `playSound` command injection remediation.
-    - `SPEC_012_CSP_SECURITY.md`: For CSP implementation (breaking change).
-    - `SPEC_013_API_KEY_VALIDATION.md`: For API key format validation.
+- **Architecture Analysis**: Verified codebase against `ARCHITECTURE.md`. Found significant MVP vs V1.0 discrepancies.
+- **Documentation Update**: Rewrote `ARCHITECTURE.md` to accurately reflect the current hybrid architecture (Electron UI + Python Backend), including "Refine Mode", "Ask Mode", and multiple AI providers.
+- **Specification**: Created `docs/internal/specs/SPEC_014_CODE_ETIQUETTE.md` defining the roadmap for codebase professionalization (Metadata, Linters, Hooks).
 
-### 🚧 In Progress
-- None. All current tasks were either completed or deferred to specs.
+### 🚧 In Progress (Pending Review/Execution)
+- **Professionalization (Phase 1 & 2)**:
+    - Created metadata files: `LICENSE`, `CODEOWNERS`, `.editorconfig`, `CHANGELOG.md`.
+    - Created tool configs: `ruff.toml`, `.eslintrc.json`, `.prettierrc`.
+    - **Note**: These files are currently *untracked/staged* in the repo.
+    - **Note**: `package.json` and `python/requirements.txt` may have pending modifications for new dependencies (`ruff`, `eslint`, etc.).
 
 ### 📋 Next Steps (Priority Order)
-1. **Implement Refine Mode**: Follow `SPEC_005_REFINE_MODE.md` to implement the "in-place" AI editing feature.
-2. **Implement Sound Security**: Execute plan in `SPEC_008` when ready to resume code protection work.
-3. **Implement API Key Validation**: Execute `SPEC_013` to improve UX/Security.
-4. **Implement CSP**: Execute `SPEC_012` (Major Refactor) when time permits.
+1.  **Professionalization Execution**:
+    - Review `SPEC_014_CODE_ETIQUETTE.md`.
+    - Verify `package.json` and `python/requirements.txt` updates are desired.
+    - Run `pnpm install` and `pip install -r python/requirements.txt`.
+    - Run `npm run format` to enforce new standards.
+2.  **Git Hooks**:
+    - Run `npx husky install` to enable pre-commit checks.
 
 ### 🔍 Key Context
-- **Files Modified**: `task.md`, `docs/internal/specs/*`.
-- **Configuration Changes**: None.
-- **Spec Status**: All specs are now uniquely numbered and consolidated.
-- **Archives**: Old Refine specs are in `docs/internal/archive/`.
+- **Files Modified**: `ARCHITECTURE.md` (Committed).
+- **Files Created (Untracked)**: `LICENSE`, `CODEOWNERS`, `.editorconfig`, `CHANGELOG.md`, `ruff.toml`, `.eslintrc.json`, `.prettierrc`.
+- **Known Issues**: The "Professionalization" files are present but dependencies are not yet installed. The repo is in a "mid-implementation" state for these tools.
 
 ### 💡 Notes for Next Session
-- The user prefers "Planning Only" mode for complex security changes initially.
-- Always check for duplicate spec numbers when creating new ones.
-- `SPEC_005` is the "Bible" for Refine Mode now; ignore archived files.
+- The user requested to "Close Session" while in the middle of Phase 2 execution.
+- **DO NOT** auto-run format commands without explicitly confirming with the user, as it touches many files.
