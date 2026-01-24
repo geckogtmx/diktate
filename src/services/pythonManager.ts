@@ -68,7 +68,7 @@ export class PythonManager extends EventEmitter {
           // Smart log level detection for Python standard logging
           if (line.includes(' - INFO - ')) {
             logger.info('Python', line);
-          } else if (line.includes(' - WARNING - ')) {
+          } else if (line.includes(' - WARNING - ') || line.includes('UserWarning:') || line.includes('DeprecationWarning:')) {
             logger.warn('Python', line);
           } else if (line.includes(' - DEBUG - ')) {
             logger.debug('Python', line);

@@ -1,7 +1,11 @@
 """Microphone mute detection using Windows Core Audio API (pycaw)."""
 
 import logging
+import warnings
 from typing import Optional
+
+# Silence pycaw/comtypes deprecation warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="pycaw")
 
 try:
     from comtypes import CLSCTX_ALL
@@ -51,7 +55,10 @@ class MuteDetector:
                 except Exception:
                     continue  # Not an input device or can't query
 
-            logger.warning(f"[MUTE_DETECTOR] Device '{self.device_label}' not found")
+            # Match failed
+            is_default = not self.device_label or self.device_label.lower() in ["default", "default microphone"]
+            if not is_default:
+                logger.info(f"[MUTE_DETECTOR] Device '{self.device_label}' not found (will use system default)")
             return None
 
         except Exception as e:

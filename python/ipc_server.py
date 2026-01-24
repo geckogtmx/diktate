@@ -8,7 +8,11 @@ import json
 import threading
 import logging
 import time
+import warnings
 from enum import Enum
+
+# Silence pycaw/comtypes deprecation warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="pycaw")
 from pathlib import Path
 from typing import Optional, Dict
 import wave
