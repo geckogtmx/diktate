@@ -40,6 +40,7 @@ interface UserSettings {
   hotkey: string;
   askHotkey: string;
   translateHotkey: string; // NEW: Ctrl+Alt+T for translate toggle
+  refineHotkey: string; // NEW: Ctrl+Alt+R for refine mode
   askOutputMode: string;
   defaultOllamaModel: string;
   audioDeviceId: string;
@@ -68,6 +69,7 @@ const store = new Store<UserSettings>({
     hotkey: 'Ctrl+Alt+D',
     askHotkey: 'Ctrl+Alt+A',
     translateHotkey: 'Ctrl+Alt+T', // NEW: Translate toggle hotkey
+    refineHotkey: 'Ctrl+Alt+R', // NEW: Refine mode hotkey
     askOutputMode: 'type',
     defaultOllamaModel: 'gemma3:4b',
     audioDeviceId: 'default',
@@ -616,6 +618,28 @@ function setupPythonEventHandlers(): void {
     } else {
       updateTrayTooltip();
     }
+  });
+
+  // Handle refine mode success
+  pythonManager.on('refine-success', (data: any) => {
+    logger.info('MAIN', 'Refine success event received', data);
+
+    // Log metrics (refine uses separate workflow from dictation pipeline)
+    if (data.charCount) {
+      logger.info('MAIN', 'Refine metrics', {
+        total: data.total,
+        capture: data.capture,
+        processing: data.processing,
+        injection: data.injection,
+        charCount: data.charCount
+      });
+    }
+  });
+
+  // Handle refine mode errors
+  pythonManager.on('refine-error', (data: any) => {
+    logger.error('MAIN', 'Refine error event received', data);
+    handleRefineError(data.error || data.message || data.code || 'Unknown error');
   });
 }
 
@@ -1336,6 +1360,85 @@ async function toggleRecording(mode: 'dictate' | 'ask' = 'dictate'): Promise<voi
 }
 
 /**
+ * Handle refine selection (Ctrl+Alt+R)
+ * Captures selected text, processes it with LLM, and pastes refined version
+ */
+function handleRefineSelection(): void {
+  if (!pythonManager) {
+    logger.error('MAIN', 'Python manager not initialized');
+    return;
+  }
+
+  logger.info('MAIN', 'Refine selection triggered');
+
+  // Update tray to processing state
+  updateTrayIcon('processing');
+  updateTrayState('Refining...');
+
+  // Play start sound if enabled
+  if (store.get('soundFeedback')) {
+    playSound(store.get('startSound', 'a'));
+  }
+
+  // Send refine command to Python
+  pythonManager.sendCommand('refine_selection')
+    .then((response) => {
+      if (response.success) {
+        logger.info('MAIN', 'Refine completed successfully', response.metrics);
+
+        // Play success sound
+        if (store.get('soundFeedback')) {
+          playSound(store.get('stopSound', 'a'));
+        }
+
+        // Reset tray
+        updateTrayIcon('idle');
+        updateTrayState('Idle');
+      } else {
+        logger.error('MAIN', `Refine failed: ${response.error}`);
+        handleRefineError(response.error);
+      }
+    })
+    .catch((err) => {
+      logger.error('MAIN', 'Refine command failed', err);
+      handleRefineError(err.message || 'Unknown error');
+    });
+}
+
+/**
+ * Handle refine errors with notifications
+ */
+function handleRefineError(error: string): void {
+  // Play error sound
+  if (store.get('soundFeedback')) {
+    playSound('error');
+  }
+
+  // Determine error message
+  let errorMessage = 'Refine mode failed. Please try again.';
+
+  if (error === 'EMPTY_SELECTION') {
+    errorMessage = 'No text selected. Please highlight text and try again.';
+  } else if (error.includes('processor') || error.includes('Ollama') || error === 'NO_PROCESSOR') {
+    errorMessage = 'Text processing failed. Check that Ollama is running.';
+  } else if (error.includes('PROCESSING_FAILED')) {
+    errorMessage = 'LLM processing failed. Please try again.';
+  }
+
+  // Show notification
+  showNotification('Refine Mode', errorMessage, true);
+
+  // Flash tray red, then return to idle
+  updateTrayIcon('error');
+  updateTrayState('Error');
+
+  setTimeout(() => {
+    updateTrayIcon('idle');
+    updateTrayState('Idle');
+  }, 2000);
+}
+
+/**
  * Setup global hotkey listeners for both Dictate and Ask modes
  */
 function setupGlobalHotkey(): void {
@@ -1420,6 +1523,29 @@ function setupGlobalHotkey(): void {
       logger.warn('HOTKEY', 'Failed to register translate hotkey', { hotkey: translateHotkey });
     } else {
       logger.info('HOTKEY', 'Translate hotkey registered', { hotkey: translateHotkey });
+    }
+
+    // Register Refine hotkey (Ctrl+Alt+R)
+    const refineHotkey = store.get('refineHotkey', 'Ctrl+Alt+R');
+    const refineRet = globalShortcut.register(refineHotkey, () => {
+      if (isWarmupLock) {
+        logger.warn('HOTKEY', 'Refine blocked: Still warming up');
+        return;
+      }
+
+      if (isRecording) {
+        logger.warn('HOTKEY', 'Refine blocked: Currently recording');
+        return;
+      }
+
+      logger.debug('HOTKEY', 'Refine hotkey pressed');
+      handleRefineSelection();
+    });
+
+    if (!refineRet) {
+      logger.warn('HOTKEY', 'Failed to register refine hotkey', { hotkey: refineHotkey });
+    } else {
+      logger.info('HOTKEY', 'Refine hotkey registered', { hotkey: refineHotkey });
     }
 
   } catch (error) {

@@ -51,7 +51,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from core import Recorder, Transcriber, Injector
 from core.processor import create_processor
 from core.mute_detector import MuteDetector
-from config.prompts import get_translation_prompt
+from config.prompts import get_translation_prompt, get_prompt
 from utils.security import redact_text, sanitize_log_message
 
 # --- SECURITY: Guaranteed audio file cleanup on exit (M3 fix) ---
@@ -1024,6 +1024,92 @@ YOUR ANSWER:"""
                     return {"success": True}
                 else:
                     return {"success": False, "error": "Injector not initialized"}
+            elif cmd_name == "refine_selection":
+                # Refine mode: Capture selection, process, paste back
+                if self.state not in [State.IDLE, State.ERROR]:
+                    return {"success": False, "error": f"Cannot refine in {self.state.value} state"}
+
+                try:
+                    self._set_state(State.PROCESSING)
+                    self.perf.reset()
+                    self.perf.start("total")
+
+                    # 1. Capture selection
+                    logger.info("[REFINE] Capturing selection...")
+                    self.perf.start("capture")
+                    selected_text = self.injector.capture_selection()
+                    self.perf.end("capture")
+
+                    if not selected_text:
+                        logger.warning("[REFINE] No text selected")
+                        self._emit_event("refine-error", {
+                            "code": "EMPTY_SELECTION",
+                            "message": "No text selected. Please highlight text and try again."
+                        })
+                        self._set_state(State.IDLE)
+                        return {"success": False, "error": "EMPTY_SELECTION"}
+
+                    # 2. Process with refine mode
+                    logger.info(f"[REFINE] Processing {len(selected_text)} chars...")
+                    self.perf.start("processing")
+
+                    if self.processor:
+                        try:
+                            # Use refine mode prompt
+                            original_prompt = self.processor.prompt
+                            self.processor.prompt = get_prompt("refine", model=getattr(self.processor, "model", None))
+
+                            refined_text = self.processor.process(selected_text)
+
+                            # Restore original prompt
+                            self.processor.prompt = original_prompt
+
+                            logger.info(f"[REFINE] Refined to {len(refined_text)} chars")
+                        except Exception as e:
+                            logger.error(f"[REFINE] Processing failed: {e}")
+                            self._emit_event("refine-error", {
+                                "code": "PROCESSING_FAILED",
+                                "message": f"Processing failed: {str(e)}"
+                            })
+                            self._set_state(State.ERROR)
+                            return {"success": False, "error": str(e)}
+                    else:
+                        logger.error("[REFINE] No processor available")
+                        self._emit_event("refine-error", {
+                            "code": "NO_PROCESSOR",
+                            "message": "No processor available"
+                        })
+                        self._set_state(State.ERROR)
+                        return {"success": False, "error": "No processor available"}
+
+                    self.perf.end("processing")
+
+                    # 3. Inject refined text
+                    self._set_state(State.INJECTING)
+                    logger.info("[REFINE] Injecting refined text...")
+                    self.perf.start("injection")
+                    self.injector.paste_text(refined_text)
+                    self.perf.end("injection")
+
+                    # 4. Emit success
+                    self.perf.end("total")
+                    metrics = self.perf.get_metrics()
+                    metrics["charCount"] = len(refined_text)
+
+                    logger.info(f"[REFINE] Success - Total: {metrics.get('total', 0):.0f}ms")
+                    self._emit_event("refine-success", metrics)
+
+                    self._set_state(State.IDLE)
+                    return {"success": True, "metrics": metrics}
+
+                except Exception as e:
+                    logger.error(f"[REFINE] Unexpected error: {e}")
+                    self._emit_event("refine-error", {
+                        "code": "UNEXPECTED_ERROR",
+                        "message": str(e)
+                    })
+                    self._set_state(State.ERROR)
+                    return {"success": False, "error": str(e)}
             elif cmd_name == "shutdown":
                 logger.info("[CMD] Shutdown requested")
                 return {"success": True}

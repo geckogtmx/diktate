@@ -37,6 +37,7 @@
 | **D: Distribution** | **Ollama Sidecar**, **Auto-Tiering**, **Web Assistant (CRM)** | PENDING |
 | **E: Polish** | **Mini Mode**, snippets, final QA | PENDING |
 | **F: Validation** | **Methodical UI Audit**, **YouTube Stress Loop**, **Edge Cases** | PENDING |
+| **G: Refine Mode** | **Refine Selection Mode (In-place text editing)** | 🚀 MVP COMPLETE - TESTING |
 
 | **v1.1 (Premium Expansion)**
 | Phase | Focus | Status |
@@ -592,6 +593,28 @@ AI_CODEX.md             ← Governance rules (stable)
 ---
 
 ## Changelog
+
+### 2026-01-24 (Update 7)
+- 🚀 **Phase G (Refine Mode)**: MVP implementation complete - feature is functional
+- ✅ **Backend Implementation**: All 3 backend files modified (~275 LOC)
+  - `python/core/injector.py`: Added `capture_selection()` method with 1s focus settle delay
+  - `python/config/prompts.py`: Added `PROMPT_REFINE` and `PROMPT_GEMMA_REFINE`
+  - `python/ipc_server.py`: Added `refine_selection` command handler with full pipeline
+- ✅ **Frontend Implementation**: Hotkey and handlers added to main.ts
+  - Registered `Ctrl+Alt+R` global hotkey
+  - Added `handleRefineSelection()` and `handleRefineError()` handlers
+  - Integrated with tray icon state system and audio feedback
+- ✅ **Window Focus Fix**: Resolved critical focus issue by extending settle time to 1 second
+- ⚠️ **Known Issue**: Clipboard restoration conflicts need investigation
+- 🧪 **Next Steps**: Multi-app testing, error scenario testing, clipboard conflict resolution
+
+### 2026-01-23 (Update 6)
+- 📝 **Phase G (Refine Mode)**: Documentation phase complete - 7 comprehensive design docs created
+- ✅ **Technical Design**: Full architecture, clipboard capture mechanism, prompt engineering documented
+- ✅ **Implementation Plan**: 5-day sprint plan with copy-paste ready code snippets (~275 LOC)
+- ✅ **User Documentation**: Complete user guide with examples and troubleshooting
+- 🚀 **Ready for Implementation**: All 14 coding tasks defined, low risk, medium complexity
+- 📊 **Estimated Effort**: 1 sprint (5-7 days), no new dependencies
 
 ### 2026-01-22 (Update 5)
 - 🔒 **Security Audit**: Completed comprehensive scan of JS and Python dependencies.

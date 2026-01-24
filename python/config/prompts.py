@@ -52,6 +52,12 @@ Rules:
 Input: {text}
 Cleaned text:"""
 
+# REFINE: In-place text improvement (for Refine Mode)
+PROMPT_REFINE = """Fix grammar, improve clarity. Return only refined text.
+
+Input: {text}
+Cleaned text:"""
+
 # BACKWARD COMPATIBILITY
 DEFAULT_CLEANUP_PROMPT = PROMPT_STANDARD
 PROMPT_LITERAL = PROMPT_RAW  # Alias for backward compatibility
@@ -63,18 +69,25 @@ PROMPT_GEMMA_STANDARD = """Dictation cleanup. Fix punctuation, remove fillers, a
 Input: {text}
 Cleaned text:"""
 
+PROMPT_GEMMA_REFINE = """Fix grammar. Improve clarity. Output only.
+
+Input: {text}
+Cleaned text:"""
+
 PROMPT_MAP = {
     "standard": PROMPT_STANDARD,
     "prompt": PROMPT_PROMPT,
     "professional": PROMPT_PROFESSIONAL,
     "raw": PROMPT_RAW,
     "literal": PROMPT_RAW,  # Alias
+    "refine": PROMPT_REFINE,  # Refine Mode
 }
 
 # Per-model overrides: model_name -> { mode -> prompt }
 MODEL_PROMPT_OVERRIDES = {
     "gemma3:4b": {
         "standard": PROMPT_GEMMA_STANDARD,
+        "refine": PROMPT_GEMMA_REFINE,
     },
     # Add other model-specific prompts here as needed
 }
