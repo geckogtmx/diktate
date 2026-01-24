@@ -64,6 +64,48 @@ Implemented fix for clipboard interference in Refine Mode (Ctrl+Alt+R).
 
 ---
 
+# 🚨 PRIORITY: Hotkey System Repair & Feature Completion
+
+## 1. The "Recurring Hotkey Bug" Analysis
+**Status**: 🔴 Identified Root Cause
+**Diagnosis**: The hotkey re-registration logic in `src/main.ts` is incomplete.
+- **Current Behavior**: When a setting changes, the `settings:set` IPC handler checks `if (key === 'hotkey')`. This *only* re-registers the main "Dictate" hotkey.
+- **The Bug**: It **ignores** changes to `askHotkey`, `translateHotkey`, `refineHotkey`, and `oopsHotkey`.
+- **Impact**: Users can change these hotkeys in the config (if we had UI for it), but `main.ts` won't apply the change until a full app restart.
+
+## 2. Implementation Plan for Next Session
+
+### Phase 1: Backend Fix (`src/main.ts`)
+1.  **Refactor `setupGlobalHotkey`**: Ensure it accepts an optional argument or just re-reads all keys from the store (it already does the latter).
+2.  **Fix `settings:set` IPC Handler**:
+    - Update the conditional: `if (['hotkey', 'askHotkey', 'translateHotkey', 'refineHotkey', 'oopsHotkey'].includes(key))`
+    - Call `setupGlobalHotkey()` when *any* of these change.
+
+### Phase 2: Complete "Oops" & "Refine" UI (`src/settings.html` / `.ts`)
+The backend logic for these features exists, but the user cannot configure them.
+
+1.  **Update `src/settings.html`**:
+    - Add a new "Refine Hotkey" section under the Hotkeys group.
+    - Add a new "Oops (Re-inject)" Hotkey section under the Hotkeys group.
+    - **Design**: Copy the existing "Dictate Hotkey" pattern (Label + recording box + Reset button).
+
+2.  **Update `src/settings.ts`**:
+    - Update `loadSettings()` to populate the new fields.
+    - Update `recordHotkey()` to handle the new `refine` and `oops` modes (add them to the `configMap`).
+    - Update `resetHotkey()` with the new defaults (`Ctrl+Alt+R` for Refine, `Ctrl+Alt+V` for Oops).
+
+### Phase 3: Verification
+- **Test**: Change "Refine" hotkey to something else (e.g., `Ctrl+Alt+9`).
+- **Verify**: Pressing `Ctrl+Alt+9` triggers Refine mode *immediately* without restart.
+- **Regression**: Ensure "Dictate" and "Ask" hotkeys still work and don't conflict.
+
+---
+
+# 📝 Current Session State
+- **Refine Mode**: Backend implemented (`ipc_server.py`), but UI missing.
+- **Oops Mode**: Backend implemented (`ipc_server.py`), but UI missing.
+- **Hotkeys**: Logic is fragile; needs the fix above.
+
 ## Previous Session: January 24, 2026
 
 I've completed the MVP implementation of **Refine Mode** - a feature that allows users to select text in any application, press `Ctrl+Alt+R`, and have an AI improve the grammar/clarity of that text in-place.
