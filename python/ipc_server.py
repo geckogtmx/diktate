@@ -292,6 +292,7 @@ class IpcServer:
         self.consecutive_failures = 0  # Track consecutive processor failures for auto-recovery
         self.custom_prompts = {}  # Custom prompts: mode -> prompt_text mapping
         self.current_mode = "standard"  # Track current processing mode for raw bypass
+        self.last_injected_text = None  # Store last injected text for "Oops" feature (Ctrl+Alt+V)
 
         # Mute detection
         self.mute_detector: Optional[MuteDetector] = None
@@ -708,6 +709,7 @@ class IpcServer:
             logger.info("[INJECT] Injecting text...")
             self.perf.start("injection")
             self.injector.type_text(processed_text)
+            self.last_injected_text = processed_text  # Capture for "Oops" feature
             self.perf.end("injection")
             logger.info("[SUCCESS] Text injected successfully")
 
@@ -1033,6 +1035,7 @@ YOUR ANSWER:"""
                 if self.injector:
                     self._set_state(State.INJECTING)
                     self.injector.type_text(text)
+                    self.last_injected_text = text  # Capture for "Oops" feature
                     self._set_state(State.IDLE)
                     return {"success": True}
                 else:
@@ -1102,6 +1105,7 @@ YOUR ANSWER:"""
                     logger.info("[REFINE] Injecting refined text...")
                     self.perf.start("injection")
                     self.injector.paste_text(refined_text)
+                    self.last_injected_text = refined_text  # Capture for "Oops" feature
                     self.perf.end("injection")
 
                     # 4. Emit success
@@ -1123,6 +1127,20 @@ YOUR ANSWER:"""
                     })
                     self._set_state(State.ERROR)
                     return {"success": False, "error": str(e)}
+            elif cmd_name == "inject_last":
+                # "Oops" feature - re-inject last successfully injected text
+                if self.last_injected_text:
+                    logger.info(f"[INJECT_LAST] Re-injecting {len(self.last_injected_text)} chars")
+                    if self.injector:
+                        self._set_state(State.INJECTING)
+                        self.injector.type_text(self.last_injected_text)
+                        self._set_state(State.IDLE)
+                        return {"success": True, "char_count": len(self.last_injected_text)}
+                    else:
+                        return {"success": False, "error": "Injector not initialized"}
+                else:
+                    logger.info("[INJECT_LAST] No text history available")
+                    return {"success": False, "error": "No text to re-inject"}
             elif cmd_name == "shutdown":
                 logger.info("[CMD] Shutdown requested")
                 return {"success": True}

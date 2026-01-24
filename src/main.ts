@@ -41,6 +41,7 @@ interface UserSettings {
   askHotkey: string;
   translateHotkey: string; // NEW: Ctrl+Alt+T for translate toggle
   refineHotkey: string; // NEW: Ctrl+Alt+R for refine mode
+  oopsHotkey: string; // NEW: Ctrl+Alt+V for re-inject last
   askOutputMode: string;
   defaultOllamaModel: string;
   audioDeviceId: string;
@@ -70,6 +71,7 @@ const store = new Store<UserSettings>({
     askHotkey: 'Ctrl+Alt+A',
     translateHotkey: 'Ctrl+Alt+T', // NEW: Translate toggle hotkey
     refineHotkey: 'Ctrl+Alt+R', // NEW: Refine mode hotkey
+    oopsHotkey: 'Ctrl+Alt+V', // NEW: Re-inject last text hotkey
     askOutputMode: 'type',
     defaultOllamaModel: 'gemma3:4b',
     audioDeviceId: 'default',
@@ -1538,6 +1540,50 @@ function setupGlobalHotkey(): void {
       logger.warn('HOTKEY', 'Failed to register refine hotkey', { hotkey: refineHotkey });
     } else {
       logger.info('HOTKEY', 'Refine hotkey registered', { hotkey: refineHotkey });
+    }
+
+    // Register Oops hotkey (Ctrl+Alt+V) - Re-inject last text
+    const oopsHotkey = store.get('oopsHotkey', 'Ctrl+Alt+V');
+    const oopsRet = globalShortcut.register(oopsHotkey, async () => {
+      if (isWarmupLock) {
+        logger.warn('HOTKEY', 'Oops blocked: Still warming up');
+        return;
+      }
+
+      if (isRecording) {
+        logger.warn('HOTKEY', 'Oops blocked: Currently recording');
+        return;
+      }
+
+      logger.debug('HOTKEY', 'Oops hotkey pressed - re-injecting last text');
+
+      if (pythonManager) {
+        try {
+          const response = await pythonManager.sendCommand('inject_last');
+
+          if (response.success) {
+            // Play confirmation sound
+            const startSound = store.get('startSound', 'a');
+            if (store.get('soundFeedback', true)) {
+              playSound(startSound);
+            }
+            logger.info('HOTKEY', 'Re-injected last text', { charCount: response.char_count });
+          } else {
+            // Show notification only on failure
+            showNotification('No Text to Re-inject', 'No previous text found. Dictate something first.', false);
+            logger.warn('HOTKEY', 'No text available to re-inject');
+          }
+        } catch (err) {
+          logger.error('HOTKEY', 'Failed to re-inject last text', err);
+          showNotification('Re-inject Failed', 'Could not re-inject text.', true);
+        }
+      }
+    });
+
+    if (!oopsRet) {
+      logger.warn('HOTKEY', 'Failed to register oops hotkey', { hotkey: oopsHotkey });
+    } else {
+      logger.info('HOTKEY', 'Oops hotkey registered', { hotkey: oopsHotkey });
     }
 
   } catch (error) {

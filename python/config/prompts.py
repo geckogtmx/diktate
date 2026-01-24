@@ -117,13 +117,9 @@ English: {text}
 Spanish:"""
 
 # AUTO (BIDIRECTIONAL): Spanish <-> English
-PROMPT_TRANSLATE_AUTO = """You are a bilingual translator. 
-If the text is in Spanish, translate it to English. 
-If the text is in English, translate it to Spanish. 
-Return ONLY the translated text.
+PROMPT_TRANSLATE_AUTO = """ES -> EN or EN -> ES. Return ONLY translation.
 
-Input: {text}
-Translation:"""
+{text}"""
 
 TRANSLATION_MAP = {
     "es-en": PROMPT_TRANSLATE_ES_EN,

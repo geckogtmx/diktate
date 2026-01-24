@@ -1,7 +1,7 @@
 # Development Roadmap
 
 > **Status:** ACTIVE - Feature Locked for v1.0
-> **Last Updated:** 2026-01-22
+> **Last Updated:** 2026-01-23
 > **Current Phase:** Lubricant & Distribution (Locking)
 > **Model:** gemma3:4b (stable, 350-750ms processing)
 
@@ -367,6 +367,7 @@ Document any app-specific issues.
 **Goal:** Final polish before v1.0 release.
 
 ### E.1 Re-implementation Queue
+- [x] **Oops Feature (Ctrl+Alt+V)**: Re-inject last successfully dictated text (DONE)
 - [ ] Snippets/shortcuts (was reverted, needs re-implementation)
 - [ ] Custom dictionary for domain-specific terms
 
