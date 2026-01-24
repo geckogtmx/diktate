@@ -1,17 +1,17 @@
 # Architecture
 
-Technical design document for dIKtate (MVP Implementation).
+Technical design document for dIKtate (V1.0 Implementation).
 
-> **Note**: This document reflects the **actual MVP implementation** (Phases 1-3 complete).
+> **Note**: This document reflects the **actual V1.0 implementation**.
 
 ## System Overview
 
-dIKtate uses a hybrid architecture: an Electron frontend for UI and system integration, communicating with a Python backend for audio processing and AI inference via JSON IPC.
+dIKtate uses a hybrid architecture: an Electron frontend for UI, system tray, and global shortcuts, communicating with a Python backend for audio processing, AI inference, and system-level interactions via JSON IPC.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         User                                     │
-│                    (presses hotkey)                              │
+│     (Hotkeys: Dictate, Ask, Translate, Refine, Oops)             │
 └─────────────────────┬───────────────────────────────────────────┘
                       │
                       ▼
@@ -21,9 +21,10 @@ dIKtate uses a hybrid architecture: an Electron frontend for UI and system integ
 │  │  Shortcut   │  │    Tray     │  │   Python Process        │  │
 │  │  Handler    │  │    Icon     │  │   Manager               │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│                                                                 │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   Logger    │  │Performance  │  │   Notification          │  │
-│  │   System    │  │   Metrics   │  │   System                │  │
+│  │  Settings   │  │ Control     │  │   Notification          │  │
+│  │  UI         │  │ Panel       │  │   System                │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
 └─────────────────────┬───────────────────────────────────────────┘
                       │ JSON IPC (stdin/stdout)
@@ -32,11 +33,11 @@ dIKtate uses a hybrid architecture: an Electron frontend for UI and system integ
 │                    Python Backend (IPC Server)                   │
 │  ┌──────────┐  ┌─────────────┐  ┌───────────┐  ┌──────────┐    │
 │  │ Recorder │─▶│ Transcriber │─▶│ Processor │─▶│ Injector │    │
-│  │ (PyAudio)│  │  (Whisper)  │  │  (Ollama) │  │ (pynput) │    │
+│  │ (PyAudio)│  │ (Whisper)   │  │ (LLM)     │  │ (pynput) │    │
 │  └──────────┘  └─────────────┘  └───────────┘  └──────────┘    │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │              Performance Metrics                        │    │
-│  └─────────────────────────────────────────────────────────┘    │
+│  ┌──────────────┐  ┌────────────────────────────────────────┐    │
+│  │ Mute Detector│  │           Performance Metrics          │    │
+│  └──────────────┘  └────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -47,188 +48,90 @@ dIKtate uses a hybrid architecture: an Electron frontend for UI and system integ
 | Component | Responsibility | Status |
 |-----------|----------------|--------|
 | **Main Process** | Global shortcut detection, tray menu, Python process lifecycle | ✅ Complete |
-| **Logger System** | File-based logging with 4 levels (DEBUG, INFO, WARN, ERROR) | ✅ Complete |
-| **Performance Metrics** | Tracks and averages pipeline performance (last 100 sessions) | ✅ Complete |
-| **Notification System** | Native Windows notifications for errors and status | ✅ Complete |
-| **Python Manager** | Spawns Python process, handles stdin/stdout JSON IPC | ✅ Complete |
-| **Renderer Process** | React UI (deferred to Phase 2+) | ⏳ Future |
-| **Preload Scripts** | Minimal IPC bridge | ✅ Complete |
+| **Settings UI** | React-based configuration window for models, hotkeys, and behavior | ✅ Complete |
+| **Control Panel** | Debug dashboard showing real-time status and logs | ✅ Complete |
+| **Python Manager** | Spawns Python process, handles stdin/stdout JSON IPC, config sync | ✅ Complete |
+| **Notification System** | Native Windows notifications for status and errors | ✅ Complete |
+| **Performance Metrics** | Tracks and averages pipeline performance | ✅ Complete |
 
 ### Backend (Python)
 
 | Component | Responsibility | Status |
 |-----------|----------------|--------|
-| **Recorder** | Captures audio from microphone via PyAudio | ✅ Complete |
-| **Transcriber** | Converts audio to text using faster-whisper (CPU mode) | ✅ Complete |
-| **Processor** | Transforms raw text via Ollama (llama3:8b) | ✅ Complete |
-| **Injector** | Simulates keyboard input to type into active application | ✅ Complete |
-| **IPC Server** | Orchestrates pipeline, communicates via JSON stdin/stdout | ✅ Complete |
-| **Performance Metrics** | Tracks 5 metrics (recording, transcription, processing, injection, total) | ✅ Complete |
+| **Recorder** | Captures audio via PyAudio; handles auto-stop and temp files | ✅ Complete |
+| **Transcriber** | Converts audio to text using `faster-whisper` (Turbo V3 model) | ✅ Complete |
+| **Processor** | text cleanup/generation via multiple providers (Ollama, Gemini, Anthropic, OpenAI) | ✅ Complete |
+| **Injector** | Simulates keyboard input/output and clipboard operations (pynput) | ✅ Complete |
+| **Mute Detector** | Background thread monitoring system hardware mute state | ✅ Complete |
+| **IPC Server** | Orchestrates pipeline, handles JSON commands, emits events | ✅ Complete |
 
-## Data Flow (MVP Implementation)
+## Data Flows
 
-1. **User** presses global hotkey (`Ctrl+Shift+Space`)
-2. **Electron** detects keydown → updates tray icon to "recording"
-3. **Electron** sends JSON command via stdin: `{"command": "start_recording"}`
-4. **Python IPC Server** receives command → emits `state-change` event: `"recording"`
-5. **Recorder** begins capturing audio stream from default microphone
-6. **User** releases hotkey (push-to-talk)
-7. **Electron** detects keyup → updates tray icon to "processing"
-8. **Electron** sends JSON command: `{"command": "stop_recording"}`
-9. **Backend** executes pipeline:
-   - Recorder saves buffer to temporary WAV file
-   - Transcriber generates raw text via faster-whisper (CPU mode)
-   - Processor applies text cleanup via Ollama (llama3:8b)
-   - Injector types final text into active window via pynput
-   - Performance metrics tracked at each stage
-10. **Python** emits events via stdout:
-    - `state-change`: "processing" → "idle"
-    - `performance-metrics`: timing data for all stages
-11. **Electron** receives events:
-    - Updates tray icon to "idle"
-    - Logs performance metrics
-    - Shows notification if errors occur
-12. **Logger** records all events to disk:
-    - Electron: `%APPDATA%/diktate/logs/electron-*.log`
-    - Python: `~/.diktate/logs/diktate.log`
+### 1. Dictation Flow (Standard)
+1.  **User** presses Dictate hotkey (`Ctrl+Alt+D`).
+2.  **Electron** signals Python to start recording.
+3.  **Python** records audio until hotkey release or max duration.
+4.  **Python** pipeline executes:
+    *   **Transcriber**: Audio → Raw Text.
+    *   **Processor**: Raw Text → Cleaned Text (using selected LLM and Prompt).
+    *   **Injector**: Cleaned Text → Active Window (simulated typing).
+5.  **Electron** receives status updates and performance metrics.
 
-## Context Modes
+### 2. Refine Mode Flow
+1.  **User** selects text in any application.
+2.  **User** presses Refine hotkey (`Ctrl+Alt+R`).
+3.  **Electron** signals Python to execute `refine_selection`.
+4.  **Python** pipeline executes:
+    *   **Injector**: Sends `Ctrl+C` to capture selection to clipboard.
+    *   **Processor**: Process clipboard text with "Refine" system prompt.
+    *   **Injector**: Pastes refined text back (`Ctrl+V`) replacing selection.
 
-### MVP Implementation (Phase 1-3)
-| Mode | Behavior | Status |
-|------|----------|--------|
-| **Standard** | Fix grammar, remove filler words, proper punctuation | ✅ Complete |
-
-### Future Phases (Deferred)
-| Mode | Behavior | Status |
-|------|----------|--------|
-| **Developer** | Format as code comments, variable names, or documentation | ⏳ Phase 2+ |
-| **Email** | Expand brief notes into professional prose | ⏳ Phase 2+ |
-| **Raw** | No transformation, literal transcription only | ⏳ Phase 2+ |
-
-## UI States
-
-### MVP Implementation (System Tray Only)
-| State | Visual | Status |
-|-------|--------|--------|
-| **Idle** | Gray tray icon | ✅ Complete |
-| **Recording** | Red tray icon | ✅ Complete |
-| **Processing** | Blue tray icon | ✅ Complete |
-| **Notifications** | Native Windows toast notifications for errors/status | ✅ Complete |
-
-### Future Phases (Floating UI)
-| State | Visual | Status |
-|-------|--------|--------|
-| **Idle** | Hidden or minimal dot | ⏳ Phase 4+ |
-| **Listening** | Expanded with pulsing indicator | ⏳ Phase 4+ |
-| **Processing** | Loading spinner | ⏳ Phase 4+ |
-| **Success** | Green flash with text preview, then fade | ⏳ Phase 4+ |
-
-## Technology Rationale
-
-| Choice | Why | MVP Status |
-|--------|-----|------------|
-| **Electron** | Required for global shortcuts and system tray on Windows | ✅ Implemented |
-| **Python** | Best ecosystem for AI/ML (faster-whisper, torch, ollama bindings) | ✅ Implemented |
-| **JSON IPC (stdin/stdout)** | Simpler than WebSocket, more reliable, no port conflicts | ✅ Implemented |
-| **faster-whisper** | CTranslate2 backend, 4x faster than original Whisper, works on CPU | ✅ Implemented (CPU mode) |
-| **Ollama** | Simple local LLM serving, easy model switching, no API keys needed | ✅ Implemented (llama3:8b) |
-| **pynput** | Cross-platform keyboard simulation, works in all applications | ✅ Implemented |
-| **PyAudio** | Mature, stable audio capture library | ✅ Implemented |
-
-## Hardware Requirements
-
-### MVP Implementation (CPU Mode)
-**Minimum**:
-- Windows 10/11
-- Modern multi-core CPU (Intel i5/AMD Ryzen 5 or better)
-- 8GB RAM
-- Ollama installed and running locally
-
-| Component | Resource Usage (CPU Mode) |
-|-----------|---------------------------|
-| faster-whisper (medium, CPU) | ~2-4 GB RAM |
-| Llama 3 8B via Ollama | ~6-8 GB RAM |
-| Electron + Python | ~200-500 MB RAM |
-| **Total** | ~8-12 GB RAM |
-
-### Performance Expectations
-- **E2E Latency (CPU)**: 15-30 seconds for 3-5 second utterance
-- **Transcription**: 2-10 seconds (CPU mode)
-- **Processing**: 1-5 seconds (Ollama)
-
-### Future GPU Support (Phase 2+)
-**Minimum**: NVIDIA GPU with 6GB+ VRAM
-- faster-whisper (medium, GPU): ~1.5 GB VRAM
-- Ollama (GPU acceleration): ~5-6 GB VRAM
-- **Expected latency improvement**: 3-5x faster
-
-## Project Structure (MVP Implementation)
-
-```
-diktate/
-├── package.json
-├── tsconfig.json
-├── src/
-│   ├── main.ts              # Main process entry (371 lines)
-│   ├── preload.ts           # Minimal IPC bridge (30 lines)
-│   ├── services/
-│   │   └── pythonManager.ts # Python process management (284 lines)
-│   └── utils/               # New in Phase 3
-│       ├── logger.ts        # File-based logging system (139 lines)
-│       └── performanceMetrics.ts # Performance tracking (176 lines)
-├── dist/                    # Compiled JavaScript output
-├── assets/                  # Tray icons (idle, recording, processing)
-├── python/
-│   ├── ipc_server.py        # JSON IPC server + pipeline (331 lines)
-│   ├── main.py              # Original CLI version (263 lines)
-│   ├── requirements.txt
-│   ├── verify_setup.py      # Setup validation script
-│   ├── venv/                # Python virtual environment
-│   └── core/
-│       ├── recorder.py      # Audio capture (116 lines)
-│       ├── transcriber.py   # Whisper wrapper (78 lines)
-│       ├── processor.py     # Ollama wrapper (105 lines)
-│       └── injector.py      # Keyboard simulation (61 lines)
-├── tests/
-│   └── test_integration_cp1.py
-├── docs/
-│   └── L3_MEMORY/           # Deferred features & full vision
-└── Documentation (Phases 1-3):
-    ├── PHASE_1_COMPLETE.md
-    ├── PHASE_2_COMPLETE.md
-    ├── PHASE_3_COMPLETE.md
-    ├── PHASE_3_TESTING_GUIDE.md
-    ├── PHASE_3_HANDOFF_SUMMARY.md
-    └── PHASE_3_QA_REPORT.md
-```
+### 3. Ask Mode Flow
+1.  **User** presses Ask hotkey (`Ctrl+Alt+A`).
+2.  **Python** records audio (question).
+3.  **Processor**: Transcribes question, then asks LLM (System Prompt: "You are a helpful assistant...").
+4.  **Electron**: Receives answer and outputs via Clipboard, Typing, or Notification (configurable).
 
 ## Configuration
 
-### MVP Implementation (Hardcoded)
-The MVP uses **hardcoded settings** for simplicity:
+Configuration is dynamic and persisted via `electron-store`. Changes in the Electron Settings UI are immediately synced to the Python backend via the `configure` IPC command.
 
-| Setting | Value | Configurable |
-|---------|-------|--------------|
-| **Hotkey** | `Ctrl+Shift+Space` | ❌ Hardcoded |
-| **Mode** | Push-to-talk | ❌ Hardcoded |
-| **Context Mode** | Standard (grammar/filler removal) | ❌ Hardcoded |
-| **Provider** | Ollama | ❌ Hardcoded |
-| **Model** | llama3:8b | ❌ Hardcoded |
-| **Audio Device** | System default microphone | ❌ Hardcoded |
+| Setting | Description |
+|---------|-------------|
+| **Processing Mode** | Local (Ollama), Cloud (Gemini), Anthropic, OpenAI |
+| **Context Modes** | Standard, Professional, Prompt, Raw (Bypass LLM) |
+| **Custom Prompts** | User-defined system prompts for each mode |
+| **Model Selection** | Hot-swappable models for all providers |
+| **Hotkeys** | Fully configurable global shortcuts |
 
-### Future Configuration (Phase 2+)
-```json
-{
-  "hotkey": "Ctrl+Shift+Space",
-  "mode": "push-to-talk",
-  "contextMode": "standard",
-  "provider": "ollama",
-  "ollamaModel": "llama3",
-  "geminiApiKey": null,
-  "audioDevice": null,
-  "customPrompts": {}
-}
+## Project Structure
+
+```
+diktate/
+├── src/
+│   ├── main.ts              # Electron Main Process (Tray, Shortcuts, IPC)
+│   ├── settings.ts          # Settings Window Logic
+│   ├── services/
+│   │   └── pythonManager.ts # Python Lifecycle & IPC Bridge
+│   └── utils/               # Logging, Metrics, Schemas
+├── python/
+│   ├── ipc_server.py        # Main Python Entrypoint (IPC Server)
+│   ├── core/
+│   │   ├── recorder.py      # Audio Capture
+│   │   ├── transcriber.py   # faster-whisper wrapper
+│   │   ├── processor.py     # Multi-provider LLM wrapper (Ollama/Cloud)
+│   │   ├── injector.py      # Keyboard/Clipboard automation
+│   │   └── mute_detector.py # Hardware mute monitoring
+│   └── config/
+│       └── prompts.py       # System prompts repository
+└── docs/                    # Documentation
 ```
 
-Configuration UI and settings persistence will be added in Phase 2+.
+## Technology Stack
+
+*   **Frontend**: Electron, TypeScript, HTML/CSS (No framework for minimal footprint).
+*   **Backend**: Python 3.10+.
+*   **AI (Local)**: Ollama (Llama 3, Gemma 2), faster-whisper (Turbo).
+*   **AI (Cloud)**: Google Gemini 1.5 Flash, Anthropic Claude 3.5 Haiku, OpenAI GPT-4o-mini.
+*   **Audio**: PyAudio (PortAudio).
+*   **Input**: pynput (Keyboard control).
