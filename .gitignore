@@ -90,3 +90,4 @@ docs/internal/
 .worktrees/
 .security-key
 logs/security/
+nul
