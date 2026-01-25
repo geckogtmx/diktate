@@ -6,6 +6,10 @@
 import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 import { logger } from '../utils/logger';
+import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 interface Command {
   id: string;
@@ -31,25 +35,90 @@ export class PythonManager extends EventEmitter {
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
   private reconnectDelay: number = 2000;
+  private ipcToken: string = '';
+  private tokenFilePath: string = '';
 
   constructor(pythonExePath: string, pythonScriptPath: string) {
     super();
     this.pythonExePath = pythonExePath;
     this.pythonScriptPath = pythonScriptPath;
+    this.tokenFilePath = path.join(os.homedir(), '.diktate', '.ipc_token');
+  }
+
+  /**
+   * Generate a cryptographically secure random token
+   */
+  private generateToken(): string {
+    return crypto.randomBytes(32).toString('hex');
+  }
+
+  /**
+   * Write token to file for external tools
+   */
+  private async writeTokenFile(): Promise<void> {
+    try {
+      const tokenDir = path.dirname(this.tokenFilePath);
+
+      // Create .diktate directory if it doesn't exist
+      if (!fs.existsSync(tokenDir)) {
+        fs.mkdirSync(tokenDir, { recursive: true });
+        logger.info('PythonManager', 'Created .diktate directory', { path: tokenDir });
+      }
+
+      // Write token to file
+      fs.writeFileSync(this.tokenFilePath, this.ipcToken, { mode: 0o400 });
+      logger.info('PythonManager', 'Token file created', { path: this.tokenFilePath });
+    } catch (error) {
+      logger.error('PythonManager', 'Failed to write token file', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Clean up token file on exit
+   */
+  private cleanupTokenFile(): void {
+    try {
+      if (fs.existsSync(this.tokenFilePath)) {
+        fs.unlinkSync(this.tokenFilePath);
+        logger.info('PythonManager', 'Token file cleaned up');
+      }
+    } catch (error) {
+      logger.warn('PythonManager', 'Failed to cleanup token file', error);
+    }
   }
 
   /**
    * Start the Python process
    */
   async start(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         logger.info('PythonManager', 'Starting Python process', { scriptPath: this.pythonScriptPath });
+
+        // Generate IPC authentication token
+        this.ipcToken = this.generateToken();
+        logger.debug('PythonManager', 'Generated IPC authentication token');
+
+        // Write token to file for external tools
+        try {
+          await this.writeTokenFile();
+        } catch (error) {
+          logger.error('PythonManager', 'Failed to write token file, continuing without it', error);
+          // Continue even if token file writing fails
+        }
+
+        // Prepare environment with IPC token
+        const env = {
+          ...process.env,
+          DIKTATE_IPC_TOKEN: this.ipcToken
+        };
 
         this.process = spawn(this.pythonExePath, [this.pythonScriptPath], {
           stdio: ['pipe', 'pipe', 'pipe'],
           detached: false,
-          cwd: require('path').dirname(this.pythonScriptPath)
+          cwd: require('path').dirname(this.pythonScriptPath),
+          env: env
         });
 
         if (!this.process) {
@@ -110,6 +179,7 @@ export class PythonManager extends EventEmitter {
   async stop(): Promise<void> {
     return new Promise((resolve) => {
       if (!this.process) {
+        this.cleanupTokenFile();
         resolve();
         return;
       }
@@ -129,11 +199,13 @@ export class PythonManager extends EventEmitter {
         if (this.process) {
           this.process.kill();
         }
+        this.cleanupTokenFile();
         resolve();
       }, 5000);
 
       this.process.on('exit', () => {
         clearTimeout(timeout);
+        this.cleanupTokenFile();
         resolve();
       });
     });

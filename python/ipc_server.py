@@ -294,6 +294,13 @@ class IpcServer:
         self.current_mode = "standard"  # Track current processing mode for raw bypass
         self.last_injected_text = None  # Store last injected text for "Oops" feature (Ctrl+Alt+V)
 
+        # IPC Authentication (SPEC_007)
+        self.ipc_token = os.environ.get("DIKTATE_IPC_TOKEN", "")
+        if not self.ipc_token:
+            logger.warning("[SECURITY] No IPC authentication token found in environment - server will reject all external commands")
+        else:
+            logger.info("[SECURITY] IPC authentication enabled")
+
         # Mute detection
         self.mute_detector: Optional[MuteDetector] = None
         self.mute_monitor_thread: Optional[threading.Thread] = None
@@ -1251,14 +1258,35 @@ YOUR ANSWER:"""
 
     def _start_command_server(self):
         """Start a simple TCP server for external control (Audio Feeder)"""
-        def handle_client(conn):
+        def handle_client(conn, addr):
             try:
                 # Set a short timeout for the client connection
                 conn.settimeout(5.0)
-                data = conn.recv(1024).decode().strip().upper()
-                logger.info(f"[CMD] Received external TCP command: {data}")
-                
-                if data == "START":
+                raw_data = conn.recv(1024).decode().strip()
+
+                # Parse command format: COMMAND:<TOKEN>
+                parts = raw_data.split(':', 1)
+                command = parts[0].upper()
+                token = parts[1] if len(parts) > 1 else ""
+
+                # Log command (without token for security)
+                logger.info(f"[CMD] Received external TCP command: {command}")
+
+                # Validate authentication token (SPEC_007)
+                if not self.ipc_token:
+                    logger.warning(f"[SECURITY] Unauthorized IPC command attempt from {addr} - no token configured")
+                    conn.sendall(b"FAIL: AUTH_REQUIRED")
+                    return
+
+                if token != self.ipc_token:
+                    logger.warning(f"[SECURITY] Unauthorized IPC command attempt from {addr} - invalid token")
+                    conn.sendall(b"FAIL: INVALID_TOKEN")
+                    return
+
+                # Authentication successful
+                logger.debug(f"[SECURITY] Authenticated IPC command from {addr}")
+
+                if command == "START":
                     # For stress testing, make this robust:
                     # 1. If PROCESSING or INJECTING, reject (client should poll for IDLE first)
                     if self.state in (State.PROCESSING, State.INJECTING):
@@ -1282,7 +1310,7 @@ YOUR ANSWER:"""
                         logger.error(f"[CMD] TCP START failed: {error_msg}")
                         conn.sendall(f"FAIL: {error_msg}".encode())
                     
-                elif data == "STOP":
+                elif command == "STOP":
                     res = self.stop_recording()
                     if res.get("success"):
                         conn.sendall(b"OK")
@@ -1291,13 +1319,13 @@ YOUR ANSWER:"""
                         logger.error(f"[CMD] TCP STOP failed: {error_msg}")
                         conn.sendall(f"FAIL: {error_msg}".encode())
                 
-                elif data == "STATUS":
+                elif command == "STATUS":
                     conn.sendall(self.state.value.encode())
                     
-                elif data == "PING":
+                elif command == "PING":
                     conn.sendall(b"PONG")
 
-                elif data == "RESET":
+                elif command == "RESET":
                     # Emergency reset - force app back to IDLE state
                     logger.warning("[CMD] RESET command received - forcing state to IDLE")
                     if self.state == State.RECORDING and self.recording:
@@ -1310,7 +1338,7 @@ YOUR ANSWER:"""
                     conn.sendall(b"OK")
 
                 else:
-                    logger.warning(f"[CMD] Unknown TCP command: {data}")
+                    logger.warning(f"[CMD] Unknown TCP command: {command}")
                     conn.sendall(b"UNKNOWN")
             except Exception as e:
                 logger.error(f"[CMD] Error handling TCP client: {e}")
@@ -1332,7 +1360,7 @@ YOUR ANSWER:"""
                 while True: # Daemon thread, will die with main
                     try:
                         conn, addr = server.accept()
-                        t = threading.Thread(target=handle_client, args=(conn,))
+                        t = threading.Thread(target=handle_client, args=(conn, addr))
                         t.daemon = True
                         t.start()
                     except Exception as e:

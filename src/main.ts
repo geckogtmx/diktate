@@ -240,6 +240,19 @@ function createSettingsWindow(): void {
 function playSound(soundName: string) {
   if (!soundName || soundName === 'none') return;
 
+  // SECURITY (SPEC_008): Strict whitelist validation to prevent command injection
+  // Only allow alphanumeric characters, hyphens, and underscores
+  if (!/^[a-zA-Z0-9_-]+$/.test(soundName)) {
+    logger.warn('MAIN', `[SECURITY] Blocked unsafe sound name: ${soundName}`);
+    return;
+  }
+
+  // SECURITY: Additional defense - ensure no path traversal
+  if (path.basename(soundName) !== soundName) {
+    logger.warn('MAIN', `[SECURITY] Blocked path traversal attempt in sound name: ${soundName}`);
+    return;
+  }
+
   const soundPath = path.join(__dirname, '..', 'assets', 'sounds', `${soundName}.wav`);
 
   if (!fs.existsSync(soundPath)) {
