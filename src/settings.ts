@@ -828,7 +828,7 @@ function updateModeModelDisplay(model: string) {
 // ============================================
 
 async function runHardwareTest() {
-    const btn = document.querySelector('[onclick="runHardwareTest()"]') as HTMLButtonElement;
+    const btn = document.getElementById('hardware-test-btn') as HTMLButtonElement;
     const gpuEl = document.getElementById('hw-gpu');
     const vramEl = document.getElementById('hw-vram');
     const tierEl = document.getElementById('hw-tier');

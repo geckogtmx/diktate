@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' http://localhost:11434;">
     <style>
         :root {
             --ink-black: #002029ff;
@@ -319,7 +320,8 @@
             <div class="msg">
                 <span>⚠️ Restart Required to Apply Model Changes</span>
             </div>
-            <button id="restart-now-banner-btn" class="btn" style="background: #fca311; color: black; font-weight: bold;">Restart Now</button>
+            <button id="restart-now-banner-btn" class="btn"
+                style="background: #fca311; color: black; font-weight: bold;">Restart Now</button>
         </div>
 
         <!-- GENERAL TAB -->
@@ -456,8 +458,7 @@
                         <select id="start-sound" style="flex: 1;">
                             <option value="none">🔇 None (Silent)</option>
                         </select>
-                        <button class="btn btn-secondary" style="padding: 4px 10px;"
-                            id="preview-start-sound">▶</button>
+                        <button class="btn btn-secondary" style="padding: 4px 10px;" id="preview-start-sound">▶</button>
                     </div>
 
                     <!-- Stop Sound -->
@@ -466,8 +467,7 @@
                         <select id="stop-sound" style="flex: 1;">
                             <option value="none">🔇 None (Silent)</option>
                         </select>
-                        <button class="btn btn-secondary" style="padding: 4px 10px;"
-                            id="preview-stop-sound">▶</button>
+                        <button class="btn btn-secondary" style="padding: 4px 10px;" id="preview-stop-sound">▶</button>
                     </div>
 
                     <!-- Ask Sound -->
@@ -476,8 +476,7 @@
                         <select id="ask-sound" style="flex: 1;">
                             <option value="none">🔇 None (Silent)</option>
                         </select>
-                        <button class="btn btn-secondary" style="padding: 4px 10px;"
-                            id="preview-ask-sound">▶</button>
+                        <button class="btn btn-secondary" style="padding: 4px 10px;" id="preview-ask-sound">▶</button>
                     </div>
                 </div>
             </div>
@@ -741,10 +740,13 @@
 
                 <!-- 1. Trailing Space Configuration -->
                 <div style="margin-bottom: 16px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #1a2f1f; border: 1px solid #10b981; border-radius: 6px;">
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #1a2f1f; border: 1px solid #10b981; border-radius: 6px;">
                         <div>
                             <label style="font-weight: 500; margin: 0; color: #10b981;">Add Trailing Space</label>
-                            <span style="display: block; color: #a7f3d0; font-size: 0.9em; margin-top: 4px;">Automatically add a space after dictation for natural spacing</span>
+                            <span
+                                style="display: block; color: #a7f3d0; font-size: 0.9em; margin-top: 4px;">Automatically
+                                add a space after dictation for natural spacing</span>
                         </div>
                         <label class="toggle-switch" style="margin: 0;">
                             <input type="checkbox" id="trailing-space-toggle" checked>
@@ -754,15 +756,20 @@
                 </div>
 
                 <!-- 2. Optional Keys Section -->
-                <div style="background: linear-gradient(135deg, #1a1a2f 0%, #0f0f1f 100%); border: 1px solid #60a5fa; border-radius: 8px; padding: 14px; margin-top: 16px;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 1em; color: #60a5fa;">Advanced: Optional Keys After Text</h3>
-                    <span style="display: block; color: #888; font-size: 0.9em; margin-bottom: 12px;">Optionally press an additional key (Enter, Tab) after the space for specific use cases</span>
+                <div
+                    style="background: linear-gradient(135deg, #1a1a2f 0%, #0f0f1f 100%); border: 1px solid #60a5fa; border-radius: 8px; padding: 14px; margin-top: 16px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 1em; color: #60a5fa;">Advanced: Optional Keys After Text
+                    </h3>
+                    <span style="display: block; color: #888; font-size: 0.9em; margin-bottom: 12px;">Optionally press
+                        an additional key (Enter, Tab) after the space for specific use cases</span>
 
                     <!-- Enable/Disable Optional Key Toggle -->
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 10px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 6px;">
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 10px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 6px;">
                         <div>
                             <label style="font-weight: 500; margin: 0;">Enable Additional Key</label>
-                            <span style="display: block; color: #888; font-size: 0.9em; margin-top: 3px;">Quick toggle for optional Enter/Tab key</span>
+                            <span style="display: block; color: #888; font-size: 0.9em; margin-top: 3px;">Quick toggle
+                                for optional Enter/Tab key</span>
                         </div>
                         <label class="toggle-switch" style="margin: 0;">
                             <input type="checkbox" id="additional-key-toggle">
@@ -773,7 +780,8 @@
                     <!-- Key Selection Dropdown -->
                     <div style="margin-bottom: 12px;">
                         <label style="display: block; margin-bottom: 6px; font-weight: 500;">Select Key to Press</label>
-                        <select id="additional-key-select" style="width: 100%; padding: 8px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0;">
+                        <select id="additional-key-select"
+                            style="width: 100%; padding: 8px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0;">
                             <option value="none">None (Space Only)</option>
                             <option value="enter">Enter (Auto-Send Messages)</option>
                             <option value="tab">Tab (Move to Next Field)</option>
@@ -781,18 +789,24 @@
                     </div>
 
                     <!-- Use Cases -->
-                    <div style="background: #0a1a0a; border-left: 3px solid #10b981; padding: 10px 12px; border-radius: 4px; font-size: 0.9em; margin-bottom: 12px;">
+                    <div
+                        style="background: #0a1a0a; border-left: 3px solid #10b981; padding: 10px 12px; border-radius: 4px; font-size: 0.9em; margin-bottom: 12px;">
                         <strong style="color: #10b981;">Common Use Cases:</strong>
                         <ul style="margin: 6px 0 0 0; padding-left: 18px; color: #888; line-height: 1.5;">
                             <li><strong>Enter key:</strong> Chat apps (Discord, Slack) - auto-send messages</li>
-                            <li><strong>Tab key:</strong> Forms, search boxes - move to next field or trigger autocomplete</li>
-                            <li><strong>Space only:</strong> General writing, documents - natural spacing without auto-actions</li>
+                            <li><strong>Tab key:</strong> Forms, search boxes - move to next field or trigger
+                                autocomplete</li>
+                            <li><strong>Space only:</strong> General writing, documents - natural spacing without
+                                auto-actions</li>
                         </ul>
                     </div>
 
                     <!-- Safety Warning -->
-                    <div style="background: #1a1410; border: 1px solid #fbbf24; border-radius: 4px; padding: 10px; font-size: 0.9em; color: #aaa;">
-                        <strong style="color: #fbbf24;">Important:</strong> The additional key feature is OFF by default. If enabled, verify the key works correctly in your target application before relying on it. Use Enter carefully in chat apps to avoid accidental message sends.
+                    <div
+                        style="background: #1a1410; border: 1px solid #fbbf24; border-radius: 4px; padding: 10px; font-size: 0.9em; color: #aaa;">
+                        <strong style="color: #fbbf24;">Important:</strong> The additional key feature is OFF by
+                        default. If enabled, verify the key works correctly in your target application before relying on
+                        it. Use Enter carefully in chat apps to avoid accidental message sends.
                     </div>
                 </div>
             </div>
@@ -869,7 +883,8 @@
                         </div>
                     </div>
                 </div>
-                <span class="sub-label">Get your key from <a href="#" id="gemini-docs-link" data-external-link="https://aistudio.google.com/apikey">Google AI Studio</a></span>
+                <span class="sub-label">Get your key from <a href="#" id="gemini-docs-link"
+                        data-external-link="https://aistudio.google.com/apikey">Google AI Studio</a></span>
             </div>
 
             <!-- Anthropic -->
@@ -894,7 +909,8 @@
                         </div>
                     </div>
                 </div>
-                <span class="sub-label">Get your key from <a href="#" id="anthropic-docs-link" data-external-link="https://console.anthropic.com/">Anthropic Console</a></span>
+                <span class="sub-label">Get your key from <a href="#" id="anthropic-docs-link"
+                        data-external-link="https://console.anthropic.com/">Anthropic Console</a></span>
             </div>
 
             <!-- OpenAI -->
@@ -918,7 +934,8 @@
                         </div>
                     </div>
                 </div>
-                <span class="sub-label">Get your key from <a href="#" id="openai-docs-link" data-external-link="https://platform.openai.com/api-keys">OpenAI Platform</a></span>
+                <span class="sub-label">Get your key from <a href="#" id="openai-docs-link"
+                        data-external-link="https://platform.openai.com/api-keys">OpenAI Platform</a></span>
             </div>
         </div>
 
@@ -948,7 +965,8 @@
                 cleanly into memory.</p>
             <div class="modal-buttons">
                 <button id="modal-cancel-btn" class="btn btn-secondary">Later</button>
-                <button id="modal-restart-btn" class="btn" style="background: #fca311; color: black; font-weight: bold;">Restart Now</button>
+                <button id="modal-restart-btn" class="btn"
+                    style="background: #fca311; color: black; font-weight: bold;">Restart Now</button>
             </div>
         </div>
     </div>
