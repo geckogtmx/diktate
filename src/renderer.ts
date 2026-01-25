@@ -258,6 +258,35 @@ function updateModeUI(mode: string) {
     addLogEntry('INFO', `Mode switched to: ${mode.toUpperCase()}`);
 };
 
+// Toggle functions for metrics and logs panels (CSP-compliant)
+function toggleLogs() {
+    const panel = document.getElementById('log-panel');
+    const icon = document.getElementById('toggle-icon');
+    if (panel && icon) {
+        if (panel.style.height === '25px') {
+            panel.style.height = '120px';
+            icon.textContent = '▼';
+        } else {
+            panel.style.height = '25px';
+            icon.textContent = '▲';
+        }
+    }
+}
+
+function toggleMetrics() {
+    const content = document.getElementById('metrics-content');
+    const icon = document.getElementById('metrics-toggle-icon');
+    if (content && icon) {
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.textContent = '▲';
+        } else {
+            content.style.display = 'none';
+            icon.textContent = '▼';
+        }
+    }
+}
+
 // Update metrics panel with recent data (A.2 observability)
 async function updateMetricsPanel() {
     const metricsChart = document.getElementById('metrics-chart');
@@ -387,3 +416,11 @@ window.electronAPI.onPlaySound((soundName: string) => {
     audio.volume = 0.5;
     audio.play().catch(e => console.error('Failed to play sound:', e));
 });
+
+// Event listeners for UI controls (CSP-compliant)
+document.getElementById('mode-standard')?.addEventListener('click', () => (window as any).switchExecutionMode('standard'));
+document.getElementById('mode-prompt')?.addEventListener('click', () => (window as any).switchExecutionMode('prompt'));
+document.getElementById('mode-professional')?.addEventListener('click', () => (window as any).switchExecutionMode('professional'));
+document.getElementById('mode-raw')?.addEventListener('click', () => (window as any).switchExecutionMode('raw'));
+document.getElementById('metrics-header')?.addEventListener('click', toggleMetrics);
+document.getElementById('log-header')?.addEventListener('click', toggleLogs);

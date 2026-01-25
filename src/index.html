@@ -602,19 +602,19 @@
 
         <!-- MODE SELECTION -->
         <div id="mode-toggle-bar">
-            <div class="mode-btn active" id="mode-standard" onclick="switchExecutionMode('standard')">
+            <div class="mode-btn active" id="mode-standard">
                 <span>Standard</span>
                 <span class="mode-desc">General</span>
             </div>
-            <div class="mode-btn" id="mode-prompt" onclick="switchExecutionMode('prompt')">
+            <div class="mode-btn" id="mode-prompt">
                 <span>Prompt</span>
                 <span class="mode-desc">Engineered</span>
             </div>
-            <div class="mode-btn" id="mode-professional" onclick="switchExecutionMode('professional')">
+            <div class="mode-btn" id="mode-professional">
                 <span>Professional</span>
                 <span class="mode-desc">Polished</span>
             </div>
-            <div class="mode-btn" id="mode-raw" onclick="switchExecutionMode('raw')">
+            <div class="mode-btn" id="mode-raw">
                 <span>Dictation</span>
                 <span class="mode-desc">Literal</span>
             </div>
@@ -642,7 +642,7 @@
 
         <!-- METRICS PANEL -->
         <div id="metrics-panel">
-            <div id="metrics-header" onclick="toggleMetrics()">
+            <div id="metrics-header">
                 <span>📊 Dictation Metrics</span>
                 <span id="metrics-toggle-icon">▲</span>
             </div>
@@ -655,7 +655,7 @@
 
     <!-- LOGS -->
     <div id="log-panel" style="height: 25px;">
-        <div id="log-header" onclick="toggleLogs()">
+        <div id="log-header">
             <span>LOGS</span>
             <span id="toggle-icon">▲</span>
         </div>
@@ -667,34 +667,9 @@
         <div style="font-size: 0.6rem; opacity: 0.5;">v0.2.0-DASH</div>
     </footer>
 
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';">
     <script>if (typeof exports === "undefined") { var exports = {}; }</script>
     <script src="./renderer.js"></script>
-    <script>
-        function toggleLogs() {
-            const panel = document.getElementById('log-panel');
-            const icon = document.getElementById('toggle-icon');
-            if (panel.style.height === '25px') {
-                panel.style.height = '120px';
-                icon.textContent = '▼';
-            } else {
-                panel.style.height = '25px';
-                icon.textContent = '▲';
-            }
-        }
-
-        function toggleMetrics() {
-            const content = document.getElementById('metrics-content');
-            const icon = document.getElementById('metrics-toggle-icon');
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                icon.textContent = '▲';
-            } else {
-                content.style.display = 'none';
-                icon.textContent = '▼';
-            }
-        }
-    </script>
 </body>
 
 </html>
