@@ -68,6 +68,171 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Initialize Mode Configuration (Master-Detail)
         await initializeModeConfiguration();
 
+        // Sidebar tab navigation (CSP-compliant)
+        document.querySelectorAll('.tab-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.getAttribute('data-tab');
+                if (tabName) switchTab(tabName);
+            });
+        });
+
+        // General tab event listeners (CSP-compliant)
+        document.getElementById('processing-mode')?.addEventListener('change', (e) => {
+            saveSetting('processingMode', (e.target as HTMLSelectElement).value);
+        });
+
+        document.getElementById('default-model')?.addEventListener('change', (e) => {
+            onDefaultModelChange((e.target as HTMLSelectElement).value);
+        });
+
+        document.getElementById('auto-start')?.addEventListener('change', (e) => {
+            saveSetting('autoStart', (e.target as HTMLInputElement).checked);
+        });
+
+        // Hotkey event listeners (CSP-compliant)
+        document.getElementById('hotkey-display')?.addEventListener('click', () => recordHotkey('dictate'));
+        document.getElementById('reset-hotkey-dictate')?.addEventListener('click', () => resetHotkey('dictate'));
+
+        document.getElementById('ask-hotkey-display')?.addEventListener('click', () => recordHotkey('ask'));
+        document.getElementById('reset-hotkey-ask')?.addEventListener('click', () => resetHotkey('ask'));
+
+        document.getElementById('translate-hotkey-display')?.addEventListener('click', () => recordHotkey('translate'));
+        document.getElementById('reset-hotkey-translate')?.addEventListener('click', () => resetHotkey('translate'));
+
+        document.getElementById('refine-hotkey-display')?.addEventListener('click', () => recordHotkey('refine'));
+        document.getElementById('reset-hotkey-refine')?.addEventListener('click', () => resetHotkey('refine'));
+
+        document.getElementById('oops-hotkey-display')?.addEventListener('click', () => recordHotkey('oops'));
+        document.getElementById('reset-hotkey-oops')?.addEventListener('click', () => resetHotkey('oops'));
+
+        // Audio tab event listeners (CSP-compliant)
+        document.getElementById('start-sound')?.addEventListener('change', (e) => {
+            saveSetting('startSound', (e.target as HTMLSelectElement).value);
+        });
+        document.getElementById('preview-start-sound')?.addEventListener('click', () => {
+            previewSpecificSound('start-sound');
+        });
+
+        document.getElementById('stop-sound')?.addEventListener('change', (e) => {
+            saveSetting('stopSound', (e.target as HTMLSelectElement).value);
+        });
+        document.getElementById('preview-stop-sound')?.addEventListener('click', () => {
+            previewSpecificSound('stop-sound');
+        });
+
+        document.getElementById('ask-sound')?.addEventListener('change', (e) => {
+            saveSetting('askSound', (e.target as HTMLSelectElement).value);
+        });
+        document.getElementById('preview-ask-sound')?.addEventListener('click', () => {
+            previewSpecificSound('ask-sound');
+        });
+
+        // Max recording duration radios
+        document.querySelectorAll('input[name="max-duration"]').forEach((radio) => {
+            radio.addEventListener('change', (e) => {
+                const value = parseInt((e.target as HTMLInputElement).value, 10);
+                saveSetting('maxRecordingDuration', value);
+            });
+        });
+
+        // Ollama tab event listeners (CSP-compliant)
+        document.getElementById('hardware-test-btn')?.addEventListener('click', runHardwareTest);
+        document.getElementById('refresh-ollama-btn')?.addEventListener('click', refreshOllamaStatus);
+        document.getElementById('browse-models-link')?.addEventListener('click', () => {
+            openExternalLink('https://ollama.com/library');
+        });
+        document.getElementById('restart-ollama-btn')?.addEventListener('click', restartOllama);
+        document.getElementById('warmup-btn')?.addEventListener('click', warmupModel);
+
+        // Quick pull buttons
+        document.querySelectorAll('[data-quick-pull]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const modelName = btn.getAttribute('data-quick-pull');
+                if (modelName) quickPullModel(modelName);
+            });
+        });
+
+        document.getElementById('pull-model-btn')?.addEventListener('click', pullOllamaModel);
+
+        document.getElementById('keep-alive-select')?.addEventListener('change', (e) => {
+            saveOllamaSetting('keepAlive', (e.target as HTMLSelectElement).value);
+        });
+
+        document.getElementById('server-url-input')?.addEventListener('change', (e) => {
+            saveOllamaSetting('serverUrl', (e.target as HTMLInputElement).value);
+        });
+
+        // Modes tab event listeners (CSP-compliant)
+        document.getElementById('default-mode-select')?.addEventListener('change', (e) => {
+            saveSetting('defaultMode', (e.target as HTMLSelectElement).value);
+        });
+
+        document.getElementById('ask-output-mode-select')?.addEventListener('change', (e) => {
+            saveSetting('askOutputMode', (e.target as HTMLSelectElement).value);
+        });
+
+        document.querySelectorAll('.mode-list-item').forEach((item) => {
+            item.addEventListener('click', () => {
+                const mode = item.getAttribute('data-mode');
+                if (mode) selectMode(mode);
+            });
+        });
+
+        document.getElementById('save-mode-btn')?.addEventListener('click', saveModeDetails);
+        document.getElementById('reset-mode-btn')?.addEventListener('click', resetModeToDefault);
+
+        document.getElementById('trailing-space-toggle')?.addEventListener('change', (e) => {
+            saveSetting('trailingSpaceEnabled', (e.target as HTMLInputElement).checked);
+        });
+
+        document.getElementById('additional-key-toggle')?.addEventListener('change', (e) => {
+            saveSetting('additionalKeyEnabled', (e.target as HTMLInputElement).checked);
+        });
+
+        document.getElementById('additional-key-select')?.addEventListener('change', (e) => {
+            saveSetting('additionalKey', (e.target as HTMLSelectElement).value);
+        });
+
+        // API Keys tab event listeners (CSP-compliant)
+        document.getElementById('test-gemini-btn')?.addEventListener('click', () => testApiKey('gemini'));
+        document.getElementById('save-gemini-btn')?.addEventListener('click', () => saveApiKey('gemini'));
+        document.getElementById('test-gemini-saved-btn')?.addEventListener('click', () => testSavedApiKey('gemini'));
+        document.getElementById('delete-gemini-btn')?.addEventListener('click', () => deleteApiKey('gemini'));
+
+        document.getElementById('test-anthropic-btn')?.addEventListener('click', () => testApiKey('anthropic'));
+        document.getElementById('save-anthropic-btn')?.addEventListener('click', () => saveApiKey('anthropic'));
+        document.getElementById('test-anthropic-saved-btn')?.addEventListener('click', () => testSavedApiKey('anthropic'));
+        document.getElementById('delete-anthropic-btn')?.addEventListener('click', () => deleteApiKey('anthropic'));
+
+        document.getElementById('test-openai-btn')?.addEventListener('click', () => testApiKey('openai'));
+        document.getElementById('save-openai-btn')?.addEventListener('click', () => saveApiKey('openai'));
+        document.getElementById('test-openai-saved-btn')?.addEventListener('click', () => testSavedApiKey('openai'));
+        document.getElementById('delete-openai-btn')?.addEventListener('click', () => deleteApiKey('openai'));
+
+        // External links
+        document.getElementById('gemini-docs-link')?.addEventListener('click', () => {
+            openExternalLink('https://aistudio.google.com/apikey');
+        });
+        document.getElementById('anthropic-docs-link')?.addEventListener('click', () => {
+            openExternalLink('https://console.anthropic.com/');
+        });
+        document.getElementById('openai-docs-link')?.addEventListener('click', () => {
+            openExternalLink('https://platform.openai.com/api-keys');
+        });
+
+        // About tab event listeners (CSP-compliant)
+        document.getElementById('website-link')?.addEventListener('click', () => {
+            openExternalLink('https://dikta.me');
+        });
+        document.getElementById('github-link')?.addEventListener('click', () => {
+            openExternalLink('https://github.com/diktate/diktate');
+        });
+
+        // Modal event listeners (CSP-compliant)
+        document.getElementById('restart-now-banner-btn')?.addEventListener('click', showRestartModal);
+        document.getElementById('modal-cancel-btn')?.addEventListener('click', hideRestartModal);
+        document.getElementById('modal-restart-btn')?.addEventListener('click', relaunchApp);
+
         // Capture initial model selections for change detection
         const defaultSelect = document.getElementById('default-model') as HTMLSelectElement;
         if (defaultSelect) initialModels['default'] = defaultSelect.value;
