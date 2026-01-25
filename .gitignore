@@ -78,6 +78,11 @@ TASKS.md
 CLAUDE.md
 GEMINI.md
 docs/internal/
+ARCHITECTURE.md
+DEVELOPMENT_ROADMAP.md
+docs/SECURITY_AUDIT.md
+docs/bugs/
+docs/performance_report.html
 .agent/
 
 # Auto Claude data directory
