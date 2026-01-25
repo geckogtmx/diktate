@@ -670,6 +670,19 @@ function setupPythonEventHandlers(): void {
 /**
  * Synchronize current Electron store settings with the Python backend
  */
+/**
+ * Validate API key format for stored keys (SPEC_013 - soft validation)
+ * Returns true if valid, false if invalid (logs warning but doesn't throw)
+ */
+function validateStoredKeyFormat(provider: string, key: string): boolean {
+  const patterns: Record<string, RegExp> = {
+    'gemini': /^AIza[0-9A-Za-z-_]{35}$/,
+    'anthropic': /^sk-ant-[a-zA-Z0-9\-_]{20,}$/,
+    'openai': /^sk-[a-zA-Z0-9]{20,}$/
+  };
+  return patterns[provider]?.test(key) ?? true;
+}
+
 async function syncPythonConfig(): Promise<void> {
   if (!pythonManager || !pythonManager.isProcessRunning()) return;
 
@@ -710,15 +723,34 @@ async function syncPythonConfig(): Promise<void> {
   try {
     let apiKey: string | undefined;
     let storeKey: string | undefined;
+    let provider: string | undefined;
 
-    if (processingMode === 'cloud' || processingMode === 'gemini') storeKey = 'encryptedGeminiApiKey';
-    else if (processingMode === 'anthropic') storeKey = 'encryptedAnthropicApiKey';
-    else if (processingMode === 'openai') storeKey = 'encryptedOpenaiApiKey';
+    if (processingMode === 'cloud' || processingMode === 'gemini') {
+      storeKey = 'encryptedGeminiApiKey';
+      provider = 'gemini';
+    } else if (processingMode === 'anthropic') {
+      storeKey = 'encryptedAnthropicApiKey';
+      provider = 'anthropic';
+    } else if (processingMode === 'openai') {
+      storeKey = 'encryptedOpenaiApiKey';
+      provider = 'openai';
+    }
 
-    if (storeKey) {
+    if (storeKey && provider) {
       const encrypted = store.get(storeKey as any) as string | undefined;
       if (encrypted && safeStorage.isEncryptionAvailable()) {
         apiKey = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
+
+        // SPEC_013: Validate format, log warning if invalid (soft validation)
+        const isValid = validateStoredKeyFormat(provider, apiKey);
+        if (!isValid) {
+          logger.warn('MAIN',
+            `Stored ${provider} API key has invalid format (legacy key?). ` +
+            `Consider re-entering in Settings.`
+          );
+          // Still allow usage for backward compatibility
+        }
+
         config.apiKey = apiKey;
       }
     }
@@ -1134,7 +1166,7 @@ ipcMain.handle('apikey:set', async (_event, provider: string, key: string) => {
   const validation = validateIpcMessage(ApiKeySetSchema, { provider, key });
   if (!validation.success) {
     logger.error('IPC', `Invalid API key payload: ${redactSensitive(validation.error)}`);
-    throw new Error(`Invalid payload: ${validation.error}`);
+    throw new Error(validation.error);
   }
 
   const encrypted = safeStorage.encryptString(key);

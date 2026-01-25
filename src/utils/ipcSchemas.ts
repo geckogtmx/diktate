@@ -40,6 +40,11 @@ export const SettingsKeySchema = z.enum([
 // API key provider schema
 export const ApiKeyProviderSchema = z.enum(['gemini', 'anthropic', 'openai']);
 
+// API key validation regexes (SPEC_013)
+const GEMINI_KEY_REGEX = /^AIza[0-9A-Za-z-_]{35}$/;
+const ANTHROPIC_KEY_REGEX = /^sk-ant-[a-zA-Z0-9\-_]{20,}$/;
+const OPENAI_KEY_REGEX = /^sk-[a-zA-Z0-9]{20,}$/;
+
 // IPC Message schemas
 export const SettingsSetSchema = z.object({
     key: SettingsKeySchema,
@@ -49,11 +54,71 @@ export const SettingsSetSchema = z.object({
 export const ApiKeySetSchema = z.object({
     provider: ApiKeyProviderSchema,
     key: z.string().min(10).max(200)
+}).superRefine((data, ctx) => {
+    const { provider, key } = data;
+    let isValid = false;
+    let expectedFormat = '';
+
+    switch (provider) {
+        case 'gemini':
+            isValid = GEMINI_KEY_REGEX.test(key);
+            expectedFormat = 'AIza followed by 35 characters (letters, numbers, -, _)';
+            break;
+        case 'anthropic':
+            isValid = ANTHROPIC_KEY_REGEX.test(key);
+            expectedFormat = 'sk-ant- followed by 20+ characters (letters, numbers, -, _)';
+            break;
+        case 'openai':
+            isValid = OPENAI_KEY_REGEX.test(key);
+            expectedFormat = 'sk- followed by 20+ alphanumeric characters';
+            break;
+    }
+
+    if (!isValid) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Invalid ${provider} API key format. Expected: ${expectedFormat}`,
+            path: ['key']
+        });
+    }
 });
 
 export const ApiKeyTestSchema = z.object({
     provider: ApiKeyProviderSchema,
     key: z.string().max(200) // Empty string = "test stored key"
+}).superRefine((data, ctx) => {
+    const { provider, key } = data;
+
+    // Skip validation for empty string (testing stored key)
+    if (key === '') {
+        return;
+    }
+
+    let isValid = false;
+    let expectedFormat = '';
+
+    switch (provider) {
+        case 'gemini':
+            isValid = GEMINI_KEY_REGEX.test(key);
+            expectedFormat = 'AIza followed by 35 characters (letters, numbers, -, _)';
+            break;
+        case 'anthropic':
+            isValid = ANTHROPIC_KEY_REGEX.test(key);
+            expectedFormat = 'sk-ant- followed by 20+ characters (letters, numbers, -, _)';
+            break;
+        case 'openai':
+            isValid = OPENAI_KEY_REGEX.test(key);
+            expectedFormat = 'sk- followed by 20+ alphanumeric characters';
+            break;
+    }
+
+    if (!isValid) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Invalid ${provider} API key format. Expected: ${expectedFormat}`,
+            path: ['key']
+        });
+    }
 });
 
 
@@ -63,7 +128,12 @@ export function validateIpcMessage<T>(schema: z.ZodSchema<T>, data: unknown): { 
     if (result.success) {
         return { success: true, data: result.data };
     }
-    return { success: false, error: result.error.message };
+
+    // Extract the first error message from Zod errors
+    const issues = result.error.issues;
+    const errorMessage = issues.length > 0 ? issues[0].message : result.error.message;
+
+    return { success: false, error: errorMessage };
 }
 
 // Log redaction utility

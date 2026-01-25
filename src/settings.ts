@@ -580,10 +580,17 @@ async function testApiKey(provider: string) {
         if (result.success) {
             alert(`✅ ${provider} API key is valid!`);
         } else {
-            alert(`❌ ${provider} API key test failed: ${result.error}`);
+            alert(`❌ ${provider} API key test failed:\n\n${result.error}`);
         }
     } catch (e) {
-        alert(`❌ Test failed: ${e}`);
+        // Extract clean validation error from Electron IPC wrapper
+        let errorMsg = e instanceof Error ? e.message : String(e);
+
+        // Remove Electron IPC wrapper: "Error invoking remote method 'apikey:test': Error: "
+        const ipcPrefix = /^Error invoking remote method '[^']+': Error: /;
+        errorMsg = errorMsg.replace(ipcPrefix, '');
+
+        alert(`❌ Test failed\n\nThe API key format is invalid. ${errorMsg}`);
     }
 }
 
@@ -1062,7 +1069,14 @@ async function saveApiKey(provider: string) {
         alert(`✅ ${provider} API key saved securely!`);
     } catch (e) {
         console.error(`Failed to save ${provider} API key:`, e);
-        alert(`❌ Failed to save ${provider} API key`);
+        // Extract clean validation error from Electron IPC wrapper
+        let errorMsg = e instanceof Error ? e.message : String(e);
+
+        // Remove Electron IPC wrapper: "Error invoking remote method 'apikey:set': Error: "
+        const ipcPrefix = /^Error invoking remote method '[^']+': Error: /;
+        errorMsg = errorMsg.replace(ipcPrefix, '');
+
+        alert(`❌ Failed to save ${provider} API key\n\nThe API key format is invalid. ${errorMsg}`);
     }
 }
 

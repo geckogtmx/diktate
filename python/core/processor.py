@@ -1,6 +1,7 @@
 """Text processor module with support for local (Ollama) and cloud (Gemini) modes."""
 
 import os
+import re
 import requests
 import logging
 import time
@@ -16,6 +17,34 @@ logger = logging.getLogger(__name__)
 
 
 from config.prompts import get_prompt, DEFAULT_CLEANUP_PROMPT
+
+
+def validate_api_key(provider: str, api_key: str) -> None:
+    """Validate API key format for a given provider (SPEC_013).
+
+    Args:
+        provider: Provider name ('gemini', 'anthropic', 'openai')
+        api_key: The API key to validate
+
+    Raises:
+        ValueError: If the API key format is invalid for the given provider
+    """
+    patterns = {
+        'gemini': (r'^AIza[0-9A-Za-z-_]{35}$', 'AIza followed by 35 characters'),
+        'anthropic': (r'^sk-ant-[a-zA-Z0-9\-_]{20,}$', 'sk-ant- followed by 20+ characters'),
+        'openai': (r'^sk-[a-zA-Z0-9]{20,}$', 'sk- followed by 20+ alphanumeric characters')
+    }
+
+    if provider not in patterns:
+        return  # Unknown provider, skip validation
+
+    pattern, description = patterns[provider]
+    if not re.match(pattern, api_key):
+        raise ValueError(
+            f"Invalid {provider} API key format. "
+            f"Expected: {description}. "
+            f"Please check your API key and try again."
+        )
 
 class LocalProcessor:
     """Processes transcribed text using local Ollama LLM."""
@@ -180,6 +209,10 @@ class CloudProcessor:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY not found in environment")
+
+        # SPEC_013: Validate key format
+        validate_api_key('gemini', self.api_key)
+
         self.prompt = prompt or DEFAULT_CLEANUP_PROMPT
         self.api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
         self.mode = "standard"
@@ -268,6 +301,10 @@ class AnthropicProcessor:
         self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not self.api_key:
             raise ValueError("ANTHROPIC_API_KEY not found in environment")
+
+        # SPEC_013: Validate key format
+        validate_api_key('anthropic', self.api_key)
+
         self.prompt = prompt or DEFAULT_CLEANUP_PROMPT
         self.api_url = "https://api.anthropic.com/v1/messages"
         self.model = "claude-3-haiku-20240307"  # Fastest Claude model
@@ -356,6 +393,10 @@ class OpenAIProcessor:
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY not found in environment")
+
+        # SPEC_013: Validate key format
+        validate_api_key('openai', self.api_key)
+
         self.prompt = prompt or DEFAULT_CLEANUP_PROMPT
         self.api_url = "https://api.openai.com/v1/chat/completions"
         self.model = "gpt-4o-mini"  # Fast and cheap
