@@ -345,6 +345,7 @@ Document any app-specific issues.
   - Leverage `site/` and `sitex/` directories for differential content testing.
   - Implement simple conversion tracking models to measure landing page effectiveness.
   - Use short-to-mid term data to fine-tune marketing messaging and onboarding flow.
+- [x] **Marketing Strategy Discovery**: Integrated findings from [MARKETING_DISCOVERIES_2026-01-25.md](./docs/internal/marketing/MARKETING_DISCOVERIES_2026-01-25.md) regarding Ko-fi vs. One-Time license value.
 
 ### D.9 Simplified Web Assistant (CRM) ✅ NEW
 > **Goal:** Deploy a v1.0 lead-capture and FAQ support bot on `dikta.me`.
@@ -452,6 +453,9 @@ Document any app-specific issues.
   - Whispering then shouting.
   - Intentional "hallucination bait" (speaking nonsense or contradictory commands).
 - **Goal**: Confirm fallback safety and internal consistency.
+
+### F.4 External Quality Assessment
+- [x] **External Repository Audit**: Completed by external advisor. See [REPOSITORY_QUALITY_ASSESSMENT_2026-01-25.md](./REPOSITORY_QUALITY_ASSESSMENT_2026-01-25.md) for detailed findings on code quality, architecture, and security.
 
 ---
 
@@ -595,6 +599,11 @@ AI_CODEX.md             ← Governance rules (stable)
 ---
 
 ## Changelog
+
+### 2026-01-25 (Update 10 - External Strategy & Quality Audit)
+- ✅ **Marketing Discoveries Integrated**: Moved research-backed pricing strategy to `docs/internal/marketing/`.
+- ✅ **Quality Assessment Received**: External audit of the repository completed and kept at root for immediate visibility.
+- ✅ **Roadmap Sync**: Updated `DEVELOPMENT_ROADMAP.md` with references to new documents.
 
 ### 2026-01-24 (Update 9 - +Key Implementation)
 - ✅ **+Key (Auto-Enter) Added**: Users can now configure a post-injection keystroke.
