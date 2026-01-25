@@ -740,6 +740,69 @@
                 </div>
             </div>
 
+            <!-- Text Injection Configuration (SPEC_006) -->
+            <div class="setting-group">
+                <label>Text Injection Settings</label>
+                <span class="sub-label">Customize how text is injected after dictation</span>
+
+                <!-- 1. Trailing Space Configuration -->
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #1a2f1f; border: 1px solid #10b981; border-radius: 6px;">
+                        <div>
+                            <label style="font-weight: 500; margin: 0; color: #10b981;">Add Trailing Space</label>
+                            <span style="display: block; color: #a7f3d0; font-size: 0.9em; margin-top: 4px;">Automatically add a space after dictation for natural spacing</span>
+                        </div>
+                        <label class="toggle-switch" style="margin: 0;">
+                            <input type="checkbox" id="trailing-space-enabled" checked onchange="saveSetting('trailingSpaceEnabled', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 2. Optional Keys Section -->
+                <div style="background: linear-gradient(135deg, #1a1a2f 0%, #0f0f1f 100%); border: 1px solid #60a5fa; border-radius: 8px; padding: 14px; margin-top: 16px;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 1em; color: #60a5fa;">Advanced: Optional Keys After Text</h3>
+                    <span style="display: block; color: #888; font-size: 0.9em; margin-bottom: 12px;">Optionally press an additional key (Enter, Tab) after the space for specific use cases</span>
+
+                    <!-- Enable/Disable Optional Key Toggle -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 10px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 6px;">
+                        <div>
+                            <label style="font-weight: 500; margin: 0;">Enable Additional Key</label>
+                            <span style="display: block; color: #888; font-size: 0.9em; margin-top: 3px;">Quick toggle for optional Enter/Tab key</span>
+                        </div>
+                        <label class="toggle-switch" style="margin: 0;">
+                            <input type="checkbox" id="additional-key-enabled" onchange="saveSetting('additionalKeyEnabled', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Key Selection Dropdown -->
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 500;">Select Key to Press</label>
+                        <select id="additional-key" onchange="saveSetting('additionalKey', this.value)" style="width: 100%; padding: 8px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0;">
+                            <option value="none">None (Space Only)</option>
+                            <option value="enter">Enter (Auto-Send Messages)</option>
+                            <option value="tab">Tab (Move to Next Field)</option>
+                        </select>
+                    </div>
+
+                    <!-- Use Cases -->
+                    <div style="background: #0a1a0a; border-left: 3px solid #10b981; padding: 10px 12px; border-radius: 4px; font-size: 0.9em; margin-bottom: 12px;">
+                        <strong style="color: #10b981;">Common Use Cases:</strong>
+                        <ul style="margin: 6px 0 0 0; padding-left: 18px; color: #888; line-height: 1.5;">
+                            <li><strong>Enter key:</strong> Chat apps (Discord, Slack) - auto-send messages</li>
+                            <li><strong>Tab key:</strong> Forms, search boxes - move to next field or trigger autocomplete</li>
+                            <li><strong>Space only:</strong> General writing, documents - natural spacing without auto-actions</li>
+                        </ul>
+                    </div>
+
+                    <!-- Safety Warning -->
+                    <div style="background: #1a1410; border: 1px solid #fbbf24; border-radius: 4px; padding: 10px; font-size: 0.9em; color: #aaa;">
+                        <strong style="color: #fbbf24;">Important:</strong> The additional key feature is OFF by default. If enabled, verify the key works correctly in your target application before relying on it. Use Enter carefully in chat apps to avoid accidental message sends.
+                    </div>
+                </div>
+            </div>
+
             <!-- Styles for mode list -->
             <style>
                 .mode-list-item {

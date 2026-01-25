@@ -53,6 +53,10 @@ interface UserSettings {
     professional: string;
     raw: string;
   };
+  // Trailing space configuration
+  trailingSpaceEnabled: boolean; // NEW: Enable trailing space (default: true)
+  additionalKeyEnabled: boolean; // NEW: Enable optional key after space
+  additionalKey: string; // NEW: Which additional key ('enter', 'tab', 'none')
 }
 
 // Initialize Store with defaults
@@ -82,7 +86,12 @@ const store = new Store<UserSettings>({
       prompt: '',
       professional: '',
       raw: ''
-    }
+    },
+    // NEW: Trailing space settings (SPEC_006)
+    trailingSpaceEnabled: true, // DEFAULT: ON (natural spacing between words)
+    // NEW: Additional key settings (SPEC_006)
+    additionalKeyEnabled: false, // DEFAULT: OFF (space only is enough)
+    additionalKey: 'none', // DEFAULT: None (can enable Enter/Tab if needed)
   }
 });
 
@@ -668,6 +677,9 @@ async function syncPythonConfig(): Promise<void> {
   });
 
   const audioDeviceLabel = store.get('audioDeviceLabel', 'Default');
+  const trailingSpaceEnabled = store.get('trailingSpaceEnabled', true);
+  const additionalKeyEnabled = store.get('additionalKeyEnabled', false);
+  const additionalKey = store.get('additionalKey', 'none');
 
   const config: any = {
     provider: processingMode,
@@ -675,7 +687,10 @@ async function syncPythonConfig(): Promise<void> {
     transMode: transMode,
     defaultModel: defaultOllamaModel,
     customPrompts: customPrompts,
-    audioDeviceLabel: audioDeviceLabel
+    audioDeviceLabel: audioDeviceLabel,
+    trailingSpaceEnabled: trailingSpaceEnabled,
+    additionalKeyEnabled: additionalKeyEnabled,
+    additionalKey: additionalKey
   };
 
   // Get API key if needed
@@ -790,7 +805,7 @@ function setupIpcHandlers(): void {
     return store.store;
   });
 
-  ipcMain.handle('settings:set', (event, key: keyof UserSettings, value: any) => {
+  ipcMain.handle('settings:set', async (event, key: keyof UserSettings, value: any) => {
     // Validate payload
     const validation = validateIpcMessage(SettingsSetSchema, { key, value });
     if (!validation.success) {
@@ -810,11 +825,14 @@ function setupIpcHandlers(): void {
     const syncKeys = [
       'defaultMode',
       'processingMode',
-      'transMode'
+      'transMode',
+      'trailingSpaceEnabled',  // NEW: Sync trailing space setting to Python
+      'additionalKeyEnabled',  // NEW: Sync additional key settings to Python
+      'additionalKey'          // NEW: Sync additional key settings to Python
     ];
 
     if (syncKeys.includes(key as string)) {
-      syncPythonConfig().catch(err => {
+      await syncPythonConfig().catch(err => {
         logger.error('IPC', 'Post-setting sync failed', err);
       });
     }

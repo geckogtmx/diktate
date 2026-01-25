@@ -708,8 +708,35 @@ class IpcServer:
             self._set_state(State.INJECTING)
             logger.info("[INJECT] Injecting text...")
             self.perf.start("injection")
+
+            # Configure trailing space behavior (if config available)
+            if hasattr(self, 'config') and self.config:
+                trailing_space_enabled = self.config.get('trailingSpaceEnabled', True)
+                self.injector.add_trailing_space = trailing_space_enabled
+                if not trailing_space_enabled:
+                    logger.debug("[INJECT] Trailing space disabled for this injection")
+
             self.injector.type_text(processed_text)
             self.last_injected_text = processed_text  # Capture for "Oops" feature
+
+            # Optional Additional Key: Press Enter/Tab after paste (if configured)
+            if hasattr(self, 'config') and self.config:
+                additional_key_enabled = self.config.get('additionalKeyEnabled', False)
+                additional_key = self.config.get('additionalKey', 'none')
+
+                if additional_key_enabled and additional_key and additional_key != 'none':
+                    # Safety delay: Wait for paste to complete before pressing additional key
+                    # This prevents the key from being captured by clipboard managers
+                    # or being sent before the OS processes the paste + space
+                    time.sleep(0.1)  # 100ms delay (configurable if needed)
+
+                    try:
+                        self.injector.press_key(additional_key)
+                        logger.info(f"[INJECT] Additional Key: Pressed '{additional_key}' after paste + space")
+                    except Exception as e:
+                        logger.error(f"[INJECT] Additional key press failed: {e}")
+                        # Non-fatal: Continue even if key press fails
+
             self.perf.end("injection")
             logger.info("[SUCCESS] Text injected successfully")
 
@@ -872,8 +899,11 @@ YOUR ANSWER:"""
     def configure(self, config: dict) -> dict:
         """Configure the pipeline (switch models, modes, providers, etc)"""
         try:
+            # Store config for use in injection logic
+            self.config = config
+
             updates = []
-            
+
             # 1. Transcriber Model
             model_size = config.get("model")
             if model_size:
@@ -1104,8 +1134,33 @@ YOUR ANSWER:"""
                     self._set_state(State.INJECTING)
                     logger.info("[REFINE] Injecting refined text...")
                     self.perf.start("injection")
+
+                    # Configure trailing space behavior (if config available)
+                    if hasattr(self, 'config') and self.config:
+                        trailing_space_enabled = self.config.get('trailingSpaceEnabled', True)
+                        self.injector.add_trailing_space = trailing_space_enabled
+                        if not trailing_space_enabled:
+                            logger.debug("[REFINE] Trailing space disabled for this injection")
+
                     self.injector.paste_text(refined_text)
                     self.last_injected_text = refined_text  # Capture for "Oops" feature
+
+                    # Optional Additional Key: Press Enter/Tab after paste (if configured)
+                    if hasattr(self, 'config') and self.config:
+                        additional_key_enabled = self.config.get('additionalKeyEnabled', False)
+                        additional_key = self.config.get('additionalKey', 'none')
+
+                        if additional_key_enabled and additional_key and additional_key != 'none':
+                            # Safety delay: Wait for paste to complete before pressing additional key
+                            time.sleep(0.1)  # 100ms delay
+
+                            try:
+                                self.injector.press_key(additional_key)
+                                logger.info(f"[REFINE] Additional Key: Pressed '{additional_key}' after paste + space")
+                            except Exception as e:
+                                logger.error(f"[REFINE] Additional key press failed: {e}")
+                                # Non-fatal: Continue even if key press fails
+
                     self.perf.end("injection")
 
                     # 4. Emit success

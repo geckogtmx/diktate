@@ -48,6 +48,7 @@ Commercial voice tools send your audio to the cloud. dIKtate runs entirely on yo
 ✅ **Error Handling:** Comprehensive logging + native notifications - **Complete**
 ✅ **Performance Tracking:** Full pipeline metrics tracking - **Complete**
 ✅ **Security Audit:** High-severity Electron and `tar` fixes implemented - **Complete**
+✅ **+Key:** Auto-Enter/Tab post-injection handling - **Complete**
 🚧 **Ask Mode:** Voice Q&A with LLM (`Ctrl+Alt+A`) - **Beta (Text response only, TTS coming soon)**
 
 **Status:** Active Development

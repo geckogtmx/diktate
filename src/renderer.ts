@@ -58,6 +58,7 @@ const perfInjectCell = document.getElementById('perf-inject-cell');
 // Toggle elements
 const toggleSound = document.getElementById('toggle-sound') as HTMLInputElement | null;
 const toggleCloud = document.getElementById('toggle-cloud') as HTMLInputElement | null;
+const toggleAdditionalKey = document.getElementById('toggle-additional-key') as HTMLInputElement | null;
 
 // Mode selection elements
 const modeBtns: Record<string, HTMLElement | null> = {
@@ -232,6 +233,12 @@ function setupToggles() {
             addLogEntry('INFO', `Processing mode: ${mode.toUpperCase()}`);
         });
     }
+    if (toggleAdditionalKey) {
+        toggleAdditionalKey.addEventListener('change', () => {
+            window.electronAPI?.setSetting?.('additionalKeyEnabled', toggleAdditionalKey.checked);
+            addLogEntry('INFO', `Additional key: ${toggleAdditionalKey.checked ? 'ENABLED' : 'DISABLED'}`);
+        });
+    }
 }
 
 // Update mode toggle UI
@@ -350,6 +357,9 @@ if (window.electronAPI) {
             }
             if (toggleCloud && state.processingMode) {
                 toggleCloud.checked = state.processingMode === 'cloud';
+            }
+            if (toggleAdditionalKey && state.additionalKeyEnabled !== undefined) {
+                toggleAdditionalKey.checked = state.additionalKeyEnabled;
             }
 
             // Restore mode selection

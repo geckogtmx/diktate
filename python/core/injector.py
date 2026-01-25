@@ -64,6 +64,7 @@ class Injector:
     def __init__(self):
         """Initialize the injector."""
         self.keyboard = Controller()
+        self.add_trailing_space = True  # Default: enabled (can be configured via IPC)
 
     def type_text(self, text: str, delay: Optional[float] = None) -> None:
         """
@@ -75,49 +76,95 @@ class Injector:
     def paste_text(self, text: str) -> None:
         """
         Inject text using clipboard paste (Ctrl+V).
-        
+
+        ALWAYS adds a trailing space after the text for natural spacing between dictations.
         Preserves the user's original clipboard content.
-        
+
         Args:
             text: Text to paste
         """
         try:
             logger.info(f"Pasting {len(text)} characters...")
-            
+
             # 1. Save original clipboard
             try:
                 original_clipboard = pyperclip.paste()
             except Exception:
                 original_clipboard = ""
 
-            # 2. Copy new text to clipboard
-            pyperclip.copy(text)
+            # 2. Add trailing space if enabled (configurable, default: enabled)
+            if self.add_trailing_space:
+                text_to_paste = text + " "
+                logger.debug(f"Added trailing space to text ({len(text)} → {len(text_to_paste)} chars)")
+            else:
+                text_to_paste = text
+                logger.debug("Trailing space disabled (pasting text as-is)")
+
+            # 3. Copy text to clipboard
+            pyperclip.copy(text_to_paste)
             
-            # 3. Simulate Ctrl+V
+            # 4. Simulate Ctrl+V
             # Small delay to ensure clipboard is ready
             time.sleep(0.05)
-            
+
             with self.keyboard.pressed(Key.ctrl):
                 self.keyboard.press('v')
                 self.keyboard.release('v')
-                
-            # 4. Wait for paste to complete before restoring clipboard
+
+            # 5. Wait for paste to complete before restoring clipboard
             # Reduced from 100ms to 20ms (M2 security fix - minimize clipboard exposure)
-            time.sleep(0.02) 
-            
-            # 5. Restore original clipboard
-            # Note: Some apps might be slow to paste, so this restores 
+            time.sleep(0.02)
+
+            # 6. Restore original clipboard
+            # Note: Some apps might be slow to paste, so this restores
             # might technically happen "too fast" for extremely laggy apps,
             # but 100ms is usually safe for modern OS.
             if original_clipboard:
                 pyperclip.copy(original_clipboard)
                 
             logger.info("Text pasted successfully")
-            
+
         except Exception as e:
             logger.error(f"Error pasting text: {e}")
             # Fallback to typing if paste fails?
             # self._type_fallback(text)
+            raise
+
+    def press_key(self, key_name: str) -> None:
+        """
+        Press a single key using keyboard simulation.
+
+        This is for OPTIONAL additional keys (Enter, Tab) on top of the
+        always-present trailing space.
+
+        Args:
+            key_name: Name of key to press ('enter', 'tab', 'return')
+        """
+        try:
+            logger.info(f"Pressing additional key: {key_name}")
+
+            # Map string names to pynput Key constants
+            key_map = {
+                'enter': Key.enter,
+                'return': Key.enter,  # Alias for enter
+                'tab': Key.tab,
+            }
+
+            key = key_map.get(key_name.lower())
+
+            if key is None:
+                logger.error(f"Unknown key name: {key_name}")
+                return
+
+            # Press and release the key
+            self.keyboard.press(key)
+            time.sleep(0.01)  # Small delay between press and release
+            self.keyboard.release(key)
+
+            logger.info(f"Additional key '{key_name}' pressed successfully")
+
+        except Exception as e:
+            logger.error(f"Error pressing key '{key_name}': {e}")
             raise
 
     def capture_selection(self, timeout_ms: int = 1500) -> Optional[str]:

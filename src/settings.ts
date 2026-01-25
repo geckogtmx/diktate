@@ -210,6 +210,11 @@ function loadSettings(settings: any) {
     setVal('default-mode', settings.defaultMode || 'standard');
     setVal('ask-output-mode', settings.askOutputMode || 'type');
 
+    // Trailing Space & Additional Keys (SPEC_006)
+    setCheck('trailing-space-enabled', settings.trailingSpaceEnabled !== false); // Default: true
+    setVal('additional-key', settings.additionalKey || 'none');
+    setCheck('additional-key-enabled', settings.additionalKeyEnabled || false);
+
     // Hotkeys
     if (settings.hotkey) {
         const hotkeyDisplay = document.getElementById('hotkey-display');

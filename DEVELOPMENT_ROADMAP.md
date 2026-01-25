@@ -38,6 +38,7 @@
 | **E: Polish** | **Mini Mode**, snippets, final QA | PENDING |
 | **F: Validation** | **Methodical UI Audit**, **YouTube Stress Loop**, **Edge Cases** | PENDING |
 | **G: Refine Mode** | **Refine Selection Mode (In-place text editing)** | 🚀 MVP COMPLETE - TESTING |
+| **H: +Key** | **Auto-Enter / Post-Injection Keystrokes** | ✅ IMPLEMENTED |
 
 | **v1.1 (Premium Expansion)**
 | Phase | Focus | Status |
@@ -594,6 +595,12 @@ AI_CODEX.md             ← Governance rules (stable)
 ---
 
 ## Changelog
+
+### 2026-01-24 (Update 9 - +Key Implementation)
+- ✅ **+Key (Auto-Enter) Added**: Users can now configure a post-injection keystroke.
+  - **Feature**: Automatically presses `Enter` or `Tab` after dictation/injection.
+  - **Settings**: Toggle trailing space, select key (None, Enter, Tab).
+  - **Status**: Implemented and available in Settings/Control Panel.
 
 ### 2026-01-24 (Update 8 - Clipboard Preservation Fix)
 - ✅ **Clipboard Bug Fixed**: Resolved issue where original clipboard was not preserved

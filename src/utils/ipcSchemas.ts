@@ -31,7 +31,10 @@ export const SettingsKeySchema = z.enum([
     'modeModel_standard',
     'modeModel_prompt',
     'modeModel_professional',
-    'customPrompts'
+    'customPrompts',
+    'trailingSpaceEnabled',   // NEW: Enable/disable trailing space (SPEC_006)
+    'additionalKeyEnabled',   // NEW: Enable/disable additional key (SPEC_006)
+    'additionalKey'           // NEW: Which additional key to press (SPEC_006)
 ]);
 
 // API key provider schema
