@@ -670,6 +670,13 @@ AI_CODEX.md             ← Governance rules (stable)
 
 ---
 
+## Strategic Investigations
+- [ ] **Smart Failover (Hybrid Processor)**: Investigate the workload for implementing the `HybridProcessor` bridge immediately.
+    - **The Problem**: Currently, the app locks into *one* provider at startup. If Ollama hangs or crashes mid-sentence, the request fails, even if the user has a valid Gemini API key available.
+    - **The Goal**: Enable immediate "Saving Throw" logic (Local → Cloud failover) to ensure near-100% reliability for pro users, without waiting for the full V3 refactor.
+
+---
+
 ## 🤖 AI-Augmented Development
 This project was co-authored by human and machine. It was developed using a multi-layered AI workflow including **Google AI Studio**, **Antigravity**, **Claude Code**, and **OpenCode**.
 
