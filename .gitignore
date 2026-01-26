@@ -88,6 +88,7 @@ REPOSITORY_QUALITY_ASSESSMENT_2026-01-25.md
 
 # Auto Claude data directory
 .auto-claude/
+.claude/
 
 # Auto Claude generated files
 .auto-claude-security.json
