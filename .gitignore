@@ -100,3 +100,6 @@ nul
 
 # Local Plans
 plans/
+
+# Sync Logs
+sync_run_*
