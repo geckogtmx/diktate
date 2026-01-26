@@ -123,8 +123,9 @@ pnpm dev
 
 ---
 
-## 🤖 AI-Co-Authored
-This project is a testament to modern AI-augmented development. It was built using a high-bandwidth collaborative workflow between a human developer and agentic systems including **Google Gemini 2.0**, **Antigravity**, and **Claude Code**.
+## 🤖 AI-Augmented Development
+
+This project demonstrates the power of modern AI-augmented development. It was built using a high-bandwidth collaborative workflow involving human developers and agentic systems, such as Google Antigravity, Claude Code, Kilo Code, and OpenCode, alongside a diverse range of local and cloud-based models.
 
 ---
 
