@@ -11,7 +11,7 @@ A high-performance, **local-first** AI voice dictation tool for Windows. Speak n
 ## 🎯 Project Status: v1.0 Feature Complete 🔒
 
 **Current Phase:** Phase F - Methodical Validation 🧪
-**Status:** All core v1.0 features (Refining, History, Security) are **Implemented and Verified**. We are currently in the final "stress-test" period before public release.
+**Status:** All core v1.0 features (Refining, Security) are **Implemented and Verified**. We are currently in the final "stress-test" period before public release.
 
 ### Core 1.0 Experience
 1. **Push-to-Talk**: Hold or toggle `Ctrl+Alt+D` to record.
@@ -26,7 +26,6 @@ A high-performance, **local-first** AI voice dictation tool for Windows. Speak n
 *   **Extreme Speed**: Local GPU inference (~3s) is often **4x faster** than Cloud APIs.
 *   **Intelligent Refinement**: Don't just dictate—edit. Use voice commands to "Make it formal" or "Turn this into a bullet list."
 *   **Deterministic Stability**: No peak-hour slowdowns or API outages.
-*   **Observability**: Integrated dashboard to monitor performance and resource usage in real-time.
 
 ---
 
@@ -48,10 +47,6 @@ A high-performance, **local-first** AI voice dictation tool for Windows. Speak n
 *   **+Key (Auto-Action)**: Automatically trigger `Enter`, `Tab`, or a `Space` after injection for seamless workflow.
 *   **Auto-Tiering**: Automatically selects the best models based on your detected GPU VRAM.
 
-### 📊 Observability (The Dashboard)
-*   **SQLite History Logging**: Every session is logged locally (3-month retention) for auditing and performance analysis.
-*   **Real-time Metrics**: Monitor latency, transcription speed, and system resource (CPU/GPU) health at `http://localhost:8765`.
-*   **Log Intelligence**: Search through your history or analyze your dictation efficiency over time.
 
 ---
 
@@ -60,8 +55,7 @@ A high-performance, **local-first** AI voice dictation tool for Windows. Speak n
 *   **Frontend**: Electron (System Tray & Settings UI)
 *   **Backend**: Python 3.11 + FastAPI + ZeroMQ
 *   **Intelligence**: Ollama (Gemma 3) & faster-whisper (CUDA)
-*   **Storage**: SQLite (History) & safeStorage (API Keys)
-*   **Dashboard**: Flask + Vanilla JS/CSS
+*   **Storage**: SQLite & safeStorage (API Keys)
 
 ---
 
