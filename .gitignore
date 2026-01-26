@@ -90,6 +90,11 @@ REPOSITORY_QUALITY_ASSESSMENT_2026-01-25.md
 .auto-claude/
 .claude/
 
+# Websites (Local-Only)
+site/
+sitex/
+mobile_site/
+
 # Auto Claude generated files
 .auto-claude-security.json
 .auto-claude-status
