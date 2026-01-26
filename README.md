@@ -36,7 +36,7 @@ A high-performance, **local-first** AI voice dictation tool for Windows. Speak n
 | Hotkey | Mode | Action |
 |:---|:---|:---|
 | `Ctrl+Alt+D` | **Dictate** | The standard pipeline: Transcribe → Clean → Type. |
-| `Ctrl+Alt+R` | **Refine** | **Open Prompt Editing**: Select text and dictate *any* instruction ("Make it a list", "Translate to Spanish", "Fix the tone"). |
+| `Ctrl+Alt+R` | **Refine** | **Dual-Action**: Tap for **Auto-Fix** (standard cleanup) or toggle for **Open Prompt** (dictate instructions like "Make it a list"). |
 | `Ctrl+Alt+A` | **Ask** | Voice Q&A with your local AI. Answers are typed or copied to clipboard. |
 | `Ctrl+Alt+V` | **Oops** | Misclicked or deleted? Instantly re-inject the last successfully processed text. |
 | `Ctrl+Alt+T` | **Translate** | Bidirectional EN ↔ ES translation: speak one, get the other. |
