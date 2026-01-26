@@ -4,7 +4,7 @@
 
 A high-performance, **local-first** AI voice dictation tool for Windows. Speak naturally, get polished, professional text—instantly typed into any application. No cloud, no lag, no compromise.
 
-[dikta.me](https://dikta.me) | [Development Roadmap](./DEVELOPMENT_ROADMAP.md) | [Security Audit](./docs/SECURITY_AUDIT.md)
+[dikta.me](https://dikta.me)
 
 ---
 
@@ -78,12 +78,8 @@ pnpm dev
 
 ---
 
-## 📜 Documentation & Governance
 
-*   **[TASKS.md](./TASKS.md)** — What we're working on right now.
-*   **[ROADMAP.md](./DEVELOPMENT_ROADMAP.md)** — The path from v1.0 to v2.0.
-*   **[ARCHITECTURE.md](./ARCHITECTURE.md)** — How it works under the hood.
-*   **[FEATURE_LIST.md](./docs/internal/marketing/FEATURE_LIST.md)** — Full technical capability overview.
+---
 
 ---
 
