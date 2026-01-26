@@ -65,6 +65,16 @@ export class PythonManager extends EventEmitter {
         logger.info('PythonManager', 'Created .diktate directory', { path: tokenDir });
       }
 
+      // Remove existing token file if present (it may be read-only from previous run)
+      if (fs.existsSync(this.tokenFilePath)) {
+        try {
+          fs.chmodSync(this.tokenFilePath, 0o600); // Make writable first
+          fs.unlinkSync(this.tokenFilePath);
+        } catch (unlinkError) {
+          logger.warn('PythonManager', 'Failed to remove old token file, will attempt overwrite', unlinkError);
+        }
+      }
+
       // Write token to file
       fs.writeFileSync(this.tokenFilePath, this.ipcToken, { mode: 0o400 });
       logger.info('PythonManager', 'Token file created', { path: this.tokenFilePath });

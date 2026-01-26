@@ -499,6 +499,33 @@ function setupPythonEventHandlers(): void {
     }
   });
 
+  // System resource monitoring (SPEC_027)
+  pythonManager.on('system-metrics', (data: any) => {
+    const { phase, activity_count, metrics } = data;
+
+    // Special notation for sampled metrics
+    const logPrefix = phase === 'post-activity'
+      ? `[SAMPLED #${activity_count}]`
+      : phase && phase.startsWith('during-')
+      ? `[SAMPLED #${activity_count} ${phase}]`
+      : `[${phase}]`;
+
+    // Log to file for beta analysis
+    const gpuMemory = metrics.gpu_memory_percent !== null && metrics.gpu_memory_percent !== undefined
+      ? `${metrics.gpu_memory_percent}%`
+      : 'N/A';
+
+    logger.info('SystemMetrics',
+      `${logPrefix} CPU: ${metrics.cpu_percent}% | Memory: ${metrics.memory_percent}% | GPU Memory: ${gpuMemory}`,
+      metrics
+    );
+
+    // Forward to debug dashboard if open
+    if (debugWindow && !debugWindow.isDestroyed()) {
+      debugWindow.webContents.send('system-metrics', { phase, activity_count, metrics });
+    }
+  });
+
   // Listen for explicit status responses if we implement polling
   pythonManager.on('status-check', (statusData: any) => {
     if (debugWindow && !debugWindow.isDestroyed()) {

@@ -26,6 +26,7 @@ export const SettingsKeySchema = z.enum([
     'transMode',
     'audioDeviceId',
     'audioDeviceLabel',
+    'audioDeviceProfiles',    // NEW: SPEC_021 - Audio device noise floor profiles
     'defaultOllamaModel',
     'maxRecordingDuration',
     'modeModel_standard',
@@ -49,7 +50,7 @@ const OPENAI_KEY_REGEX = /^sk-[a-zA-Z0-9]{20,}$/;
 // IPC Message schemas
 export const SettingsSetSchema = z.object({
     key: SettingsKeySchema,
-    value: z.union([z.string(), z.boolean(), z.number()])
+    value: z.union([z.string(), z.boolean(), z.number(), z.record(z.string(), z.any())]) // Allow objects for audioDeviceProfiles
 });
 
 export const ApiKeySetSchema = z.object({

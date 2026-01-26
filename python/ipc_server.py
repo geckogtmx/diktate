@@ -55,6 +55,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from core import Recorder, Transcriber, Injector
 from core.processor import create_processor
 from core.mute_detector import MuteDetector
+from core.system_monitor import SystemMonitor
 from config.prompts import get_translation_prompt, get_prompt
 from utils.security import redact_text, sanitize_log_message
 
@@ -307,6 +308,13 @@ class IpcServer:
         self.mute_monitor_active = False
         self.last_known_mute_state = None  # Will be set by first check in monitor loop
 
+        # System monitoring (SPEC_027)
+        self.system_monitor = SystemMonitor()
+        self.activity_counter = 0  # Count activities for 1-in-10 sampling
+        self.sample_interval = 10  # Sample every 10th activity
+        self.monitor_thread: Optional[threading.Thread] = None
+        self.should_monitor = False  # Flag to control monitoring thread
+
         logger.info("Initializing IPC Server...")
         self._initialize_components()
 
@@ -329,6 +337,18 @@ class IpcServer:
                     logger.warning("Text processing will use raw transcription fallback")
 
             logger.info("Startup warmup complete")
+
+            # Emit startup system metrics (SPEC_027)
+            try:
+                startup_metrics = self.system_monitor.get_snapshot()
+                self._emit_event('system-metrics', {
+                    'phase': 'startup',
+                    'metrics': startup_metrics
+                })
+                logger.info(f"[SystemMonitor] Startup metrics: {self.system_monitor.get_summary()}")
+            except Exception as e:
+                logger.warning(f"[SystemMonitor] Failed to emit startup metrics: {e}")
+
         except Exception as e:
             logger.warning(f"Startup warmup encountered issues: {e}")
         finally:
@@ -502,9 +522,41 @@ class IpcServer:
 
     def _set_state(self, new_state: State) -> None:
         """Set pipeline state and emit event"""
-        logger.info(f"State transition: {self.state.value} -> {new_state.value}")
+        old_state = self.state
+        logger.info(f"State transition: {old_state.value} -> {new_state.value}")
         self.state = new_state
         self._emit_event("state-change", {"state": new_state.value})
+
+        # System monitoring hooks (SPEC_027)
+        # Increment counter when starting ANY activity (leaving idle state)
+        # This includes: dictate, ask, translate, refine (with/without recording)
+        if old_state == State.IDLE and new_state != State.IDLE and new_state != State.WARMUP:
+            self.activity_counter += 1
+            logger.debug(f"[SystemMonitor] Activity count: {self.activity_counter}")
+
+            # Start parallel monitoring every Nth activity
+            if self.activity_counter % self.sample_interval == 0:
+                logger.info(f"[SystemMonitor] Starting parallel monitoring for activity #{self.activity_counter}")
+                self._start_parallel_monitoring()
+
+        # Stop monitoring and emit post-activity snapshot when returning to idle
+        if new_state == State.IDLE and old_state != State.IDLE:
+            # Stop monitoring thread if running
+            if self.should_monitor:
+                self._stop_parallel_monitoring()
+
+                # Emit post-activity snapshot if this was a sampled activity
+                if self.activity_counter % self.sample_interval == 0:
+                    try:
+                        post_metrics = self.system_monitor.get_snapshot()
+                        self._emit_event('system-metrics', {
+                            'phase': 'post-activity',
+                            'activity_count': self.activity_counter,
+                            'metrics': post_metrics
+                        })
+                        logger.debug(f"[SystemMonitor] Post-activity metrics: {self.system_monitor.get_summary()}")
+                    except Exception as e:
+                        logger.warning(f"[SystemMonitor] Failed to emit post-activity metrics: {e}")
 
     def _on_recording_auto_stopped(self, max_duration: int) -> None:
         """Callback when recording is auto-stopped due to duration limit."""
@@ -1417,6 +1469,38 @@ Output only the modified text, nothing else:"""
         except Exception as e:
             logger.error(sanitize_log_message(f"Error handling command: {e}"))
             return {"success": False, "error": str(e)}
+
+    def _start_parallel_monitoring(self):
+        """Start background thread to sample system metrics during activity (SPEC_027)"""
+        self.should_monitor = True
+
+        def monitor_loop():
+            """Background loop that samples metrics every 1 second during activity"""
+            while self.should_monitor:
+                try:
+                    metrics = self.system_monitor.get_snapshot()
+                    self._emit_event('system-metrics', {
+                        'phase': f'during-{self.state.value}',
+                        'activity_count': self.activity_counter,
+                        'metrics': metrics
+                    })
+                except Exception as e:
+                    logger.warning(f"[SystemMonitor] Failed to sample metrics: {e}")
+
+                # Sample every 1 second
+                time.sleep(1)
+
+        self.monitor_thread = threading.Thread(target=monitor_loop, daemon=True)
+        self.monitor_thread.start()
+        logger.debug("[SystemMonitor] Parallel monitoring thread started")
+
+    def _stop_parallel_monitoring(self):
+        """Stop background monitoring thread (SPEC_027)"""
+        self.should_monitor = False
+        if self.monitor_thread:
+            self.monitor_thread.join(timeout=2)
+            self.monitor_thread = None
+            logger.debug("[SystemMonitor] Parallel monitoring thread stopped")
 
     def _emit_event(self, event_type: str, data: dict) -> None:
         """Emit an event to Electron"""

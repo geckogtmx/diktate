@@ -299,6 +299,188 @@
             font-weight: 600;
             color: #ffcc00;
         }
+
+        /* AUDIO OPTIMIZATION TOOLS (SPEC_021) */
+        .signal-monitor {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .meter-container {
+            position: relative;
+            height: 40px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .meter-background {
+            display: flex;
+            height: 100%;
+            width: 100%;
+        }
+
+        .zone {
+            flex: 1;
+            opacity: 0.3;
+        }
+
+        .zone-silent {
+            background: #666666;
+        }
+
+        .zone-low {
+            background: #ffaa00;
+        }
+
+        .zone-good {
+            background: #44ff44;
+        }
+
+        .zone-high {
+            background: #ffaa00;
+        }
+
+        .zone-clip {
+            background: #ff4444;
+        }
+
+        .meter-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            transition: width 0.05s ease-out, background-color 0.2s ease;
+            border-radius: 4px;
+        }
+
+        .meter-fill.level-clip {
+            background: #ff4444;
+        }
+
+        .meter-fill.level-high {
+            background: #ffaa00;
+        }
+
+        .meter-fill.level-good {
+            background: #44ff44;
+        }
+
+        .meter-fill.level-low {
+            background: #ffaa00;
+        }
+
+        .meter-fill.level-silent {
+            background: #666666;
+        }
+
+        .peak-indicator {
+            position: absolute;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: white;
+            box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+            transition: left 0.1s ease-out, opacity 0.3s ease;
+            display: none;
+        }
+
+        .peak-indicator.visible {
+            display: block;
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: #ccc;
+            text-align: center;
+            padding: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .technical-readout {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        [title] {
+            cursor: help;
+            border-bottom: 1px dotted #666;
+        }
+
+        .diagnostic-tools {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .diagnostic-card {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #333;
+            transition: border-color 0.2s ease;
+        }
+
+        .diagnostic-card:hover {
+            border-color: #555;
+        }
+
+        .diagnostic-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .diagnostic-card p {
+            margin: 0 0 12px 0;
+            font-size: 12px;
+            color: #888;
+            line-height: 1.4;
+        }
+
+        .result-text {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .noise-history {
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 
@@ -481,6 +663,62 @@
                 </div>
             </div>
 
+            <!-- Signal Quality Monitor (SPEC_021) -->
+            <div class="setting-group">
+                <label>🎤 Signal Quality Monitor</label>
+                <span class="sub-label">Real-time microphone level analysis</span>
+
+                <div class="signal-monitor">
+                    <!-- Meter Container -->
+                    <div class="meter-container">
+                        <div class="meter-background">
+                            <div class="zone zone-silent"></div>
+                            <div class="zone zone-low"></div>
+                            <div class="zone zone-good"></div>
+                            <div class="zone zone-high"></div>
+                            <div class="zone zone-clip"></div>
+                        </div>
+                        <div id="signal-meter" class="meter-fill"></div>
+                        <div id="peak-hold" class="peak-indicator"></div>
+                    </div>
+
+                    <!-- Status Text -->
+                    <div id="signal-status" class="status-text" role="status" aria-live="polite">
+                        Click "Start Monitoring" to begin
+                    </div>
+
+                    <!-- Technical Readout -->
+                    <div class="technical-readout">
+                        <span>Peak: <strong id="peak-db" title="Maximum instantaneous level">--</strong> dB</span>
+                        <span>RMS: <strong id="rms-db" title="Root Mean Square - average loudness">--</strong> dB</span>
+                    </div>
+
+                    <!-- Control Button -->
+                    <button id="start-monitoring-btn" class="btn btn-primary" style="margin-top: 12px;"
+                        aria-label="Start or stop audio monitoring">
+                        Start Monitoring
+                    </button>
+                </div>
+            </div>
+
+            <!-- Advanced Diagnostics (SPEC_021) -->
+            <details class="setting-group">
+                <summary style="cursor: pointer; font-weight: 600; padding: 8px 0;">🔧 Advanced Diagnostics</summary>
+
+                <div class="diagnostic-tools" style="margin-top: 12px;">
+                    <!-- Complete Microphone Test -->
+                    <div class="diagnostic-card">
+                        <h4>🎤 Microphone Quality Test</h4>
+                        <p>Quick test: checks volume, quality, and background noise. Just click and follow the prompts!</p>
+                        <button id="complete-test-btn" class="btn btn-primary"
+                            aria-label="Run complete microphone test">
+                            🎤 Test My Microphone
+                        </button>
+                        <div id="test-instructions" class="result-text" style="display: none;"></div>
+                        <div id="test-result" class="result-text" style="display: none;"></div>
+                    </div>
+                </div>
+            </details>
 
             <div class="setting-group">
                 <div class="setting-row">

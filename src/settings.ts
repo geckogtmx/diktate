@@ -4,37 +4,123 @@
  */
 
 // No export needed, loaded as a script in settings.html
+// Type definitions for window.settingsAPI are in src/global.d.ts
 
-// Type declaration for the secure bridge
-interface SettingsAPI {
-    getAll: () => Promise<any>;
-    get: (key: string) => Promise<any>;
-    set: (key: string, value: any) => Promise<void>;
-    saveAudioDevice: (deviceId: string, deviceLabel: string) => Promise<void>;
-    openExternal: (url: string) => void;
-    // API Key methods
-    getApiKeys: () => Promise<Record<string, boolean>>;
-    setApiKey: (provider: string, key: string) => Promise<void>;
-    testApiKey: (provider: string, key: string) => Promise<{ success: boolean; error?: string }>;
-    // Sound methods
-    playSound: (soundName: string) => Promise<void>;
-    getSoundFiles: () => Promise<string[]>;
-    // Custom Prompts
-    getCustomPrompts: () => Promise<Record<string, string>>;
-    getDefaultPrompts: () => Promise<Record<string, string>>;
-    getDefaultPrompt: (mode: string, model: string) => Promise<string>;
-    saveCustomPrompt: (mode: string, promptText: string) => Promise<{ success: boolean; error?: string }>;
-    resetCustomPrompt: (mode: string) => Promise<{ success: boolean; error?: string }>;
-    // Hardware testing
-    runHardwareTest: () => Promise<{ gpu: string; vram: string; tier: string; speed: number }>;
-    // App Control
-    relaunchApp: () => void;
-    // Ollama Warmup
-    warmupOllamaModel: () => Promise<{ success: boolean; model: string; error?: string }>;
+// ============================================================================
+// AUDIO ANALYZER (SPEC_021) - Inlined to avoid module loading issues
+// ============================================================================
+
+/**
+ * Audio Analyzer Class
+ * Provides real-time audio analysis for microphone input
+ */
+class AudioAnalyzer {
+    private audioContext: AudioContext | null = null;
+    private analyser: AnalyserNode | null = null;
+    private microphone: MediaStreamAudioSourceNode | null = null;
+    private dataArray: Float32Array<ArrayBuffer> | null = null;
+    private stream: MediaStream | null = null;
+    private isRunning: boolean = false;
+
+    constructor() {
+        // AudioContext will be created on start
+    }
+
+    async start(deviceId?: string): Promise<void> {
+        try {
+            this.audioContext = new AudioContext();
+            const constraints: MediaStreamConstraints = {
+                audio: deviceId ? { deviceId: { exact: deviceId } } : true
+            };
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            this.analyser = this.audioContext.createAnalyser();
+            this.analyser.fftSize = 2048;
+            this.analyser.smoothingTimeConstant = 0.3;
+            this.microphone = this.audioContext.createMediaStreamSource(this.stream);
+            this.microphone.connect(this.analyser);
+            this.dataArray = new Float32Array(this.analyser.fftSize);
+            this.isRunning = true;
+        } catch (error) {
+            this.cleanup();
+            throw new Error(`Failed to start audio analyzer: ${error}`);
+        }
+    }
+
+    stop(): void {
+        this.cleanup();
+    }
+
+    getRMS(): number {
+        if (!this.analyser || !this.dataArray || !this.isRunning) return 0;
+        this.analyser.getFloatTimeDomainData(this.dataArray);
+        let sum = 0;
+        for (let i = 0; i < this.dataArray.length; i++) {
+            sum += this.dataArray[i] * this.dataArray[i];
+        }
+        return Math.sqrt(sum / this.dataArray.length);
+    }
+
+    getPeak(): number {
+        if (!this.analyser || !this.dataArray || !this.isRunning) return 0;
+        this.analyser.getFloatTimeDomainData(this.dataArray);
+        let peak = 0;
+        for (let i = 0; i < this.dataArray.length; i++) {
+            const abs = Math.abs(this.dataArray[i]);
+            if (abs > peak) peak = abs;
+        }
+        return peak;
+    }
+
+    toDecibels(amplitude: number): number {
+        if (amplitude <= 0) return -Infinity;
+        return 20 * Math.log10(amplitude);
+    }
+
+    private cleanup(): void {
+        this.isRunning = false;
+        if (this.microphone) {
+            this.microphone.disconnect();
+            this.microphone = null;
+        }
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+        }
+        if (this.audioContext) {
+            this.audioContext.close();
+            this.audioContext = null;
+        }
+        this.analyser = null;
+        this.dataArray = null;
+    }
 }
 
-interface Window {
-    settingsAPI: SettingsAPI;
+/**
+ * Audio level classification
+ */
+type AudioLevel = 'silent' | 'low' | 'good' | 'high' | 'clipping';
+
+function classifyAudioLevel(peakDb: number): AudioLevel {
+    if (peakDb > -3) return 'clipping';
+    if (peakDb > -6) return 'high';
+    if (peakDb > -20) return 'good';
+    if (peakDb > -40) return 'low';
+    return 'silent';
+}
+
+function getAudioLevelMessage(level: AudioLevel): string {
+    switch (level) {
+        case 'clipping': return '⚠️ Too loud! Lower input volume';
+        case 'high': return '⚡ Strong signal (near max)';
+        case 'good': return '✓ Perfect levels';
+        case 'low': return '⚠️ Quiet. Increase volume or move closer';
+        case 'silent': return '❌ No signal detected';
+        default: return 'Unknown';
+    }
+}
+
+function getAudioLevelClass(level: AudioLevel): string {
+    return `level-${level}`;
 }
 
 // State
@@ -43,6 +129,19 @@ let initialModels: Record<string, string> = {};
 let hasModelChanges = false;
 let availableModels: any[] = [];
 let defaultPrompts: Record<string, string> = {};
+
+// Audio Monitoring State (SPEC_021)
+let audioAnalyzer: AudioAnalyzer | null = null;
+let animationFrameId: number | null = null;
+let isMonitoring: boolean = false;
+let peakHoldValue: number = 0;
+let peakHoldDecay: number = 0;
+let lastStatusUpdate: number = 0;
+const STATUS_UPDATE_INTERVAL = 100; // Update text max 10 times/sec
+
+// Active test tracking
+let activeTestInterval: ReturnType<typeof setInterval> | null = null;
+let activeTestAborted: boolean = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -126,6 +225,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('preview-ask-sound')?.addEventListener('click', () => {
             previewSpecificSound('ask-sound');
         });
+
+        // Audio Monitoring event listeners (SPEC_021)
+        document.getElementById('start-monitoring-btn')?.addEventListener('click', toggleAudioMonitoring);
+        document.getElementById('measure-noise-btn')?.addEventListener('click', measureNoiseFloor);
+        document.getElementById('complete-test-btn')?.addEventListener('click', runCompleteMicrophoneTest);
 
         // Max recording duration radios
         document.querySelectorAll('input[name="max-duration"]').forEach((radio) => {
@@ -301,10 +405,17 @@ async function refreshAudioDevices(selectedId: string | undefined, selectedLabel
             try {
                 await window.settingsAPI.saveAudioDevice(deviceId, label);
                 console.log('Audio device saved successfully');
+                // Load noise floor for new device (SPEC_021)
+                await loadNoiseFloorForDevice(deviceId);
             } catch (error) {
                 console.error('Failed to save audio device:', error);
             }
         };
+
+        // Load initial noise floor (SPEC_021)
+        if (selectedId) {
+            await loadNoiseFloorForDevice(selectedId);
+        }
 
     } catch (err) {
         console.error('Error listing devices:', err);
@@ -314,24 +425,34 @@ async function refreshAudioDevices(selectedId: string | undefined, selectedLabel
 
 // Tab Switching
 function switchTab(tabId: string) {
-    // Buttons - find the correct button for this tab
+    // Buttons - Remove active from all, then add to the matching button
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
-        // Check if this button matches the target tab
-        if (btn.textContent?.toLowerCase().includes(tabId.toLowerCase().substring(0, 4))) {
+        // Check if this button's data-tab attribute matches the target tab
+        if (btn.getAttribute('data-tab') === tabId) {
             btn.classList.add('active');
         }
     });
 
-    // If called from an event (like clicking), use event target
-    if (event?.target) {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        (event.target as HTMLElement).classList.add('active');
-    }
-
-    // Content
+    // Content - Show the corresponding tab content
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     document.getElementById(tabId)?.classList.add('active');
+
+    // Stop monitoring when leaving audio tab (SPEC_021)
+    if (tabId !== 'audio' && isMonitoring) {
+        stopAudioMonitoring();
+        const btn = document.getElementById('start-monitoring-btn') as HTMLButtonElement;
+        if (btn) btn.textContent = 'Start Monitoring';
+    }
+
+    // Abort any active test when leaving audio tab
+    if (tabId !== 'audio') {
+        activeTestAborted = true;
+        if (audioAnalyzer) {
+            audioAnalyzer.stop();
+            audioAnalyzer = null;
+        }
+    }
 
     // If switching to models tab, refresh the list and status
     if (tabId === 'models') {
@@ -1630,6 +1751,669 @@ async function resetModeToDefault() {
         console.error('Failed to reset mode:', error);
         alert(`❌ Error: ${error}`);
     }
+}
+
+// ============================================================================
+// AUDIO MONITORING FUNCTIONS (SPEC_021)
+// ============================================================================
+
+/**
+ * Toggle audio monitoring on/off
+ */
+async function toggleAudioMonitoring() {
+    const btn = document.getElementById('start-monitoring-btn') as HTMLButtonElement;
+
+    if (isMonitoring) {
+        stopAudioMonitoring();
+        btn.textContent = 'Start Monitoring';
+    } else {
+        try {
+            await startAudioMonitoring();
+            btn.textContent = 'Stop Monitoring';
+        } catch (error) {
+            console.error('Failed to start monitoring:', error);
+            alert('Failed to access microphone. Please check permissions.');
+        }
+    }
+}
+
+/**
+ * Start audio monitoring
+ */
+async function startAudioMonitoring() {
+    const deviceSelect = document.getElementById('audio-device') as HTMLSelectElement;
+    const deviceId = deviceSelect.value === 'default' ? undefined : deviceSelect.value;
+
+    // Clean up any existing analyzer
+    if (audioAnalyzer) {
+        audioAnalyzer.stop();
+        audioAnalyzer = null;
+    }
+
+    // Cancel any existing animation frame
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+
+    try {
+        audioAnalyzer = new AudioAnalyzer();
+        await audioAnalyzer.start(deviceId);
+
+        isMonitoring = true;
+        peakHoldValue = 0;
+
+        // Update meter using requestAnimationFrame
+        function animate() {
+            if (isMonitoring && audioAnalyzer) {
+                updateSignalMeter();
+                animationFrameId = requestAnimationFrame(animate);
+            }
+        }
+        animate();
+    } catch (error) {
+        // Clean up on error
+        if (audioAnalyzer) {
+            audioAnalyzer.stop();
+            audioAnalyzer = null;
+        }
+        isMonitoring = false;
+        throw error;
+    }
+}
+
+/**
+ * Stop audio monitoring
+ */
+function stopAudioMonitoring() {
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+
+    if (audioAnalyzer) {
+        audioAnalyzer.stop();
+        audioAnalyzer = null;
+    }
+
+    isMonitoring = false;
+
+    // Reset UI
+    const meter = document.getElementById('signal-meter');
+    const status = document.getElementById('signal-status');
+    const peakDb = document.getElementById('peak-db');
+    const rmsDb = document.getElementById('rms-db');
+    const peakHold = document.getElementById('peak-hold');
+
+    if (meter) meter.style.width = '0%';
+    if (status) status.textContent = 'Monitoring stopped';
+    if (peakDb) peakDb.textContent = '--';
+    if (rmsDb) rmsDb.textContent = '--';
+    if (peakHold) peakHold.classList.remove('visible');
+}
+
+/**
+ * Update signal meter display
+ */
+function updateSignalMeter() {
+    if (!audioAnalyzer || !isMonitoring) return;
+
+    const rms = audioAnalyzer.getRMS();
+    const peak = audioAnalyzer.getPeak();
+    const rmsDb = audioAnalyzer.toDecibels(rms);
+    const peakDb = audioAnalyzer.toDecibels(peak);
+
+    // Update peak hold
+    if (peakDb > peakHoldValue) {
+        peakHoldValue = peakDb;
+        peakHoldDecay = 60; // Hold for 1 second at 60fps
+    } else if (peakHoldDecay > 0) {
+        peakHoldDecay--;
+    } else {
+        peakHoldValue = Math.max(peakHoldValue - 0.5, peakDb);
+    }
+
+    // Get DOM elements
+    const meter = document.getElementById('signal-meter');
+    const status = document.getElementById('signal-status');
+    const peakDbEl = document.getElementById('peak-db');
+    const rmsDbEl = document.getElementById('rms-db');
+    const peakHold = document.getElementById('peak-hold');
+
+    if (!meter || !status) return;
+
+    // Classify audio level
+    const level = classifyAudioLevel(peakDb);
+    const statusText = getAudioLevelMessage(level);
+    const colorClass = getAudioLevelClass(level);
+
+    // Update meter fill
+    meter.className = `meter-fill ${colorClass}`;
+    const percentage = Math.max(0, Math.min(100, (peakDb + 60) / 60 * 100));
+    meter.style.width = `${percentage}%`;
+
+    // Update status text (throttled)
+    const now = Date.now();
+    if (now - lastStatusUpdate > STATUS_UPDATE_INTERVAL) {
+        status.textContent = statusText;
+        lastStatusUpdate = now;
+    }
+
+    // Update technical readout
+    if (peakDbEl) peakDbEl.textContent = isFinite(peakDb) ? peakDb.toFixed(1) : '--';
+    if (rmsDbEl) rmsDbEl.textContent = isFinite(rmsDb) ? rmsDb.toFixed(1) : '--';
+
+    // Update peak hold indicator
+    if (peakHold && isFinite(peakHoldValue)) {
+        const peakPercentage = Math.max(0, Math.min(100, (peakHoldValue + 60) / 60 * 100));
+        peakHold.style.left = `${peakPercentage}%`;
+        peakHold.classList.add('visible');
+    }
+}
+
+/**
+ * Measure noise floor
+ */
+async function measureNoiseFloor() {
+    const btn = document.getElementById('measure-noise-btn') as HTMLButtonElement;
+    const resultDiv = document.getElementById('noise-result');
+
+    if (!resultDiv) return;
+
+    // Ensure monitoring is active
+    if (!isMonitoring) {
+        alert('Please start monitoring first');
+        return;
+    }
+
+    // Disable button
+    btn.disabled = true;
+    btn.textContent = 'Measuring...';
+
+    // Show countdown
+    resultDiv.style.display = 'block';
+    resultDiv.textContent = '🤫 Please remain silent...\n\nStarting in 3...';
+
+    await sleep(1000);
+    resultDiv.textContent = '🤫 Please remain silent...\n\nStarting in 2...';
+
+    await sleep(1000);
+    resultDiv.textContent = '🤫 Please remain silent...\n\nStarting in 1...';
+
+    await sleep(1000);
+    resultDiv.textContent = '🤫 Recording silence...\n\n⏱️ 3 seconds remaining';
+
+    // Collect samples for 3 seconds
+    const samples: number[] = [];
+    const startTime = Date.now();
+    const duration = 3000;
+
+    const collectInterval = setInterval(() => {
+        if (!audioAnalyzer || !isMonitoring) {
+            clearInterval(collectInterval);
+            return;
+        }
+
+        const rms = audioAnalyzer.getRMS();
+        samples.push(rms);
+
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.ceil((duration - elapsed) / 1000);
+        if (resultDiv) {
+            resultDiv.textContent = `🤫 Recording silence...\n\n⏱️ ${remaining} seconds remaining`;
+        }
+    }, 50);
+
+    // Store the interval ID for cleanup
+    activeTestInterval = collectInterval;
+
+    try {
+        // Wait for duration
+        await sleep(duration);
+        clearInterval(collectInterval);
+        activeTestInterval = null;
+
+        // Check if we collected enough samples
+        if (samples.length === 0 || !audioAnalyzer) {
+            throw new Error('Measurement aborted or no data collected');
+        }
+
+        // Calculate average RMS
+        const avgRms = samples.reduce((a, b) => a + b, 0) / samples.length;
+        const noiseFloorDb = audioAnalyzer.toDecibels(avgRms);
+
+        // Save to settings
+        await saveNoiseFloor(noiseFloorDb);
+
+        // Display result
+        displayNoiseFloorResult(noiseFloorDb);
+    } catch (error) {
+        console.error('Noise floor measurement failed:', error);
+        if (resultDiv) {
+            resultDiv.textContent = '❌ Measurement failed. Please try again.';
+        }
+    } finally {
+        // Re-enable button
+        if (activeTestInterval) {
+            clearInterval(activeTestInterval);
+            activeTestInterval = null;
+        }
+        btn.disabled = false;
+        btn.textContent = '📊 Measure Noise Floor';
+    }
+}
+
+/**
+ * Helper function to sleep
+ */
+function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Save noise floor to settings
+ */
+async function saveNoiseFloor(noiseFloorDb: number) {
+    const deviceSelect = document.getElementById('audio-device') as HTMLSelectElement;
+    const deviceId = deviceSelect.value;
+    const deviceLabel = deviceSelect.options[deviceSelect.selectedIndex].text;
+
+    // Get current profiles
+    const settings = await window.settingsAPI.getAll();
+    const profiles = settings.audioDeviceProfiles || {};
+
+    // Update profile
+    profiles[deviceId] = {
+        deviceId,
+        deviceLabel,
+        noiseFloor: noiseFloorDb,
+        lastCalibrated: new Date().toISOString()
+    };
+
+    // Save
+    await window.settingsAPI.set('audioDeviceProfiles', profiles);
+}
+
+/**
+ * Display noise floor result
+ */
+function displayNoiseFloorResult(noiseFloorDb: number) {
+    const resultDiv = document.getElementById('noise-result');
+    const historyDiv = document.getElementById('noise-history');
+
+    if (!resultDiv) return;
+
+    let emoji = '';
+    let assessment = '';
+    let recommendation = '';
+
+    if (noiseFloorDb < -50) {
+        emoji = '✅';
+        assessment = 'Excellent';
+        recommendation = 'Your environment is very quiet. No changes needed.';
+    } else if (noiseFloorDb < -35) {
+        emoji = '⚠️';
+        assessment = 'Moderate';
+        recommendation = 'Moderate background noise detected. Consider:\n• Closing windows\n• Turning off fans\n• Using a headset microphone';
+    } else {
+        emoji = '❌';
+        assessment = 'High Noise';
+        recommendation = 'High noise level detected! Transcription accuracy will be degraded.\n\nRecommendations:\n• Move to a quieter room\n• Use a headset with noise cancellation\n• Enable noise suppression in Windows Sound Settings';
+    }
+
+    resultDiv.textContent = `${emoji} Noise Floor: ${noiseFloorDb.toFixed(1)} dB\n\nAssessment: ${assessment}\n\n${recommendation}`;
+
+    // Show history
+    if (historyDiv) {
+        const now = new Date().toLocaleString();
+        historyDiv.style.display = 'block';
+        historyDiv.textContent = `Last measured: ${now}`;
+    }
+}
+
+/**
+ * Load noise floor for device
+ */
+async function loadNoiseFloorForDevice(deviceId: string) {
+    const settings = await window.settingsAPI.getAll();
+    const profiles = settings.audioDeviceProfiles || {};
+    const profile = profiles[deviceId];
+
+    const historyDiv = document.getElementById('noise-history');
+
+    if (profile && profile.noiseFloor !== null && historyDiv) {
+        const date = new Date(profile.lastCalibrated!).toLocaleString();
+        historyDiv.style.display = 'block';
+        historyDiv.textContent = `Last measured: ${date} (${profile.noiseFloor.toFixed(1)} dB)`;
+    } else if (historyDiv) {
+        historyDiv.style.display = 'none';
+    }
+}
+
+/**
+ * ONE-CLICK MICROPHONE TEST (SPEC_021 - Frictionless UX)
+ * Two-step automated test: 30s speech + 15s silence
+ */
+async function runCompleteMicrophoneTest() {
+    const btn = document.getElementById('complete-test-btn') as HTMLButtonElement;
+    const instructionsDiv = document.getElementById('test-instructions');
+    const resultDiv = document.getElementById('test-result');
+
+    if (!btn || !instructionsDiv || !resultDiv) return;
+
+    // Reset abort flag
+    activeTestAborted = false;
+
+    // Disable button
+    btn.disabled = true;
+    btn.textContent = 'Testing...';
+
+    // Get device
+    const deviceSelect = document.getElementById('audio-device') as HTMLSelectElement;
+    const deviceId = deviceSelect.value === 'default' ? undefined : deviceSelect.value;
+    const deviceLabel = deviceSelect.options[deviceSelect.selectedIndex].text;
+
+    try {
+        // Initialize analyzer
+        if (audioAnalyzer) {
+            audioAnalyzer.stop();
+        }
+        audioAnalyzer = new AudioAnalyzer();
+        await audioAnalyzer.start(deviceId);
+
+        // STEP 1: Speech Quality Test (15 seconds)
+        instructionsDiv.style.display = 'block';
+        resultDiv.style.display = 'none';
+
+        instructionsDiv.innerHTML = `
+            <h4>📢 Step 1: Read This Aloud</h4>
+            <p><strong>Please read at your normal speaking volume:</strong></p>
+            <div style="padding: 12px; background: rgba(255,255,255,0.05); border-radius: 4px; margin: 12px 0; font-size: 14px; line-height: 1.6;">
+                Imagine all the people<br>
+                Living life in peace<br>
+                You may say I'm a dreamer<br>
+                But I'm not the only one<br>
+                I hope someday you'll join us<br>
+                And the world will be as one<br><br>
+                Imagine no possessions<br>
+                I wonder if you can<br>
+                No need for greed or hunger<br>
+                A brotherhood of man<br>
+                Imagine all the people<br>
+                Sharing all the world
+            </div>
+            <p style="color: #888; font-size: 13px;">⏱️ Recording for 15 seconds...</p>
+        `;
+
+        const speechSamples: { rms: number, peak: number }[] = [];
+        const speechStartTime = Date.now();
+        const speechDuration = 15000;
+
+        while (Date.now() - speechStartTime < speechDuration && !activeTestAborted) {
+            if (!audioAnalyzer) break;
+            const rms = audioAnalyzer.getRMS();
+            const peak = audioAnalyzer.getPeak();
+            speechSamples.push({ rms, peak });
+
+            const remaining = Math.ceil((speechDuration - (Date.now() - speechStartTime)) / 1000);
+            const timeDisplay = instructionsDiv.querySelector('p:last-child');
+            if (timeDisplay) {
+                timeDisplay.textContent = `⏱️ Recording for ${remaining} seconds...`;
+            }
+
+            await sleep(100);
+        }
+
+        if (activeTestAborted) {
+            throw new Error('Test aborted');
+        }
+
+        // STEP 2: Noise Floor Test (10 seconds) - User triggered
+        instructionsDiv.innerHTML = `
+            <h4>🤫 Step 2: Background Noise Test</h4>
+            <p><strong>Click the button below, then remain completely silent for 10 seconds.</strong></p>
+            <button id="start-silence-btn" class="btn btn-primary" style="margin-top: 12px;">Ready - Start Silence Test</button>
+        `;
+
+        // Wait for user to click button
+        await new Promise<void>((resolve) => {
+            const silenceBtn = document.getElementById('start-silence-btn');
+            if (silenceBtn) {
+                silenceBtn.addEventListener('click', () => resolve(), { once: true });
+            }
+        });
+
+        instructionsDiv.innerHTML = `
+            <h4>🤫 Step 2: Background Noise Test</h4>
+            <p><strong>Please remain completely silent...</strong></p>
+            <p style="color: #888; font-size: 13px;">⏱️ Measuring silence for 10 seconds...</p>
+        `;
+
+        const noiseSamples: number[] = [];
+        const noiseStartTime = Date.now();
+        const noiseDuration = 10000;
+
+        while (Date.now() - noiseStartTime < noiseDuration && !activeTestAborted) {
+            if (!audioAnalyzer) break;
+            const rms = audioAnalyzer.getRMS();
+            noiseSamples.push(rms);
+
+            const remaining = Math.ceil((noiseDuration - (Date.now() - noiseStartTime)) / 1000);
+            const timeDisplay = instructionsDiv.querySelector('p:last-child');
+            if (timeDisplay) {
+                timeDisplay.textContent = `⏱️ Measuring silence for ${remaining} seconds...`;
+            }
+
+            await sleep(100);
+        }
+
+        if (activeTestAborted) {
+            throw new Error('Test aborted');
+        }
+
+        // ANALYZE RESULTS
+        const results = analyzeTestResults(speechSamples, noiseSamples, audioAnalyzer);
+
+        // Save noise floor to profile
+        if (results.noiseFloorDb !== null) {
+            const settings = await window.settingsAPI.getAll();
+            const profiles = settings.audioDeviceProfiles || {};
+            profiles[deviceSelect.value] = {
+                deviceId: deviceSelect.value,
+                deviceLabel: deviceLabel,
+                noiseFloor: results.noiseFloorDb,
+                lastCalibrated: new Date().toISOString()
+            };
+            await window.settingsAPI.set('audioDeviceProfiles', profiles);
+        }
+
+        // Display results
+        displayTestResults(results, instructionsDiv, resultDiv);
+
+    } catch (error) {
+        console.error('Microphone test failed:', error);
+        instructionsDiv.style.display = 'none';
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `
+            <h4 style="color: #f87171;">❌ Test Failed</h4>
+            <p>${error instanceof Error ? error.message : 'Please check your microphone permissions and try again.'}</p>
+        `;
+    } finally {
+        // Cleanup
+        if (audioAnalyzer) {
+            audioAnalyzer.stop();
+            audioAnalyzer = null;
+        }
+        btn.disabled = false;
+        btn.textContent = '🎤 Test My Microphone';
+        activeTestAborted = false;
+    }
+}
+
+/**
+ * Analyze test results and generate recommendations
+ */
+function analyzeTestResults(
+    speechSamples: { rms: number, peak: number }[],
+    noiseSamples: number[],
+    analyzer: AudioAnalyzer
+): {
+    peakDb: number,
+    avgSpeechDb: number,
+    noiseFloorDb: number | null,
+    clipping: boolean,
+    tooQuiet: boolean,
+    highNoise: boolean,
+    status: 'excellent' | 'good' | 'warning' | 'poor',
+    issues: string[],
+    recommendations: string[]
+} {
+    // Calculate speech metrics
+    const peaks = speechSamples.map(s => s.peak);
+    const rmsValues = speechSamples.map(s => s.rms);
+
+    const maxPeak = Math.max(...peaks);
+    const avgRms = rmsValues.reduce((a, b) => a + b, 0) / rmsValues.length;
+
+    const peakDb = analyzer.toDecibels(maxPeak);
+    const avgSpeechDb = analyzer.toDecibels(avgRms);
+
+    // Calculate noise floor
+    const avgNoise = noiseSamples.reduce((a, b) => a + b, 0) / noiseSamples.length;
+    const noiseFloorDb = analyzer.toDecibels(avgNoise);
+
+    // Analyze issues
+    const issues: string[] = [];
+    const recommendations: string[] = [];
+
+    const clipping = peakDb > -3;
+    const tooQuiet = peakDb < -30;
+    const highNoise = noiseFloorDb > -40;
+    const signalToNoise = avgSpeechDb - noiseFloorDb;
+
+    if (clipping) {
+        issues.push('Audio is clipping (distortion detected)');
+        recommendations.push('Lower your microphone input volume in Windows Sound settings');
+    }
+
+    if (tooQuiet) {
+        issues.push('Microphone levels are very low');
+        recommendations.push('Increase microphone volume or move closer to the microphone');
+    }
+
+    if (highNoise) {
+        issues.push('High background noise detected');
+        recommendations.push('Reduce ambient noise or use noise cancellation if available');
+    }
+
+    if (signalToNoise < 15 && !tooQuiet) {
+        issues.push('Poor signal-to-noise ratio');
+        recommendations.push('Try moving to a quieter environment');
+    }
+
+    // Determine overall status
+    let status: 'excellent' | 'good' | 'warning' | 'poor';
+    if (issues.length === 0 && peakDb > -12 && peakDb < -6) {
+        status = 'excellent';
+    } else if (issues.length === 0) {
+        status = 'good';
+    } else if (clipping || tooQuiet) {
+        status = 'poor';
+    } else {
+        status = 'warning';
+    }
+
+    return {
+        peakDb,
+        avgSpeechDb,
+        noiseFloorDb,
+        clipping,
+        tooQuiet,
+        highNoise,
+        status,
+        issues,
+        recommendations
+    };
+}
+
+/**
+ * Display formatted test results
+ */
+function displayTestResults(
+    results: ReturnType<typeof analyzeTestResults>,
+    instructionsDiv: HTMLElement,
+    resultDiv: HTMLElement
+) {
+    instructionsDiv.style.display = 'none';
+    resultDiv.style.display = 'block';
+
+    let statusEmoji = '';
+    let statusText = '';
+    let statusColor = '';
+
+    switch (results.status) {
+        case 'excellent':
+            statusEmoji = '✅';
+            statusText = 'Excellent';
+            statusColor = '#4ade80';
+            break;
+        case 'good':
+            statusEmoji = '✓';
+            statusText = 'Good';
+            statusColor = '#6ee7b7';
+            break;
+        case 'warning':
+            statusEmoji = '⚠️';
+            statusText = 'Needs Attention';
+            statusColor = '#fbbf24';
+            break;
+        case 'poor':
+            statusEmoji = '❌';
+            statusText = 'Issues Detected';
+            statusColor = '#f87171';
+            break;
+    }
+
+    let html = `
+        <h4 style="color: ${statusColor};">${statusEmoji} ${statusText}</h4>
+
+        <div style="margin: 16px 0; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 4px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span>Peak Level:</span>
+                <strong>${isFinite(results.peakDb) ? results.peakDb.toFixed(1) : '--'} dB</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span>Average Speech:</span>
+                <strong>${isFinite(results.avgSpeechDb) ? results.avgSpeechDb.toFixed(1) : '--'} dB</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Noise Floor:</span>
+                <strong>${results.noiseFloorDb !== null && isFinite(results.noiseFloorDb) ? results.noiseFloorDb.toFixed(1) : '--'} dB</strong>
+            </div>
+        </div>
+    `;
+
+    if (results.issues.length > 0) {
+        html += `<h5 style="margin-top: 16px; color: #fbbf24;">Issues Found:</h5><ul style="margin: 8px 0; padding-left: 20px;">`;
+        results.issues.forEach(issue => {
+            html += `<li style="margin: 4px 0;">${issue}</li>`;
+        });
+        html += `</ul>`;
+    }
+
+    if (results.recommendations.length > 0) {
+        html += `<h5 style="margin-top: 16px; color: #60a5fa;">Recommendations:</h5><ul style="margin: 8px 0; padding-left: 20px;">`;
+        results.recommendations.forEach(rec => {
+            html += `<li style="margin: 4px 0;">${rec}</li>`;
+        });
+        html += `</ul>`;
+    }
+
+    if (results.status === 'excellent' || results.status === 'good') {
+        html += `<p style="margin-top: 16px; color: #4ade80;">Your microphone is ready for dictation!</p>`;
+    }
+
+    resultDiv.innerHTML = html;
 }
 
 // Expose to global scope
