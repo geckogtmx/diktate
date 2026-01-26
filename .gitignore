@@ -94,6 +94,7 @@ REPOSITORY_QUALITY_ASSESSMENT_2026-01-25.md
 site/
 sitex/
 mobile_site/
+.shared/
 
 # Auto Claude generated files
 .auto-claude-security.json
