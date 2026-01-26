@@ -97,3 +97,6 @@ REPOSITORY_QUALITY_ASSESSMENT_2026-01-25.md
 .security-key
 logs/security/
 nul
+
+# Local Plans
+plans/
