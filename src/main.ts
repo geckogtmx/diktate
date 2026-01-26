@@ -41,6 +41,7 @@ interface UserSettings {
   askHotkey: string;
   translateHotkey: string; // NEW: Ctrl+Alt+T for translate toggle
   refineHotkey: string; // NEW: Ctrl+Alt+R for refine mode
+  refineMode: 'autopilot' | 'instruction'; // NEW: Refine behavior mode (SPEC_025)
   oopsHotkey: string; // NEW: Ctrl+Alt+V for re-inject last
   askOutputMode: string;
   defaultOllamaModel: string;
@@ -75,6 +76,7 @@ const store = new Store<UserSettings>({
     askHotkey: 'Ctrl+Alt+A',
     translateHotkey: 'Ctrl+Alt+T', // NEW: Translate toggle hotkey
     refineHotkey: 'Ctrl+Alt+R', // NEW: Refine mode hotkey
+    refineMode: 'autopilot', // NEW: Refine behavior default (SPEC_025)
     oopsHotkey: 'Ctrl+Alt+V', // NEW: Re-inject last text hotkey
     askOutputMode: 'type',
     defaultOllamaModel: 'gemma3:4b',
@@ -99,7 +101,7 @@ let tray: Tray | null = null;
 let pythonManager: PythonManager | null = null;
 let isRecording: boolean = false;
 let isWarmupLock: boolean = true; // NEW: Lock interaction until fully initialized
-let recordingMode: 'dictate' | 'ask' | 'translate' = 'dictate';
+let recordingMode: 'dictate' | 'ask' | 'translate' | 'refine' = 'dictate';
 let settingsWindow: BrowserWindow | null = null;
 
 /**
@@ -665,6 +667,93 @@ function setupPythonEventHandlers(): void {
     logger.error('MAIN', 'Refine error event received', data);
     handleRefineError(data.error || data.message || data.code || 'Unknown error');
   });
+
+  // Handle refine instruction mode success (SPEC_025)
+  pythonManager.on('refine-instruction-success', (data: any) => {
+    logger.info('MAIN', 'Refine instruction success', {
+      instruction: data.instruction,
+      originalLength: data.original_length,
+      refinedLength: data.refined_length,
+      metrics: data.metrics
+    });
+
+    // Reset state
+    isRecording = false;
+    updateTrayIcon('idle');
+    updateTrayState('Idle');
+
+    // Show success notification
+    const instructionPreview = data.instruction.substring(0, 50);
+    showNotification(
+      'Text Refined',
+      `✨ "${instructionPreview}${data.instruction.length > 50 ? '...' : ''}"\n\n${data.original_length} → ${data.refined_length} chars`,
+      false
+    );
+
+    // Log performance metrics
+    if (data.metrics) {
+      logger.info('MAIN', 'Refine instruction metrics', data.metrics);
+    }
+  });
+
+  // Handle refine instruction mode fallback (no selection - Ask mode)
+  pythonManager.on('refine-instruction-fallback', async (data: any) => {
+    logger.info('MAIN', 'Refine instruction fallback to Ask mode', {
+      instruction: data.instruction,
+      answerLength: data.answer?.length
+    });
+
+    // Reset state
+    isRecording = false;
+    updateTrayIcon('idle');
+    updateTrayState('Idle');
+
+    const { instruction, answer } = data;
+
+    // Copy answer to clipboard (already done in Python, but ensure it's done)
+    const { clipboard } = require('electron');
+    clipboard.writeText(answer);
+
+    // Show notification
+    showNotification(
+      'No Selection - Answer Ready',
+      `💡 "${instruction.substring(0, 60)}${instruction.length > 60 ? '...' : ''}"\n\n${answer.substring(0, 100)}${answer.length > 100 ? '...' : ''}\n\n📋 Copied to clipboard!`,
+      false
+    );
+
+    // Forward to debug window if open
+    if (debugWindow && !debugWindow.isDestroyed()) {
+      debugWindow.webContents.send('refine-instruction-fallback', { instruction, answer });
+    }
+  });
+
+  // Handle refine instruction mode errors (SPEC_025)
+  pythonManager.on('refine-instruction-error', (data: any) => {
+    logger.error('MAIN', 'Refine instruction error', {
+      code: data.code,
+      error: data.error
+    });
+
+    // Reset state
+    isRecording = false;
+    updateTrayIcon('idle');
+    updateTrayState('Idle');
+
+    // Determine error message based on code
+    let errorMessage = 'Failed to refine text with instruction';
+    if (data.code === 'EMPTY_INSTRUCTION') {
+      errorMessage = 'No instruction detected. Please speak clearly and try again.';
+    } else if (data.code === 'NO_PROCESSOR') {
+      errorMessage = 'Text processing unavailable. Check that Ollama is running.';
+    } else if (data.code === 'PROCESSING_FAILED') {
+      errorMessage = 'LLM processing failed. Please try again.';
+    } else if (data.error) {
+      errorMessage = data.error;
+    }
+
+    // Show error notification
+    showNotification('Refine Instruction Failed', errorMessage, true);
+  });
 }
 
 /**
@@ -821,7 +910,8 @@ function setupIpcHandlers(): void {
       models,
       soundFeedback: store.get('soundFeedback', true),
       processingMode: actualProcessingMode,
-      recordingMode: recordingMode
+      recordingMode: recordingMode,
+      refineMode: store.get('refineMode', 'autopilot')
     };
   });
 
@@ -1350,9 +1440,9 @@ ipcMain.handle('ollama:warmup', async () => {
 
 /**
  * Toggle recording state
- * @param mode - 'dictate' for normal dictation, 'ask' for Q&A mode, 'translate' for bidirectional translation
+ * @param mode - 'dictate' for normal dictation, 'ask' for Q&A mode, 'translate' for bidirectional translation, 'refine' for instruction mode
  */
-async function toggleRecording(mode: 'dictate' | 'ask' | 'translate' = 'dictate'): Promise<void> {
+async function toggleRecording(mode: 'dictate' | 'ask' | 'translate' | 'refine' = 'dictate'): Promise<void> {
   if (isWarmupLock) {
     logger.warn('MAIN', 'Recording blocked: App is still warming up');
     return;
@@ -1366,7 +1456,9 @@ async function toggleRecording(mode: 'dictate' | 'ask' | 'translate' = 'dictate'
   if (isRecording) {
     // Play feedback sound
     if (store.get('soundFeedback')) {
-      const sound = recordingMode === 'ask' || recordingMode === 'translate' ? store.get('askSound') : store.get('stopSound');
+      const sound = (recordingMode === 'ask' || recordingMode === 'translate' || recordingMode === 'refine')
+        ? store.get('askSound')
+        : store.get('stopSound');
       playSound(sound);
     }
 
@@ -1374,7 +1466,12 @@ async function toggleRecording(mode: 'dictate' | 'ask' | 'translate' = 'dictate'
     logger.info('MAIN', 'Stopping recording', { mode: recordingMode });
     isRecording = false;
     updateTrayIcon('processing');
-    updateTrayState(recordingMode === 'ask' ? 'Thinking...' : recordingMode === 'translate' ? 'Translating...' : 'Processing');
+    updateTrayState(
+      recordingMode === 'ask' ? 'Thinking...' :
+      recordingMode === 'translate' ? 'Translating...' :
+      recordingMode === 'refine' ? 'Refining...' :
+      'Processing'
+    );
 
     try {
       await pythonManager.sendCommand('stop_recording');
@@ -1386,7 +1483,9 @@ async function toggleRecording(mode: 'dictate' | 'ask' | 'translate' = 'dictate'
   } else {
     // Play feedback sound
     if (store.get('soundFeedback')) {
-      const sound = mode === 'ask' || mode === 'translate' ? store.get('askSound') : store.get('startSound');
+      const sound = (mode === 'ask' || mode === 'translate' || mode === 'refine')
+        ? store.get('askSound')
+        : store.get('startSound');
       playSound(sound);
     }
 
@@ -1395,7 +1494,12 @@ async function toggleRecording(mode: 'dictate' | 'ask' | 'translate' = 'dictate'
     logger.info('MAIN', 'Starting recording', { mode });
     isRecording = true;
     updateTrayIcon('recording');
-    updateTrayState(mode === 'ask' ? 'Listening (Ask)' : mode === 'translate' ? 'Listening (Translate)' : 'Recording');
+    updateTrayState(
+      mode === 'ask' ? 'Listening (Ask)' :
+      mode === 'translate' ? 'Listening (Translate)' :
+      mode === 'refine' ? 'Listening (Instruction)' :
+      'Recording'
+    );
 
     // Notify status window of mode change
     if (debugWindow && !debugWindow.isDestroyed()) {
@@ -1446,24 +1550,8 @@ function handleRefineSelection(): void {
   }
 
   // Send refine command to Python
+  // Note: Success/error handling is done via events (refine-success, refine-error)
   pythonManager.sendCommand('refine_selection')
-    .then((response) => {
-      if (response.success) {
-        logger.info('MAIN', 'Refine completed successfully', response.metrics);
-
-        // Play success sound
-        if (store.get('soundFeedback')) {
-          playSound(store.get('stopSound', 'a'));
-        }
-
-        // Reset tray
-        updateTrayIcon('idle');
-        updateTrayState('Idle');
-      } else {
-        logger.error('MAIN', `Refine failed: ${response.error}`);
-        handleRefineError(response.error);
-      }
-    })
     .catch((err) => {
       logger.error('MAIN', 'Refine command failed', err);
       handleRefineError(err.message || 'Unknown error');
@@ -1582,21 +1670,34 @@ function setupGlobalHotkey(): void {
       logger.info('HOTKEY', 'Translate hotkey registered', { hotkey: translateHotkey });
     }
 
-    // Register Refine hotkey (Ctrl+Alt+R)
+    // Register Refine hotkey (Ctrl+Alt+R) - SPEC_025
     const refineHotkey = store.get('refineHotkey', 'Ctrl+Alt+R');
-    const refineRet = globalShortcut.register(refineHotkey, () => {
+    const refineRet = globalShortcut.register(refineHotkey, async () => {
       if (isWarmupLock) {
         logger.warn('HOTKEY', 'Refine blocked: Still warming up');
         return;
       }
 
-      if (isRecording) {
-        logger.warn('HOTKEY', 'Refine blocked: Currently recording');
-        return;
-      }
+      const refineMode = store.get('refineMode', 'autopilot');
+      logger.debug('HOTKEY', `Refine hotkey pressed (mode: ${refineMode})`);
 
-      logger.debug('HOTKEY', 'Refine hotkey pressed');
-      handleRefineSelection();
+      if (refineMode === 'instruction') {
+        // Instruction Mode: Start recording for dictated instruction
+        if (isRecording) {
+          // Stop recording (second press completes the instruction)
+          await toggleRecording('refine');
+        } else {
+          // Start recording for instruction
+          await toggleRecording('refine');
+        }
+      } else {
+        // Autopilot Mode: Immediate refine with default prompt
+        if (isRecording) {
+          logger.warn('HOTKEY', 'Refine blocked: Currently recording');
+          return;
+        }
+        handleRefineSelection();
+      }
     });
 
     if (!refineRet) {

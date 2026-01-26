@@ -284,7 +284,7 @@ class IpcServer:
         self.processor: Optional[Processor] = None
         self.injector: Optional[Injector] = None
         self.recording = False
-        self.recording_mode = "dictate"  # 'dictate' or 'ask'
+        self.recording_mode = "dictate"  # 'dictate', 'ask', 'refine', or 'translate'
         self.audio_file = None
         self.perf = PerformanceMetrics()
         self.session_stats = SessionStats()  # Session-level stats (A.2)
@@ -521,7 +521,7 @@ class IpcServer:
         Args:
             device_id: Audio device ID
             device_label: Audio device label for matching
-            mode: 'dictate' for normal dictation, 'ask' for Q&A mode
+            mode: 'dictate' for normal dictation, 'ask' for Q&A mode, 'refine' for instruction mode, 'translate' for translation
             max_duration: Maximum recording duration in seconds (0 = unlimited)
         """
         # Allow starting from IDLE or ERROR states (to recover from errors)
@@ -596,6 +596,8 @@ class IpcServer:
             # Process based on mode
             if self.recording_mode == "ask":
                 thread = threading.Thread(target=self._process_ask_recording)
+            elif self.recording_mode == "refine":
+                thread = threading.Thread(target=self._process_refine_recording)
             else:
                 thread = threading.Thread(target=self._process_recording)
             thread.start()
@@ -870,6 +872,209 @@ YOUR ANSWER:"""
         except Exception as e:
             logger.error(sanitize_log_message(f"Ask pipeline error: {e}"))
             self._emit_event("ask-response", {"success": False, "error": str(e)})
+            self._set_state(State.ERROR)
+
+    def _process_refine_recording(self) -> None:
+        """Process recorded audio as an instruction for refining selected text (SPEC_025).
+
+        Workflow:
+        1. Transcribe audio -> instruction
+        2. Capture selected text
+        3. If no selection: fallback to Ask mode (answer instruction directly)
+        4. If selection exists: use instruction as prompt to refine text
+        5. Inject refined result
+        """
+        try:
+            self._set_state(State.PROCESSING)
+            logger.info("[REFINE-INST] Processing refine instruction...")
+
+            # Log audio metadata
+            if self.audio_file:
+                try:
+                    audio_size = os.path.getsize(self.audio_file)
+                    with wave.open(self.audio_file, 'rb') as wf:
+                        frames = wf.getnframes()
+                        rate = wf.getframerate()
+                        audio_duration = frames / float(rate)
+                    logger.info(f"[AUDIO] Duration: {audio_duration:.2f}s, Size: {audio_size} bytes")
+                except Exception as e:
+                    logger.warning(f"Could not read audio metadata: {e}")
+
+            # Step 1: Transcribe the instruction
+            logger.info("[TRANSCRIBE] Transcribing instruction...")
+            self.perf.start("transcription")
+            instruction = self.transcriber.transcribe(self.audio_file)
+            self.perf.end("transcription")
+            logger.info(f"[INSTRUCTION] {redact_text(instruction)}")
+
+            if not instruction or not instruction.strip():
+                logger.warning("[REFINE-INST] Empty instruction detected")
+                self._emit_event("refine-instruction-error", {
+                    "success": False,
+                    "error": "No instruction detected",
+                    "code": "EMPTY_INSTRUCTION"
+                })
+                self._set_state(State.IDLE)
+                return
+
+            # Step 2: Capture selected text
+            logger.info("[REFINE-INST] Capturing selected text...")
+            self.perf.start("capture")
+            selected_text = self.injector.capture_selection(timeout_ms=1500)
+            self.perf.end("capture")
+
+            # Step 3: Check if selection is empty
+            if not selected_text or not selected_text.strip():
+                logger.info("[REFINE-INST] No selection found - fallback to Ask mode")
+
+                # Fallback: treat instruction as a question
+                if self.processor:
+                    logger.info("[REFINE-INST] Processing instruction as question...")
+                    self.perf.start("processing")
+
+                    # Build Ask mode prompt
+                    ask_prompt = """You are a helpful AI assistant. The user has asked you a question via voice.
+Answer the question concisely and helpfully. Be direct and informative.
+
+USER QUESTION: {text}
+
+YOUR ANSWER:"""
+
+                    try:
+                        answer = self.processor.process(instruction, prompt_override=ask_prompt)
+                        self.perf.end("processing")
+                        logger.info(f"[ANSWER] {redact_text(answer)}")
+
+                        # Copy answer to clipboard
+                        import pyperclip
+                        pyperclip.copy(answer.strip())
+
+                        # Emit success (no injection, clipboard only)
+                        self._emit_event("refine-instruction-fallback", {
+                            "success": True,
+                            "instruction": instruction.strip(),
+                            "answer": answer.strip(),
+                            "mode": "ask_fallback"
+                        })
+                    except Exception as e:
+                        logger.error(f"[REFINE-INST] Processor failed in fallback: {e}")
+                        self.perf.end("processing")
+                        self._emit_event("refine-instruction-error", {
+                            "success": False,
+                            "error": f"Processing failed: {str(e)}",
+                            "code": "PROCESSING_FAILED"
+                        })
+                else:
+                    logger.error("[REFINE-INST] No processor available")
+                    self._emit_event("refine-instruction-error", {
+                        "success": False,
+                        "error": "No LLM processor available",
+                        "code": "NO_PROCESSOR"
+                    })
+
+                # End total timing and cleanup
+                self.perf.end("total")
+                if self.audio_file:
+                    try:
+                        os.remove(self.audio_file)
+                    except Exception as e:
+                        logger.warning(f"Failed to delete audio file: {e}")
+                self._set_state(State.IDLE)
+                return
+
+            # Step 4: Process text with instruction as prompt
+            logger.info(f"[REFINE-INST] Processing {len(selected_text)} chars with custom instruction")
+
+            if self.processor:
+                self.perf.start("processing")
+
+                # Build instruction-based prompt
+                refine_instruction_prompt = f"""You are a text editing assistant. Follow this instruction precisely:
+
+INSTRUCTION: {instruction}
+
+TEXT TO MODIFY:
+{{text}}
+
+Output only the modified text, nothing else:"""
+
+                try:
+                    refined_text = self.processor.process(selected_text, prompt_override=refine_instruction_prompt)
+                    self.perf.end("processing")
+                    logger.info(f"[REFINED] {len(refined_text)} chars")
+
+                    # Step 5: Inject refined text
+                    logger.info("[INJECT] Injecting refined text...")
+                    self.perf.start("injection")
+                    self.injector.paste_text(refined_text)
+
+                    # Press additional key if configured
+                    trailing_space_enabled = self.config.get('trailingSpaceEnabled', True) if hasattr(self, 'config') and self.config else True
+                    additional_key_enabled = self.config.get('additionalKeyEnabled', False) if hasattr(self, 'config') and self.config else False
+                    additional_key = self.config.get('additionalKey', 'enter') if hasattr(self, 'config') and self.config else 'enter'
+
+                    if trailing_space_enabled:
+                        self.injector.paste_text(" ")
+                    if additional_key_enabled and additional_key:
+                        self.injector.press_key(additional_key)
+
+                    self.perf.end("injection")
+
+                    # Store for Oops feature
+                    self.last_injection = refined_text
+
+                    # Emit success
+                    self.perf.end("total")
+                    metrics = self.perf.get_metrics()
+
+                    self._emit_event("refine-instruction-success", {
+                        "success": True,
+                        "instruction": instruction.strip(),
+                        "original_length": len(selected_text),
+                        "refined_length": len(refined_text),
+                        "metrics": {
+                            "total_ms": int(metrics.get("total", 0)),
+                            "transcription_ms": int(metrics.get("transcription", 0)),
+                            "capture_ms": int(metrics.get("capture", 0)),
+                            "processing_ms": int(metrics.get("processing", 0)),
+                            "injection_ms": int(metrics.get("injection", 0))
+                        }
+                    })
+
+                    logger.info(f"[PERF] Refine instruction complete - Total: {metrics.get('total', 0):.0f}ms")
+
+                except Exception as e:
+                    logger.error(f"[REFINE-INST] Processing failed: {e}")
+                    self.perf.end("processing")
+                    self._emit_event("refine-instruction-error", {
+                        "success": False,
+                        "error": f"Processing failed: {str(e)}",
+                        "code": "PROCESSING_FAILED"
+                    })
+            else:
+                logger.error("[REFINE-INST] No processor available")
+                self._emit_event("refine-instruction-error", {
+                    "success": False,
+                    "error": "No LLM processor available",
+                    "code": "NO_PROCESSOR"
+                })
+
+            # Cleanup
+            if self.audio_file:
+                try:
+                    os.remove(self.audio_file)
+                except Exception as e:
+                    logger.warning(f"Failed to delete temporary audio file: {e}")
+
+            self._set_state(State.IDLE)
+
+        except Exception as e:
+            logger.error(sanitize_log_message(f"Refine instruction pipeline error: {e}"))
+            self._emit_event("refine-instruction-error", {
+                "success": False,
+                "error": str(e),
+                "code": "UNEXPECTED_ERROR"
+            })
             self._set_state(State.ERROR)
 
     def check_health(self) -> dict:

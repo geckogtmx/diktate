@@ -153,11 +153,20 @@ class LocalProcessor:
         text = text.replace("{text}", "[text]")
         return text
 
-    def process(self, text: str, max_retries: int = 3) -> str:
-        """Process text using Ollama with exponential backoff retry logic."""
+    def process(self, text: str, max_retries: int = 3, prompt_override: Optional[str] = None) -> str:
+        """Process text using Ollama with exponential backoff retry logic.
+
+        Args:
+            text: The text to process
+            max_retries: Number of retry attempts on failure
+            prompt_override: Optional custom prompt to use instead of self.prompt
+                           (for one-off processing without changing mode)
+        """
         # Sanitize input to prevent prompt injection (M1 security fix)
         safe_text = self._sanitize_for_prompt(text)
-        prompt = self.prompt.replace("{text}", safe_text)
+        # Use override if provided, otherwise use the instance prompt
+        active_prompt = prompt_override if prompt_override is not None else self.prompt
+        prompt = active_prompt.replace("{text}", safe_text)
 
         for attempt in range(max_retries):
             try:
@@ -241,10 +250,17 @@ class CloudProcessor:
         text = text.replace("{text}", "[text]")
         return text
 
-    def process(self, text: str, max_retries: int = 3) -> str:
-        """Process text using Gemini API with exponential backoff retry logic."""
+    def process(self, text: str, max_retries: int = 3, prompt_override: Optional[str] = None) -> str:
+        """Process text using Gemini API with exponential backoff retry logic.
+
+        Args:
+            text: The text to process
+            max_retries: Number of retry attempts on failure
+            prompt_override: Optional custom prompt to use instead of self.prompt
+        """
         safe_text = self._sanitize_for_prompt(text)
-        prompt = self.prompt.replace("{text}", safe_text)
+        active_prompt = prompt_override if prompt_override is not None else self.prompt
+        prompt = active_prompt.replace("{text}", safe_text)
 
         for attempt in range(max_retries):
             try:
@@ -334,10 +350,17 @@ class AnthropicProcessor:
         text = text.replace("{text}", "[text]")
         return text
 
-    def process(self, text: str, max_retries: int = 3) -> str:
-        """Process text using Anthropic Claude API."""
+    def process(self, text: str, max_retries: int = 3, prompt_override: Optional[str] = None) -> str:
+        """Process text using Anthropic Claude API.
+
+        Args:
+            text: The text to process
+            max_retries: Number of retry attempts on failure
+            prompt_override: Optional custom prompt to use instead of self.prompt
+        """
         safe_text = self._sanitize_for_prompt(text)
-        prompt = self.prompt.replace("{text}", safe_text)
+        active_prompt = prompt_override if prompt_override is not None else self.prompt
+        prompt = active_prompt.replace("{text}", safe_text)
 
         for attempt in range(max_retries):
             try:
@@ -415,10 +438,17 @@ class OpenAIProcessor:
         text = text.replace("{text}", "[text]")
         return text
 
-    def process(self, text: str, max_retries: int = 3) -> str:
-        """Process text using OpenAI API."""
+    def process(self, text: str, max_retries: int = 3, prompt_override: Optional[str] = None) -> str:
+        """Process text using OpenAI API.
+
+        Args:
+            text: The text to process
+            max_retries: Number of retry attempts on failure
+            prompt_override: Optional custom prompt to use instead of self.prompt
+        """
         safe_text = self._sanitize_for_prompt(text)
-        prompt = self.prompt.replace("{text}", safe_text)
+        active_prompt = prompt_override if prompt_override is not None else self.prompt
+        prompt = active_prompt.replace("{text}", safe_text)
 
         for attempt in range(max_retries):
             try:

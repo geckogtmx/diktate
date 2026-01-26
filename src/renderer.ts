@@ -59,6 +59,8 @@ const perfInjectCell = document.getElementById('perf-inject-cell');
 const toggleSound = document.getElementById('toggle-sound') as HTMLInputElement | null;
 const toggleCloud = document.getElementById('toggle-cloud') as HTMLInputElement | null;
 const toggleAdditionalKey = document.getElementById('toggle-additional-key') as HTMLInputElement | null;
+const toggleRefineMode = document.getElementById('toggle-refine-mode') as HTMLInputElement | null;
+const refineModeLabel = document.getElementById('refine-mode-label') as HTMLElement | null;
 
 // Mode selection elements
 const modeBtns: Record<string, HTMLElement | null> = {
@@ -239,6 +241,14 @@ function setupToggles() {
             addLogEntry('INFO', `Additional key: ${toggleAdditionalKey.checked ? 'ENABLED' : 'DISABLED'}`);
         });
     }
+    if (toggleRefineMode && refineModeLabel) {
+        toggleRefineMode.addEventListener('change', () => {
+            const mode = toggleRefineMode.checked ? 'instruction' : 'autopilot';
+            window.electronAPI?.setSetting?.('refineMode', mode);
+            refineModeLabel.textContent = mode === 'instruction' ? 'Refine: Instruct' : 'Refine: Auto';
+            addLogEntry('INFO', `Refine mode: ${mode.toUpperCase()}`);
+        });
+    }
 }
 
 // Update mode toggle UI
@@ -389,6 +399,10 @@ if (window.electronAPI) {
             }
             if (toggleAdditionalKey && state.additionalKeyEnabled !== undefined) {
                 toggleAdditionalKey.checked = state.additionalKeyEnabled;
+            }
+            if (toggleRefineMode && refineModeLabel && state.refineMode) {
+                toggleRefineMode.checked = state.refineMode === 'instruction';
+                refineModeLabel.textContent = state.refineMode === 'instruction' ? 'Refine: Instruct' : 'Refine: Auto';
             }
 
             // Restore mode selection
