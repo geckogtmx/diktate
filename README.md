@@ -113,11 +113,7 @@ pnpm dev
 - **Clean Uninstall** - Complete removal of all application data and traces from the system.
 
 ### Commercial & Licensing
-- **One-Time Purchase** - Lifetime access for a single flat fee.
-- **Anti-Subscription** - Strict policy against recurring fees or hidden costs for software use.
-- **Source Available** - Full access to the codebase for transparency and auditing.
-- **MIT License** - Open-source core engine allowed for modification and distribution.
-- **BYO Keys** - Plug in personal OpenAI, Anthropic, or DeepSeek API keys for cloud processing.
+- **TBD** - Pricing and licensing details are currently being finalized.
 
 ---
 
