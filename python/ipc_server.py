@@ -58,6 +58,7 @@ from core.mute_detector import MuteDetector
 from core.system_monitor import SystemMonitor
 from config.prompts import get_translation_prompt, get_prompt
 from utils.security import redact_text, sanitize_log_message
+from utils.history_manager import HistoryManager
 
 # --- SECURITY: Guaranteed audio file cleanup on exit (M3 fix) ---
 import atexit
@@ -315,6 +316,14 @@ class IpcServer:
         self.monitor_thread: Optional[threading.Thread] = None
         self.should_monitor = False  # Flag to control monitoring thread
 
+        # History logging (SPEC_029)
+        self.history_manager: Optional[HistoryManager] = None
+        try:
+            self.history_manager = HistoryManager()
+            logger.info("[HISTORY] Initialized SQLite history logging")
+        except Exception as e:
+            logger.error(f"[HISTORY] Failed to initialize history manager: {e}")
+
         logger.info("Initializing IPC Server...")
         self._initialize_components()
 
@@ -337,6 +346,15 @@ class IpcServer:
                     logger.warning("Text processing will use raw transcription fallback")
 
             logger.info("Startup warmup complete")
+
+            # Auto-prune history on startup (SPEC_029)
+            if self.history_manager:
+                try:
+                    deleted = self.history_manager.prune_history(days=90)
+                    if deleted > 0:
+                        logger.info(f"[HISTORY] Pruned {deleted} old records during startup")
+                except Exception as e:
+                    logger.warning(f"[HISTORY] Auto-pruning failed: {e}")
 
             # Emit startup system metrics (SPEC_027)
             try:
@@ -814,6 +832,25 @@ class IpcServer:
             # Record session stats (A.2)
             self.session_stats.record_success(len(processed_text), metrics.get('total', 0))
 
+            # Log to history database (SPEC_029)
+            if self.history_manager:
+                try:
+                    self.history_manager.log_session({
+                        'mode': self.recording_mode,
+                        'transcriber_model': getattr(self.transcriber, 'model_size', 'unknown'),
+                        'processor_model': getattr(self.processor, 'model', 'unknown') if self.processor else 'none',
+                        'raw_text': raw_text,
+                        'processed_text': processed_text,
+                        'audio_duration_s': audio_duration if 'audio_duration' in locals() else None,
+                        'transcription_time_ms': metrics.get('transcription', 0),
+                        'processing_time_ms': metrics.get('processing', 0),
+                        'total_time_ms': metrics.get('total', 0),
+                        'success': True,
+                        'error_message': None
+                    })
+                except Exception as e:
+                    logger.warning(f"[HISTORY] Failed to log session: {e}")
+
             # Cleanup
             if self.audio_file:
                 try:
@@ -826,6 +863,26 @@ class IpcServer:
         except Exception as e:
             logger.error(sanitize_log_message(f"Pipeline error: {e}"))
             self.session_stats.record_error()  # Track errors (A.2)
+
+            # Log error to history database (SPEC_029)
+            if self.history_manager:
+                try:
+                    self.history_manager.log_session({
+                        'mode': self.recording_mode,
+                        'transcriber_model': getattr(self.transcriber, 'model_size', 'unknown'),
+                        'processor_model': getattr(self.processor, 'model', 'unknown') if self.processor else 'none',
+                        'raw_text': None,
+                        'processed_text': None,
+                        'audio_duration_s': None,
+                        'transcription_time_ms': None,
+                        'processing_time_ms': None,
+                        'total_time_ms': None,
+                        'success': False,
+                        'error_message': str(e)
+                    })
+                except Exception as hist_e:
+                    logger.warning(f"[HISTORY] Failed to log error: {hist_e}")
+
             self._set_state(State.ERROR)
 
     def _process_ask_recording(self) -> None:
@@ -912,6 +969,25 @@ YOUR ANSWER:"""
             metrics = self.perf.get_metrics()
             logger.info(f"[PERF] Ask complete - Total: {metrics.get('total', 0):.0f}ms")
 
+            # Log to history database (SPEC_029)
+            if self.history_manager:
+                try:
+                    self.history_manager.log_session({
+                        'mode': 'ask',
+                        'transcriber_model': getattr(self.transcriber, 'model_size', 'unknown'),
+                        'processor_model': getattr(self.processor, 'model', 'unknown') if self.processor else 'none',
+                        'raw_text': question if 'question' in locals() else None,
+                        'processed_text': answer if 'answer' in locals() else None,
+                        'audio_duration_s': audio_duration if 'audio_duration' in locals() else None,
+                        'transcription_time_ms': metrics.get('transcription', 0),
+                        'processing_time_ms': metrics.get('ask', 0),
+                        'total_time_ms': metrics.get('total', 0),
+                        'success': True,
+                        'error_message': None
+                    })
+                except Exception as e:
+                    logger.warning(f"[HISTORY] Failed to log ask session: {e}")
+
             # Cleanup
             if self.audio_file:
                 try:
@@ -924,6 +1000,26 @@ YOUR ANSWER:"""
         except Exception as e:
             logger.error(sanitize_log_message(f"Ask pipeline error: {e}"))
             self._emit_event("ask-response", {"success": False, "error": str(e)})
+
+            # Log error to history database (SPEC_029)
+            if self.history_manager:
+                try:
+                    self.history_manager.log_session({
+                        'mode': 'ask',
+                        'transcriber_model': getattr(self.transcriber, 'model_size', 'unknown'),
+                        'processor_model': getattr(self.processor, 'model', 'unknown') if self.processor else 'none',
+                        'raw_text': None,
+                        'processed_text': None,
+                        'audio_duration_s': None,
+                        'transcription_time_ms': None,
+                        'processing_time_ms': None,
+                        'total_time_ms': None,
+                        'success': False,
+                        'error_message': str(e)
+                    })
+                except Exception as hist_e:
+                    logger.warning(f"[HISTORY] Failed to log ask error: {hist_e}")
+
             self._set_state(State.ERROR)
 
     def _process_refine_recording(self) -> None:
@@ -1095,6 +1191,25 @@ Output only the modified text, nothing else:"""
 
                     logger.info(f"[PERF] Refine instruction complete - Total: {metrics.get('total', 0):.0f}ms")
 
+                    # Log to history database (SPEC_029)
+                    if self.history_manager:
+                        try:
+                            self.history_manager.log_session({
+                                'mode': 'refine',
+                                'transcriber_model': getattr(self.transcriber, 'model_size', 'unknown'),
+                                'processor_model': getattr(self.processor, 'model', 'unknown') if self.processor else 'none',
+                                'raw_text': instruction,
+                                'processed_text': refined_text,
+                                'audio_duration_s': audio_duration if 'audio_duration' in locals() else None,
+                                'transcription_time_ms': metrics.get('transcription', 0),
+                                'processing_time_ms': metrics.get('processing', 0),
+                                'total_time_ms': metrics.get('total', 0),
+                                'success': True,
+                                'error_message': None
+                            })
+                        except Exception as e:
+                            logger.warning(f"[HISTORY] Failed to log refine session: {e}")
+
                 except Exception as e:
                     logger.error(f"[REFINE-INST] Processing failed: {e}")
                     self.perf.end("processing")
@@ -1127,6 +1242,26 @@ Output only the modified text, nothing else:"""
                 "error": str(e),
                 "code": "UNEXPECTED_ERROR"
             })
+
+            # Log error to history database (SPEC_029)
+            if self.history_manager:
+                try:
+                    self.history_manager.log_session({
+                        'mode': 'refine',
+                        'transcriber_model': getattr(self.transcriber, 'model_size', 'unknown'),
+                        'processor_model': getattr(self.processor, 'model', 'unknown') if self.processor else 'none',
+                        'raw_text': None,
+                        'processed_text': None,
+                        'audio_duration_s': None,
+                        'transcription_time_ms': None,
+                        'processing_time_ms': None,
+                        'total_time_ms': None,
+                        'success': False,
+                        'error_message': str(e)
+                    })
+                except Exception as hist_e:
+                    logger.warning(f"[HISTORY] Failed to log refine error: {hist_e}")
+
             self._set_state(State.ERROR)
 
     def check_health(self) -> dict:
@@ -1709,6 +1844,13 @@ Output only the modified text, nothing else:"""
 
         if hasattr(self, 'listener') and self.listener:
             self.listener.stop()
+
+        # Gracefully shutdown history manager (SPEC_029)
+        if self.history_manager:
+            try:
+                self.history_manager.shutdown()
+            except Exception as e:
+                logger.warning(f"Error shutting down history manager: {e}")
 
         logger.info("IPC Server shutdown complete")
         sys.exit(0)
