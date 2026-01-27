@@ -11,7 +11,7 @@ A high-performance, **local-first** AI voice dictation tool for Windows. Speak n
 ## 🎯 Project Status: v1.0 Feature Complete 🔒
 
 **Current Phase:** Phase F - Methodical Validation 🧪
-**Status:** All core v1.0 features (Refining, Security) are **Implemented and Verified**. We are currently in the final "stress-test" period before public release.
+**Status:** All core v1.0 features (Refining, Security, **Google Hub Integration**) are **Implemented and Verified**. We are performing final stress-testing of the OAuth fallback mechanisms.
 
 ### Core 1.0 Experience
 1. **Push-to-Talk**: Hold or toggle `Ctrl+Alt+D` to record.
@@ -41,10 +41,10 @@ A high-performance, **local-first** AI voice dictation tool for Windows. Speak n
 | `Ctrl+Alt+T` | **Translate** | Bidirectional EN ↔ ES translation: speak one, get the other. |
 
 ### 🧠 Intelligence & Performance
-*   **Gemma 3 4B Integration**: High-quality local reasoning for professional text formatting.
+*   **Hybrid Intelligence**: Seamlessly switch between local **Gemma 3 4B** and cloud-based **Gemini 2.5 Flash** (via Google Hub OAuth).
 *   **Whisper V3 Turbo**: State-of-the-art speech-to-text accuracy.
 *   **Bilingual Bridge**: Real-time translation between English and Spanish.
-*   **+Key (Auto-Action)**: Automatically trigger `Enter`, `Tab`, or a `Space` after injection for seamless workflow.
+*   **+Key (Auto-Action)**: Automatically trigger `Enter`, `Tab`, or a `Space` after injection.
 *   **Auto-Tiering**: Automatically selects the best models based on your detected GPU VRAM.
 
 
@@ -89,13 +89,14 @@ pnpm dev
 - **Smart Fallback** - Automatically switches to raw transcription if the LLM processing hangs or fails.
 
 ### Workflow & Intelligence
-- **Ask Mode** - Voice Q&A with the local LLM using a dedicated hotkey (Ctrl+Alt+A).
+- **Ask Mode** - Voice Q&A with the LLM using a dedicated hotkey (Ctrl+Alt+A).
+- **Google Hub (SPEC_016)** - Integrated Google Account Gemini quota via secure OAuth 2.0 (Gemini 2.5/3.0 support).
 - **Context Modes** - Switchable prompts for different output styles (Standard, Developer, Email, Creative).
 - **Prompt Helper Mode** - Automatically structures voice input into clear, formatted LLM prompts.
 - **Bilingual Bridge** - Real-time translation between English and Spanish during dictation.
 - **Refine Mode** - Two-stage editing: Select text and auto-fix, or dictate specific implementation commands ("Make formal").
-- **Snippets** (Coming v2.0) - Voice macros that expand short phrases into predefined text blocks.
-- **Post-it Notes Mode** (Coming v2.0) - Dedicated dictation mode for appending timestamps and notes to a file.
+- **Snippets** (Coming v2.0) - Voice macros that expand short phrases into blocks.
+- **Post-it Notes Mode** (Coming v2.0) - Dictation mode for appending timestamps to a file.
 
 ### Performance & Tech
 - **Speed Advantage** - Low-latency processing (350-750ms) significantly faster than cloud APIs.

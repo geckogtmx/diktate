@@ -230,18 +230,22 @@ class CloudProcessor:
         # Detect auth type
         self.is_oauth = self.api_key.startswith('ya29.')
 
-        self.prompt = prompt or DEFAULT_CLEANUP_PROMPT
-        self.api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+        # SPEC_033: Identify as Gemini 2.5 Flash (Latest Stable)
+        self.model = "gemini-2.5-flash"
+        self.prompt = prompt or get_prompt(DEFAULT_CLEANUP_PROMPT, self.model)
+        
+        # Use stable v1beta model endpoint
+        self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
         self.mode = "standard"
 
         auth_method = "OAuth Bearer Token" if self.is_oauth else "API Key"
-        logger.info(f"Cloud processor initialized (Gemini Flash, {auth_method})")
+        logger.info(f"Cloud processor initialized ({self.model}, {auth_method})")
 
     def set_mode(self, mode: str) -> None:
         """Update processing mode (standard, prompt, professional, raw)."""
         self.mode = mode
-        self.prompt = get_prompt(mode)
-        logger.info(f"Cloud processor mode switched to: {mode}")
+        self.prompt = get_prompt(mode, self.model)
+        logger.info(f"Cloud processor mode switched to: {mode} (Model: {self.model})")
 
     def set_custom_prompt(self, custom_prompt: str) -> None:
         """Set a custom system prompt (overrides mode defaults)."""
@@ -312,12 +316,12 @@ class CloudProcessor:
                         "Content-Type": "application/json",
                         "Authorization": f"Bearer {self.api_key}"
                     }
-                    logger.info(f"[CLOUD] Using Gemini 1.5 Flash (OAuth)")
+                    logger.info(f"[CLOUD] Using {self.model} (OAuth)")
                 else:
                     # API key (query parameter)
                     url = f"{self.api_url}?key={self.api_key}"
                     headers = {"Content-Type": "application/json"}
-                    logger.info(f"[CLOUD] Using Gemini 1.5 Flash (API Key)")
+                    logger.info(f"[CLOUD] Using {self.model} (API Key)")
 
                 # Log the prompt usage (for debugging "tricks" like bullets not working)
                 logger.info(f"[CLOUD] Prompt Template: {active_prompt[:50]}...")

@@ -779,6 +779,10 @@ class IpcServer:
                     except Exception as e:
                         # Processor failed - fall back to raw transcription
                         logger.error(f"[FALLBACK] Processor failed: {e}")
+
+                        # SPEC_016: Handle OAuth token expiration
+                        self._handle_processor_error(e)
+
                         logger.info("[FALLBACK] Using raw transcription (no processing)")
                         processed_text = raw_text
                         processor_failed = True
@@ -963,14 +967,14 @@ class IpcServer:
                 logger.info("[ASK] Asking LLM...")
                 self.perf.start("ask")
 
-                # Store original prompt and use Q&A prompt
+                # SPEC_033: Dynamic prompt injection (Gemini/Gemma overrides)
                 original_prompt = self.processor.prompt
-                self.processor.prompt = """You are a helpful AI assistant. The user has asked you a question via voice.
-Answer the question concisely and helpfully. Be direct and informative.
+                model_name = getattr(self.processor, 'model', 'unknown')
+                ask_prompt = get_prompt("ask", model=model_name)
 
-USER QUESTION: {text}
-
-YOUR ANSWER:"""
+                # Only switch processor prompt if we got a valid (potentially model-specific) override
+                if ask_prompt:
+                    self.processor.prompt = ask_prompt
 
                 try:
                     answer = self.processor.process(question)
@@ -991,6 +995,10 @@ YOUR ANSWER:"""
                 except Exception as e:
                     # Ask mode failure - no fallback, just return error
                     logger.error(f"[ASK] Processor failed: {e}")
+
+                    # SPEC_016: Handle OAuth token expiration
+                    self._handle_processor_error(e)
+
                     self.consecutive_failures += 1
                     self.perf.end("ask")
 
@@ -1125,13 +1133,9 @@ YOUR ANSWER:"""
                     logger.info("[REFINE-INST] Processing instruction as question...")
                     self.perf.start("processing")
 
-                    # Build Ask mode prompt
-                    ask_prompt = """You are a helpful AI assistant. The user has asked you a question via voice.
-Answer the question concisely and helpfully. Be direct and informative.
-
-USER QUESTION: {text}
-
-YOUR ANSWER:"""
+                    # SPEC_033: Use dynamic Q&A prompt for fallback
+                    model_name = getattr(self.processor, 'model', 'unknown')
+                    ask_prompt = get_prompt("ask", model=model_name)
 
                     try:
                         answer = self.processor.process(instruction, prompt_override=ask_prompt)
@@ -1181,15 +1185,10 @@ YOUR ANSWER:"""
             if self.processor:
                 self.perf.start("processing")
 
-                # Build instruction-based prompt
-                refine_instruction_prompt = f"""You are a text editing assistant. Follow this instruction precisely:
-
-INSTRUCTION: {instruction}
-
-TEXT TO MODIFY:
-{{text}}
-
-Output only the modified text, nothing else:"""
+                # SPEC_033: Build dynamic instruction-based prompt
+                model_name = getattr(self.processor, 'model', 'unknown')
+                base_prompt = get_prompt("refine_instruction", model=model_name)
+                refine_instruction_prompt = base_prompt.replace("{instruction}", instruction)
 
                 try:
                     refined_text = self.processor.process(selected_text, prompt_override=refine_instruction_prompt)
@@ -1199,9 +1198,8 @@ Output only the modified text, nothing else:"""
                     # Step 5: Inject refined text
                     logger.info("[INJECT] Injecting refined text...")
                     self.perf.start("injection")
-                    self.injector.paste_text(refined_text)
 
-                    # Press additional key if configured
+                    # Configure trailing space behavior (if config available)
                     trailing_space_enabled = self.config.get('trailingSpaceEnabled', True) if hasattr(self, 'config') and self.config else True
                     additional_key_enabled = self.config.get('additionalKeyEnabled', False) if hasattr(self, 'config') and self.config else False
                     additional_key = self.config.get('additionalKey', 'enter') if hasattr(self, 'config') and self.config else 'enter'
@@ -1214,7 +1212,7 @@ Output only the modified text, nothing else:"""
                     self.perf.end("injection")
 
                     # Store for Oops feature
-                    self.last_injection = refined_text
+                    self.last_injected_text = refined_text
 
                     # Emit success
                     self.perf.end("total")
@@ -1261,6 +1259,10 @@ Output only the modified text, nothing else:"""
 
                 except Exception as e:
                     logger.error(f"[REFINE-INST] Processing failed: {e}")
+
+                    # SPEC_016: Handle OAuth token expiration
+                    self._handle_processor_error(e)
+
                     self.perf.end("processing")
                     self._emit_event("refine-instruction-error", {
                         "success": False,
@@ -1370,16 +1372,16 @@ Output only the modified text, nothing else:"""
                         return {"status": "error", "message": f"Ollama status {response.status_code}"}
                 except Exception as e:
                     return {"status": "error", "message": f"Ollama unreachable: {e}"}
-            
+
             elif hasattr(self.processor, "api_key"):
                 # Cloud processor - check if API key is present
                 if self.processor.api_key:
                     return {"status": "ok", "message": "Cloud provider configured", "provider": "cloud"}
                 else:
                     return {"status": "error", "message": "Missing API key"}
-            
+
             return {"status": "ok", "message": "Processor ready (no health check available)"}
-            
+
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
@@ -1526,10 +1528,10 @@ Output only the modified text, nothing else:"""
                     "transcriber": "Unknown",
                     "processor": "Unknown"
                 }
-                
+
                 if self.transcriber:
                     data["transcriber"] = self.transcriber.model_size.upper()
-                
+
                 if self.processor:
                     if hasattr(self.processor, "model"):
                         data["processor"] = self.processor.model.upper()
@@ -1541,7 +1543,7 @@ Output only the modified text, nothing else:"""
                         data["processor"] = "GPT-4o-MINI"
                     else:
                         data["processor"] = "LOCAL LLM"
-                        
+
                 return {"success": True, "data": data}
             elif cmd_name == "configure":
                 return self.configure(command.get("config", {}))
@@ -1600,6 +1602,10 @@ Output only the modified text, nothing else:"""
                             logger.info(f"[REFINE] Refined to {len(refined_text)} chars")
                         except Exception as e:
                             logger.error(f"[REFINE] Processing failed: {e}")
+
+                            # SPEC_016: Handle OAuth token expiration
+                            self._handle_processor_error(e)
+
                             self._emit_event("refine-error", {
                                 "code": "PROCESSING_FAILED",
                                 "message": f"Processing failed: {str(e)}"
@@ -1725,6 +1731,17 @@ Output only the modified text, nothing else:"""
             self.monitor_thread.join(timeout=2)
             self.monitor_thread = None
             logger.debug("[SystemMonitor] Parallel monitoring thread stopped")
+
+    def _handle_processor_error(self, e: Exception) -> None:
+        """Handle LLM processor errors, detecting OAuth issues (SPEC_016)."""
+        err_msg = str(e)
+        if "oauth_token_invalid" in err_msg:
+            logger.error(f"[OAUTH] Token invalid detected, notifying Electron for refresh")
+            # Emit api-error event that main.ts listens for
+            self._emit_event("api-error", {
+                "error_type": "oauth_token_invalid",
+                "error_message": err_msg
+            })
 
     def _emit_event(self, event_type: str, data: dict) -> None:
         """Emit an event to Electron"""

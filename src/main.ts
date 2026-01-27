@@ -791,6 +791,10 @@ function setupPythonEventHandlers(): void {
       case OAuthEventType.TOKEN_REFRESHED:
         // Token successfully refreshed - no notification (silent success)
         logger.info('MAIN', `Token refreshed for account ${event.accountId}`);
+        // SPEC_016: Crucial! Push new token to Python after refresh
+        syncPythonConfig().catch(err => {
+          logger.error('MAIN', 'Failed to sync config after token refresh', err);
+        });
         break;
 
       case OAuthEventType.TOKEN_REFRESH_FAILED:
@@ -1131,7 +1135,7 @@ async function syncPythonConfig(): Promise<void> {
       // Determine processor name based on provider
       let processorDisplay = config.defaultModel; // Default to Ollama model
       if (config.provider === 'cloud' || config.provider === 'gemini') {
-        processorDisplay = 'Gemini 1.5 Flash';
+        processorDisplay = 'Gemini 2.5 Flash';
       } else if (config.provider === 'anthropic') {
         processorDisplay = 'Claude 3.5 Haiku';
       } else if (config.provider === 'openai') {
