@@ -3,7 +3,7 @@
  * Exposes only necessary IPC channels to renderer
  */
 
-import { contextBridge, ipcRenderer, shell } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 
 const settingsAPI = {
     // Settings CRUD
@@ -19,21 +19,27 @@ const settingsAPI = {
 
     // External links (safe wrapper)
     openExternal: (url: string) => {
+        ipcRenderer.send('log', 'DEBUG', `[Preload] Request to open external URL: ${url}`);
         // Whitelist allowed URLs for security (L3 fix: proper subdomain check)
-        const allowedDomains = ['dikta.me', 'github.com', 'ko-fi.com', 'aistudio.google.com', 'console.anthropic.com', 'platform.openai.com', 'localhost'];
+        const allowedDomains = ['dikta.me', 'github.com', 'ko-fi.com', 'aistudio.google.com', 'accounts.google.com', 'console.anthropic.com', 'platform.openai.com', 'localhost'];
         try {
             const parsed = new URL(url);
+            ipcRenderer.send('log', 'DEBUG', `[Preload] Parsed hostname: ${parsed.hostname}`);
+
             // Fixed: Check for exact match OR proper subdomain (hostname ends with '.domain')
             const isAllowed = allowedDomains.some(d =>
                 parsed.hostname === d || parsed.hostname.endsWith('.' + d)
             );
+
+            ipcRenderer.send('log', 'DEBUG', `[Preload] URL allowed? ${isAllowed}`);
+
             if (isAllowed) {
-                shell.openExternal(url);
+                ipcRenderer.send('open-external', url);
             } else {
-                console.warn('Blocked external URL:', url);
+                ipcRenderer.send('log', 'WARN', `[Preload] Blocked external URL: ${url}`);
             }
         } catch (e) {
-            console.error('Invalid URL:', url);
+            ipcRenderer.send('log', 'ERROR', `[Preload] Invalid URL: ${url} - ${e}`);
         }
     },
 
@@ -41,6 +47,22 @@ const settingsAPI = {
     getApiKeys: () => ipcRenderer.invoke('apikey:get-all'),
     setApiKey: (provider: string, key: string) => ipcRenderer.invoke('apikey:set', provider, key),
     testApiKey: (provider: string, key: string) => ipcRenderer.invoke('apikey:test', provider, key),
+
+    // OAuth Google Hub (SPEC_016)
+    oauth: {
+        startFlow: (provider: string) => ipcRenderer.invoke('oauth:start-flow', provider),
+        listAccounts: () => ipcRenderer.invoke('oauth:list-accounts'),
+        getActive: () => ipcRenderer.invoke('oauth:get-active'),
+        switchAccount: (accountId: string) => ipcRenderer.invoke('oauth:switch-account', accountId),
+        disconnect: (accountId: string) => ipcRenderer.invoke('oauth:disconnect', accountId),
+        getQuota: (accountId: string) => ipcRenderer.invoke('oauth:get-quota', accountId),
+        validateToken: (accountId: string) => ipcRenderer.invoke('oauth:validate-token', accountId),
+    },
+
+    // OAuth Event Listener (SPEC_016 Phase 5)
+    onOAuthEvent: (callback: (event: any) => void) => {
+        ipcRenderer.on('oauth-event', (_event, data) => callback(data));
+    },
 
     // Sound playback
     playSound: (soundName: string) => ipcRenderer.invoke('settings:play-sound', soundName),

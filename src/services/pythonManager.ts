@@ -337,6 +337,26 @@ export class PythonManager extends EventEmitter {
       this.emit('recording-auto-stopped', event);
     } else if (event.event === 'status-check') {
       this.emit('status-check', event);
+    } else if (event.event === 'refine-success') {
+      this.emit('refine-success', event);
+    } else if (event.event === 'refine-error') {
+      this.emit('refine-error', event);
+    } else if (event.event === 'refine-instruction-success') {
+      this.emit('refine-instruction-success', event);
+    } else if (event.event === 'refine-instruction-fallback') {
+      this.emit('refine-instruction-fallback', event);
+    } else if (event.event === 'refine-instruction-error') {
+      this.emit('refine-instruction-error', event);
+    } else if (event.event === 'system-metrics') {
+      this.emit('system-metrics', event);
+    } else if (event.event === 'mic-muted') {
+      this.emit('mic-muted', event);
+    } else if (event.event === 'mic-status') {
+      this.emit('mic-status', event);
+    } else if (event.event === 'api-error') {
+      this.emit('api-error', event);
+    } else if (event.event === 'dictation-success') {
+      this.emit('dictation-success', event);
     }
   }
 

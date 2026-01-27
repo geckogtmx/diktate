@@ -3,6 +3,36 @@
  * This file extends the Window interface to include the settingsAPI bridge
  */
 
+// OAuth Account type
+interface OAuthAccountInfo {
+    accountId: string;
+    email: string;
+    displayName?: string;
+    status: string;
+    expiresAt: number;
+    quotaUsedToday: number;
+    quotaLimitDaily: number;
+    lastUsedAt: number;
+}
+
+interface QuotaInfo {
+    used: number;
+    limit: number;
+    remaining: number;
+    resetAt: number;
+    percentUsed: number;
+}
+
+interface OAuthAPI {
+    startFlow: (provider: string) => Promise<{ success: boolean; authUrl?: string; state?: string; error?: string }>;
+    listAccounts: () => Promise<{ success: boolean; accounts?: OAuthAccountInfo[]; error?: string }>;
+    getActive: () => Promise<{ success: boolean; account?: OAuthAccountInfo | null; error?: string }>;
+    switchAccount: (accountId: string) => Promise<{ success: boolean; error?: string }>;
+    disconnect: (accountId: string) => Promise<{ success: boolean; error?: string }>;
+    getQuota: (accountId: string) => Promise<{ success: boolean; quotaInfo?: QuotaInfo; error?: string }>;
+    validateToken: (accountId: string) => Promise<{ success: boolean; valid?: boolean; error?: string }>;
+}
+
 // Declare the SettingsAPI interface in global scope
 interface SettingsAPI {
     // Settings CRUD
@@ -20,6 +50,12 @@ interface SettingsAPI {
     getApiKeys: () => Promise<Record<string, boolean>>;
     setApiKey: (provider: string, key: string) => Promise<void>;
     testApiKey: (provider: string, key: string) => Promise<{ success: boolean; error?: string }>;
+
+    // OAuth Google Hub (SPEC_016)
+    oauth: OAuthAPI;
+
+    // OAuth Event Listener (SPEC_016 Phase 5)
+    onOAuthEvent: (callback: (event: any) => void) => void;
 
     // Sound methods
     playSound: (soundName: string) => Promise<void>;

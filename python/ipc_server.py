@@ -858,6 +858,13 @@ class IpcServer:
             logger.info(f"[PERF] Session complete - Total: {metrics.get('total', 0):.0f}ms, Chars: {metrics['charCount']}")
             self._emit_event("performance-metrics", metrics)
 
+            # Emit dictation success for quota tracking (SPEC_016 Phase 4)
+            self._emit_event("dictation-success", {
+                "processed_text": processed_text,
+                "char_count": len(processed_text),
+                "mode": self.current_mode
+            })
+
             # Persist metrics to JSON (A.2)
             self.perf.save_to_json(session_timestamp, log_dir)
 
@@ -1218,6 +1225,7 @@ Output only the modified text, nothing else:"""
                         "instruction": instruction.strip(),
                         "original_length": len(selected_text),
                         "refined_length": len(refined_text),
+                        "refined_text": refined_text,
                         "metrics": {
                             "total_ms": int(metrics.get("total", 0)),
                             "transcription_ms": int(metrics.get("transcription", 0)),
@@ -1646,6 +1654,7 @@ Output only the modified text, nothing else:"""
                     self.perf.end("total")
                     metrics = self.perf.get_metrics()
                     metrics["charCount"] = len(refined_text)
+                    metrics["refined_text"] = refined_text
 
                     logger.info(f"[REFINE] Success - Total: {metrics.get('total', 0):.0f}ms")
                     self._emit_event("refine-success", metrics)

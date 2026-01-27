@@ -12,7 +12,7 @@ interface Window {
         getInitialState: () => Promise<any>;
         setSetting: (key: string, value: any) => Promise<void>;
         onPlaySound: (callback: (soundName: string) => void) => void;
-        onBadgeUpdate: (callback: (badges: { processor?: string }) => void) => void;
+        onBadgeUpdate: (callback: (badges: { processor?: string; authType?: string }) => void) => void;
         onModeChange: (callback: (mode: string) => void) => void;
     };
 }
@@ -43,6 +43,7 @@ const statCost = document.getElementById('stat-cost');
 // Badge elements
 const badgeTranscriber = document.getElementById('badge-transcriber');
 const badgeProcessor = document.getElementById('badge-processor');
+const badgeAuth = document.getElementById('badge-auth');
 
 // Perf grid elements
 const perfRec = document.getElementById('perf-rec');
@@ -175,12 +176,15 @@ function updatePerformanceMetrics(metrics: PerformanceMetrics) {
     }
 }
 
-function updateBadges(models?: { transcriber?: string; processor?: string }) {
+function updateBadges(models?: { transcriber?: string; processor?: string }, authType?: string) {
     if (models?.transcriber && badgeTranscriber) {
         badgeTranscriber.textContent = models.transcriber;
     }
     if (models?.processor && badgeProcessor) {
         badgeProcessor.textContent = models.processor;
+    }
+    if (authType && badgeAuth) {
+        badgeAuth.textContent = authType;
     }
 }
 
@@ -372,8 +376,8 @@ if (window.electronAPI) {
 
     // Badge update handler (for provider switches)
     if ((window.electronAPI as any).onBadgeUpdate) {
-        (window.electronAPI as any).onBadgeUpdate((badges: { processor?: string }) => {
-            updateBadges(badges);
+        (window.electronAPI as any).onBadgeUpdate((badges: { processor?: string; authType?: string }) => {
+            updateBadges(badges, badges.authType);
         });
     }
 
@@ -388,7 +392,7 @@ if (window.electronAPI) {
     window.electronAPI.getInitialState().then((state) => {
         if (state) {
             setStatus(state.status || 'idle');
-            updateBadges(state.models);
+            updateBadges(state.models, state.authType);
 
             // Restore toggle states
             if (toggleSound && state.soundFeedback !== undefined) {

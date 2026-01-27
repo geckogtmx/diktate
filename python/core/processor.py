@@ -20,17 +20,21 @@ from config.prompts import get_prompt, DEFAULT_CLEANUP_PROMPT
 
 
 def validate_api_key(provider: str, api_key: str) -> None:
-    """Validate API key format for a given provider (SPEC_013).
+    """Validate API key format for a given provider (SPEC_013, SPEC_016).
 
     Args:
         provider: Provider name ('gemini', 'anthropic', 'openai')
-        api_key: The API key to validate
+        api_key: The API key or OAuth token to validate
 
     Raises:
         ValueError: If the API key format is invalid for the given provider
     """
+    # Accept OAuth Bearer tokens (they start with ya29.)
+    if api_key.startswith('ya29.'):
+        return  # Valid OAuth token
+
     patterns = {
-        'gemini': (r'^AIza[0-9A-Za-z-_]{35}$', 'AIza followed by 35 characters'),
+        'gemini': (r'^AIza[0-9A-Za-z-_]{35}$', 'AIza followed by 35 characters OR OAuth token (ya29.*)'),
         'anthropic': (r'^sk-ant-[a-zA-Z0-9\-_]{20,}$', 'sk-ant- followed by 20+ characters'),
         'openai': (r'^sk-[a-zA-Z0-9]{20,}$', 'sk- followed by 20+ alphanumeric characters')
     }
@@ -212,7 +216,7 @@ class LocalProcessor:
 
 
 class CloudProcessor:
-    """Processes transcribed text using Gemini API (cloud)."""
+    """Processes transcribed text using Gemini API (cloud) with API key or OAuth support (SPEC_016)."""
 
     def __init__(self, api_key: Optional[str] = None, prompt: Optional[str] = None):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
@@ -220,12 +224,18 @@ class CloudProcessor:
             raise ValueError("GEMINI_API_KEY not found in environment")
 
         # SPEC_013: Validate key format
+        # SPEC_016: Accept OAuth Bearer tokens (start with 'ya29.')
         validate_api_key('gemini', self.api_key)
+
+        # Detect auth type
+        self.is_oauth = self.api_key.startswith('ya29.')
 
         self.prompt = prompt or DEFAULT_CLEANUP_PROMPT
         self.api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
         self.mode = "standard"
-        logger.info("Cloud processor initialized (Gemini Flash)")
+
+        auth_method = "OAuth Bearer Token" if self.is_oauth else "API Key"
+        logger.info(f"Cloud processor initialized (Gemini Flash, {auth_method})")
 
     def set_mode(self, mode: str) -> None:
         """Update processing mode (standard, prompt, professional, raw)."""
@@ -250,8 +260,36 @@ class CloudProcessor:
         text = text.replace("{text}", "[text]")
         return text
 
+    def _handle_api_error(self, response, attempt: int, max_retries: int) -> Optional[str]:
+        """Detect and handle API errors with structured responses.
+
+        Returns:
+            Error type string if should abort retry, None to continue retrying
+        """
+        status = response.status_code
+
+        if status == 401:
+            logger.error("OAuth token invalid or expired (401)")
+            # Emit structured error to Electron via IPC
+            # This will be caught by main.ts event handler
+            return "oauth_token_invalid"
+
+        elif status == 429:
+            logger.warning(f"API rate limit exceeded (429) - attempt {attempt}/{max_retries}")
+            # Let exponential backoff handle it
+            return None  # Continue retrying
+
+        elif status >= 500:
+            logger.warning(f"API server error ({status}) - attempt {attempt}/{max_retries}")
+            # Transient server error - retry
+            return None
+
+        else:
+            logger.warning(f"API returned unexpected status {status}: {response.text[:200]}")
+            return None  # Continue retrying
+
     def process(self, text: str, max_retries: int = 3, prompt_override: Optional[str] = None) -> str:
-        """Process text using Gemini API with exponential backoff retry logic.
+        """Process text using Gemini API with exponential backoff retry logic (SPEC_016 OAuth support).
 
         Args:
             text: The text to process
@@ -265,8 +303,22 @@ class CloudProcessor:
         for attempt in range(max_retries):
             try:
                 logger.info(f"Processing text with Gemini Flash (attempt {attempt + 1}/{max_retries})...")
+
+                # Build request based on auth type (SPEC_016)
+                if self.is_oauth:
+                    # OAuth Bearer token
+                    url = self.api_url
+                    headers = {
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {self.api_key}"
+                    }
+                else:
+                    # API key (query parameter)
+                    url = f"{self.api_url}?key={self.api_key}"
+                    headers = {"Content-Type": "application/json"}
+
                 response = requests.post(
-                    f"{self.api_url}?key={self.api_key}",
+                    url,
                     json={
                         "contents": [{"parts": [{"text": prompt}]}],
                         "generationConfig": {
@@ -274,7 +326,7 @@ class CloudProcessor:
                             "maxOutputTokens": 1024
                         }
                     },
-                    headers={"Content-Type": "application/json"},
+                    headers=headers,
                     timeout=30
                 )
 
@@ -290,14 +342,22 @@ class CloudProcessor:
                             logger.info("Text processed successfully (cloud)")
                             return processed_text
                     logger.warning("Empty response from Gemini API")
-                else:
-                    logger.warning(f"Gemini API returned status {response.status_code}: {response.text}")
+
+                # Handle API errors with structured detection
+                error_type = self._handle_api_error(response, attempt + 1, max_retries)
+                if error_type == "oauth_token_invalid":
+                    # Special case: Don't retry, let Electron handle token refresh
+                    raise Exception(error_type)
+                # All other errors fall through to exponential backoff retry
 
             except requests.Timeout:
                 logger.warning(f"Gemini API request timed out (attempt {attempt + 1}/{max_retries})")
             except requests.ConnectionError as e:
                 logger.warning(f"Connection error to Gemini API (attempt {attempt + 1}/{max_retries}): {e}")
             except Exception as e:
+                if "oauth_token_invalid" in str(e):
+                    logger.error("OAuth token issue detected, aborting retries")
+                    raise
                 logger.error(f"Error processing text with Gemini: {e}")
 
             # Exponential backoff: 1s, 2s, 4s (only if not the last attempt)

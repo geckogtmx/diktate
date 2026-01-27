@@ -4,11 +4,15 @@
  */
 
 import { app, Tray, Menu, ipcMain, globalShortcut, BrowserWindow, Notification, nativeImage, NativeImage, shell, safeStorage } from 'electron';
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import * as path from 'path';
 import * as fs from 'fs';
 import { PythonManager } from './services/pythonManager';
 import { logger } from './utils/logger';
 import { performanceMetrics } from './utils/performanceMetrics';
+import { initializeOAuthManager, getOAuthManager, OAuthEventType } from './services/OAuthManager';
 
 import Store from 'electron-store';
 import { validateIpcMessage, SettingsSetSchema, ApiKeySetSchema, ApiKeyTestSchema, redactSensitive } from './utils/ipcSchemas';
@@ -96,6 +100,9 @@ const store = new Store<UserSettings>({
     additionalKey: 'none', // DEFAULT: None (can enable Enter/Tab if needed)
   }
 });
+
+// Initialize OAuth Manager for Google Hub (SPEC_016)
+initializeOAuthManager(store as any);
 
 let tray: Tray | null = null;
 let pythonManager: PythonManager | null = null;
@@ -499,6 +506,31 @@ function setupPythonEventHandlers(): void {
     }
   });
 
+  // Track quota for main dictation (SPEC_016 Phase 4)
+  pythonManager.on('dictation-success', (data: any) => {
+    logger.info('MAIN', 'Dictation success event received', {
+      charCount: data.char_count,
+      mode: data.mode
+    });
+
+    // Track quota usage for OAuth accounts
+    try {
+      if (data.processed_text) {
+        const oauthManager = getOAuthManager();
+        const activeAccount = oauthManager.getActiveAccount();
+        if (activeAccount && activeAccount.status === 'active') {
+          oauthManager.updateQuota(activeAccount.accountId, data.processed_text);
+          logger.info('MAIN', `Quota updated for ${activeAccount.email} (Dictation)`, {
+            textLength: data.processed_text.length,
+            updatedUsage: oauthManager.getQuotaInfo(activeAccount.accountId)
+          });
+        }
+      }
+    } catch (err) {
+      logger.warn('MAIN', 'Failed to update quota after dictation', err);
+    }
+  });
+
   // System resource monitoring (SPEC_027)
   pythonManager.on('system-metrics', (data: any) => {
     const { phase, activity_count, metrics } = data;
@@ -552,6 +584,22 @@ function setupPythonEventHandlers(): void {
 
     const { question, answer } = response;
     const outputMode = store.get('askOutputMode') || 'clipboard';
+
+    // Track quota usage for OAuth accounts (SPEC_016 Phase 4)
+    try {
+      const oauthManager = getOAuthManager();
+      const activeAccount = oauthManager.getActiveAccount();
+      if (activeAccount && activeAccount.status === 'active') {
+        // Update quota with the processed text length
+        oauthManager.updateQuota(activeAccount.accountId, answer);
+        logger.info('MAIN', `Quota updated for ${activeAccount.email}`, {
+          textLength: answer.length,
+          updatedUsage: oauthManager.getQuotaInfo(activeAccount.accountId)
+        });
+      }
+    } catch (err) {
+      logger.warn('MAIN', 'Failed to update quota after processing', err);
+    }
 
     logger.info('MAIN', 'Delivering ask response', { outputMode, answerLength: answer?.length });
 
@@ -673,6 +721,132 @@ function setupPythonEventHandlers(): void {
     }
   });
 
+  // Handle API errors from Python (OAuth, rate limits, network)
+  pythonManager.on('api-error', async (data: any) => {
+    const { error_type, error_message, account_id } = data;
+
+    logger.error('MAIN', 'API error received from Python', { error_type, error_message });
+
+    const oauthManager = getOAuthManager();
+
+    if (error_type === 'oauth_token_invalid' || error_type === '401') {
+      // Token unauthorized - trigger refresh via OAuthManager
+      try {
+        const targetAccountId = account_id || oauthManager.getActiveAccount()?.accountId;
+        if (targetAccountId) {
+          logger.info('MAIN', `Triggering token refresh for account ${targetAccountId}`);
+          await oauthManager.handle401Error(targetAccountId);
+
+          // Show notification
+          showNotification(
+            'Token Refreshed',
+            'Your Google account access has been renewed automatically.',
+            false
+          );
+        }
+      } catch (error) {
+        logger.error('MAIN', 'Token refresh failed', error);
+        showNotification(
+          'Authentication Error',
+          'Please reconnect your Google account in Settings.',
+          true
+        );
+      }
+    } else if (error_type === 'network_error') {
+      // Network connectivity issue
+      try {
+        const activeAccount = oauthManager.getActiveAccount();
+        if (activeAccount) {
+          await oauthManager.handleNetworkError(activeAccount.accountId, new Error(error_message));
+        }
+      } catch (error) {
+        logger.error('MAIN', 'Network error handling failed', error);
+      }
+
+      // Show user-friendly notification
+      showNotification(
+        'Network Issue',
+        'Check your internet connection. Retrying automatically...',
+        false
+      );
+    } else if (error_type === 'rate_limit' || error_type === '429') {
+      // API rate limit exceeded
+      logger.warn('MAIN', 'API rate limit hit, will retry with backoff');
+      showNotification(
+        'Quota Limit',
+        'API rate limit reached. Retrying in a moment...',
+        false
+      );
+    }
+  });
+
+  // Listen for OAuth events from OAuthManager
+  const oauthManager = getOAuthManager();
+
+  // Create a shared handler for all OAuth events
+  const handleOAuthEvent = (event: any) => {
+    logger.info('MAIN', 'OAuth event received', event);
+
+    switch (event.type) {
+      case OAuthEventType.TOKEN_REFRESHED:
+        // Token successfully refreshed - no notification (silent success)
+        logger.info('MAIN', `Token refreshed for account ${event.accountId}`);
+        break;
+
+      case OAuthEventType.TOKEN_REFRESH_FAILED:
+        showNotification(
+          'Token Refresh Failed',
+          `Account: ${event.data?.email}\nWill retry automatically.`,
+          false
+        );
+        break;
+
+      case OAuthEventType.TOKEN_REVOKED:
+        showNotification(
+          'Account Disconnected',
+          `Your Google account (${event.data?.email}) was revoked.\nPlease reconnect in Settings.`,
+          true
+        );
+        break;
+
+      case OAuthEventType.QUOTA_WARNING:
+        const percent = Math.round((event.data.used / event.data.limit) * 100);
+        showNotification(
+          'Quota Warning',
+          `${percent}% of daily quota used.\nAccount: ${event.data?.email}`,
+          false
+        );
+        break;
+
+      case OAuthEventType.QUOTA_EXCEEDED:
+        showNotification(
+          'Quota Exceeded',
+          `Daily quota reached for ${event.data?.email}.\nConsider switching to Local mode in Settings.`,
+          true
+        );
+        break;
+
+      case OAuthEventType.NETWORK_ERROR:
+        // Already handled by api-error event, skip duplicate notification
+        break;
+    }
+
+    // Forward OAuth events to settings window if open
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      settingsWindow.webContents.send('oauth-event', event);
+    }
+  };
+
+  // Register listener for all OAuth event types
+  oauthManager.on(OAuthEventType.TOKEN_REFRESHED, handleOAuthEvent);
+  oauthManager.on(OAuthEventType.TOKEN_REFRESH_FAILED, handleOAuthEvent);
+  oauthManager.on(OAuthEventType.TOKEN_REVOKED, handleOAuthEvent);
+  oauthManager.on(OAuthEventType.TOKEN_EXPIRED, handleOAuthEvent);
+  oauthManager.on(OAuthEventType.QUOTA_WARNING, handleOAuthEvent);
+  oauthManager.on(OAuthEventType.QUOTA_EXCEEDED, handleOAuthEvent);
+  oauthManager.on(OAuthEventType.ACCOUNT_STATUS_CHANGED, handleOAuthEvent);
+  oauthManager.on(OAuthEventType.NETWORK_ERROR, handleOAuthEvent);
+
   // Handle refine mode success
   pythonManager.on('refine-success', (data: any) => {
     logger.info('MAIN', 'Refine success event received', data);
@@ -686,6 +860,24 @@ function setupPythonEventHandlers(): void {
         injection: data.injection,
         charCount: data.charCount
       });
+    }
+
+    // Track quota usage for OAuth accounts during refine (SPEC_016 Phase 4)
+    try {
+      if (data.refined_text) {
+        const oauthManager = getOAuthManager();
+        const activeAccount = oauthManager.getActiveAccount();
+        if (activeAccount && activeAccount.status === 'active') {
+          // Update quota with the refined text length
+          oauthManager.updateQuota(activeAccount.accountId, data.refined_text);
+          logger.info('MAIN', `Quota updated for ${activeAccount.email} (Refine mode)`, {
+            textLength: data.refined_text.length,
+            updatedUsage: oauthManager.getQuotaInfo(activeAccount.accountId)
+          });
+        }
+      }
+    } catch (err) {
+      logger.warn('MAIN', 'Failed to update quota after refine processing', err);
     }
   });
 
@@ -716,6 +908,24 @@ function setupPythonEventHandlers(): void {
       `✨ "${instructionPreview}${data.instruction.length > 50 ? '...' : ''}"\n\n${data.original_length} → ${data.refined_length} chars`,
       false
     );
+
+    // Track quota usage for OAuth accounts during instruction refine (SPEC_016 Phase 4)
+    try {
+      if (data.refined_text) {
+        const oauthManager = getOAuthManager();
+        const activeAccount = oauthManager.getActiveAccount();
+        if (activeAccount && activeAccount.status === 'active') {
+          // Update quota with the refined text length
+          oauthManager.updateQuota(activeAccount.accountId, data.refined_text);
+          logger.info('MAIN', `Quota updated for ${activeAccount.email} (Instruction Refine mode)`, {
+            textLength: data.refined_text.length,
+            updatedUsage: oauthManager.getQuotaInfo(activeAccount.accountId)
+          });
+        }
+      }
+    } catch (err) {
+      logger.warn('MAIN', 'Failed to update quota after instruction refine processing', err);
+    }
 
     // Log performance metrics
     if (data.metrics) {
@@ -835,43 +1045,73 @@ async function syncPythonConfig(): Promise<void> {
     additionalKey: additionalKey
   };
 
-  // Get API key if needed
+  // Get API credentials - prefer OAuth token over API key
   try {
     let apiKey: string | undefined;
     let storeKey: string | undefined;
     let provider: string | undefined;
 
     if (processingMode === 'cloud' || processingMode === 'gemini') {
-      storeKey = 'encryptedGeminiApiKey';
       provider = 'gemini';
+
+      // PRIORITY 1: Check for active OAuth account
+      const oauthManager = getOAuthManager();
+      const activeAccount = oauthManager.getActiveAccount();
+
+      if (activeAccount && activeAccount.status === 'active') {
+        // Use OAuth access token (preferred)
+        apiKey = activeAccount.accessToken;
+        logger.info('MAIN', `Using OAuth token for ${activeAccount.email}`);
+        config.authType = 'oauth';  // Signal to Python that this is OAuth
+        config.accountId = activeAccount.accountId;  // For error reporting
+      } else {
+        // FALLBACK: Use stored API key
+        storeKey = 'encryptedGeminiApiKey';
+        const encrypted = store.get(storeKey as any) as string | undefined;
+        if (encrypted && safeStorage.isEncryptionAvailable()) {
+          apiKey = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
+
+          // SPEC_013: Validate format (soft validation)
+          const isValid = validateStoredKeyFormat(provider, apiKey);
+          if (!isValid) {
+            logger.warn('MAIN', `Stored ${provider} API key has invalid format (legacy key?).`);
+          }
+
+          logger.info('MAIN', 'Using stored Gemini API key (OAuth not available)');
+          config.authType = 'apikey';
+        }
+      }
     } else if (processingMode === 'anthropic') {
       storeKey = 'encryptedAnthropicApiKey';
       provider = 'anthropic';
+      // (Anthropic does not use OAuth currently, only API keys)
     } else if (processingMode === 'openai') {
       storeKey = 'encryptedOpenaiApiKey';
       provider = 'openai';
+      // (OpenAI does not use OAuth currently, only API keys)
     }
 
-    if (storeKey && provider) {
+    // Decrypt stored API key if needed (non-OAuth path)
+    if (storeKey && provider && !apiKey) {
       const encrypted = store.get(storeKey as any) as string | undefined;
       if (encrypted && safeStorage.isEncryptionAvailable()) {
         apiKey = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
 
-        // SPEC_013: Validate format, log warning if invalid (soft validation)
+        // SPEC_013: Validate format
         const isValid = validateStoredKeyFormat(provider, apiKey);
         if (!isValid) {
-          logger.warn('MAIN',
-            `Stored ${provider} API key has invalid format (legacy key?). ` +
-            `Consider re-entering in Settings.`
-          );
-          // Still allow usage for backward compatibility
+          logger.warn('MAIN', `Stored ${provider} API key has invalid format.`);
         }
 
-        config.apiKey = apiKey;
+        config.authType = 'apikey';
       }
     }
+
+    if (apiKey) {
+      config.apiKey = apiKey;
+    }
   } catch (e) {
-    logger.error('MAIN', 'Failed to decrypt API key for sync', e);
+    logger.error('MAIN', 'Failed to retrieve API credentials for sync', e);
   }
 
   try {
@@ -911,6 +1151,25 @@ async function syncPythonConfig(): Promise<void> {
  * Setup IPC handlers for communication with Python
  */
 function setupIpcHandlers(): void {
+  // Debug logging from preload (settings window)
+  ipcMain.on('log', (_event, level: string, message: string) => {
+    if (level === 'DEBUG') {
+      logger.debug('PRELOAD', message);
+    } else if (level === 'WARN') {
+      logger.warn('PRELOAD', message);
+    } else if (level === 'ERROR') {
+      logger.error('PRELOAD', message);
+    } else {
+      logger.info('PRELOAD', message);
+    }
+  });
+
+  // Open external URLs (delegated from preload for security)
+  ipcMain.on('open-external', (_event, url: string) => {
+    logger.info('PRELOAD', `Opening external URL: ${url}`);
+    shell.openExternal(url);
+  });
+
   // Handle get-initial-state
   ipcMain.handle('get-initial-state', async () => {
     const currentMode = store.get('defaultMode') || 'standard';
@@ -930,6 +1189,26 @@ function setupIpcHandlers(): void {
 
     const actualProcessingMode = store.get('processingMode', 'local');
 
+    // Determine auth type: LOC (local/ollama), SUB (OAuth subscription), API (API key)
+    let authType = 'LOC';
+    if (actualProcessingMode === 'cloud' || actualProcessingMode === 'gemini') {
+      try {
+        const oauthManager = getOAuthManager();
+        const activeAccount = oauthManager.getActiveAccount();
+        if (activeAccount && activeAccount.status === 'active') {
+          authType = 'SUB';
+        } else {
+          // Check for API key fallback
+          const apiKeys = store.get('encryptedGeminiApiKey');
+          if (apiKeys) authType = 'API';
+        }
+      } catch (e) {
+        // Fallback to checking API key
+        const apiKeys = store.get('encryptedGeminiApiKey');
+        if (apiKeys) authType = 'API';
+      }
+    }
+
     return {
       status: pythonManager?.getStatus() || 'disconnected',
       isRecording,
@@ -938,7 +1217,8 @@ function setupIpcHandlers(): void {
       soundFeedback: store.get('soundFeedback', true),
       processingMode: actualProcessingMode,
       recordingMode: recordingMode,
-      refineMode: store.get('refineMode', 'autopilot')
+      refineMode: store.get('refineMode', 'autopilot'),
+      authType: authType
     };
   });
 
@@ -997,6 +1277,30 @@ function setupIpcHandlers(): void {
       await syncPythonConfig().catch(err => {
         logger.error('IPC', 'Post-setting sync failed', err);
       });
+    }
+
+    // Update auth type badge if processingMode changed
+    if (key === 'processingMode') {
+      const actualProcessingMode = store.get('processingMode', 'local');
+      let authType = 'LOC';
+      if (actualProcessingMode === 'cloud' || actualProcessingMode === 'gemini') {
+        try {
+          const oauthManager = getOAuthManager();
+          const activeAccount = oauthManager.getActiveAccount();
+          if (activeAccount && activeAccount.status === 'active') {
+            authType = 'SUB';
+          } else {
+            const apiKeys = store.get('encryptedGeminiApiKey');
+            if (apiKeys) authType = 'API';
+          }
+        } catch (e) {
+          const apiKeys = store.get('encryptedGeminiApiKey');
+          if (apiKeys) authType = 'API';
+        }
+      }
+      if (debugWindow && !debugWindow.isDestroyed()) {
+        debugWindow.webContents.send('badge-update', { authType });
+      }
     }
 
     // If auto-start setting changed
@@ -1382,6 +1686,154 @@ ipcMain.handle('apikey:test', async (_event, provider: string, key: string) => {
     return { success: false, error: 'Unknown provider' };
   } catch (e) {
     return { success: false, error: String(e) };
+  }
+});
+
+// ============================================================================
+// OAuth Google Hub - SPEC_016
+// ============================================================================
+
+/**
+ * Initiate OAuth flow for Google Hub
+ */
+ipcMain.handle('oauth:start-flow', async (_event, provider: string) => {
+  try {
+    const oauthManager = getOAuthManager();
+    const { authUrl, state } = await oauthManager.initiateFlow(provider);
+
+    logger.info('IPC', 'OAuth flow initiated');
+    return { success: true, authUrl, state };
+  } catch (error) {
+    logger.error('IPC', 'OAuth flow initiation failed', error);
+    return { success: false, error: String(error) };
+  }
+});
+
+/**
+ * List connected OAuth accounts
+ */
+ipcMain.handle('oauth:list-accounts', async () => {
+  try {
+    const oauthManager = getOAuthManager();
+    const accounts = oauthManager.getAccounts();
+
+    return {
+      success: true,
+      accounts: accounts.map(acc => ({
+        accountId: acc.accountId,
+        email: acc.email,
+        displayName: acc.displayName,
+        status: acc.status,
+        expiresAt: acc.expiresAt,
+        quotaUsedToday: acc.quotaUsedToday,
+        quotaLimitDaily: acc.quotaLimitDaily,
+        lastUsedAt: acc.lastUsedAt
+      }))
+    };
+  } catch (error) {
+    logger.error('IPC', 'Failed to list OAuth accounts', error);
+    return { success: false, error: String(error) };
+  }
+});
+
+/**
+ * Get active OAuth account
+ */
+ipcMain.handle('oauth:get-active', async () => {
+  try {
+    const oauthManager = getOAuthManager();
+    const account = oauthManager.getActiveAccount();
+
+    if (!account) {
+      return { success: true, account: null };
+    }
+
+    return {
+      success: true,
+      account: {
+        accountId: account.accountId,
+        email: account.email,
+        displayName: account.displayName,
+        status: account.status,
+        expiresAt: account.expiresAt,
+        quotaUsedToday: account.quotaUsedToday,
+        quotaLimitDaily: account.quotaLimitDaily,
+        lastUsedAt: account.lastUsedAt
+      }
+    };
+  } catch (error) {
+    logger.error('IPC', 'Failed to get active OAuth account', error);
+    return { success: false, error: String(error) };
+  }
+});
+
+/**
+ * Switch to different OAuth account
+ */
+ipcMain.handle('oauth:switch-account', async (_event, accountId: string) => {
+  try {
+    const oauthManager = getOAuthManager();
+    await oauthManager.setActiveAccount(accountId);
+
+    logger.info('IPC', `Switched to OAuth account ${accountId}`);
+
+    // Sync config to Python with new active account
+    await syncPythonConfig();
+
+    return { success: true };
+  } catch (error) {
+    logger.error('IPC', 'Failed to switch OAuth account', error);
+    return { success: false, error: String(error) };
+  }
+});
+
+/**
+ * Disconnect OAuth account
+ */
+ipcMain.handle('oauth:disconnect', async (_event, accountId: string) => {
+  try {
+    const oauthManager = getOAuthManager();
+    await oauthManager.disconnectAccount(accountId);
+
+    logger.info('IPC', `Disconnected OAuth account ${accountId}`);
+
+    // Sync config to Python
+    await syncPythonConfig();
+
+    return { success: true };
+  } catch (error) {
+    logger.error('IPC', 'Failed to disconnect OAuth account', error);
+    return { success: false, error: String(error) };
+  }
+});
+
+/**
+ * Get quota info for account
+ */
+ipcMain.handle('oauth:get-quota', async (_event, accountId: string) => {
+  try {
+    const oauthManager = getOAuthManager();
+    const quotaInfo = oauthManager.getQuotaInfo(accountId);
+
+    return { success: true, quotaInfo };
+  } catch (error) {
+    logger.error('IPC', 'Failed to get quota info', error);
+    return { success: false, error: String(error) };
+  }
+});
+
+/**
+ * Validate OAuth token
+ */
+ipcMain.handle('oauth:validate-token', async (_event, accountId: string) => {
+  try {
+    const oauthManager = getOAuthManager();
+    const valid = await oauthManager.validateToken(accountId);
+
+    return { success: true, valid };
+  } catch (error) {
+    logger.error('IPC', 'Failed to validate token', error);
+    return { success: false, error: String(error) };
   }
 });
 
@@ -1896,6 +2348,14 @@ app.on('before-quit', async () => {
   // Unregister global hotkey
   globalShortcut.unregisterAll();
   logger.info('MAIN', 'Global hotkeys unregistered');
+
+  // Cleanup OAuth Manager
+  try {
+    await getOAuthManager().destroy();
+    logger.info('MAIN', 'OAuth manager cleaned up');
+  } catch (e) {
+    logger.warn('MAIN', 'Error cleaning up OAuth manager', e);
+  }
 
   if (pythonManager) {
     await pythonManager.stop();

@@ -297,6 +297,103 @@ document.addEventListener('DOMContentLoaded', async () => {
             saveSetting('additionalKey', (e.target as HTMLSelectElement).value);
         });
 
+        // Google Hub OAuth event listeners (SPEC_016)
+        document.getElementById('oauth-connect-btn')?.addEventListener('click', async () => {
+            await initializeOAuthFlow();
+        });
+
+        document.getElementById('oauth-refresh-btn')?.addEventListener('click', async () => {
+            const activeAccount = await window.settingsAPI.oauth.getActive();
+            if (activeAccount.success && activeAccount.account) {
+                try {
+                    // OAuth refresh is handled automatically by OAuthManager
+                    // This button manually triggers validation and UI refresh
+                    await updateOAuthUI();
+                } catch (error) {
+                    console.error('Failed to refresh token:', error);
+                }
+            }
+        });
+
+        document.getElementById('oauth-disconnect-btn')?.addEventListener('click', async () => {
+            const activeAccount = await window.settingsAPI.oauth.getActive();
+            if (activeAccount.success && activeAccount.account) {
+                const confirmed = confirm(`Disconnect ${activeAccount.account.email}?`);
+                if (confirmed) {
+                    const result = await window.settingsAPI.oauth.disconnect(activeAccount.account.accountId);
+                    if (result.success) {
+                        await updateOAuthUI();
+                    } else {
+                        alert(`Error disconnecting account: ${result.error}`);
+                    }
+                }
+            }
+        });
+
+        // Connect another account button
+        document.getElementById('oauth-add-account-btn')?.addEventListener('click', async () => {
+            await initializeOAuthFlow();
+        });
+
+        // Initialize OAuth UI on load
+        updateOAuthUI();
+
+        // Listen for OAuth events from main process (SPEC_016 Phase 5)
+        window.settingsAPI.onOAuthEvent((event: any) => {
+            console.log('OAuth event received in settings:', event);
+
+            const { type, accountId, data } = event;
+
+            switch (type) {
+                case 'token-refreshed':
+                    // Silent success - just refresh UI
+                    updateOAuthUI();
+                    break;
+
+                case 'token-refresh-failed':
+                    showOAuthError(`Token refresh failed for ${data?.email}. Retrying...`);
+                    updateOAuthUI();
+                    break;
+
+                case 'token-revoked':
+                    showOAuthError(`Account ${data?.email} was disconnected. Please reconnect.`);
+                    updateOAuthUI();
+                    break;
+
+                case 'token-expired':
+                    showOAuthError(`Token expired for ${data?.email}. Refreshing...`);
+                    updateOAuthUI();
+                    break;
+
+                case 'quota-warning':
+                    const percent = Math.round((data.used / data.limit) * 100);
+                    showOAuthWarning(`${percent}% of daily quota used for ${data?.email}`);
+                    updateOAuthUI();
+                    break;
+
+                case 'quota-exceeded':
+                    showOAuthError(`Daily quota exceeded for ${data?.email}. Resets at ${new Date(data.resetAt).toLocaleTimeString()}.`);
+                    updateOAuthUI();
+                    break;
+
+                case 'network-error':
+                    showOAuthWarning(`Network error: ${data?.error}. Retrying automatically...`);
+                    break;
+
+                case 'account-status-changed':
+                    updateOAuthUI();
+                    break;
+            }
+        });
+
+        // Periodic quota refresh (every 5 seconds while Google Hub tab is visible)
+        setInterval(() => {
+            const googleHubTab = document.getElementById('google-hub');
+            if (googleHubTab && googleHubTab.style.display !== 'none') {
+                updateOAuthUI();
+            }
+        }, 5000);
+
         // API Keys tab event listeners (CSP-compliant)
         document.getElementById('test-gemini-btn')?.addEventListener('click', () => testApiKey('gemini'));
         document.getElementById('save-gemini-btn')?.addEventListener('click', () => saveApiKey('gemini'));
@@ -641,6 +738,311 @@ function resetHotkey(mode: 'dictate' | 'ask' | 'translate' | 'refine' | 'oops' =
 // External links handler (called from onclick in HTML)
 function openExternalLink(url: string) {
     window.settingsAPI.openExternal(url);
+}
+
+// ============================================================================
+// Google Hub OAuth Functions (SPEC_016)
+// ============================================================================
+
+async function updateOAuthUI() {
+    try {
+        const result = await window.settingsAPI.oauth.listAccounts();
+
+        if (!result.success) {
+            console.error('Failed to load OAuth accounts:', result.error);
+            showOAuthError();
+            return;
+        }
+
+        const accounts = result.accounts || [];
+        const activeResult = await window.settingsAPI.oauth.getActive();
+        const activeAccount = activeResult.success ? activeResult.account : null;
+
+        // Update UI based on account status
+        const noAccountsDiv = document.getElementById('oauth-no-accounts');
+        const accountsContainer = document.getElementById('oauth-accounts-container');
+        const quotaSection = document.getElementById('oauth-quota-section');
+        const activeAccountDiv = document.getElementById('oauth-active-account');
+        const fallbackNotice = document.getElementById('oauth-fallback-notice');
+
+        if (!noAccountsDiv || !accountsContainer || !quotaSection || !activeAccountDiv || !fallbackNotice) {
+            console.warn('OAuth UI elements not found');
+            return;
+        }
+
+        if (accounts.length === 0) {
+            // Show "no accounts" message
+            noAccountsDiv.style.display = 'block';
+            accountsContainer.style.display = 'none';
+            quotaSection.style.display = 'none';
+            activeAccountDiv.style.display = 'none';
+
+            // Check if API key fallback is in use
+            try {
+                const apiKeys = await window.settingsAPI.getApiKeys();
+                const hasGeminiKey = apiKeys && (apiKeys.gemini || apiKeys.google);
+                if (hasGeminiKey) {
+                    fallbackNotice.style.display = 'block';
+                } else {
+                    fallbackNotice.style.display = 'none';
+                }
+            } catch (err) {
+                console.warn('Failed to check API keys:', err);
+                fallbackNotice.style.display = 'none';
+            }
+        } else {
+            // Hide "no accounts" message
+            noAccountsDiv.style.display = 'none';
+            accountsContainer.style.display = 'block';
+
+            // Hide "Connect Another Account" button if 3 accounts are connected
+            const addAccountBtn = document.getElementById('oauth-add-account-btn');
+            if (addAccountBtn) {
+                addAccountBtn.style.display = accounts.length >= 3 ? 'none' : 'block';
+            }
+
+            // Update account list
+            const accountsList = document.getElementById('oauth-accounts-list');
+            if (accountsList) {
+                accountsList.innerHTML = accounts.map(account => {
+                    // Enhanced status badge with icons
+                    let statusBadge = '';
+                    let statusColor = '';
+                    switch (account.status) {
+                        case 'active':
+                            statusBadge = '✓ Active';
+                            statusColor = '#4ade80';
+                            break;
+                        case 'refreshing':
+                            statusBadge = '⟳ Refreshing...';
+                            statusColor = '#38bdf8';
+                            break;
+                        case 'expired':
+                            statusBadge = '⚠ Expired';
+                            statusColor = '#f97316';
+                            break;
+                        case 'revoked':
+                            statusBadge = '✗ Disconnected';
+                            statusColor = '#f87171';
+                            break;
+                        case 'error':
+                            statusBadge = '⚠ Error';
+                            statusColor = '#f87171';
+                            break;
+                        default:
+                            statusBadge = account.status;
+                            statusColor = '#94a3b8';
+                    }
+
+                    // Quota display if available
+                    let quotaDisplay = '';
+                    if (account.quotaUsedToday !== undefined && account.quotaLimitDaily !== undefined) {
+                        const quotaPercent = Math.round((account.quotaUsedToday / account.quotaLimitDaily) * 100);
+                        const quotaColor = quotaPercent >= 90 ? '#f87171' : quotaPercent >= 75 ? '#f97316' : '#4ade80';
+                        quotaDisplay = `<div style="color: ${quotaColor}; font-size: 0.85em; margin-top: 4px;">
+                            ${quotaPercent}% quota used
+                        </div>`;
+                    }
+
+                    return `
+                        <div style="padding: 12px; background: #1a2f3a; border: 1px solid #0ea5e9; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="color: #38bdf8; font-weight: 500;">${account.email}</div>
+                                <div style="color: #94a3b8; font-size: 0.85em; margin-top: 4px;">
+                                    Status: <span style="color: ${statusColor}; font-weight: 600;">${statusBadge}</span>
+                                </div>
+                                ${quotaDisplay}
+                            </div>
+                            <div>
+                                ${account.accountId === activeAccount?.accountId ? '<span style="color: #4ade80; font-weight: 500; font-size: 0.85em;">✓ Active</span>' : `<button class="btn btn-secondary" onclick="switchOAuthAccount('${account.accountId}')" style="font-size: 0.85em;">🔄 Switch</button>`}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // If we have accounts but no active account, set the first one as active
+            if (accounts.length > 0 && !activeAccount) {
+                console.warn('No active account set, setting first account as active');
+                const firstAccount = accounts[0];
+                await window.settingsAPI.oauth.switchAccount(firstAccount.accountId);
+                // Refresh to get the newly set active account
+                await updateOAuthUI();
+                return;
+            }
+
+            // Update active account display
+            if (activeAccount) {
+                activeAccountDiv.style.display = 'block';
+                const email = document.getElementById('oauth-active-email');
+                const status = document.getElementById('oauth-active-status');
+
+                if (email && status) {
+                    email.textContent = activeAccount.email;
+                    const statusText = activeAccount.status === 'active' ?
+                        `Expires: ${new Date(activeAccount.expiresAt).toLocaleString()}` :
+                        `Status: ${activeAccount.status}`;
+                    status.textContent = statusText;
+                }
+
+                // Show the active account section
+                activeAccountDiv.style.display = 'block';
+
+                // Update quota
+                const quotaResult = await window.settingsAPI.oauth.getQuota(activeAccount.accountId);
+                if (quotaResult.success && quotaResult.quotaInfo) {
+                    const quota = quotaResult.quotaInfo;
+                    quotaSection.style.display = 'block';
+
+                    const quotaText = document.getElementById('oauth-quota-text');
+                    const quotaPercent = document.getElementById('oauth-quota-percent');
+                    const quotaBar = document.getElementById('oauth-quota-bar');
+
+                    if (quotaText && quotaPercent && quotaBar) {
+                        quotaText.textContent = `${quota.used.toLocaleString()} / ${quota.limit.toLocaleString()} characters`;
+                        quotaPercent.textContent = `${quota.percentUsed.toFixed(1)}%`;
+                        quotaBar.style.width = `${Math.min(quota.percentUsed, 100)}%`;
+
+                        // Change bar color based on usage
+                        if (quota.percentUsed >= 95) {
+                            quotaBar.style.background = 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)';
+                        } else if (quota.percentUsed >= 80) {
+                            quotaBar.style.background = 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)';
+                        }
+                    }
+                }
+            } else {
+                activeAccountDiv.style.display = 'none';
+                quotaSection.style.display = 'none';
+            }
+        }
+
+        fallbackNotice.style.display = 'none';
+    } catch (error) {
+        console.error('Error updating OAuth UI:', error);
+        showOAuthError();
+    }
+}
+
+async function initializeOAuthFlow() {
+    try {
+        const button = document.getElementById('oauth-connect-btn') as HTMLButtonElement | null;
+        if (button) button.disabled = true;
+
+        const result = await window.settingsAPI.oauth.startFlow('google');
+
+        if (!result.success || !result.authUrl) {
+            alert(`Failed to start OAuth flow: ${result.error || 'Unknown error'}`);
+            if (button) button.disabled = false;
+            return;
+        }
+
+        // Open browser for authorization
+        window.settingsAPI.openExternal(result.authUrl);
+
+        // Wait for user to authorize and return
+        // The redirect server will handle the callback
+        // Check every second if an account was added
+        let attempts = 0;
+        const checkInterval = setInterval(async () => {
+            attempts++;
+
+            const listResult = await window.settingsAPI.oauth.listAccounts();
+            if (listResult.success && listResult.accounts && listResult.accounts.length > 0) {
+                clearInterval(checkInterval);
+                await updateOAuthUI();
+                if (button) button.disabled = false;
+            } else if (attempts > 300) {
+                // Timeout after 5 minutes
+                clearInterval(checkInterval);
+                if (button) button.disabled = false;
+                console.log('OAuth flow timed out, but you can check again');
+            }
+        }, 1000);
+    } catch (error) {
+        console.error('Failed to initialize OAuth flow:', error);
+        alert(`Error: ${error}`);
+        const button = document.getElementById('oauth-connect-btn') as HTMLButtonElement | null;
+        if (button) button.disabled = false;
+    }
+}
+
+async function switchOAuthAccount(accountId: string) {
+    try {
+        const result = await window.settingsAPI.oauth.switchAccount(accountId);
+        if (result.success) {
+            await updateOAuthUI();
+        } else {
+            alert(`Failed to switch account: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('Error switching account:', error);
+        alert(`Error: ${error}`);
+    }
+}
+
+async function disconnectOAuthAccount(accountId: string) {
+    const account = (await window.settingsAPI.oauth.listAccounts()).accounts?.find(a => a.accountId === accountId);
+    if (!account) return;
+
+    const confirmed = confirm(`Disconnect ${account.email}?`);
+    if (!confirmed) return;
+
+    try {
+        const result = await window.settingsAPI.oauth.disconnect(accountId);
+        if (result.success) {
+            await updateOAuthUI();
+        } else {
+            alert(`Failed to disconnect account: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('Error disconnecting account:', error);
+        alert(`Error: ${error}`);
+    }
+}
+
+function showOAuthError(message?: string) {
+    if (message) {
+        // Show error message in dedicated error display
+        const errorDiv = document.getElementById('oauth-error-message');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.className = 'oauth-error visible';
+
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                errorDiv.className = 'oauth-error';
+            }, 10000);
+        }
+    } else {
+        // Fallback behavior for general OAuth errors
+        const noAccountsDiv = document.getElementById('oauth-no-accounts');
+        const fallbackNotice = document.getElementById('oauth-fallback-notice');
+
+        if (noAccountsDiv) noAccountsDiv.style.display = 'block';
+        if (fallbackNotice) fallbackNotice.style.display = 'block';
+    }
+}
+
+function showOAuthWarning(message: string) {
+    const errorDiv = document.getElementById('oauth-error-message');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.className = 'oauth-warning visible';
+
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            errorDiv.className = 'oauth-warning';
+        }, 5000);
+    }
+}
+
+function clearOAuthError() {
+    const errorDiv = document.getElementById('oauth-error-message');
+    if (errorDiv) {
+        errorDiv.className = 'oauth-error';
+        errorDiv.textContent = '';
+    }
 }
 
 // API Key Functions
