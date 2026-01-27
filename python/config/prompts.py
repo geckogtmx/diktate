@@ -59,12 +59,14 @@ Input: {text}
 Cleaned text:"""
 
 # ASK: Dedicated prompt for Q&A mode
-PROMPT_ASK = """You are a helpful AI assistant. The user has asked you a question via voice.
-Answer the question concisely and helpfully. Be direct and informative.
+PROMPT_ASK = """Answer the user's question directly and concisely. 
+Rules:
+1. Return ONLY the answer text.
+4. NO conversational fillers at all
 
 USER QUESTION: {text}
 
-YOUR ANSWER:"""
+ANSWER:"""
 
 # REFINE_INSTRUCTION: Dedicated prompt for instruction-based edits
 PROMPT_REFINE_INSTRUCTION = """You are a text editing assistant. Follow this instruction precisely:
@@ -92,17 +94,15 @@ Input: {text}
 Cleaned text:"""
 
 # --- GEMINI SPECIFIC OVERRIDES (SPEC_033) ---
-# Gemini requires stricter instructions to trigger markdown/formatting behavior.
-PROMPT_GEMINI_ASK = """You are a professional AI assistant. The user is using voice dictation to ask you a question.
-
-RULES:
-1. Be direct, informative, and concise.
-2. Use MARKDOWN for structure: use bolding for emphasis, bullet points for lists, and headers if appropriate.
-3. Do not include conversational filler or meta-talk about being an AI.
+# Gemini requires stricter instructions to be concise and avoid meta-talk.
+PROMPT_GEMINI_ASK = """Answer the user's question directly and concisely. 
+Rules:
+1. Return ONLY the answer text.
+4. NO conversational fillers at all
 
 USER QUESTION: {text}
 
-YOUR FORMATTED ANSWER:"""
+ANSWER:"""
 
 PROMPT_GEMINI_REFINE_INSTRUCTION = """You are a strictly compliant text editing engine. Follow the user's instruction precisely on the provided text.
 
@@ -150,24 +150,20 @@ MODEL_PROMPT_OVERRIDES = {
     },
     # Gemini 2.5 / 3.0 series (Stable & Preview)
     'gemini-2.5-flash': {
-        'ask': PROMPT_GEMINI_ASK,
-        'refine_instruction': PROMPT_GEMINI_REFINE_INSTRUCTION,
-        'refine': PROMPT_GEMINI_REFINE
+        'standard': PROMPT_GEMMA_STANDARD,
+        'ask': PROMPT_GEMINI_ASK
     },
     'gemini-2.5-pro': {
-        'ask': PROMPT_GEMINI_ASK,
-        'refine_instruction': PROMPT_GEMINI_REFINE_INSTRUCTION,
-        'refine': PROMPT_GEMINI_REFINE
+        'standard': PROMPT_GEMMA_STANDARD,
+        'ask': PROMPT_GEMINI_ASK
     },
     'gemini-3-flash-preview': {
-        'ask': PROMPT_GEMINI_ASK,
-        'refine_instruction': PROMPT_GEMINI_REFINE_INSTRUCTION,
-        'refine': PROMPT_GEMINI_REFINE
+        'standard': PROMPT_GEMMA_STANDARD,
+        'ask': PROMPT_GEMINI_ASK
     },
     'gemini-3-pro-preview': {
-        'ask': PROMPT_GEMINI_ASK,
-        'refine_instruction': PROMPT_GEMINI_REFINE_INSTRUCTION,
-        'refine': PROMPT_GEMINI_REFINE
+        'standard': PROMPT_GEMMA_STANDARD,
+        'ask': PROMPT_GEMINI_ASK
     },
     # Add other model-specific prompts here as needed
 }
