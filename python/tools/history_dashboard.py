@@ -394,6 +394,10 @@ DASHBOARD_HTML = """
         <div class="performance-section">
             <h2>Performance Metrics (Averages)</h2>
             <div class="perf-row">
+                <span class="perf-label">Recording Duration</span>
+                <span class="perf-value">{{ stats.avg_audio_duration_s|round(1) }}s</span>
+            </div>
+            <div class="perf-row">
                 <span class="perf-label">Transcription (Whisper)</span>
                 <span class="perf-value">{{ stats.avg_transcription_ms }}ms</span>
             </div>
@@ -518,6 +522,38 @@ DASHBOARD_HTML = """
         </div>
         {% endif %}
 
+        {% if ollama_status %}
+        <div class="performance-section" style="margin-top: 30px;">
+            <h2>Ollama Status</h2>
+
+            <div class="system-grid" style="grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                <div class="system-card">
+                    <div class="system-card-title">Loaded Model</div>
+                    <div class="system-card-value">{{ ollama_status.model_name or 'None' }}</div>
+                    <div class="system-card-unit">active</div>
+                </div>
+
+                <div class="system-card">
+                    <div class="system-card-title">VRAM Usage</div>
+                    <div class="system-card-value">{{ '%.1f GB' % ollama_status.vram_gb if ollama_status.vram_gb else 'N/A' }}</div>
+                    <div class="system-card-unit">allocated</div>
+                </div>
+
+                <div class="system-card">
+                    <div class="system-card-title">Processor</div>
+                    <div class="system-card-value">{{ ollama_status.processor or 'N/A' }}</div>
+                    <div class="system-card-unit">mode</div>
+                </div>
+
+                <div class="system-card">
+                    <div class="system-card-title">Unload Timer</div>
+                    <div class="system-card-value">{{ '%d min' % ollama_status.unload_minutes if ollama_status.unload_minutes else 'N/A' }}</div>
+                    <div class="system-card-unit">remaining</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         {% if advanced %}
         <div class="performance-section">
             <h2>Content Metrics (All Sessions)</h2>
@@ -537,32 +573,33 @@ DASHBOARD_HTML = """
                 <span class="perf-label">Avg Words per Session</span>
                 <span class="perf-value">{{ advanced.avg_raw_words }}</span>
             </div>
-            <div class="perf-row">
-                <span class="perf-label">Words Per Second (Whisper)</span>
-                <span class="perf-value" style="color: #4caf50;">{{ advanced.words_per_second }} wps</span>
-            </div>
         </div>
 
         <div class="performance-section">
-            <h2>Quality Metrics</h2>
+            <h2>LLM Processing Metrics</h2>
             <div class="perf-row">
-                <span class="perf-label">Transcription Accuracy</span>
-                <span class="perf-value" style="color: #667eea;">{{ advanced.accuracy_percent }}%</span>
+                <span class="perf-label">LLM Edit Rate</span>
+                <span class="perf-value" style="color: #667eea;">{{ advanced.char_change_percent }}%</span>
             </div>
             <div class="perf-row">
-                <span class="perf-label">Text Change Rate</span>
-                <span class="perf-value">{{ advanced.char_change_percent }}%</span>
+                <span class="perf-label">Total Pipeline WPM</span>
+                <span class="perf-value">{{ advanced.pipeline_wpm | round(1) }} words/min</span>
+            </div>
+            <div class="perf-row">
+                <span class="perf-label">End-to-End WPM</span>
+                <span class="perf-value" style="color: #4caf50;">{{ advanced.end_to_end_wpm | round(1) }} words/min</span>
             </div>
             <div class="perf-row" style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px; margin-top: 10px;">
                 <span class="perf-label" style="font-size: 0.8em; color: #666;">
-                    <em>Accuracy = how much text stays same after LLM processing<br/>
-                    Change Rate = percentage of characters modified</em>
+                    <em>Edit Rate = how much the LLM changed the raw transcription<br/>
+                    Pipeline WPM = processing time only (transcription + LLM)<br/>
+                    End-to-End WPM = your actual capability (dictation + processing)</em>
                 </span>
             </div>
         </div>
 
         <div class="performance-section">
-            <h2>Normalized Performance (Accounting for Recording Length)</h2>
+            <h2>Pipeline Performance</h2>
             <div class="perf-row">
                 <span class="perf-label">Avg Recording Duration</span>
                 <span class="perf-value">{{ advanced.avg_audio_duration_s }}s</span>
@@ -729,6 +766,29 @@ def get_app_health_metrics(manager, system_monitor):
         }
 
 
+def get_ollama_status_for_dashboard():
+    """Get current Ollama model status for dashboard display (Phase 2)"""
+    try:
+        from utils.history_manager import get_ollama_status
+        status = get_ollama_status()
+
+        # Return dict with all fields (None if not loaded)
+        return {
+            'model_name': status.get('model_name'),
+            'vram_gb': status.get('vram_gb'),
+            'processor': status.get('processor'),
+            'unload_minutes': status.get('unload_minutes')
+        }
+    except Exception as e:
+        logger.warning(f"Failed to get Ollama status: {e}")
+        return {
+            'model_name': None,
+            'vram_gb': None,
+            'processor': None,
+            'unload_minutes': None
+        }
+
+
 def calculate_advanced_stats(manager):
     """Calculate advanced metrics like character counts, WPS, accuracy"""
     try:
@@ -770,18 +830,27 @@ def calculate_advanced_stats(manager):
         avg_raw_words = total_raw_words / total_sessions if total_sessions > 0 else 0
         avg_processed_words = total_processed_words / total_sessions if total_sessions > 0 else 0
 
-        # Calculate words per second (transcription only - faster metric)
+        # Calculate words per minute (WPM) - transcription only
         avg_transcription_ms = sum(s.get('transcription_time_ms') or 0 for s in successful) / total_sessions if total_sessions > 0 else 0
-        wps = (total_raw_words / (avg_transcription_ms / 1000)) if avg_transcription_ms > 0 else 0
+        total_transcription_time_s = sum(s.get('transcription_time_ms') or 0 for s in successful) / 1000
+        transcription_wpm = (total_raw_words / (total_transcription_time_s / 60)) if total_transcription_time_s > 0 else 0
 
-        # Calculate accuracy: how much text changes after processing
-        # Lower change % = more accurate transcription
+        # Calculate end-to-end pipeline WPM (transcription + processing)
+        # This is comparable to typing speed
+        total_pipeline_time_s = total_time_ms / 1000
+        pipeline_wpm = (total_raw_words / (total_pipeline_time_s / 60)) if total_pipeline_time_s > 0 else 0
+
+        # Calculate true end-to-end WPM (dictation + transcription + processing)
+        # This is the human's actual capability using the app
+        total_audio_duration_s = sum(s.get('audio_duration_s') or 0 for s in successful)
+        total_end_to_end_time_s = total_audio_duration_s + total_pipeline_time_s
+        end_to_end_wpm = (total_raw_words / (total_end_to_end_time_s / 60)) if total_end_to_end_time_s > 0 else 0
+
+        # Calculate LLM edit rate: how much text changes after processing
         if total_raw_chars > 0:
             char_change_percent = abs(total_processed_chars - total_raw_chars) / total_raw_chars * 100
-            # Invert to get "accuracy" (100% = no change, 0% = complete change)
-            accuracy_percent = max(0, 100 - char_change_percent)
         else:
-            accuracy_percent = 100
+            char_change_percent = 0
 
         # Calculate throughput metrics (normalize by recording length)
         # This shows how efficiently the pipeline processes content
@@ -830,8 +899,9 @@ def calculate_advanced_stats(manager):
             'avg_processed_chars': round(avg_processed_chars, 1),
             'avg_raw_words': round(avg_raw_words, 1),
             'avg_processed_words': round(avg_processed_words, 1),
-            'words_per_second': round(wps, 1),
-            'accuracy_percent': round(accuracy_percent, 1),
+            'transcription_wpm': round(transcription_wpm, 1),  # Transcription only WPM
+            'pipeline_wpm': round(pipeline_wpm, 1),  # Full pipeline WPM (comparable to typing)
+            'end_to_end_wpm': round(end_to_end_wpm, 1),  # True end-to-end including dictation time
             'char_change_percent': round(char_change_percent, 1),
             'avg_audio_duration_s': round(avg_audio_duration_s, 2),
             'efficiency_ratio': round(efficiency_ratio, 2),
@@ -853,6 +923,7 @@ def dashboard():
         advanced = calculate_advanced_stats(manager)
         system_resources = get_system_resources(system_monitor)
         app_health = get_app_health_metrics(manager, system_monitor)
+        ollama_status = get_ollama_status_for_dashboard()
         db_location = manager.db_path
         return render_template_string(
             DASHBOARD_HTML,
@@ -860,6 +931,7 @@ def dashboard():
             advanced=advanced,
             system_resources=system_resources,
             app_health=app_health,
+            ollama_status=ollama_status,
             db_location=db_location
         )
     except Exception as e:

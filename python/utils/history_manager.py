@@ -8,12 +8,76 @@ import sqlite3
 import threading
 import logging
 import os
+import subprocess
+import re
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from queue import Queue
 
 logger = logging.getLogger(__name__)
+
+
+def get_ollama_status() -> Dict[str, Any]:
+    """
+    Get Ollama model status from 'ollama ps' command.
+
+    Returns:
+        Dictionary with loaded model info or empty dict if not loaded/failed
+        Keys: model_name, vram_gb, processor, unload_minutes
+    """
+    try:
+        result = subprocess.run(
+            ['ollama', 'ps'],
+            capture_output=True,
+            text=True,
+            timeout=2.0
+        )
+
+        if result.returncode != 0:
+            return {}
+
+        lines = result.stdout.strip().split('\n')
+        if len(lines) < 2:  # No model loaded (only header)
+            return {}
+
+        # Parse the second line (first model entry)
+        # Format: NAME         ID              SIZE      PROCESSOR    CONTEXT    UNTIL
+        # Example: gemma3:4b    a2af6cc3eb7f    4.3 GB    100% GPU     2048       9 minutes from now
+        data_line = lines[1]
+        parts = data_line.split()
+
+        if len(parts) < 6:
+            return {}
+
+        model_name = parts[0]
+        size_str = parts[2] + ' ' + parts[3]  # "4.3 GB"
+        processor = ' '.join(parts[4:6])  # "100% GPU" or "CPU"
+        until_str = ' '.join(parts[7:])  # "9 minutes from now" or similar
+
+        # Parse VRAM size (e.g., "4.3 GB" -> 4.3)
+        vram_match = re.search(r'([\d.]+)\s*GB', size_str)
+        vram_gb = float(vram_match.group(1)) if vram_match else None
+
+        # Parse unload time (e.g., "9 minutes from now" -> 9, "About a minute" -> 1)
+        unload_match = re.search(r'(\d+)\s*minutes?', until_str)
+        if unload_match:
+            unload_minutes = int(unload_match.group(1))
+        elif 'about a minute' in until_str.lower():
+            unload_minutes = 1
+        else:
+            unload_minutes = None
+
+        return {
+            'model_name': model_name,
+            'vram_gb': vram_gb,
+            'processor': processor,
+            'unload_minutes': unload_minutes
+        }
+
+    except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
+        logger.debug(f"Failed to get Ollama status: {e}")
+        return {}
 
 
 class HistoryManager:
@@ -89,6 +153,40 @@ class HistoryManager:
                 ON history(success)
             """)
 
+            # Create system_metrics table for Phase 2 monitoring
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS system_metrics (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    history_id INTEGER,
+                    sample_type TEXT,
+                    cpu_percent REAL,
+                    memory_percent REAL,
+                    memory_used_gb REAL,
+                    gpu_memory_used_gb REAL,
+                    gpu_memory_percent REAL,
+                    ollama_model_loaded TEXT,
+                    ollama_vram_gb REAL,
+                    ollama_processor TEXT,
+                    ollama_unload_minutes INTEGER,
+                    FOREIGN KEY (history_id) REFERENCES history(id)
+                )
+            """)
+
+            # Create index for metrics queries
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_metrics_timestamp
+                ON system_metrics(timestamp)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_metrics_type
+                ON system_metrics(sample_type)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_metrics_history
+                ON system_metrics(history_id)
+            """)
+
             conn.commit()
             conn.close()
 
@@ -120,7 +218,11 @@ class HistoryManager:
                     break
 
                 # Write the item to database
-                self._write_to_db(item)
+                # Check if it's a metrics tuple or regular history dict
+                if isinstance(item, tuple) and item[0] == 'metrics':
+                    self._write_metrics_to_db(item[1])
+                else:
+                    self._write_to_db(item)
                 self.write_queue.task_done()
 
             except Empty:
@@ -187,6 +289,61 @@ class HistoryManager:
 
         # Queue the write asynchronously
         self.write_queue.put(data)
+
+    def log_system_metrics(self, metrics_data: Dict[str, Any]) -> None:
+        """
+        Queue system metrics for logging. Non-blocking.
+
+        Args:
+            metrics_data: Dictionary with system metrics (CPU, Memory, GPU, Ollama status)
+                Required keys: sample_type ('post_recording' or 'background_probe')
+                Optional keys: history_id, cpu_percent, memory_percent, etc.
+        """
+        # Queue the write asynchronously (same queue as history)
+        self.write_queue.put(('metrics', metrics_data))
+
+    def _write_metrics_to_db(self, data: Dict[str, Any]) -> None:
+        """
+        Write a single metrics record to the database.
+
+        Args:
+            data: Dictionary with keys matching system_metrics table columns
+        """
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            # Insert the metrics record
+            cursor.execute("""
+                INSERT INTO system_metrics (
+                    timestamp, history_id, sample_type,
+                    cpu_percent, memory_percent, memory_used_gb,
+                    gpu_memory_used_gb, gpu_memory_percent,
+                    ollama_model_loaded, ollama_vram_gb,
+                    ollama_processor, ollama_unload_minutes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                data.get('timestamp', datetime.now().isoformat()),
+                data.get('history_id'),
+                data.get('sample_type'),
+                data.get('cpu_percent'),
+                data.get('memory_percent'),
+                data.get('memory_used_gb'),
+                data.get('gpu_memory_used_gb'),
+                data.get('gpu_memory_percent'),
+                data.get('ollama_model_loaded'),
+                data.get('ollama_vram_gb'),
+                data.get('ollama_processor'),
+                data.get('ollama_unload_minutes')
+            ))
+
+            conn.commit()
+            conn.close()
+
+            logger.debug(f"Recorded {data.get('sample_type', 'unknown')} system metrics")
+
+        except sqlite3.Error as e:
+            logger.error(f"Database metrics write error: {e}")
 
     def search_by_phrase(self, phrase: str, limit: int = 50) -> list:
         """
@@ -304,11 +461,12 @@ class HistoryManager:
                 SELECT
                     AVG(transcription_time_ms) as avg_trans,
                     AVG(processing_time_ms) as avg_proc,
-                    AVG(total_time_ms) as avg_total
+                    AVG(total_time_ms) as avg_total,
+                    AVG(audio_duration_s) as avg_audio
                 FROM history WHERE success = 1
             """)
             row = cursor.fetchone()
-            avg_trans, avg_proc, avg_total = row if row else (None, None, None)
+            avg_trans, avg_proc, avg_total, avg_audio = row if row else (None, None, None, None)
 
             # By mode
             cursor.execute("""
@@ -329,6 +487,7 @@ class HistoryManager:
                 "avg_transcription_ms": round(avg_trans, 2) if avg_trans else 0,
                 "avg_processing_ms": round(avg_proc, 2) if avg_proc else 0,
                 "avg_total_ms": round(avg_total, 2) if avg_total else 0,
+                "avg_audio_duration_s": round(avg_audio, 2) if avg_audio else 0,
                 "by_mode": by_mode
             }
         except sqlite3.Error as e:

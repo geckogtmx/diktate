@@ -367,6 +367,9 @@ class IpcServer:
             except Exception as e:
                 logger.warning(f"[SystemMonitor] Failed to emit startup metrics: {e}")
 
+            # Start background metrics monitoring (Phase 2)
+            self._start_metrics_monitoring()
+
         except Exception as e:
             logger.warning(f"Startup warmup encountered issues: {e}")
         finally:
@@ -505,6 +508,35 @@ class IpcServer:
                 logger.info("[MUTE_MONITOR] COM uninitialized")
             except Exception:
                 pass
+
+    def _start_metrics_monitoring(self):
+        """Start background thread for periodic system metrics sampling (Phase 2)"""
+        if self.monitor_thread and self.should_monitor:
+            logger.info("[METRICS] Background monitoring already running")
+            return
+
+        self.should_monitor = True
+        self.monitor_thread = threading.Thread(
+            target=self._metrics_monitor_loop,
+            daemon=True,
+            name="MetricsMonitorThread"
+        )
+        self.monitor_thread.start()
+        logger.info("[METRICS] Started background metrics monitoring (60s interval)")
+
+    def _metrics_monitor_loop(self):
+        """Background loop that captures system metrics every 60 seconds"""
+        while self.should_monitor:
+            try:
+                # Wait 60 seconds before next sample
+                time.sleep(60)
+
+                # Capture background probe metrics
+                self._capture_system_metrics('background_probe')
+
+            except Exception as e:
+                logger.error(f"[METRICS] Error in monitoring loop: {e}")
+                time.sleep(60)  # Back off on error
 
     def _initialize_components(self) -> None:
         """Initialize all pipeline components"""
@@ -851,6 +883,9 @@ class IpcServer:
                 except Exception as e:
                     logger.warning(f"[HISTORY] Failed to log session: {e}")
 
+            # Capture system metrics after successful recording (Phase 2)
+            self._capture_system_metrics('post_recording')
+
             # Cleanup
             if self.audio_file:
                 try:
@@ -987,6 +1022,9 @@ YOUR ANSWER:"""
                     })
                 except Exception as e:
                     logger.warning(f"[HISTORY] Failed to log ask session: {e}")
+
+            # Capture system metrics after successful ask (Phase 2)
+            self._capture_system_metrics('post_recording')
 
             # Cleanup
             if self.audio_file:
@@ -1210,6 +1248,9 @@ Output only the modified text, nothing else:"""
                         except Exception as e:
                             logger.warning(f"[HISTORY] Failed to log refine session: {e}")
 
+                    # Capture system metrics after successful refine (Phase 2)
+                    self._capture_system_metrics('post_recording')
+
                 except Exception as e:
                     logger.error(f"[REFINE-INST] Processing failed: {e}")
                     self.perf.end("processing")
@@ -1263,6 +1304,45 @@ Output only the modified text, nothing else:"""
                     logger.warning(f"[HISTORY] Failed to log refine error: {hist_e}")
 
             self._set_state(State.ERROR)
+
+    def _capture_system_metrics(self, sample_type: str, history_id: Optional[int] = None) -> None:
+        """
+        Capture system metrics snapshot and log to database.
+
+        Args:
+            sample_type: 'post_recording' or 'background_probe'
+            history_id: Optional link to history record (for post_recording)
+        """
+        if not self.history_manager or not self.system_monitor:
+            return
+
+        try:
+            # Get system snapshot from SystemMonitor
+            snapshot = self.system_monitor.get_snapshot()
+
+            # Get Ollama status
+            from utils.history_manager import get_ollama_status
+            ollama_status = get_ollama_status()
+
+            # Log metrics
+            self.history_manager.log_system_metrics({
+                'sample_type': sample_type,
+                'history_id': history_id,
+                'cpu_percent': snapshot.get('cpu_percent'),
+                'memory_percent': snapshot.get('memory_percent'),
+                'memory_used_gb': snapshot.get('memory_used_gb'),
+                'gpu_memory_used_gb': snapshot.get('gpu_memory_used_gb'),
+                'gpu_memory_percent': snapshot.get('gpu_memory_percent'),
+                'ollama_model_loaded': ollama_status.get('model_name'),
+                'ollama_vram_gb': ollama_status.get('vram_gb'),
+                'ollama_processor': ollama_status.get('processor'),
+                'ollama_unload_minutes': ollama_status.get('unload_minutes')
+            })
+
+            logger.debug(f"[METRICS] Captured {sample_type} system metrics")
+
+        except Exception as e:
+            logger.warning(f"[METRICS] Failed to capture metrics: {e}")
 
     def check_health(self) -> dict:
         """Check health of the current processor/model (A.1)"""
