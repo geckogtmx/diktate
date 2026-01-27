@@ -312,11 +312,16 @@ class CloudProcessor:
                         "Content-Type": "application/json",
                         "Authorization": f"Bearer {self.api_key}"
                     }
+                    logger.info(f"[CLOUD] Using Gemini 1.5 Flash (OAuth)")
                 else:
                     # API key (query parameter)
                     url = f"{self.api_url}?key={self.api_key}"
                     headers = {"Content-Type": "application/json"}
+                    logger.info(f"[CLOUD] Using Gemini 1.5 Flash (API Key)")
 
+                # Log the prompt usage (for debugging "tricks" like bullets not working)
+                logger.info(f"[CLOUD] Prompt Template: {active_prompt[:50]}...")
+                
                 response = requests.post(
                     url,
                     json={
