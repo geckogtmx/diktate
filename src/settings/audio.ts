@@ -203,7 +203,7 @@ function updateSignalMeter() {
 export async function measureNoiseFloor() {
     const btn = document.getElementById('measure-noise-btn') as HTMLButtonElement;
     const resultDiv = document.getElementById('noise-result');
-    if (!resultDiv || !state.isMonitoring) return;
+    if (!resultDiv) return;
 
     btn.disabled = true;
     btn.textContent = 'Measuring...';
@@ -217,24 +217,128 @@ export async function measureNoiseFloor() {
     }
 
     const samples: number[] = [];
-    const duration = 3000;
-    const collectInterval = setInterval(() => {
-        if (state.audioAnalyzer) samples.push(state.audioAnalyzer.getRMS());
-    }, 50);
+    const durationCount = 60; // 3 seconds at 50ms intervals
 
-    await sleep(duration);
-    clearInterval(collectInterval);
+    return new Promise<void>((resolve) => {
+        let count = 0;
+        const interval = setInterval(() => {
+            if (state.audioAnalyzer) samples.push(state.audioAnalyzer.getRMS());
+            count++;
+            if (count >= durationCount) {
+                clearInterval(interval);
+                finish();
+            }
+        }, 50);
 
-    if (samples.length > 0 && state.audioAnalyzer) {
-        const avgRms = samples.reduce((a, b) => a + b, 0) / samples.length;
-        const db = state.audioAnalyzer.toDecibels(avgRms);
-        // Logic for saving and displaying will be finalized in union with UI
+        const finish = async () => {
+            if (samples.length > 0 && state.audioAnalyzer) {
+                const avgRms = samples.reduce((a, b) => a + b, 0) / samples.length;
+                const db = state.audioAnalyzer.toDecibels(avgRms);
+
+                // Save
+                const deviceSelect = document.getElementById('audio-device') as HTMLSelectElement;
+                if (deviceSelect) {
+                    const deviceId = deviceSelect.value;
+                    const deviceLabel = deviceSelect.options[deviceSelect.selectedIndex].text;
+                    const settings = await window.settingsAPI.getAll();
+                    const profiles = settings.audioDeviceProfiles || {};
+                    profiles[deviceId] = {
+                        deviceId,
+                        deviceLabel,
+                        noiseFloor: db,
+                        lastCalibrated: new Date().toISOString()
+                    };
+                    await window.settingsAPI.set('audioDeviceProfiles', profiles);
+                }
+
+                // Display
+                displayNoiseFloorResult(db);
+            }
+            btn.disabled = false;
+            btn.textContent = '📊 Measure Noise Floor';
+            resolve();
+        };
+    });
+}
+
+function displayNoiseFloorResult(noiseFloorDb: number) {
+    const resultDiv = document.getElementById('noise-result');
+    const historyDiv = document.getElementById('noise-history');
+    if (!resultDiv) return;
+
+    let emoji = noiseFloorDb < -50 ? '✅' : (noiseFloorDb < -35 ? '⚠️' : '❌');
+    let assessment = noiseFloorDb < -50 ? 'Excellent' : (noiseFloorDb < -35 ? 'Moderate' : 'High Noise');
+
+    resultDiv.textContent = `${emoji} Noise Floor: ${noiseFloorDb.toFixed(1)} dB\n\nAssessment: ${assessment}`;
+    if (historyDiv) {
+        historyDiv.style.display = 'block';
+        historyDiv.textContent = `Last measured: ${new Date().toLocaleString()}`;
     }
+}
 
-    btn.disabled = false;
-    btn.textContent = '📊 Measure Noise Floor';
+export async function loadNoiseFloorForDevice(deviceId: string) {
+    const settings = await window.settingsAPI.getAll();
+    const profiles = settings.audioDeviceProfiles || {};
+    const profile = profiles[deviceId];
+    const historyDiv = document.getElementById('noise-history');
+
+    if (profile && profile.noiseFloor !== null && historyDiv) {
+        historyDiv.style.display = 'block';
+        historyDiv.textContent = `Last measured: ${new Date(profile.lastCalibrated!).toLocaleString()} (${profile.noiseFloor.toFixed(1)} dB)`;
+    } else if (historyDiv) {
+        historyDiv.style.display = 'none';
+    }
+}
+
+export async function refreshAudioDevices(selectedId?: string, selectedLabel?: string) {
+    const select = document.getElementById('audio-device') as HTMLSelectElement | null;
+    if (!select) return;
+
+    try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputs = devices.filter(d => d.kind === 'audioinput');
+
+        select.innerHTML = '';
+        const def = document.createElement('option');
+        def.value = 'default';
+        def.text = 'Default Microphone';
+        select.appendChild(def);
+
+        audioInputs.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.deviceId;
+            opt.text = d.label || `Microphone ${select.length + 1}`;
+            select.appendChild(opt);
+        });
+
+        if (selectedId) {
+            select.value = selectedId;
+            if (select.value !== selectedId && selectedLabel) {
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].text === selectedLabel) {
+                        select.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        select.onchange = async () => {
+            const id = select.value;
+            const label = select.options[select.selectedIndex].text;
+            await window.settingsAPI.saveAudioDevice(id, label);
+            await loadNoiseFloorForDevice(id);
+        };
+
+        if (selectedId) await loadNoiseFloorForDevice(selectedId);
+    } catch (e) {
+        console.error('refreshAudioDevices failed:', e);
+    }
 }
 
 export async function runCompleteMicrophoneTest() {
-    // Ported from settings.ts with state.activeTestAborted awareness
+    // This involves complex multi-step UI logic, ported from settings.ts
+    // For now, let's ensure the skeleton exists to avoid runtime errors
+    console.warn('runCompleteMicrophoneTest not fully ported yet');
 }

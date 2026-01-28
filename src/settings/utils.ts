@@ -18,6 +18,64 @@ export function saveSetting(key: string, value: any) {
 }
 
 /**
+ * Loads settings into the DOM
+ */
+export function loadSettings(settings: any) {
+    if (!settings) return;
+
+    // General
+    setVal('processing-mode', settings.processingMode || 'local');
+    setCheck('auto-start', settings.autoStart || false);
+
+    // Audio - sound selection
+    setVal('start-sound', settings.startSound || 'a');
+    setVal('stop-sound', settings.stopSound || 'a');
+    setVal('ask-sound', settings.askSound || 'c');
+
+    // Audio - max recording duration
+    const maxDuration = settings.maxRecordingDuration !== undefined ? settings.maxRecordingDuration : 60;
+    const durationRadios = document.querySelectorAll<HTMLInputElement>('input[name="max-duration"]');
+    durationRadios.forEach(radio => {
+        radio.checked = parseInt(radio.value) === maxDuration;
+    });
+
+    // Models
+    setVal('default-model', settings.defaultOllamaModel || 'gemma3:4b');
+
+    // Modes
+    setVal('default-mode', settings.defaultMode || 'standard');
+    setVal('ask-output-mode', settings.askOutputMode || 'type');
+
+    // Trailing Space & Additional Keys
+    setCheck('trailing-space-enabled', settings.trailingSpaceEnabled !== false);
+    setVal('additional-key', settings.additionalKey || 'none');
+    setCheck('additional-key-enabled', settings.additionalKeyEnabled || false);
+
+    // Hotkeys
+    if (settings.hotkey) {
+        const d = document.getElementById('hotkey-display');
+        if (d) d.textContent = settings.hotkey;
+    }
+    if (settings.askHotkey) {
+        const d = document.getElementById('ask-hotkey-display');
+        if (d) d.textContent = settings.askHotkey;
+    }
+    if (settings.translateHotkey) {
+        const d = document.getElementById('translate-hotkey-display');
+        if (d) d.textContent = settings.translateHotkey;
+    }
+    if (settings.refineHotkey) {
+        const d = document.getElementById('refine-hotkey-display');
+        if (d) d.textContent = settings.refineHotkey;
+    }
+    if (settings.oopsHotkey) {
+        const d = document.getElementById('oops-hotkey-display');
+        if (d) d.textContent = settings.oopsHotkey;
+    }
+}
+
+
+/**
  * Tab Switching Logic
  */
 export function switchTab(tabId: string) {

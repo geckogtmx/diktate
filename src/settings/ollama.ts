@@ -123,3 +123,76 @@ export async function warmupModel() {
         alert('Error warming up model');
     }
 }
+
+export async function pullOllamaModel() {
+    const input = document.getElementById('ollama-pull-model') as HTMLInputElement;
+    const statusEl = document.getElementById('ollama-pull-status');
+    const modelName = input?.value?.trim();
+
+    if (!modelName) {
+        if (statusEl) statusEl.textContent = '⚠️ Please enter a model name';
+        return;
+    }
+
+    if (statusEl) {
+        statusEl.textContent = `⏳ Pulling ${modelName}...`;
+        statusEl.style.color = '#fbbf24';
+    }
+
+    try {
+        const response = await fetch('http://localhost:11434/api/pull', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: modelName, stream: false })
+        });
+
+        if (response.ok) {
+            if (statusEl) {
+                statusEl.textContent = `✅ Successfully pulled ${modelName}!`;
+                statusEl.style.color = '#4ade80';
+            }
+            if (input) input.value = '';
+            await loadOllamaModels();
+        } else {
+            const errorData = await response.text();
+            if (statusEl) {
+                statusEl.textContent = `❌ Failed: ${errorData}`;
+                statusEl.style.color = '#f87171';
+            }
+        }
+    } catch (e) {
+        if (statusEl) {
+            statusEl.textContent = `❌ Error: ${e}`;
+            statusEl.style.color = '#f87171';
+        }
+    }
+}
+
+export async function deleteOllamaModel(modelName: string) {
+    if (!confirm(`Delete model "${modelName}"?`)) return;
+
+    try {
+        const response = await fetch('http://localhost:11434/api/delete', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: modelName })
+        });
+
+        if (response.ok) {
+            alert(`🗑️ ${modelName} deleted successfully`);
+            await loadOllamaModels();
+        } else {
+            const errorData = await response.text();
+            alert(`❌ Failed to delete: ${errorData}`);
+        }
+    } catch (e) {
+        alert(`❌ Error deleting model: ${e}`);
+    }
+}
+
+export function quickPullModel(modelName: string) {
+    const input = document.getElementById('ollama-pull-model') as HTMLInputElement;
+    if (input) input.value = modelName;
+    pullOllamaModel();
+}
+
