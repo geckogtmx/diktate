@@ -2,9 +2,11 @@
  * Audio Management (SPEC_021)
  */
 
-import { state } from './store';
-import { STATUS_UPDATE_INTERVAL } from './constants';
-import { AudioLevel } from './types';
+import { state } from './store.js';
+import { STATUS_UPDATE_INTERVAL } from './constants.js';
+import { AudioLevel } from './types.js';
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export class AudioAnalyzer {
     private audioContext: AudioContext | null = null;
@@ -209,8 +211,6 @@ export async function measureNoiseFloor() {
     btn.textContent = 'Measuring...';
     resultDiv.style.display = 'block';
 
-    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
     for (let i = 3; i > 0; i--) {
         resultDiv.textContent = `🤫 Please remain silent...\n\nStarting in ${i}...`;
         await sleep(1000);
@@ -337,8 +337,239 @@ export async function refreshAudioDevices(selectedId?: string, selectedLabel?: s
     }
 }
 
+interface TestResults {
+    peakDb: number;
+    avgSpeechDb: number;
+    noiseFloorDb: number | null;
+    clipping: boolean;
+    tooQuiet: boolean;
+    highNoise: boolean;
+    status: 'excellent' | 'good' | 'warning' | 'poor';
+    issues: string[];
+    recommendations: string[];
+}
+
+/**
+ * Runs the multi-step full microphone diagnostic
+ */
 export async function runCompleteMicrophoneTest() {
-    // This involves complex multi-step UI logic, ported from settings.ts
-    // For now, let's ensure the skeleton exists to avoid runtime errors
-    console.warn('runCompleteMicrophoneTest not fully ported yet');
+    const btn = document.getElementById('complete-test-btn') as HTMLButtonElement;
+    const instructionsDiv = document.getElementById('test-instructions');
+    const resultDiv = document.getElementById('test-result');
+
+    if (!btn || !instructionsDiv || !resultDiv) return;
+
+    try {
+        btn.disabled = true;
+        btn.textContent = '🧪 Test in Progress...';
+        instructionsDiv.style.display = 'block';
+        resultDiv.style.display = 'none';
+
+        const deviceSelect = document.getElementById('audio-device') as HTMLSelectElement;
+        const deviceId = deviceSelect.value === 'default' ? undefined : deviceSelect.value;
+        const deviceLabel = deviceSelect.options[deviceSelect.selectedIndex].text;
+
+        // STEP 1: SPEECH TEST
+        instructionsDiv.innerHTML = `
+            <h4 style="color: #38bdf8; margin-bottom: 12px;">🎙️ Step 1: Read This Aloud</h4>
+            <p style="margin-bottom: 15px;">Please read at your normal volume for 15 seconds:</p>
+            <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid #0ea5e9; padding: 15px; border-radius: 6px; margin-bottom: 15px; font-style: italic; line-height: 1.5;">
+                "Imagine there's no heaven, it's easy if you try. No hell below us, above us only sky. Imagine all the people living for today."
+            </div>
+            <p style="color: #94a3b8; font-size: 0.9em;">⏱️ Recording for 15 seconds...</p>
+        `;
+
+        const speechSamples: { rms: number, peak: number }[] = [];
+        const speechDuration = 15000;
+        const speechStartTime = Date.now();
+
+        const analyzer = new AudioAnalyzer();
+        await analyzer.start(deviceId);
+
+        while (Date.now() - speechStartTime < speechDuration) {
+            const rms = analyzer.getRMS();
+            const peak = analyzer.getPeak();
+            speechSamples.push({ rms, peak });
+
+            const remaining = Math.ceil((speechDuration - (Date.now() - speechStartTime)) / 1000);
+            const timeDisplay = instructionsDiv.querySelector('p:last-child');
+            if (timeDisplay) timeDisplay.textContent = `⏱️ Recording for ${remaining} seconds...`;
+
+            await sleep(100);
+        }
+
+        // STEP 2: NOISE TEST
+        instructionsDiv.innerHTML = `
+            <h4 style="color: #38bdf8; margin-bottom: 12px;">🤫 Step 2: Background Noise Test</h4>
+            <p style="margin-bottom: 15px;">Click the button, then remain <strong>completely silent</strong> for 10 seconds.</p>
+            <button id="start-silence-btn" class="btn btn-primary">Ready - Start Silence Test</button>
+        `;
+
+        await new Promise<void>((resolve) => {
+            const silenceBtn = document.getElementById('start-silence-btn');
+            silenceBtn?.addEventListener('click', () => resolve(), { once: true });
+        });
+
+        instructionsDiv.innerHTML = `
+            <h4 style="color: #38bdf8; margin-bottom: 12px;">🤫 Step 2: Background Noise Test</h4>
+            <p><strong>Remain silent...</strong></p>
+            <p style="color: #94a3b8; font-size: 0.9em;">⏱️ Measuring silence for 10 seconds...</p>
+        `;
+
+        const noiseSamples: number[] = [];
+        const noiseDuration = 10000;
+        const noiseStartTime = Date.now();
+
+        while (Date.now() - noiseStartTime < noiseDuration) {
+            noiseSamples.push(analyzer.getRMS());
+            const remaining = Math.ceil((noiseDuration - (Date.now() - noiseStartTime)) / 1000);
+            const timeDisplay = instructionsDiv.querySelector('p:last-child');
+            if (timeDisplay) timeDisplay.textContent = `⏱️ Measuring silence for ${remaining} seconds...`;
+            await sleep(100);
+        }
+
+        // STEP 3: ANALYZE & SAVE
+        const results = analyzeTestResults(speechSamples, noiseSamples, analyzer);
+
+        if (results.noiseFloorDb !== null) {
+            const settings = await window.settingsAPI.getAll();
+            const profiles = settings.audioDeviceProfiles || {};
+            profiles[deviceSelect.value] = {
+                deviceId: deviceSelect.value,
+                deviceLabel: deviceLabel,
+                noiseFloor: results.noiseFloorDb,
+                lastCalibrated: new Date().toISOString()
+            };
+            await window.settingsAPI.set('audioDeviceProfiles', profiles);
+        }
+
+        displayTestResults(results, instructionsDiv, resultDiv);
+        analyzer.stop();
+
+    } catch (error) {
+        console.error('Microphone test failed:', error);
+        instructionsDiv.style.display = 'none';
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `
+            <h4 style="color: #f87171;">❌ Test Failed</h4>
+            <p>${error instanceof Error ? error.message : 'Please check your microphone permissions and try again.'}</p>
+        `;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🧪 Run Advanced Diagnostic';
+    }
+}
+
+/**
+ * Analyzes audio metrics
+ */
+function analyzeTestResults(
+    speechSamples: { rms: number, peak: number }[],
+    noiseSamples: number[],
+    analyzer: AudioAnalyzer
+): TestResults {
+    const peaks = speechSamples.map(s => s.peak);
+    const rmsValues = speechSamples.map(s => s.rms);
+    const maxPeak = Math.max(...peaks);
+    const avgRms = rmsValues.reduce((a, b) => a + b, 0) / rmsValues.length;
+
+    const peakDb = analyzer.toDecibels(maxPeak);
+    const avgSpeechDb = analyzer.toDecibels(avgRms);
+    const avgNoise = noiseSamples.reduce((a, b) => a + b, 0) / noiseSamples.length;
+    const noiseFloorDb = analyzer.toDecibels(avgNoise);
+
+    const issues: string[] = [];
+    const recommendations: string[] = [];
+
+    const clipping = peakDb > -3;
+    const tooQuiet = peakDb < -30;
+    const highNoise = noiseFloorDb > -45;
+
+    if (clipping) {
+        issues.push('Audio is clipping (distortion detected)');
+        recommendations.push('Lower your microphone input volume in Windows settings');
+    }
+    if (tooQuiet) {
+        issues.push('Signal is too quiet');
+        recommendations.push('Increase your microphone input volume or speak closer to the mic');
+    }
+    if (highNoise) {
+        issues.push('High background noise');
+        recommendations.push('Move to a quieter area or use a noise-canceling microphone');
+    }
+
+    let status: TestResults['status'] = 'excellent';
+    if (clipping || tooQuiet || highNoise) status = 'warning';
+    if (clipping && tooQuiet) status = 'poor'; // Basically unusable
+    if (!clipping && peakDb > -15 && !highNoise) status = 'excellent';
+    else if (!clipping && !tooQuiet) status = 'good';
+
+    return {
+        peakDb,
+        avgSpeechDb,
+        noiseFloorDb,
+        clipping,
+        tooQuiet,
+        highNoise,
+        status,
+        issues,
+        recommendations
+    };
+}
+
+/**
+ * Renders the test results to the UI
+ */
+function displayTestResults(
+    results: TestResults,
+    instructionsDiv: HTMLElement,
+    resultDiv: HTMLElement
+) {
+    instructionsDiv.style.display = 'none';
+    resultDiv.style.display = 'block';
+
+    let statusColor = '#4ade80';
+    let statusLabel = 'Excellent';
+    if (results.status === 'warning') { statusColor = '#fbbf24'; statusLabel = 'Needs Attention'; }
+    if (results.status === 'poor') { statusColor = '#f87171'; statusLabel = 'Poor Quality'; }
+
+    let html = `
+        <h4 style="color: ${statusColor}; margin-bottom: 12px;">Diagnostic Results: ${statusLabel}</h4>
+        <div style="background: #1a2f3a; border: 1px solid #334155; padding: 12px; border-radius: 6px; font-size: 0.9em;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>Peak Volume:</span>
+                <span style="font-weight: 600;">${results.peakDb.toFixed(1)} dB</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>Average Speech:</span>
+                <span style="font-weight: 600;">${results.avgSpeechDb.toFixed(1)} dB</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Noise Floor:</span>
+                <span style="font-weight: 600;">${results.noiseFloorDb?.toFixed(1)} dB</span>
+            </div>
+        </div>
+    `;
+
+    if (results.issues.length > 0) {
+        html += `<div style="margin-top: 15px;">
+            <p style="color: #f87171; font-weight: 600; margin-bottom: 5px;">⚠️ Issues Found:</p>
+            <ul style="padding-left: 20px; color: #cbd5e1;">
+                ${results.issues.map((i: string) => `<li>${i}</li>`).join('')}
+            </ul>
+        </div>`;
+    }
+
+    if (results.recommendations.length > 0) {
+        html += `<div style="margin-top: 15px;">
+            <p style="color: #38bdf8; font-weight: 600; margin-bottom: 5px;">💡 Recommendations:</p>
+            <ul style="padding-left: 20px; color: #cbd5e1;">
+                ${results.recommendations.map((r: string) => `<li>${r}</li>`).join('')}
+            </ul>
+        </div>`;
+    } else {
+        html += `<p style="margin-top: 15px; color: #4ade80;">✅ Your microphone is perfectly calibrated for dictation.</p>`;
+    }
+
+    resultDiv.innerHTML = html;
 }

@@ -3,7 +3,7 @@
  * Centralized state management to replace global variables
  */
 
-import { AudioAnalyzer } from './audio';
+import type { AudioAnalyzer } from './audio.js';
 
 export interface SettingsState {
     isRecordingHotkey: boolean;

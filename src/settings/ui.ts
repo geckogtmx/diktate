@@ -2,8 +2,8 @@
  * UI & Hardware Management
  */
 
-import { state } from './store';
-import { formatBytes } from './utils';
+import { state } from './store.js';
+import { formatBytes } from './utils.js';
 
 /**
  * Runs hardware performance test (GPU/VRAM)

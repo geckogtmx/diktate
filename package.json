@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsc && tsc -p tsconfig.settings.json && copy src\\*.html dist\\ && electron . --dev",
     "start": "electron .",
-    "build": "tsc && tsc -p tsconfig.settings.json && electron .",
+    "build": "tsc && tsc -p tsconfig.settings.json && copy src\\*.html dist\\ && electron .",
     "dist": "pnpm run package-python && electron-builder",
     "package-python": "cd python && build_backend.bat",
     "test": "node tests/smoke-test.cjs && pytest python/"

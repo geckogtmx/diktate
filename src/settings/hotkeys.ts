@@ -2,9 +2,9 @@
  * Hotkey Management
  */
 
-import { state } from './store';
-import { saveSetting } from './utils';
-import { HOTKEY_DEFAULTS } from './constants';
+import { state } from './store.js';
+import { saveSetting } from './utils.js';
+import { HOTKEY_DEFAULTS } from './constants.js';
 
 type HotkeyMode = 'dictate' | 'ask' | 'translate' | 'refine' | 'oops';
 

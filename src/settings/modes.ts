@@ -2,7 +2,7 @@
  * Mode Configuration (SPEC_016, SPEC_029)
  */
 
-import { state } from './store';
+import { state } from './store.js';
 
 export async function initializeModeConfiguration() {
     try {

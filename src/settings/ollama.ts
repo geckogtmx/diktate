@@ -2,14 +2,14 @@
  * Ollama Model Management (SPEC_031)
  */
 
-import { state } from './store';
-import { formatBytes, saveSetting } from './utils';
+import { state } from './store.js';
+import { formatBytes, saveSetting } from './utils.js';
 import {
     getRecommendedMaxModelSize,
     getModelSizeClass,
     showRestartModal,
     checkModelChanges
-} from './ui';
+} from './ui.js';
 
 /**
  * Check if Ollama is running and update UI
