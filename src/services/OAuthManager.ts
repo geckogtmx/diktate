@@ -94,7 +94,7 @@ interface UserInfo {
 
 export interface QuotaInfo {
   used: number;
-  limit: number;
+  limit: number; // Daily safety limit (approximate)
   remaining: number;
   resetAt: number;
   percentUsed: number;
@@ -694,7 +694,7 @@ export class OAuthManager {
       lastRefreshedAt: Date.now(),
       lastUsedAt: Date.now(),
       quotaUsedToday: 0,
-      quotaLimitDaily: 1_000_000, // Free tier
+      quotaLimitDaily: 1_000_000, // Safety Buffer (Local Estimation)
       quotaResetAt: this.getNextUTCMidnight(),
       status: AccountStatus.ACTIVE
     };

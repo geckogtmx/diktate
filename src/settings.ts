@@ -880,7 +880,7 @@ async function updateOAuthUI() {
                 if (email && status) {
                     email.textContent = activeAccount.email;
                     const statusText = activeAccount.status === 'active' ?
-                        `Expires: ${new Date(activeAccount.expiresAt).toLocaleString()}` :
+                        `Status: Active` :
                         `Status: ${activeAccount.status}`;
                     status.textContent = statusText;
                 }
@@ -898,16 +898,14 @@ async function updateOAuthUI() {
                     const quotaPercent = document.getElementById('oauth-quota-percent');
                     const quotaBar = document.getElementById('oauth-quota-bar');
 
-                    if (quotaText && quotaPercent && quotaBar) {
-                        quotaText.textContent = `${quota.used.toLocaleString()} / ${quota.limit.toLocaleString()} characters`;
-                        quotaPercent.textContent = `${quota.percentUsed.toFixed(1)}%`;
-                        quotaBar.style.width = `${Math.min(quota.percentUsed, 100)}%`;
+                    if (quotaText) {
+                        quotaText.textContent = `${quota.used.toLocaleString()} chars`;
 
-                        // Change bar color based on usage
-                        if (quota.percentUsed >= 95) {
-                            quotaBar.style.background = 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)';
-                        } else if (quota.percentUsed >= 80) {
-                            quotaBar.style.background = 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)';
+                        // Optional: Change color if usage is high (safety check)
+                        if (quota.percentUsed > 100) {
+                            quotaText.style.color = '#f87171'; // Red
+                        } else {
+                            quotaText.style.color = 'white';
                         }
                     }
                 }

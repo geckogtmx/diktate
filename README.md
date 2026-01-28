@@ -90,7 +90,7 @@ pnpm dev
 
 ### Workflow & Intelligence
 - **Ask Mode** - Voice Q&A with the LLM using a dedicated hotkey (Ctrl+Alt+A).
-- **Google Hub (SPEC_016)** - Integrated Google Account Gemini quota via secure OAuth 2.0 (Gemini 2.5/3.0 support).
+- **Google Hub (SPEC_016)** - Integrated Google Account Gemini support with OAuth 2.0 and local **Usage Tracking** (Daily Character Counter).
 - **Context Modes** - Switchable prompts for different output styles (Standard, Developer, Email, Creative).
 - **Prompt Helper Mode** - Automatically structures voice input into clear, formatted LLM prompts.
 - **Bilingual Bridge** - Real-time translation between English and Spanish during dictation.

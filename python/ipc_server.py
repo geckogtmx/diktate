@@ -1198,6 +1198,9 @@ class IpcServer:
                     # Step 5: Inject refined text
                     logger.info("[INJECT] Injecting refined text...")
                     self.perf.start("injection")
+                    
+                    # FIX: Inject the refined text!
+                    self.injector.type_text(refined_text)
 
                     # Configure trailing space behavior (if config available)
                     trailing_space_enabled = self.config.get('trailingSpaceEnabled', True) if hasattr(self, 'config') and self.config else True
