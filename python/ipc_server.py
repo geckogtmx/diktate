@@ -1502,6 +1502,48 @@ class IpcServer:
                 self.mute_detector.update_device_label(device_label)
                 updates.append(f"AudioDevice: {device_label}")
 
+            # 7. Dynamic API Key Updates (Gemini, Anthropic, OpenAI)
+            # Allow updating keys without switching provider (updates secure storage in main)
+            
+            # Gemini
+            gemini_key = config.get("geminiApiKey")
+            if gemini_key is not None: # check for None because empty string is a valid update (clearing key)
+                os.environ["GEMINI_API_KEY"] = gemini_key
+                updates.append("GeminiApiKey")
+                # If currently using Gemini, refresh processor to apply new key
+                if self.processor and hasattr(self.processor, "api_url") and "google" in self.processor.api_url:
+                    logger.info("[CONFIG] Refreshing active Gemini processor with new key")
+                    try:
+                        self.processor = create_processor()
+                    except Exception as e:
+                         logger.error(f"[CONFIG] Failed to refresh Gemini processor: {e}")
+
+            # Anthropic
+            anthropic_key = config.get("anthropicApiKey")
+            if anthropic_key is not None:
+                os.environ["ANTHROPIC_API_KEY"] = anthropic_key
+                updates.append("AnthropicApiKey")
+                # If currently using Anthropic, refresh processor
+                if self.processor and hasattr(self.processor, "api_url") and "anthropic" in self.processor.api_url:
+                    logger.info("[CONFIG] Refreshing active Anthropic processor with new key")
+                    try:
+                        self.processor = create_processor()
+                    except Exception as e:
+                         logger.error(f"[CONFIG] Failed to refresh Anthropic processor: {e}")
+
+            # OpenAI
+            openai_key = config.get("openaiApiKey")
+            if openai_key is not None:
+                os.environ["OPENAI_API_KEY"] = openai_key
+                updates.append("OpenaiApiKey")
+                # If currently using OpenAI, refresh processor
+                if self.processor and hasattr(self.processor, "api_url") and "openai" in self.processor.api_url:
+                    logger.info("[CONFIG] Refreshing active OpenAI processor with new key")
+                    try:
+                        self.processor = create_processor()
+                    except Exception as e:
+                         logger.error(f"[CONFIG] Failed to refresh OpenAI processor: {e}")
+
             if updates:
                 return {"success": True, "message": f"Updated: {', '.join(updates)}"}
             return {"success": False, "error": "No valid configuration found"}

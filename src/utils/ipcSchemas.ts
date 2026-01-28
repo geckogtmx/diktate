@@ -55,9 +55,15 @@ export const SettingsSetSchema = z.object({
 
 export const ApiKeySetSchema = z.object({
     provider: ApiKeyProviderSchema,
-    key: z.string().min(10).max(200)
+    key: z.string().max(200) // Removed min(10) to allow empty string (clearing key)
 }).superRefine((data, ctx) => {
     const { provider, key } = data;
+
+    // Allow clearing the key
+    if (key === '') {
+        return;
+    }
+
     let isValid = false;
     let expectedFormat = '';
 

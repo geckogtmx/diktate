@@ -1592,10 +1592,19 @@ ipcMain.handle('apikey:set', async (_event, provider: string, key: string) => {
     throw new Error(validation.error);
   }
 
-  const encrypted = safeStorage.encryptString(key);
   const storeKey = `encrypted${provider.charAt(0).toUpperCase() + provider.slice(1)}ApiKey`;
-  store.set(storeKey, encrypted.toString('base64'));
-  logger.info('IPC', `API key for ${provider} stored securely`);
+
+  if (!key) {
+    // If key is empty, delete it from the store
+    // We need to cast to any because the key is dynamic
+    store.delete(storeKey as any);
+    logger.info('IPC', `API key for ${provider} deleted`);
+  } else {
+    // If key is present, encrypt and save
+    const encrypted = safeStorage.encryptString(key);
+    store.set(storeKey, encrypted.toString('base64'));
+    logger.info('IPC', `API key for ${provider} stored securely`);
+  }
 
   // Also update Python with the new key
   if (pythonManager) {
