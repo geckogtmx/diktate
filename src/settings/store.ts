@@ -1,0 +1,44 @@
+/**
+ * Settings Page Store
+ * Centralized state management to replace global variables
+ */
+
+import { AudioAnalyzer } from './audio';
+
+export interface SettingsState {
+    isRecordingHotkey: boolean;
+    initialModels: Record<string, string>;
+    hasModelChanges: boolean;
+    availableModels: any[];
+    defaultPrompts: Record<string, string>;
+
+    // Audio Monitoring State (SPEC_021)
+    audioAnalyzer: AudioAnalyzer | null;
+    animationFrameId: number | null;
+    isMonitoring: boolean;
+    peakHoldValue: number;
+    peakHoldDecay: number;
+    lastStatusUpdate: number;
+
+    // Active test tracking
+    activeTestInterval: ReturnType<typeof setInterval> | null;
+    activeTestAborted: boolean;
+}
+
+export const state: SettingsState = {
+    isRecordingHotkey: false,
+    initialModels: {},
+    hasModelChanges: false,
+    availableModels: [],
+    defaultPrompts: {},
+
+    audioAnalyzer: null,
+    animationFrameId: null,
+    isMonitoring: false,
+    peakHoldValue: 0,
+    peakHoldDecay: 0,
+    lastStatusUpdate: 0,
+
+    activeTestInterval: null,
+    activeTestAborted: false
+};
