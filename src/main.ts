@@ -1222,7 +1222,10 @@ function setupIpcHandlers(): void {
       processingMode: actualProcessingMode,
       recordingMode: recordingMode,
       refineMode: store.get('refineMode', 'autopilot'),
-      authType: authType
+      authType: authType,
+      additionalKeyEnabled: store.get('additionalKeyEnabled', false),
+      additionalKey: store.get('additionalKey', 'none'),
+      trailingSpaceEnabled: store.get('trailingSpaceEnabled', true)
     };
   });
 

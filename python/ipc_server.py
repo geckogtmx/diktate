@@ -1209,7 +1209,7 @@ class IpcServer:
 
                     if trailing_space_enabled:
                         self.injector.paste_text(" ")
-                    if additional_key_enabled and additional_key:
+                    if additional_key_enabled and additional_key and additional_key != 'none':
                         self.injector.press_key(additional_key)
 
                     self.perf.end("injection")
@@ -1391,6 +1391,7 @@ class IpcServer:
     def configure(self, config: dict) -> dict:
         """Configure the pipeline (switch models, modes, providers, etc)"""
         try:
+            logger.info(f"[CONFIG] Received configuration update: {config}")
             # Store config for use in injection logic
             self.config = config
 

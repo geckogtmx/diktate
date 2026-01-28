@@ -374,7 +374,7 @@ export async function runCompleteMicrophoneTest() {
             <h4 style="color: #38bdf8; margin-bottom: 12px;">🎙️ Step 1: Read This Aloud</h4>
             <p style="margin-bottom: 15px;">Please read at your normal volume for 15 seconds:</p>
             <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid #0ea5e9; padding: 15px; border-radius: 6px; margin-bottom: 15px; font-style: italic; line-height: 1.5;">
-                "Imagine there's no heaven, it's easy if you try. No hell below us, above us only sky. Imagine all the people living for today."
+                "Imagine there's no heaven, it's easy if you try. No hell below us, above us only sky. Imagine all the people living for today. Imagine there's no countries, it isn't hard to do. Nothing to kill or die for, and no religion too. Imagine all the people living life in peace. You may say I'm a dreamer, but I'm not the only one. I hope someday you'll join us, and the world will be as one."
             </div>
             <p style="color: #94a3b8; font-size: 0.9em;">⏱️ Recording for 15 seconds...</p>
         `;

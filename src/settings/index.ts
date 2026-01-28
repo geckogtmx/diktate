@@ -112,7 +112,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // External links
     const urls: Record<string, string> = {
-        'browse-models-link': 'https://ollama.com/library',
         'gemini-docs-link': 'https://aistudio.google.com/apikey',
         'anthropic-docs-link': 'https://console.anthropic.com/',
         'openai-docs-link': 'https://platform.openai.com/api-keys',
@@ -129,16 +128,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Step 1: Initialize stores and static UI
         console.log('[Init] Starting settings initialization...');
 
-        // Step 2: Populate dynamic dropdowns FIRST (async)
-        // This ensures loadSettings has valid options to select
+        // Step 2: Load settings from Electron store FIRST
+        // This is the source of truth for IDs that dynamic loaders need
+        settings = await window.settingsAPI.getAll();
+
+        // Step 3: Populate dynamic dropdowns (async)
         const dropdownTask = populateSoundDropdowns().catch(e => console.error('Sound error:', e));
-        const deviceTask = refreshAudioDevices().catch(e => console.error('Audio error:', e));
+        const deviceTask = refreshAudioDevices(settings?.audioDeviceId, settings?.audioDeviceLabel).catch(e => console.error('Audio error:', e));
+        const hardwareTask = runHardwareTest().catch(e => console.error('Hardware test error:', e));
 
         // Wait for dynamic UI to be ready
-        await Promise.all([dropdownTask, deviceTask]);
-
-        // Step 3: Load settings from Electron store
-        settings = await window.settingsAPI.getAll();
+        await Promise.all([dropdownTask, deviceTask, hardwareTask]);
     } catch (e) {
         console.error('Core initialization failed:', e);
     }

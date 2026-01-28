@@ -15,22 +15,32 @@ import {
  * Check if Ollama is running and update UI
  */
 export async function checkOllamaStatus() {
-    const statusEl = document.getElementById('ollama-version');
-    if (!statusEl) return;
+    const statusEl = document.getElementById('ollama-service-status');
+    const versionEl = document.getElementById('ollama-service-version');
+    if (!statusEl && !versionEl) return;
+
+    const setStatus = (text: string, color: string) => {
+        if (statusEl) {
+            statusEl.textContent = text;
+            statusEl.style.color = color;
+        }
+    };
+
+    const setVersion = (ver: string) => {
+        if (versionEl) versionEl.textContent = ver;
+    };
 
     try {
         const response = await fetch('http://localhost:11434/api/version');
         if (response.ok) {
             const data = await response.json();
-            statusEl.textContent = `✅ Ollama v${data.version} running`;
-            statusEl.style.color = '#4ade80';
+            setStatus('✅ Ollama running', '#4ade80');
+            setVersion(`v${data.version}`);
         } else {
-            statusEl.textContent = '❌ Ollama not responding';
-            statusEl.style.color = '#f87171';
+            setStatus('❌ Ollama not responding', '#f87171');
         }
     } catch (e) {
-        statusEl.textContent = '❌ Ollama not running';
-        statusEl.style.color = '#f87171';
+        setStatus('❌ Ollama not running', '#f87171');
     }
 }
 
@@ -50,6 +60,10 @@ export async function loadOllamaModels() {
         state.availableModels = models;
 
         select.innerHTML = '';
+        // Update model count in UI
+        const countEl = document.getElementById('ollama-loaded-models');
+        if (countEl) countEl.textContent = models.length.toString();
+
         if (models.length === 0) {
             const option = document.createElement('option');
             option.value = '';
@@ -98,16 +112,47 @@ export function saveOllamaSetting(key: string, value: any) {
 }
 
 export async function restartOllama() {
+    const statusEl = document.getElementById('ollama-restart-status');
+    if (statusEl) {
+        statusEl.textContent = '⏳ Restarting Service...';
+        statusEl.style.color = '#fbbf24'; // Yellow
+    }
+
+    // Progress animation
+    let dots = 0;
+    const interval = setInterval(() => {
+        dots = (dots + 1) % 4;
+        if (statusEl) statusEl.textContent = '⏳ Restarting Service' + '.'.repeat(dots);
+    }, 500);
+
     try {
         const result = await window.settingsAPI.restartOllama();
+        clearInterval(interval);
+
         if (result.success) {
-            alert('Ollama restart signal sent');
-            setTimeout(checkOllamaStatus, 3000);
+            if (statusEl) {
+                statusEl.textContent = '✅ Service restarted successfully';
+                statusEl.style.color = '#4ade80'; // Green
+            }
+            // Refresh status immediately
+            checkOllamaStatus();
+
+            // Clear message after 5 seconds
+            setTimeout(() => {
+                if (statusEl) statusEl.textContent = '';
+            }, 5000);
         } else {
-            alert(`Failed to restart Ollama: ${result.error}`);
+            if (statusEl) {
+                statusEl.textContent = `❌ Restart failed: ${result.error}`;
+                statusEl.style.color = '#f87171'; // Red
+            }
         }
     } catch (e) {
-        alert('Error restarting Ollama');
+        clearInterval(interval);
+        if (statusEl) {
+            statusEl.textContent = '❌ Error triggering restart';
+            statusEl.style.color = '#f87171';
+        }
     }
 }
 
