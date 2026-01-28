@@ -124,41 +124,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // 2. ASYNC INITIALIZATION (Data-dependent)
+    let settings: any;
     try {
-        // Fetch settings - this is the only shared dependency
-        const settings = await window.settingsAPI.getAll();
+        // Step 1: Initialize stores and static UI
+        console.log('[Init] Starting settings initialization...');
 
-        // 1. POPULATE DROPDOWNS FIRST (Crucial for persistence)
-        // We do these first so that loadSettings() has valid options to select
-        try {
-            await refreshAudioDevices(settings.audioDeviceId, settings.audioDeviceLabel);
-        } catch (e) { console.error('Audio init failed:', e); }
+        // Step 2: Populate dynamic dropdowns FIRST (async)
+        // This ensures loadSettings has valid options to select
+        const dropdownTask = populateSoundDropdowns().catch(e => console.error('Sound error:', e));
+        const deviceTask = refreshAudioDevices().catch(e => console.error('Audio error:', e));
 
-        try {
-            await populateSoundDropdowns();
-        } catch (e) { console.error('Sound init failed:', e); }
+        // Wait for dynamic UI to be ready
+        await Promise.all([dropdownTask, deviceTask]);
 
-        try {
-            await checkOllamaStatus();
-            await loadOllamaModels();
-        } catch (e) { console.error('Ollama init failed:', e); }
+        // Step 3: Load settings from Electron store
+        settings = await window.settingsAPI.getAll();
+    } catch (e) {
+        console.error('Core initialization failed:', e);
+    }
 
-        // 2. LOAD VALUES INTO POPULATED DROPDOWNS
+    try {
+        await checkOllamaStatus();
+        await loadOllamaModels();
+    } catch (e) { console.error('Ollama init failed:', e); }
+
+    // 2. LOAD VALUES INTO POPULATED DROPDOWNS
+    if (settings) {
         loadSettings(settings);
-
-        // 3. Initialize Domain Logic
-        try {
-            await loadApiKeyStatuses();
-        } catch (e) { console.error('API Key status init failed:', e); }
-
-        try {
-            await updateOAuthUI();
-            initOAuthListeners();
-        } catch (e) { console.error('OAuth init failed:', e); }
-
-        try {
-            await initializeModeConfiguration();
-        } catch (e) { console.error('Modes init failed:', e); }
 
         // 4. Initialize State base values (for change tracking)
         state.initialModels = {
@@ -168,101 +160,112 @@ document.addEventListener('DOMContentLoaded', async () => {
             'modeModel_professional': settings.modeModel_professional || '',
             'modeModel_raw': settings.modeModel_raw || ''
         };
-
-
-        // 6. Bind Remaining Interactive Components
-
-
-        // General
-        document.getElementById('processing-mode')?.addEventListener('change', (e) => {
-            saveSetting('processingMode', (e.target as HTMLSelectElement).value);
-        });
-        document.getElementById('default-model')?.addEventListener('change', (e) => {
-            onDefaultModelChange((e.target as HTMLSelectElement).value);
-        });
-        document.getElementById('auto-start')?.addEventListener('change', (e) => {
-            saveSetting('autoStart', (e.target as HTMLInputElement).checked);
-        });
-
-        // Hotkeys
-        const hotkeyConfigs: { id: string, mode: any }[] = [
-            { id: 'hotkey-display', mode: 'dictate' },
-            { id: 'ask-hotkey-display', mode: 'ask' },
-            { id: 'translate-hotkey-display', mode: 'translate' },
-            { id: 'refine-hotkey-display', mode: 'refine' },
-            { id: 'oops-hotkey-display', mode: 'oops' }
-        ];
-        hotkeyConfigs.forEach(cfg => {
-            document.getElementById(cfg.id)?.addEventListener('click', () => recordHotkey(cfg.mode));
-            document.getElementById(`reset-hotkey-${cfg.mode}`)?.addEventListener('click', () => resetHotkey(cfg.mode));
-        });
-
-        // Audio
-        ['start', 'stop', 'ask'].forEach(s => {
-            document.getElementById(`${s}-sound`)?.addEventListener('change', (e) => {
-                saveSetting(`${s}Sound`, (e.target as HTMLSelectElement).value);
-            });
-            document.getElementById(`preview-${s}-sound`)?.addEventListener('click', () => {
-                previewSpecificSound(`${s}-sound`);
-            });
-        });
-
-        document.getElementById('start-monitoring-btn')?.addEventListener('click', () => {
-            // Need to import toggleAudioMonitoring
-            import('./audio.js').then(m => m.toggleAudioMonitoring());
-        });
-        document.getElementById('measure-noise-btn')?.addEventListener('click', () => {
-            import('./audio.js').then(m => m.measureNoiseFloor());
-        });
-        document.getElementById('complete-test-btn')?.addEventListener('click', () => {
-            import('./audio.js').then(m => m.runCompleteMicrophoneTest());
-        });
-
-        document.querySelectorAll('input[name="max-duration"]').forEach((radio) => {
-            radio.addEventListener('change', (e) => {
-                const value = parseInt((e.target as HTMLInputElement).value, 10);
-                saveSetting('maxRecordingDuration', value);
-            });
-        });
-
-        // Ollama
-        document.getElementById('hardware-test-btn')?.addEventListener('click', runHardwareTest);
-        document.getElementById('refresh-ollama-btn')?.addEventListener('click', checkOllamaStatus);
-        document.getElementById('restart-ollama-btn')?.addEventListener('click', restartOllama);
-        document.getElementById('warmup-btn')?.addEventListener('click', warmupModel);
-        document.getElementById('pull-model-btn')?.addEventListener('click', () => {
-            pullOllamaModel();
-        });
-
-        // Modes
-        document.getElementById('save-mode-btn')?.addEventListener('click', saveModeDetails);
-        document.getElementById('reset-mode-btn')?.addEventListener('click', resetModeToDefault);
-
-        document.getElementById('trailing-space-toggle')?.addEventListener('change', (e) => {
-            saveSetting('trailingSpaceEnabled', (e.target as HTMLInputElement).checked);
-        });
-        document.getElementById('additional-key-toggle')?.addEventListener('change', (e) => {
-            saveSetting('additionalKeyEnabled', (e.target as HTMLInputElement).checked);
-        });
-        document.getElementById('additional-key-select')?.addEventListener('change', (e) => {
-            saveSetting('additionalKey', (e.target as HTMLSelectElement).value);
-        });
-
-        // API Keys
-        ['gemini', 'anthropic', 'openai'].forEach(p => {
-            document.getElementById(`test-${p}-btn`)?.addEventListener('click', () => {
-                // Determine if we test new or saved
-                const input = document.getElementById(`${p}-api-key`) as HTMLInputElement;
-                if (input && input.value) saveApiKey(p);
-                else testSavedApiKey(p);
-            });
-            document.getElementById(`save-${p}-btn`)?.addEventListener('click', () => saveApiKey(p));
-            document.getElementById(`test-${p}-saved-btn`)?.addEventListener('click', () => testSavedApiKey(p));
-            document.getElementById(`delete-${p}-btn`)?.addEventListener('click', () => deleteApiKey(p));
-        });
-
-        console.log('✅ Settings Initialization Complete.');
-    } catch (error) {
-        console.error('❌ Settings Initialization Failed:', error);
     }
+
+    // 3. Initialize Domain Logic
+    try {
+        await loadApiKeyStatuses();
+    } catch (e) { console.error('API Key status init failed:', e); }
+
+    try {
+        await updateOAuthUI();
+        initOAuthListeners();
+    } catch (e) { console.error('OAuth init failed:', e); }
+
+    try {
+        await initializeModeConfiguration();
+    } catch (e) { console.error('Modes init failed:', e); }
+
+
+    // 6. Bind Remaining Interactive Components
+
+    // General
+    document.getElementById('processing-mode')?.addEventListener('change', (e) => {
+        saveSetting('processingMode', (e.target as HTMLSelectElement).value);
+    });
+    document.getElementById('default-model')?.addEventListener('change', (e) => {
+        onDefaultModelChange((e.target as HTMLSelectElement).value);
+    });
+    document.getElementById('auto-start')?.addEventListener('change', (e) => {
+        saveSetting('autoStart', (e.target as HTMLInputElement).checked);
+    });
+
+    // Hotkeys
+    const hotkeyConfigs: { id: string, mode: any }[] = [
+        { id: 'hotkey-display', mode: 'dictate' },
+        { id: 'ask-hotkey-display', mode: 'ask' },
+        { id: 'translate-hotkey-display', mode: 'translate' },
+        { id: 'refine-hotkey-display', mode: 'refine' },
+        { id: 'oops-hotkey-display', mode: 'oops' }
+    ];
+    hotkeyConfigs.forEach(cfg => {
+        document.getElementById(cfg.id)?.addEventListener('click', () => recordHotkey(cfg.mode));
+        document.getElementById(`reset-hotkey-${cfg.mode}`)?.addEventListener('click', () => resetHotkey(cfg.mode));
+    });
+
+    // Audio
+    ['start', 'stop', 'ask'].forEach(s => {
+        document.getElementById(`${s}-sound`)?.addEventListener('change', (e) => {
+            saveSetting(`${s}Sound`, (e.target as HTMLSelectElement).value);
+        });
+        document.getElementById(`preview-${s}-sound`)?.addEventListener('click', () => {
+            previewSpecificSound(`${s}-sound`);
+        });
+    });
+
+    document.getElementById('start-monitoring-btn')?.addEventListener('click', () => {
+        // Need to import toggleAudioMonitoring
+        import('./audio.js').then(m => m.toggleAudioMonitoring());
+    });
+    document.getElementById('measure-noise-btn')?.addEventListener('click', () => {
+        import('./audio.js').then(m => m.measureNoiseFloor());
+    });
+    document.getElementById('complete-test-btn')?.addEventListener('click', () => {
+        import('./audio.js').then(m => m.runCompleteMicrophoneTest());
+    });
+
+    document.querySelectorAll('input[name="max-duration"]').forEach((radio) => {
+        radio.addEventListener('change', (e) => {
+            const value = parseInt((e.target as HTMLInputElement).value, 10);
+            saveSetting('maxRecordingDuration', value);
+        });
+    });
+
+    // Ollama
+    document.getElementById('hardware-test-btn')?.addEventListener('click', runHardwareTest);
+    document.getElementById('refresh-ollama-btn')?.addEventListener('click', checkOllamaStatus);
+    document.getElementById('restart-ollama-btn')?.addEventListener('click', restartOllama);
+    document.getElementById('warmup-btn')?.addEventListener('click', warmupModel);
+    document.getElementById('pull-model-btn')?.addEventListener('click', () => {
+        pullOllamaModel();
+    });
+
+    // Modes
+    document.getElementById('save-mode-btn')?.addEventListener('click', saveModeDetails);
+    document.getElementById('reset-mode-btn')?.addEventListener('click', resetModeToDefault);
+
+    document.getElementById('trailing-space-toggle')?.addEventListener('change', (e) => {
+        saveSetting('trailingSpaceEnabled', (e.target as HTMLInputElement).checked);
+    });
+    document.getElementById('additional-key-toggle')?.addEventListener('change', (e) => {
+        saveSetting('additionalKeyEnabled', (e.target as HTMLInputElement).checked);
+    });
+    document.getElementById('additional-key-select')?.addEventListener('change', (e) => {
+        saveSetting('additionalKey', (e.target as HTMLSelectElement).value);
+    });
+
+    // API Keys
+    ['gemini', 'anthropic', 'openai'].forEach(p => {
+        document.getElementById(`test-${p}-btn`)?.addEventListener('click', () => {
+            // Determine if we test new or saved
+            const input = document.getElementById(`${p}-api-key`) as HTMLInputElement;
+            if (input && input.value) saveApiKey(p);
+            else testSavedApiKey(p);
+        });
+        document.getElementById(`save-${p}-btn`)?.addEventListener('click', () => saveApiKey(p));
+        document.getElementById(`test-${p}-saved-btn`)?.addEventListener('click', () => testSavedApiKey(p));
+        document.getElementById(`delete-${p}-btn`)?.addEventListener('click', () => deleteApiKey(p));
+    });
+
+    console.log('✅ Settings Initialization Complete.');
 });

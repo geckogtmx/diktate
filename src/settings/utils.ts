@@ -46,10 +46,12 @@ export function loadSettings(settings: any) {
     setVal('default-mode', settings.defaultMode || 'standard');
     setVal('ask-output-mode', settings.askOutputMode || 'type');
 
-    // Trailing Space & Additional Keys
-    setCheck('trailing-space-enabled', settings.trailingSpaceEnabled !== false);
-    setVal('additional-key', settings.additionalKey || 'none');
-    setCheck('additional-key-enabled', settings.additionalKeyEnabled || false);
+    // Trailing Space Configuration (SPEC_006)
+    setCheck('trailing-space-toggle', settings.trailingSpaceEnabled !== false); // Default to true
+
+    // Optional Keys Section (SPEC_006)
+    setCheck('additional-key-toggle', settings.additionalKeyEnabled || false);
+    setVal('additional-key-select', settings.additionalKey || 'none');
 
     // Hotkeys
     if (settings.hotkey) {
