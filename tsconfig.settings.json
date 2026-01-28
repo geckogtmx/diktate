@@ -6,6 +6,7 @@
         "outDir": "./dist/renderers/settings"
     },
     "include": [
-        "src/settings/**/*"
+        "src/settings/**/*",
+        "src/global.d.ts"
     ]
 }

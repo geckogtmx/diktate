@@ -8,7 +8,7 @@ export class AudioAnalyzer {
     private audioContext: AudioContext | null = null;
     private analyser: AnalyserNode | null = null;
     private microphone: MediaStreamAudioSourceNode | null = null;
-    private dataArray: Float32Array | null = null;
+    private dataArray: Float32Array<ArrayBuffer> | null = null;
     private stream: MediaStream | null = null;
     private isRunning: boolean = false;
 
