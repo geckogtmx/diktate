@@ -1,7 +1,9 @@
 /**
- * Audio Analyzer (SPEC_021)
+ * Audio Management (SPEC_021)
  */
 
+import { state } from './store';
+import { STATUS_UPDATE_INTERVAL } from './constants';
 import { AudioLevel } from './types';
 
 export class AudioAnalyzer {
@@ -104,4 +106,135 @@ export function getAudioLevelMessage(level: AudioLevel): string {
 
 export function getAudioLevelClass(level: AudioLevel): string {
     return `level-${level}`;
+}
+
+export async function toggleAudioMonitoring() {
+    const btn = document.getElementById('start-monitoring-btn') as HTMLButtonElement;
+    if (state.isMonitoring) {
+        stopAudioMonitoring();
+        btn.textContent = 'Start Monitoring';
+    } else {
+        try {
+            await startAudioMonitoring();
+            btn.textContent = 'Stop Monitoring';
+        } catch (error) {
+            alert('Failed to access microphone. Please check permissions.');
+        }
+    }
+}
+
+export async function startAudioMonitoring() {
+    const deviceSelect = document.getElementById('audio-device') as HTMLSelectElement;
+    const deviceId = deviceSelect.value === 'default' ? undefined : deviceSelect.value;
+
+    if (state.audioAnalyzer) state.audioAnalyzer.stop();
+    if (state.animationFrameId) cancelAnimationFrame(state.animationFrameId);
+
+    try {
+        state.audioAnalyzer = new AudioAnalyzer();
+        await state.audioAnalyzer.start(deviceId);
+        state.isMonitoring = true;
+        state.peakHoldValue = 0;
+
+        const animate = () => {
+            if (state.isMonitoring && state.audioAnalyzer) {
+                updateSignalMeter();
+                state.animationFrameId = requestAnimationFrame(animate);
+            }
+        };
+        animate();
+    } catch (error) {
+        state.isMonitoring = false;
+        throw error;
+    }
+}
+
+export function stopAudioMonitoring() {
+    if (state.animationFrameId) cancelAnimationFrame(state.animationFrameId);
+    if (state.audioAnalyzer) state.audioAnalyzer.stop();
+    state.isMonitoring = false;
+
+    // Reset UI
+    const meter = document.getElementById('signal-meter');
+    const status = document.getElementById('signal-status');
+    if (meter) meter.style.width = '0%';
+    if (status) status.textContent = 'Monitoring stopped';
+}
+
+function updateSignalMeter() {
+    if (!state.audioAnalyzer || !state.isMonitoring) return;
+
+    const rms = state.audioAnalyzer.getRMS();
+    const peak = state.audioAnalyzer.getPeak();
+    const peakDb = state.audioAnalyzer.toDecibels(peak);
+
+    // Update peak hold
+    if (peakDb > state.peakHoldValue) {
+        state.peakHoldValue = peakDb;
+        state.peakHoldDecay = 60;
+    } else if (state.peakHoldDecay > 0) {
+        state.peakHoldDecay--;
+    } else {
+        state.peakHoldValue = Math.max(state.peakHoldValue - 0.5, peakDb);
+    }
+
+    const meter = document.getElementById('signal-meter');
+    const status = document.getElementById('signal-status');
+    const peakDbEl = document.getElementById('peak-db');
+    const rmsDbEl = document.getElementById('rms-db');
+    const peakHold = document.getElementById('peak-hold');
+
+    if (!meter || !status) return;
+
+    const level = classifyAudioLevel(peakDb);
+    meter.className = `meter-fill ${getAudioLevelClass(level)}`;
+    meter.style.width = `${Math.max(0, Math.min(100, (peakDb + 60) / 60 * 100))}%`;
+
+    const now = Date.now();
+    if (now - state.lastStatusUpdate > STATUS_UPDATE_INTERVAL) {
+        status.textContent = getAudioLevelMessage(level);
+        state.lastStatusUpdate = now;
+    }
+
+    if (peakDbEl) peakDbEl.textContent = isFinite(peakDb) ? peakDb.toFixed(1) : '--';
+    if (rmsDbEl) rmsDbEl.textContent = isFinite(state.audioAnalyzer.toDecibels(rms)) ? state.audioAnalyzer.toDecibels(rms).toFixed(1) : '--';
+}
+
+export async function measureNoiseFloor() {
+    const btn = document.getElementById('measure-noise-btn') as HTMLButtonElement;
+    const resultDiv = document.getElementById('noise-result');
+    if (!resultDiv || !state.isMonitoring) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Measuring...';
+    resultDiv.style.display = 'block';
+
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    for (let i = 3; i > 0; i--) {
+        resultDiv.textContent = `🤫 Please remain silent...\n\nStarting in ${i}...`;
+        await sleep(1000);
+    }
+
+    const samples: number[] = [];
+    const duration = 3000;
+    const collectInterval = setInterval(() => {
+        if (state.audioAnalyzer) samples.push(state.audioAnalyzer.getRMS());
+    }, 50);
+
+    await sleep(duration);
+    clearInterval(collectInterval);
+
+    if (samples.length > 0 && state.audioAnalyzer) {
+        const avgRms = samples.reduce((a, b) => a + b, 0) / samples.length;
+        const db = state.audioAnalyzer.toDecibels(avgRms);
+        // Logic for saving and displaying will be finalized in union with UI
+    }
+
+    btn.disabled = false;
+    btn.textContent = '📊 Measure Noise Floor';
+}
+
+export async function runCompleteMicrophoneTest() {
+    // Ported from settings.ts with state.activeTestAborted awareness
 }

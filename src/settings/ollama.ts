@@ -9,7 +9,7 @@ import {
     getModelSizeClass,
     showRestartModal,
     checkModelChanges
-} from './ui_stubs'; // We will create ui.ts later, using stubs for now or imports
+} from './ui';
 
 /**
  * Check if Ollama is running and update UI

@@ -23,6 +23,7 @@ export interface SettingsState {
     // Active test tracking
     activeTestInterval: ReturnType<typeof setInterval> | null;
     activeTestAborted: boolean;
+    currentSelectedMode: string;
 }
 
 export const state: SettingsState = {
@@ -40,5 +41,6 @@ export const state: SettingsState = {
     lastStatusUpdate: 0,
 
     activeTestInterval: null,
-    activeTestAborted: false
+    activeTestAborted: false,
+    currentSelectedMode: 'standard'
 };
