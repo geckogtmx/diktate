@@ -64,6 +64,35 @@ export async function loadOllamaModels() {
         const countEl = document.getElementById('ollama-loaded-models');
         if (countEl) countEl.textContent = models.length.toString();
 
+        // Populate Installed Models List
+        const listContainer = document.getElementById('ollama-models-list');
+        if (listContainer) {
+            listContainer.innerHTML = '';
+            if (models.length === 0) {
+                listContainer.innerHTML = '<div style="color: #888; text-align: center; padding: 10px;">No models installed</div>';
+            } else {
+                models.forEach((model: any) => {
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; border-bottom: 1px solid #333;';
+
+                    const info = document.createElement('div');
+                    info.innerHTML = `<span style="color: #e0e0e0;">${model.name}</span> <span style="color: #888; font-size: 0.85em; margin-left: 8px;">${formatBytes(model.size)}</span>`;
+
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-danger'; // Uses existing class
+                    btn.innerHTML = '🗑️';
+                    btn.title = 'Delete Model';
+                    btn.style.padding = '2px 8px';
+                    btn.style.fontSize = '0.9em';
+                    btn.onclick = () => deleteOllamaModel(model.name);
+
+                    row.appendChild(info);
+                    row.appendChild(btn);
+                    listContainer.appendChild(row);
+                });
+            }
+        }
+
         if (models.length === 0) {
             const option = document.createElement('option');
             option.value = '';
@@ -117,6 +146,9 @@ export async function restartOllama() {
         statusEl.textContent = '⏳ Restarting Service...';
         statusEl.style.color = '#fbbf24'; // Yellow
     }
+
+    // Yield to let UI paint
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     // Progress animation
     let dots = 0;
