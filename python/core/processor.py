@@ -566,20 +566,26 @@ class OpenAIProcessor:
         raise Exception(f"OpenAI API processing failed after {max_retries} retries")
 
 
-# Factory function to create the right processor based on environment
-def create_processor():
-    """Create processor based on PROCESSING_MODE env var."""
-    mode = os.environ.get("PROCESSING_MODE", "local").lower()
+# Factory function to create the right processor based on environment or explicit provider
+def create_processor(provider_name: Optional[str] = None, api_key: Optional[str] = None):
+    """Create processor based on provider name or PROCESSING_MODE env var.
     
-    if mode == "gemini" or mode == "cloud":
-        logger.info("Using GEMINI processing mode (Gemini Flash)")
-        return CloudProcessor()
+    Args:
+        provider_name: Explicit provider ('local', 'gemini', 'anthropic', 'openai')
+        api_key: Optional API key to use (overrides env var)
+    """
+    mode = provider_name or os.environ.get("PROCESSING_MODE", "local")
+    mode = mode.lower()
+    
+    if mode in ("gemini", "cloud"):
+        logger.info(f"Using GEMINI processing mode (Gemini Flash) {'(custom key)' if api_key else ''}")
+        return CloudProcessor(api_key=api_key)
     elif mode == "anthropic":
-        logger.info("Using ANTHROPIC processing mode (Claude Haiku)")
-        return AnthropicProcessor()
+        logger.info(f"Using ANTHROPIC processing mode (Claude Haiku) {'(custom key)' if api_key else ''}")
+        return AnthropicProcessor(api_key=api_key)
     elif mode == "openai":
-        logger.info("Using OPENAI processing mode (GPT-4o-mini)")
-        return OpenAIProcessor()
+        logger.info(f"Using OPENAI processing mode (GPT-4o-mini) {'(custom key)' if api_key else ''}")
+        return OpenAIProcessor(api_key=api_key)
     else:
         logger.info("Using LOCAL processing mode (Ollama)")
         return LocalProcessor()

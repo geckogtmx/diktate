@@ -971,15 +971,20 @@
                         style="background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
                         <h3 id="mode-detail-title" style="margin: 0 0 20px 0;">Standard</h3>
 
-                        <!-- Model Selection -->
+                        <!-- Provider Selection -->
                         <div style="margin-bottom: 20px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">Model Override</label>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">Processing
+                                Provider</label>
                             <select id="mode-detail-model"
                                 style="width: 100%; padding: 8px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0;">
-                                <option value="">Use default model</option>
+                                <option value="">Local (Application Default)</option>
                             </select>
-                            <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;">Leave empty
-                                to use app default model</span>
+                            <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;">Local
+                                (App Default) uses the global toggle.</span>
+                            <div
+                                style="margin-top: 8px; font-size: 0.8em; color: var(--accent-color); opacity: 0.8; font-style: italic; border-left: 2px solid var(--accent-color); padding-left: 8px;">
+                                💡 Note: Specific providers override the global Cloud toggle on the Control Panel.
+                            </div>
                         </div>
 
                         <!-- System Prompt -->

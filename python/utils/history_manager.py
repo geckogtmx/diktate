@@ -128,6 +128,7 @@ class HistoryManager:
                     mode TEXT,
                     transcriber_model TEXT,
                     processor_model TEXT,
+                    provider TEXT,
                     raw_text TEXT,
                     processed_text TEXT,
                     audio_duration_s REAL,
@@ -152,6 +153,13 @@ class HistoryManager:
                 CREATE INDEX IF NOT EXISTS idx_history_success
                 ON history(success)
             """)
+
+            # Migration: Add provider column if it doesn't exist
+            cursor.execute("PRAGMA table_info(history)")
+            columns = [info[1] for info in cursor.fetchall()]
+            if 'provider' not in columns:
+                logger.info("Migrating history table: adding 'provider' column")
+                cursor.execute("ALTER TABLE history ADD COLUMN provider TEXT")
 
             # Create system_metrics table for Phase 2 monitoring
             cursor.execute("""
@@ -246,16 +254,17 @@ class HistoryManager:
             # Insert the record
             cursor.execute("""
                 INSERT INTO history (
-                    timestamp, mode, transcriber_model, processor_model,
+                    timestamp, mode, transcriber_model, processor_model, provider,
                     raw_text, processed_text, audio_duration_s,
                     transcription_time_ms, processing_time_ms, total_time_ms,
                     success, error_message
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 data.get('timestamp', datetime.now().isoformat()),
                 data.get('mode'),
                 data.get('transcriber_model'),
                 data.get('processor_model'),
+                data.get('provider'),
                 data.get('raw_text'),
                 data.get('processed_text'),
                 data.get('audio_duration_s'),

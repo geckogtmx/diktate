@@ -98,6 +98,7 @@ pnpm dev
 - **Refine Mode** - Two-stage editing: Select text and auto-fix, or dictate specific implementation commands ("Make formal").
 - **Snippets** (Coming v2.0) - Voice macros that expand short phrases into blocks.
 - **Post-it Notes Mode** - Dedicated recording mode (`Ctrl+Alt+N`) for appending voice notes to a local file with smart context capture.
+- **Per-Mode Provider Selection** - Customize the processing backend (Local vs Gemini vs Claude) for each individual mode (e.g., Local for dictation, Gemini for Refine).
 
 ### Performance & Tech
 - **Speed Advantage** - Low-latency processing (350-750ms) significantly faster than cloud APIs.

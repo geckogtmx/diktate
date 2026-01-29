@@ -35,6 +35,13 @@ export const SettingsKeySchema = z.enum([
     'modeModel_ask',       // NEW: Ask mode model override
     'modeModel_refine',    // NEW: Refine mode model override
     'modeModel_refine_instruction', // NEW: Refine Instruction mode model override
+    'modeProvider_standard',
+    'modeProvider_prompt',
+    'modeProvider_professional',
+    'modeProvider_ask',
+    'modeProvider_refine',
+    'modeProvider_refine_instruction',
+    'modeProvider_raw',
     'customPrompts',
     'trailingSpaceEnabled',   // NEW: Enable/disable trailing space (SPEC_006)
     'additionalKeyEnabled',   // NEW: Enable/disable additional key (SPEC_006)

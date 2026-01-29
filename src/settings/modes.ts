@@ -6,43 +6,52 @@ import { state } from './store.js';
 
 export async function initializeModeConfiguration() {
     try {
-        const response = await fetch('http://localhost:11434/api/tags').catch(() => null);
-        if (response && response.ok) {
-            const data = await response.json();
-            state.availableModels = data.models || [];
-        }
+        const providerSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
+        if (providerSelect) {
+            providerSelect.innerHTML = '';
 
-        const modelSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
-        if (modelSelect) {
-            modelSelect.innerHTML = '';
-
-            // Add "Use App Default" option
-            const appDefault = state.initialModels?.default || 'gemma3:4b';
+            // Add "Local (App Default)" option
             const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.text = `Use App Default (${appDefault})`;
-            defaultOption.style.color = '#888';
-            defaultOption.style.fontStyle = 'italic';
-            modelSelect.appendChild(defaultOption);
+            defaultOption.value = 'local';
+            defaultOption.text = 'Local (App Default)';
+            providerSelect.appendChild(defaultOption);
 
             // Add divider
             const divider = document.createElement('option');
             divider.disabled = true;
             divider.text = '──────────';
-            modelSelect.appendChild(divider);
+            providerSelect.appendChild(divider);
 
-            state.availableModels.forEach((model: any) => {
-                const option = document.createElement('option');
-                option.value = model.name;
-                option.text = model.name;
-                modelSelect.appendChild(option);
-            });
+            // Fetch API key statuses to show available cloud providers
+            const apiKeys = await window.settingsAPI.getApiKeys();
 
-            modelSelect.onchange = async () => {
-                const newValue = modelSelect.value;
+            if (apiKeys.geminiApiKey) {
+                const opt = document.createElement('option');
+                opt.value = 'gemini';
+                opt.text = 'Gemini (Cloud)';
+                providerSelect.appendChild(opt);
+            }
+            if (apiKeys.anthropicApiKey) {
+                const opt = document.createElement('option');
+                opt.value = 'anthropic';
+                opt.text = 'Claude (Cloud)';
+                providerSelect.appendChild(opt);
+            }
+            if (apiKeys.openaiApiKey) {
+                const opt = document.createElement('option');
+                opt.value = 'openai';
+                opt.text = 'OpenAI (Cloud)';
+                providerSelect.appendChild(opt);
+            }
+
+            providerSelect.onchange = async () => {
+                const newValue = providerSelect.value;
                 if (state.currentSelectedMode && state.currentSelectedMode !== 'raw') {
-                    // Save immediately to settings store (empty string = remove override)
-                    await window.settingsAPI.set(`modeModel_${state.currentSelectedMode}`, newValue);
+                    await window.settingsAPI.set(`modeProvider_${state.currentSelectedMode}`, newValue);
+                    // Legacy cleanup: remove model override if switching to cloud
+                    if (newValue !== 'local') {
+                        await window.settingsAPI.set(`modeModel_${state.currentSelectedMode}`, '');
+                    }
                 }
                 updatePromptDisplay(state.currentSelectedMode, newValue);
             };
@@ -89,11 +98,11 @@ export async function selectMode(mode: string) {
         titleEl.textContent = modeNames[mode] || mode;
     }
 
-    const modelSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
-    if (modelSelect) {
+    const providerSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
+    if (providerSelect) {
         const settings = await window.settingsAPI.getAll();
-        const savedModel = settings[`modeModel_${mode}`];
-        modelSelect.value = savedModel || '';
+        const savedProvider = settings[`modeProvider_${mode}`];
+        providerSelect.value = savedProvider || 'local';
     }
 
     const modelSection = document.getElementById('mode-detail-model')?.parentElement;
@@ -124,7 +133,7 @@ export async function selectMode(mode: string) {
         if (buttonContainer) buttonContainer.style.display = 'flex';
         if (infoEl) infoEl.style.marginTop = '4px';
 
-        await updatePromptDisplay(mode, modelSelect?.value);
+        await updatePromptDisplay(mode, providerSelect?.value);
     }
 }
 
@@ -156,10 +165,10 @@ export async function updatePromptDisplay(mode: string, model: string) {
 
 export async function saveModeDetails() {
     const promptTextarea = document.getElementById('mode-detail-prompt') as HTMLTextAreaElement;
-    const modelSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
+    const providerSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
     let promptText = promptTextarea?.value?.trim() || '';
 
-    const currentDefaultPrompt = await window.settingsAPI.getDefaultPrompt(state.currentSelectedMode, modelSelect?.value || '');
+    const currentDefaultPrompt = await window.settingsAPI.getDefaultPrompt(state.currentSelectedMode, providerSelect?.value || '');
     if (promptText === currentDefaultPrompt) {
         promptText = '';
     }
@@ -171,8 +180,8 @@ export async function saveModeDetails() {
 
     try {
         await window.settingsAPI.saveCustomPrompt(state.currentSelectedMode, promptText);
-        if (modelSelect && state.currentSelectedMode !== 'raw') {
-            await window.settingsAPI.set(`modeModel_${state.currentSelectedMode}`, modelSelect.value);
+        if (providerSelect && state.currentSelectedMode !== 'raw') {
+            await window.settingsAPI.set(`modeProvider_${state.currentSelectedMode}`, providerSelect.value);
         }
 
         // feedback

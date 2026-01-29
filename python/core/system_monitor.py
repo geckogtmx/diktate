@@ -4,8 +4,11 @@ Provides lightweight CPU, Memory, and GPU metrics for performance analysis.
 """
 
 import psutil
+import logging
 from datetime import datetime
 from typing import Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 try:
     import torch
@@ -31,7 +34,12 @@ class SystemMonitor:
             return
 
         self._gpu_initialized = True
-        self.has_nvidia_gpu = TORCH_AVAILABLE and torch.cuda.is_available()
+        
+        if not TORCH_AVAILABLE:
+            logger.warning("[SystemMonitor] Torch not found - GPU metrics unavailable")
+            return
+
+        self.has_nvidia_gpu = torch.cuda.is_available()
 
         if self.has_nvidia_gpu:
             try:
@@ -39,12 +47,15 @@ class SystemMonitor:
                 self.gpu_device_name = torch.cuda.get_device_name(0) if self.gpu_device_count > 0 else "Unknown"
                 # Get total GPU memory in GB
                 self.gpu_total_memory = torch.cuda.get_device_properties(0).total_memory / (1024**3) if self.gpu_device_count > 0 else 0
+                logger.info(f"[SystemMonitor] Detected GPU: {self.gpu_device_name} ({self.gpu_total_memory:.2f} GB)")
             except Exception as e:
-                print(f"[SystemMonitor] Warning: GPU detection failed: {e}")
+                logger.warning(f"[SystemMonitor] GPU detection failed: {e}")
                 self.has_nvidia_gpu = False
                 self.gpu_device_count = 0
                 self.gpu_device_name = None
                 self.gpu_total_memory = 0
+        else:
+            logger.info("[SystemMonitor] CUDA not found - running in CPU mode")
 
     def get_snapshot(self) -> Dict:
         """
@@ -84,7 +95,7 @@ class SystemMonitor:
                     gpu_memory_percent = 0.0
 
             except Exception as e:
-                print(f"[SystemMonitor] Warning: GPU metrics query failed: {e}")
+                logger.warning(f"[SystemMonitor] GPU metrics query failed: {e}")
                 gpu_memory_used_gb = None
                 gpu_memory_total_gb = None
                 gpu_memory_percent = None
