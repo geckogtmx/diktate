@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Documentation - dIKtate</title>
+    <meta name="description" content="Technical documentation and guides for dIKtate voice engine." />
+    <script type="module" src="/src/docs.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="bg-background text-text selection:bg-primary selection:text-white overflow-hidden h-screen flex flex-col">
+
+    <!-- Unified Header (Across Site) -->
+    <header
+        class="h-16 w-full flex-shrink-0 bg-background border-b border-white/5 flex items-center justify-between px-8 z-[60]">
+        <!-- Logo -->
+        <a href="/index.html" class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z">
+                    </path>
+                </svg>
+            </div>
+            dIKtate <span class="text-[10px] font-mono font-normal opacity-40 ml-1">DOCS</span>
+        </a>
+
+        <!-- Navigation Menu (Aligned to Right) -->
+        <nav class="flex items-center gap-12 text-sm font-medium">
+            <a href="/index.html" class="text-muted hover:text-white transition-colors">Home</a>
+            <a href="https://github.com/your-repo" class="text-muted hover:text-white transition-colors">GitHub</a>
+            <a href="/index.html#pricing" class="btn-primary py-2.5 px-8 text-xs shadow-none hover:shadow-glow">Get
+                Power</a>
+        </nav>
+    </header>
+
+    <!-- Content Container -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <aside
+            class="w-72 border-r border-white/5 bg-background flex flex-col flex-shrink-0 h-full overflow-y-auto custom-scrollbar">
+            <div class="py-12 px-4 space-y-10">
+                <section>
+                    <h5 class="px-3 text-xs font-mono font-bold uppercase tracking-[0.2em] text-primary mb-4">User
+                        Center</h5>
+                    <nav class="flex flex-col gap-1">
+                        <a href="#welcome"
+                            class="px-3 py-2 text-sm text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors">Welcome
+                            & Vision</a>
+                        <a href="#quickstart"
+                            class="px-3 py-2 text-sm text-white font-medium hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2">
+                            <div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                            Getting Started
+                        </a>
+                        <a href="#hotkeys"
+                            class="px-3 py-2 text-sm text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors">Using
+                            dIKtate</a>
+                        <a href="#context"
+                            class="px-3 py-2 text-sm text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors">Intelligence
+                            & Context</a>
+                        <a href="#interface"
+                            class="px-3 py-2 text-sm text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors">Status
+                            & Interface</a>
+                    </nav>
+                </section>
+
+                <section>
+                    <h5 class="px-3 text-xs font-mono font-bold uppercase tracking-[0.2em] text-muted mb-4 opacity-50">
+                        Developer Hub</h5>
+                    <nav class="flex flex-col gap-1">
+                        <a href="#dev-setup"
+                            class="px-3 py-2 text-sm text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors">Dev
+                            Environment</a>
+                        <a href="#architecture"
+                            class="px-3 py-2 text-sm text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors">Core
+                            Architecture</a>
+                        <a href="#ipc"
+                            class="px-3 py-2 text-sm text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors">IPC
+                            Reference</a>
+                        <a href="#troubleshooting"
+                            class="px-3 py-2 text-sm text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors">Troubleshooting</a>
+                    </nav>
+                </section>
+
+                <section>
+                    <h5 class="px-3 text-xs font-mono font-bold uppercase tracking-[0.2em] text-muted mb-4 opacity-50">
+                        Governance & Future</h5>
+                    <nav class="flex flex-col gap-1">
+                        <a href="#codex"
+                            class="px-3 py-2 text-sm text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors">AI_CODEX
+                            Rules</a>
+                        <a href="#privacy"
+                            class="px-3 py-2 text-sm text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors">Privacy
+                            Protocol</a>
+                        <a href="#roadmap"
+                            class="px-3 py-2 text-sm text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors">Roadmap
+                            & Expansion</a>
+                    </nav>
+                </section>
+            </div>
+
+            <!-- Sidebar Status -->
+            <div class="mt-auto p-8 border-t border-white/5 bg-black/10">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-[10px] font-mono text-muted uppercase tracking-widest">Engine Status: Ready</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Wrapper -->
+        <main class="flex-1 overflow-y-auto relative h-full">
+            <div class="max-w-7xl mx-auto px-12 pt-16 h-full flex flex-col md:flex-row gap-16 relative">
+                <!-- Content Area -->
+                <div class="flex-1 max-w-3xl pb-32">
+                    <!-- Gradient Background Backdrop -->
+                    <div
+                        class="absolute top-0 right-0 w-1/3 h-[800px] bg-primary/5 blur-[120px] pointer-events-none -z-10">
+                    </div>
+
+                    <!-- Quick Start Content -->
+                    <article id="quickstart" class="mb-20">
+                        <h1 class="text-5xl font-bold mb-6 text-white tracking-tight">Quick Start Guide</h1>
+                        <p class="text-lg text-muted mb-8 leading-relaxed">
+                            Welcome to dIKtate. This guide will help you set up the core engine for Phase 1 testing and
+                            verify your local environment.
+                        </p>
+
+                        <section id="prerequisites" class="mb-12">
+                            <h2 class="text-2xl font-bold mb-4 text-white">Prerequisites</h2>
+                            <div class="card bg-white/5 border-white/10 p-6 space-y-4">
+                                <ul class="space-y-4">
+                                    <li class="flex items-start gap-4">
+                                        <div
+                                            class="mt-1 w-5 h-5 rounded-full bg-green-400/20 flex items-center justify-center flex-shrink-0">
+                                            <span class="text-green-400 text-xs">✓</span>
+                                        </div>
+                                        <div>
+                                            <strong class="text-white block">Python 3.12+</strong>
+                                            <span class="text-sm text-muted">A standard Python installation for the
+                                                engine core.</span>
+                                        </div>
+                                    </li>
+                                    <li class="flex items-start gap-4">
+                                        <div
+                                            class="mt-1 w-5 h-5 rounded-full bg-green-400/20 flex items-center justify-center flex-shrink-0">
+                                            <span class="text-green-400 text-xs">✓</span>
+                                        </div>
+                                        <div>
+                                            <strong class="text-white block">NVIDIA GPU (Recommended)</strong>
+                                            <span class="text-sm text-muted">8GB+ VRAM suggested for
+                                                Whisper-v3-turbo.</span>
+                                        </div>
+                                    </li>
+                                    <li class="flex items-start gap-4">
+                                        <div
+                                            class="mt-1 w-5 h-5 rounded-full bg-green-400/20 flex items-center justify-center flex-shrink-0">
+                                            <span class="text-green-400 text-xs">✓</span>
+                                        </div>
+                                        <div>
+                                            <strong class="text-white block">Ollama</strong>
+                                            <span class="text-sm text-muted">Install Ollama to run the text cleanup
+                                                models.</span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section id="installation" class="mb-12">
+                            <h2 class="text-2xl font-bold mb-4 text-white">Installation</h2>
+                            <p class="text-muted mb-6">Run the following commands in your terminal to verify everything
+                                is installed correctly:</p>
+
+                            <div
+                                class="bg-black/60 border border-white/10 rounded-xl p-5 font-mono text-sm group relative shadow-2xl">
+                                <div class="flex justify-between items-center mb-4 border-b border-white/5 pb-2">
+                                    <div class="flex gap-1.5">
+                                        <div class="w-3 h-3 rounded-full bg-white/10"></div>
+                                        <div class="w-3 h-3 rounded-full bg-white/10"></div>
+                                        <div class="w-3 h-3 rounded-full bg-white/10"></div>
+                                    </div>
+                                    <button
+                                        class="text-primary hover:text-white transition-colors text-xs font-bold uppercase tracking-widest">Copy</button>
+                                </div>
+                                <pre class="text-primary overflow-x-auto py-2"><code>cd python
+source venv/Scripts/activate  # On Windows
+python verify_setup.py</code></pre>
+                            </div>
+
+                            <div class="mt-8 p-6 bg-primary/5 border border-primary/20 rounded-xl flex gap-4">
+                                <div class="text-2xl">💡</div>
+                                <p class="text-sm text-muted leading-relaxed">
+                                    <strong class="text-white">Pro Tip:</strong> On the first run, the Whisper model
+                                    (medium) will download approximately 3.1 GB of data. Make sure you have enough disk
+                                    space and a stable connection.
+                                </p>
+                            </div>
+                        </section>
+                    </article>
+
+                    <!-- AI Codex Content -->
+                    <article id="codex" class="mb-20">
+                        <div
+                            class="inline-block px-3 py-1 bg-white/5 border border-white/10 rounded-full text-white text-[10px] font-mono tracking-widest mb-4">
+                            GOVERNANCE</div>
+                        <h2 class="text-4xl font-bold mb-6 text-white tracking-tight">AI_CODEX: The Constitution</h2>
+                        <p class="text-muted mb-10 leading-relaxed text-lg">
+                            The dIKtate engine operates under a strict agency protocol. These rules ensure that all
+                            models maintain consistency and privacy.
+                        </p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="card p-8 border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all">
+                                <div class="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
+                                    <span class="text-primary text-xl">⚓</span>
+                                </div>
+                                <h3 class="text-white font-bold mb-3">Prime Directive</h3>
+                                <p class="text-sm text-muted italic leading-relaxed">"Ship early, iterate fast, preserve
+                                    vision."</p>
+                            </div>
+                            <div class="card p-8 border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all">
+                                <div class="w-10 h-10 bg-cta/20 rounded-lg flex items-center justify-center mb-4">
+                                    <span class="text-cta text-xl">🛡️</span>
+                                </div>
+                                <h3 class="text-white font-bold mb-3">Local-First</h3>
+                                <p class="text-sm text-muted leading-relaxed">No cloud dependencies for core
+                                    functionality. Data never leaves the air-gap boundary.</p>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- Footer Area -->
+                    <footer
+                        class="pt-20 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div class="flex flex-col gap-1">
+                            <p class="text-xs text-muted">© 2026 dIKtate Documentation. Last modified: 2026-01-22</p>
+                            <p class="text-[10px] text-muted/40 font-mono uppercase tracking-[0.15em]">Co-authored by
+                                Human & AI (Gemini Studio, Antigravity, Claude Code)</p>
+                        </div>
+                        <div class="flex gap-6">
+                            <a href="#" class="text-xs text-muted hover:text-white transition-colors">Twitter</a>
+                            <a href="#" class="text-xs text-muted hover:text-white transition-colors">GitHub</a>
+                            <a href="#" class="text-xs text-muted hover:text-white transition-colors">Discord</a>
+                        </div>
+                    </footer>
+                </div>
+
+                <!-- TOC Sidebar -->
+                <aside class="hidden xl:block w-56 flex-shrink-0 sticky top-16 h-fit pt-4">
+                    <h5 class="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-muted mb-6">On this page
+                    </h5>
+                    <div class="relative">
+                        <div class="absolute left-0 top-0 bottom-0 w-px bg-white/5"></div>
+                        <nav class="flex flex-col gap-4 pl-6">
+                            <a href="#quickstart"
+                                class="text-xs text-white hover:text-primary transition-colors border-l-2 border-primary -ml-[25px] pl-[23px]">Introduction</a>
+                            <a href="#prerequisites"
+                                class="text-xs text-muted hover:text-white transition-colors">Prerequisites</a>
+                            <a href="#installation"
+                                class="text-xs text-muted hover:text-white transition-colors">Installation</a>
+                            <a href="#codex" class="text-xs text-muted hover:text-white transition-colors">AI Codex</a>
+                        </nav>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+
+    <style>
+        /* Premium custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        article {
+            animation: fade-in-up 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Ensure only the main main and sidebar are scrollable */
+        body {
+            overflow: hidden;
+        }
+    </style>
+
+</body>
+
+</html>

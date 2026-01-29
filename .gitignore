@@ -90,10 +90,13 @@ REPOSITORY_QUALITY_ASSESSMENT_2026-01-25.md
 .auto-claude/
 .claude/
 
-# Websites (Local-Only)
-site/
-sitex/
-mobile_site/
+# Websites (Source tracked, artifacts ignored)
+site/dist/
+site/node_modules/
+sitex/dist/
+sitex/node_modules/
+mobile_site/dist/
+mobile_site/node_modules/
 .shared/
 
 # Auto Claude generated files
