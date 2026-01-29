@@ -85,7 +85,7 @@ export async function checkModelChanges() {
         if (state.initialModels['default'] !== settings.defaultOllamaModel) changed = true;
 
         if (!changed) {
-            const modes = ['standard', 'prompt', 'professional'];
+            const modes = ['standard', 'prompt', 'professional', 'ask', 'refine', 'refine_instruction'];
             for (const mode of modes) {
                 if (state.initialModels[`modeModel_${mode}`] !== (settings[`modeModel_${mode}`] || '')) {
                     changed = true;

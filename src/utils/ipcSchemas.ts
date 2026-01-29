@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 // Settings schemas
 export const ProcessingModeSchema = z.enum(['local', 'cloud', 'google', 'anthropic', 'openai']);
-export const ExecutionModeSchema = z.enum(['standard', 'prompt', 'professional', 'raw']);
+export const ExecutionModeSchema = z.enum(['standard', 'prompt', 'professional', 'raw', 'ask', 'refine', 'refine_instruction']);
 export const TransModeSchema = z.enum(['none', 'es-en', 'en-es']);
 
 export const SettingsKeySchema = z.enum([
@@ -32,6 +32,9 @@ export const SettingsKeySchema = z.enum([
     'modeModel_standard',
     'modeModel_prompt',
     'modeModel_professional',
+    'modeModel_ask',       // NEW: Ask mode model override
+    'modeModel_refine',    // NEW: Refine mode model override
+    'modeModel_refine_instruction', // NEW: Refine Instruction mode model override
     'customPrompts',
     'trailingSpaceEnabled',   // NEW: Enable/disable trailing space (SPEC_006)
     'additionalKeyEnabled',   // NEW: Enable/disable additional key (SPEC_006)

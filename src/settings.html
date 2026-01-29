@@ -951,6 +951,19 @@
                         <div class="mode-list-item" data-mode="raw">
                             Raw
                         </div>
+
+                        <!-- Divider -->
+                        <div class="mode-list-divider">Processing Modes</div>
+
+                        <div class="mode-list-item" data-mode="ask">
+                            Ask (Q&A)
+                        </div>
+                        <div class="mode-list-item" data-mode="refine">
+                            Refine
+                        </div>
+                        <div class="mode-list-item" data-mode="refine_instruction">
+                            Refine (Instruction)
+                        </div>
                     </div>
 
                     <!-- RIGHT: Mode Details -->
@@ -1096,6 +1109,17 @@
                     color: white;
                     border-color: var(--dark-teal-3);
                     box-shadow: 0 0 8px rgba(0, 96, 122, 0.5);
+                }
+
+                .mode-list-divider {
+                    font-size: 0.75rem;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    color: #666;
+                    margin: 15px 0 5px 0;
+                    padding-left: 5px;
+                    border-bottom: 1px solid var(--border-color);
+                    padding-bottom: 5px;
                 }
             </style>
         </div>

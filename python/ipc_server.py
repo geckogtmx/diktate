@@ -1188,13 +1188,33 @@ class IpcServer:
             if self.processor:
                 self.perf.start("processing")
 
-                # SPEC_033: Build dynamic instruction-based prompt
+                # SPEC_033: Check for Refine Instruction Mode Model Override
+                original_model = getattr(self.processor, 'model', None)
+                mode_models = getattr(self, 'mode_models', {})
+                inst_model_override = mode_models.get("refine_instruction")
+                
+                if inst_model_override and inst_model_override != original_model:
+                     if hasattr(self.processor, "set_model"):
+                        logger.info(f"[REFINE-INST] Temporarily switching model to override: {inst_model_override}")
+                        self.processor.set_model(inst_model_override)
+                     else:
+                        logger.warning(f"[REFINE-INST] Cannot override model on {type(self.processor).__name__}")
+                
+                # Re-fetch model name in case it changed
                 model_name = getattr(self.processor, 'model', 'unknown')
+                
+                # SPEC_033: Build dynamic instruction-based prompt
                 base_prompt = get_prompt("refine_instruction", model=model_name)
                 refine_instruction_prompt = base_prompt.replace("{instruction}", instruction)
 
                 try:
                     refined_text = self.processor.process(selected_text, prompt_override=refine_instruction_prompt)
+                    
+                    # Restore original model if changed
+                    if inst_model_override and inst_model_override != original_model:
+                         if hasattr(self.processor, "set_model"):
+                            logger.info(f"[REFINE-INST] Restoring original model: {original_model}")
+                            self.processor.set_model(original_model)
                     self.perf.end("processing")
                     logger.info(f"[REFINED] {len(refined_text)} chars")
 
@@ -1620,6 +1640,17 @@ class IpcServer:
                 else:
                     logger.warning(f"Processor {type(self.processor).__name__} does not support model switching (not LocalProcessor)")
 
+            # 6. Mode-specific Model Overrides (SPEC_033)
+            mode_models = config.get("modeModels")
+            if mode_models:
+                self.mode_models = {k: v for k, v in mode_models.items() if v}
+                if self.mode_models:
+                    logger.info(f"[CONFIG] Model overrides loaded: {self.mode_models}")
+            else:
+                # If config provided but no modeModels (or empty), clear existing
+                if "modeModels" in config:
+                     self.mode_models = {}
+
             # 6. Audio Device Label (for mute detection)
             device_label = config.get("audioDeviceLabel")
             if device_label and self.mute_detector:
@@ -1760,14 +1791,34 @@ class IpcServer:
 
                     if self.processor:
                         try:
+                            # SPEC_033: Check for Refine Mode Model Override
+                            original_model = getattr(self.processor, "model", None)
+                            mode_models = getattr(self, "mode_models", {})
+                            refine_model_override = mode_models.get("refine")
+                            
+                            if refine_model_override and refine_model_override != original_model:
+                                if hasattr(self.processor, "set_model"):
+                                    logger.info(f"[REFINE] Temporarily switching model to override: {refine_model_override}")
+                                    self.processor.set_model(refine_model_override)
+                                else:
+                                    logger.warning(f"[REFINE] Cannot override model on {type(self.processor).__name__}")
+
                             # Use refine mode prompt
                             original_prompt = self.processor.prompt
-                            self.processor.prompt = get_prompt("refine", model=getattr(self.processor, "model", None))
+                            # Re-fetch prompt because model might have changed
+                            current_model = getattr(self.processor, "model", None)
+                            self.processor.prompt = get_prompt("refine", model=current_model)
 
                             refined_text = self.processor.process(selected_text)
 
                             # Restore original prompt
                             self.processor.prompt = original_prompt
+                            
+                            # Restore original model if changed
+                            if refine_model_override and refine_model_override != original_model:
+                                 if hasattr(self.processor, "set_model"):
+                                    logger.info(f"[REFINE] Restoring original model: {original_model}")
+                                    self.processor.set_model(original_model)
 
                             logger.info(f"[REFINE] Refined to {len(refined_text)} chars")
                         except Exception as e:

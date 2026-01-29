@@ -79,7 +79,9 @@ export async function selectMode(mode: string) {
         'standard': 'Standard',
         'prompt': 'Prompt',
         'professional': 'Professional',
-        'raw': 'Raw'
+        'raw': 'Raw',
+        'ask': 'Ask (Q&A)',
+        'refine': 'Refine'
     };
 
     const titleEl = document.getElementById('mode-detail-title');
@@ -172,6 +174,21 @@ export async function saveModeDetails() {
         if (modelSelect && state.currentSelectedMode !== 'raw') {
             await window.settingsAPI.set(`modeModel_${state.currentSelectedMode}`, modelSelect.value);
         }
+
+        // feedback
+        const saveBtn = document.getElementById('save-mode-btn');
+        if (saveBtn) {
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = 'Saved!';
+            saveBtn.style.backgroundColor = '#22c55e'; // Green
+            setTimeout(() => {
+                if (saveBtn) {
+                    saveBtn.textContent = originalText;
+                    saveBtn.style.backgroundColor = ''; // Revert to default
+                }
+            }, 2000);
+        }
+
         await loadPrompts();
         selectMode(state.currentSelectedMode);
     } catch (error) {

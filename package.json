@@ -39,6 +39,7 @@
       "assets/**/*",
       "package.json"
     ],
+    "icon": "assets/icon.png",
     "win": {
       "target": [
         "nsis",

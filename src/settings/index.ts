@@ -159,7 +159,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             'modeModel_standard': settings.modeModel_standard || '',
             'modeModel_prompt': settings.modeModel_prompt || '',
             'modeModel_professional': settings.modeModel_professional || '',
-            'modeModel_raw': settings.modeModel_raw || ''
+            'modeModel_raw': settings.modeModel_raw || '',
+            'modeModel_ask': settings.modeModel_ask || '',
+            'modeModel_refine': settings.modeModel_refine || '',
+            'modeModel_refine_instruction': settings.modeModel_refine_instruction || ''
         };
     }
 
