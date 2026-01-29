@@ -7,9 +7,8 @@ import { state } from './store.js';
 import { loadSettings, setVal, setCheck, switchTab, openExternalLink, saveSetting } from './utils.js';
 import { checkOllamaStatus, loadOllamaModels, onDefaultModelChange, saveOllamaSetting, restartOllama, warmupModel, pullOllamaModel, quickPullModel, initSafeModelLibrary, installVerifiedModel } from './ollama.js';
 import { refreshAudioDevices } from './audio.js';
-import { updateOAuthUI, initializeOAuthFlow, switchAccount, disconnectAccount, initOAuthListeners } from './oauth.js';
 import { recordHotkey, resetHotkey } from './hotkeys.js';
-import { saveApiKey, testSavedApiKey, deleteApiKey, loadApiKeyStatuses } from './apiKeys.js';
+import { saveApiKey, testCurrentApiKey, testSavedApiKey, deleteApiKey, loadApiKeyStatuses } from './apiKeys.js';
 import { initializeModeConfiguration, selectMode, saveModeDetails, resetModeToDefault } from './modes.js';
 import { runHardwareTest, populateSoundDropdowns, previewSpecificSound, showRestartModal, hideRestartModal, relaunchApp } from './ui.js';
 
@@ -19,12 +18,7 @@ import { runHardwareTest, populateSoundDropdowns, previewSpecificSound, showRest
 (window as any).saveSetting = saveSetting;
 
 // 2. Namespaced exposure for modular dynamic fragments (SPEC_032)
-(window as any).oauth = {
-    initializeOAuthFlow,
-    switchAccount,
-    disconnectAccount,
-    updateOAuthUI
-};
+(window as any).oauth = {}; // OAuth Module Removed
 
 (window as any).apiKeys = {
     saveApiKey,
@@ -70,9 +64,9 @@ import { runHardwareTest, populateSoundDropdowns, previewSpecificSound, showRest
 };
 
 // Aliases for legacy static HTML compatibility
-(window as any).initializeOAuthFlow = initializeOAuthFlow;
-(window as any).switchOAuthAccount = switchAccount;
-(window as any).disconnectOAuthAccount = disconnectAccount;
+// (window as any).initializeOAuthFlow = initializeOAuthFlow; // Removed
+// (window as any).switchOAuthAccount = switchAccount; // Removed
+// (window as any).disconnectOAuthAccount = disconnectAccount; // Removed
 (window as any).saveApiKey = saveApiKey;
 (window as any).testSavedApiKey = testSavedApiKey;
 (window as any).deleteApiKey = deleteApiKey;
@@ -117,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         'openai-docs-link': 'https://platform.openai.com/api-keys',
         'website-link': 'https://dikta.me',
         'github-link': 'https://github.com/diktate/diktate',
-        'ollama-help-link': 'https://docs.ollama.com/import'
+        'ollama-help-link': 'https://docs.ollama.com/'
     };
     Object.keys(urls).forEach(id => {
         document.getElementById(id)?.addEventListener('click', () => openExternalLink(urls[id]));
@@ -169,10 +163,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadApiKeyStatuses();
     } catch (e) { console.error('API Key status init failed:', e); }
 
-    try {
-        await updateOAuthUI();
-        initOAuthListeners();
-    } catch (e) { console.error('OAuth init failed:', e); }
+    // OAuth initialization removed (SPEC_016)
+
 
     try {
         await initializeModeConfiguration();
@@ -263,12 +255,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveSetting('additionalKey', (e.target as HTMLSelectElement).value);
     });
 
-    // API Keys
     ['gemini', 'anthropic', 'openai'].forEach(p => {
         document.getElementById(`test-${p}-btn`)?.addEventListener('click', () => {
             // Determine if we test new or saved
             const input = document.getElementById(`${p}-api-key`) as HTMLInputElement;
-            if (input && input.value) saveApiKey(p);
+            if (input && input.value) testCurrentApiKey(p);
             else testSavedApiKey(p);
         });
         document.getElementById(`save-${p}-btn`)?.addEventListener('click', () => saveApiKey(p));

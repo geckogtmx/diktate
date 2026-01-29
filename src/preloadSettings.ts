@@ -21,7 +21,7 @@ const settingsAPI = {
     openExternal: (url: string) => {
         ipcRenderer.send('log', 'DEBUG', `[Preload] Request to open external URL: ${url}`);
         // Whitelist allowed URLs for security (L3 fix: proper subdomain check)
-        const allowedDomains = ['dikta.me', 'github.com', 'ko-fi.com', 'aistudio.google.com', 'accounts.google.com', 'console.anthropic.com', 'platform.openai.com', 'localhost'];
+        const allowedDomains = ['dikta.me', 'github.com', 'ko-fi.com', 'ollama.com', 'aistudio.google.com', 'accounts.google.com', 'console.anthropic.com', 'platform.openai.com', 'localhost'];
         try {
             const parsed = new URL(url);
             ipcRenderer.send('log', 'DEBUG', `[Preload] Parsed hostname: ${parsed.hostname}`);
@@ -47,22 +47,6 @@ const settingsAPI = {
     getApiKeys: () => ipcRenderer.invoke('apikey:get-all'),
     setApiKey: (provider: string, key: string) => ipcRenderer.invoke('apikey:set', provider, key),
     testApiKey: (provider: string, key: string) => ipcRenderer.invoke('apikey:test', provider, key),
-
-    // OAuth Google Hub (SPEC_016)
-    oauth: {
-        startFlow: (provider: string) => ipcRenderer.invoke('oauth:start-flow', provider),
-        listAccounts: () => ipcRenderer.invoke('oauth:list-accounts'),
-        getActive: () => ipcRenderer.invoke('oauth:get-active'),
-        switchAccount: (accountId: string) => ipcRenderer.invoke('oauth:switch-account', accountId),
-        disconnect: (accountId: string) => ipcRenderer.invoke('oauth:disconnect', accountId),
-        getQuota: (accountId: string) => ipcRenderer.invoke('oauth:get-quota', accountId),
-        validateToken: (accountId: string) => ipcRenderer.invoke('oauth:validate-token', accountId),
-    },
-
-    // OAuth Event Listener (SPEC_016 Phase 5)
-    onOAuthEvent: (callback: (event: any) => void) => {
-        ipcRenderer.on('oauth-event', (_event, data) => callback(data));
-    },
 
     // Sound playback
     playSound: (soundName: string) => ipcRenderer.invoke('settings:play-sound', soundName),

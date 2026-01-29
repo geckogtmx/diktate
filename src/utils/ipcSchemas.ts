@@ -45,7 +45,7 @@ export const ApiKeyProviderSchema = z.enum(['gemini', 'anthropic', 'openai']);
 // API key validation regexes (SPEC_013)
 const GEMINI_KEY_REGEX = /^AIza[0-9A-Za-z-_]{35}$/;
 const ANTHROPIC_KEY_REGEX = /^sk-ant-[a-zA-Z0-9\-_]{20,}$/;
-const OPENAI_KEY_REGEX = /^sk-[a-zA-Z0-9]{20,}$/;
+const OPENAI_KEY_REGEX = /^sk-[a-zA-Z0-9\-_]{20,}$/;
 
 // IPC Message schemas
 export const SettingsSetSchema = z.object({
@@ -78,7 +78,7 @@ export const ApiKeySetSchema = z.object({
             break;
         case 'openai':
             isValid = OPENAI_KEY_REGEX.test(key);
-            expectedFormat = 'sk- followed by 20+ alphanumeric characters';
+            expectedFormat = 'sk- followed by 20+ characters (letters, numbers, underscores, or dashes)';
             break;
     }
 
@@ -116,7 +116,7 @@ export const ApiKeyTestSchema = z.object({
             break;
         case 'openai':
             isValid = OPENAI_KEY_REGEX.test(key);
-            expectedFormat = 'sk- followed by 20+ alphanumeric characters';
+            expectedFormat = 'sk- followed by 20+ characters (letters, numbers, underscores, or dashes)';
             break;
     }
 

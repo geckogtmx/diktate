@@ -45,6 +45,9 @@ const electronAPI = {
   setSetting: (key: string, value: any) => ipcRenderer.invoke('settings:set', key, value),
   onPlaySound: (callback: (soundName: string) => void) => {
     ipcRenderer.on('play-sound', (_, soundName) => callback(soundName));
+  },
+  onSettingChange: (callback: (key: string, value: any) => void) => {
+    ipcRenderer.on('setting-changed', (_, { key, value }) => callback(key, value));
   }
 };
 

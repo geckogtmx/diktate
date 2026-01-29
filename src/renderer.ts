@@ -381,6 +381,23 @@ if (window.electronAPI) {
         });
     }
 
+    // Setting change handler (SPEC_032 UI Sync)
+    if ((window.electronAPI as any).onSettingChange) {
+        (window.electronAPI as any).onSettingChange((key: string, value: any) => {
+            if (key === 'soundFeedback' && toggleSound) {
+                toggleSound.checked = value;
+            } else if (key === 'processingMode' && toggleCloud) {
+                toggleCloud.checked = value === 'cloud';
+            } else if (key === 'additionalKeyEnabled' && toggleAdditionalKey) {
+                toggleAdditionalKey.checked = value;
+                addLogEntry('INFO', `Additional key sync: ${value ? 'ENABLED' : 'DISABLED'}`);
+            } else if (key === 'refineMode' && toggleRefineMode && refineModeLabel) {
+                toggleRefineMode.checked = value === 'instruction';
+                refineModeLabel.textContent = value === 'instruction' ? 'Refine: Instruct' : 'Refine: Auto';
+            }
+        });
+    }
+
     // Mode change handler (triggers status updates, not button changes)
     if ((window.electronAPI as any).onModeChange) {
         (window.electronAPI as any).onModeChange((mode: string) => {

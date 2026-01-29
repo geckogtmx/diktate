@@ -481,83 +481,6 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-
-        /* OAuth Error/Warning Display (SPEC_016 Phase 5) */
-        .oauth-error,
-        .oauth-warning {
-            padding: 12px;
-            margin-bottom: 16px;
-            border-radius: 6px;
-            font-size: 14px;
-            display: none;
-            transition: opacity 0.3s ease;
-        }
-
-        .oauth-error.visible,
-        .oauth-warning.visible {
-            display: block;
-            opacity: 1;
-        }
-
-        .oauth-error {
-            background-color: #fee;
-            border: 1px solid #fcc;
-            color: #c33;
-        }
-
-        .oauth-warning {
-            background-color: #ffc;
-            border: 1px solid #fc6;
-            color: #930;
-        }
-
-        .status-active {
-            color: #0a0;
-            font-weight: 600;
-        }
-
-        .status-refreshing {
-            color: #07f;
-            font-weight: 600;
-        }
-
-        .status-expired {
-            color: #f90;
-            font-weight: 600;
-        }
-
-        .status-revoked,
-        .status-error {
-            color: #c33;
-            font-weight: 600;
-        }
-
-        .quota-ok {
-            color: #0a0;
-        }
-
-        .quota-warning {
-            color: #f90;
-            font-weight: 600;
-        }
-
-        .quota-critical {
-            color: #c33;
-            font-weight: 600;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
-        }
     </style>
 </head>
 
@@ -567,7 +490,6 @@
         <div class="tab-btn" data-tab="audio">Audio</div>
         <div class="tab-btn" data-tab="ollama">Ollama</div>
         <div class="tab-btn" data-tab="modes">Modes</div>
-        <div class="tab-btn" data-tab="google-hub">Google Hub</div>
         <div class="tab-btn" data-tab="apikeys">API Keys</div>
         <div class="tab-btn" data-tab="about">About</div>
     </div>
@@ -599,7 +521,6 @@
                     <select id="processing-mode">
                         <option value="local">🏠 Local (Offline, Confidential)</option>
                         <option value="cloud">☁️ Cloud (Faster, Paid)</option>
-                        <option value="google">🔐 Google Login (Your Account)</option>
                     </select>
                 </div>
             </div>
@@ -1167,113 +1088,7 @@
         </div>
 
 
-        <!-- GOOGLE HUB TAB -->
-        <div id="google-hub" class="tab-content">
-            <h2>Google Hub</h2>
-
-            <!-- Google Hub Info -->
-            <div
-                style="background: linear-gradient(135deg, #1a2f3a 0%, #0f1f2f 100%); border: 1px solid #0ea5e9; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-                <div>
-                    <h3 style="margin: 0 0 12px 0; color: #38bdf8; font-size: 1.1em;">Google Account Authentication</h3>
-                    <ul style="margin: 0; padding-left: 18px; color: #7dd3fc; font-size: 0.9em; line-height: 1.6;">
-                        <li><strong>OAuth 2.0 PKCE Flow</strong> - Secure authorization without sharing API keys</li>
-                        <li><strong>Automatic Priority</strong> - When enabled in Cloud mode, OAuth is preferred over
-                            API keys</li>
-                        <li><strong>Personal Quota</strong> - Use your Google Gemini quota (1M chars/day)</li>
-                        <li><strong>Multi-Account</strong> - Connect up to 3 Google accounts and switch between them
-                        </li>
-                        <li><strong>Auto-Refresh</strong> - Tokens automatically refresh before expiration</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Error/Warning Message Display (SPEC_016 Phase 5) -->
-            <div id="oauth-error-message" class="oauth-error"></div>
-
-            <!-- Google Hub Status Section -->
-            <div id="oauth-status-section" style="margin-bottom: 24px;">
-                <!-- Connected Accounts List -->
-                <div id="oauth-accounts-container" style="display: none;">
-                    <h3 style="margin-top: 0; color: #38bdf8;">Connected Accounts</h3>
-                    <div id="oauth-accounts-list" style="display: flex; flex-direction: column; gap: 12px;">
-                        <!-- Account items will be dynamically inserted here -->
-                    </div>
-                    <button id="oauth-add-account-btn" class="btn btn-primary"
-                        style="margin-top: 12px; width: 100%; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);">
-                        ➕ Connect Another Account
-                    </button>
-                </div>
-
-                <!-- No Accounts Message -->
-                <div id="oauth-no-accounts"
-                    style="padding: 16px; background: #0f1f2f; border: 1px dashed #0ea5e9; border-radius: 6px; text-align: center;">
-                    <p style="margin: 0 0 12px 0; color: #94a3b8;">No Google accounts connected</p>
-                    <button id="oauth-connect-btn" class="btn btn-primary"
-                        style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);">
-                        🔗 Connect Google Account
-                    </button>
-                </div>
-            </div>
-
-            <!-- Usage Info (shown when account connected) -->
-            <div id="oauth-quota-section" style="display: none; margin-bottom: 24px;">
-                <h3 style="margin-top: 0;">Daily Usage</h3>
-                <div class="setting-group">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #0f1f2f; border: 1px solid #1e293b; border-radius: 6px;">
-                        <span id="oauth-quota-text" style="font-family: monospace; font-size: 1.1em;">Loading
-                            usage...</span>
-                        <span style="color: #94a3b8; font-size: 0.9em;">(Local Counter)</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Active Account Info -->
-            <div id="oauth-active-account" style="display: none;">
-                <div class="setting-group">
-                    <label>Active Account</label>
-                    <div
-                        style="padding: 12px; background: #1a2f3a; border: 1px solid #0ea5e9; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div id="oauth-active-email" style="color: #38bdf8; font-weight: 500;"></div>
-                            <div id="oauth-active-status" style="color: #94a3b8; font-size: 0.85em; margin-top: 4px;">
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 8px;">
-                            <button id="oauth-disconnect-btn" class="btn btn-danger" style="font-size: 0.85em;">🔌
-                                Disconnect</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Fallback to API Keys Warning -->
-            <div id="oauth-fallback-notice" style="display: none; margin-top: 24px;">
-                <div
-                    style="padding: 16px; background: #7c2d12; border: 2px solid #f97316; border-radius: 8px; color: #fed7aa;">
-                    <div style="display: flex; align-items: flex-start; gap: 12px;">
-                        <span style="font-size: 1.5em; flex-shrink: 0;">⚠️</span>
-                        <div>
-                            <h4 style="margin: 0 0 8px 0; color: #fef3c7;">API Key in Use</h4>
-                            <p style="margin: 0 0 12px 0; font-size: 0.9em; line-height: 1.5;">
-                                Google Hub is not configured. The app is using your Gemini API key instead of OAuth
-                                tokens.
-                            </p>
-                            <div
-                                style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; font-size: 0.85em; line-height: 1.5;">
-                                <p style="margin: 0 0 8px 0;"><strong>To switch to OAuth:</strong></p>
-                                <ol style="margin: 0; padding-left: 16px;">
-                                    <li>Connect your Google account above</li>
-                                    <li>Reload the app (Settings → Restart)</li>
-                                    <li>API key will be used as fallback only</li>
-                                </ol>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- GOOGLE HUB TAB REMOVED -->
 
         <!-- API KEYS TAB -->
         <div id="apikeys" class="tab-content">

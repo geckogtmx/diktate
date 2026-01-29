@@ -11,7 +11,7 @@ A high-performance, **local-first** AI voice dictation tool for Windows. Speak n
 ## 🎯 Project Status: v1.0 Feature Complete 🔒
 
 **Current Phase:** Phase F - Methodical Validation 🧪
-**Status:** All core v1.0 features (Refining, Security, **Google Hub Integration**) are **Implemented and Verified**. We are performing final stress-testing of the OAuth fallback mechanisms.
+**Status:** Core v1.0 features (Refining, Security) are **Implemented and Verified**. The application strictly enforces **Bring Your Own Key (BYOK)** for cloud-based LLM services.
 
 ### Core 1.0 Experience
 1. **Push-to-Talk**: Hold or toggle `Ctrl+Alt+D` to record.
@@ -41,7 +41,7 @@ A high-performance, **local-first** AI voice dictation tool for Windows. Speak n
 | `Ctrl+Alt+T` | **Translate** | Bidirectional EN ↔ ES translation: speak one, get the other. |
 
 ### 🧠 Intelligence & Performance
-*   **Hybrid Intelligence**: Seamlessly switch between local **Gemma 3 4B** and cloud-based **Gemini 2.5 Flash** (via Google Hub OAuth).
+*   **Hybrid Intelligence**: Seamlessly switch between local **Gemma 3 4B** and cloud-based **Gemini 2.5 Flash** (via API Keys).
 *   **Whisper V3 Turbo**: State-of-the-art speech-to-text accuracy.
 *   **Bilingual Bridge**: Real-time translation between English and Spanish.
 *   **+Key (Auto-Action)**: Automatically trigger `Enter`, `Tab`, or a `Space` after injection.
@@ -90,7 +90,7 @@ pnpm dev
 
 ### Workflow & Intelligence
 - **Ask Mode** - Voice Q&A with the LLM using a dedicated hotkey (Ctrl+Alt+A).
-- **Google Hub (SPEC_016)** - Integrated Google Account Gemini support with OAuth 2.0 and local **Usage Tracking** (Daily Character Counter).
+- **BYOK Cloud Mode** - Optional integration with Gemini 2.5 Flash using your own API key for maximum speed and intelligence.
 - **Context Modes** - Switchable prompts for different output styles (Standard, Developer, Email, Creative).
 - **Prompt Helper Mode** - Automatically structures voice input into clear, formatted LLM prompts.
 - **Bilingual Bridge** - Real-time translation between English and Spanish during dictation.

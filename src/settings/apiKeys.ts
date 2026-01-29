@@ -29,6 +29,30 @@ export async function saveApiKey(provider: string) {
 }
 
 /**
+ * Tests the API key currently in the input field
+ */
+export async function testCurrentApiKey(provider: string) {
+    const input = document.getElementById(`${provider}-api-key`) as HTMLInputElement;
+    const key = input?.value?.trim();
+
+    if (!key) {
+        alert(`Please enter a ${provider} API key to test`);
+        return;
+    }
+
+    try {
+        const result = await window.settingsAPI.testApiKey(provider, key);
+        if (result.success) {
+            alert(`✅ ${provider} API key is valid!`);
+        } else {
+            alert(`❌ ${provider} API key test failed: ${result.error}`);
+        }
+    } catch (e) {
+        alert(`❌ Test failed: ${e}`);
+    }
+}
+
+/**
  * Tests the saved API key
  */
 export async function testSavedApiKey(provider: string) {

@@ -15,6 +15,22 @@ export async function initializeModeConfiguration() {
         const modelSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
         if (modelSelect) {
             modelSelect.innerHTML = '';
+
+            // Add "Use App Default" option
+            const appDefault = state.initialModels?.default || 'gemma3:4b';
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.text = `Use App Default (${appDefault})`;
+            defaultOption.style.color = '#888';
+            defaultOption.style.fontStyle = 'italic';
+            modelSelect.appendChild(defaultOption);
+
+            // Add divider
+            const divider = document.createElement('option');
+            divider.disabled = true;
+            divider.text = '──────────';
+            modelSelect.appendChild(divider);
+
             state.availableModels.forEach((model: any) => {
                 const option = document.createElement('option');
                 option.value = model.name;
@@ -25,7 +41,7 @@ export async function initializeModeConfiguration() {
             modelSelect.onchange = async () => {
                 const newValue = modelSelect.value;
                 if (state.currentSelectedMode && state.currentSelectedMode !== 'raw') {
-                    // Save immediately to settings store
+                    // Save immediately to settings store (empty string = remove override)
                     await window.settingsAPI.set(`modeModel_${state.currentSelectedMode}`, newValue);
                 }
                 updatePromptDisplay(state.currentSelectedMode, newValue);
@@ -75,7 +91,7 @@ export async function selectMode(mode: string) {
     if (modelSelect) {
         const settings = await window.settingsAPI.getAll();
         const savedModel = settings[`modeModel_${mode}`];
-        modelSelect.value = savedModel || settings.defaultOllamaModel || 'gemma3:4b';
+        modelSelect.value = savedModel || '';
     }
 
     const modelSection = document.getElementById('mode-detail-model')?.parentElement;
