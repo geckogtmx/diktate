@@ -82,6 +82,7 @@ docs/internal/
 ARCHITECTURE.md
 DEVELOPMENT_ROADMAP.md
 docs/SECURITY_AUDIT.md
+docs/SECURITY_AUDIT_REPORT_*.md
 docs/bugs/
 docs/performance_report.html
 REPOSITORY_QUALITY_ASSESSMENT_2026-01-25.md
@@ -114,3 +115,6 @@ plans/
 
 # Sync Logs
 sync_run_*
+
+# Scripts
+start_dashboard.bat
