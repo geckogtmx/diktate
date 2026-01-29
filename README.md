@@ -39,6 +39,7 @@ A high-performance, **local-first** AI voice dictation tool for Windows. Speak n
 | `Ctrl+Alt+A` | **Ask** | Voice Q&A with your local AI. Answers are typed or copied to clipboard. |
 | `Ctrl+Alt+V` | **Oops** | Misclicked or deleted? Instantly re-inject the last successfully processed text. |
 | `Ctrl+Alt+T` | **Translate** | Bidirectional EN ↔ ES translation: speak one, get the other. |
+| `Ctrl+Alt+N` | **Note** | **Post-it Mode**: Dictate notes directly to a local file with smart context and timestamps. |
 
 ### 🧠 Intelligence & Performance
 *   **Hybrid Intelligence**: Seamlessly switch between local **Gemma 3 4B** and cloud-based **Gemini 2.5 Flash** (via API Keys).
@@ -96,7 +97,7 @@ pnpm dev
 - **Bilingual Bridge** - Real-time translation between English and Spanish during dictation.
 - **Refine Mode** - Two-stage editing: Select text and auto-fix, or dictate specific implementation commands ("Make formal").
 - **Snippets** (Coming v2.0) - Voice macros that expand short phrases into blocks.
-- **Post-it Notes Mode** (Coming v2.0) - Dictation mode for appending timestamps to a file.
+- **Post-it Notes Mode** - Dedicated recording mode (`Ctrl+Alt+N`) for appending voice notes to a local file with smart context capture.
 
 ### Performance & Tech
 - **Speed Advantage** - Low-latency processing (350-750ms) significantly faster than cloud APIs.
