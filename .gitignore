@@ -118,3 +118,10 @@ sync_run_*
 
 # Scripts
 start_dashboard.bat
+python/build_backend.bat
+
+# Research & Internal Notes
+**/PROMPT_ANALYSIS.md
+**/.agent/
+**/.shared/
+**/.claude/
