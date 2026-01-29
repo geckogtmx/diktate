@@ -67,7 +67,10 @@ const settingsAPI = {
     warmupOllamaModel: () => ipcRenderer.invoke('ollama:warmup'),
 
     // App Control
-    relaunchApp: () => ipcRenderer.invoke('app:relaunch')
+    relaunchApp: () => ipcRenderer.invoke('app:relaunch'),
+
+    // Post-It Notes (SPEC_020)
+    selectNoteFile: () => ipcRenderer.invoke('settings:select-note-file')
 };
 
 contextBridge.exposeInMainWorld('settingsAPI', settingsAPI);

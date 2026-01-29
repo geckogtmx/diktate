@@ -491,6 +491,7 @@
         <div class="tab-btn" data-tab="ollama">Ollama</div>
         <div class="tab-btn" data-tab="modes">Modes</div>
         <div class="tab-btn" data-tab="apikeys">API Keys</div>
+        <div class="tab-btn" data-tab="notes">Notes</div>
         <div class="tab-btn" data-tab="about">About</div>
     </div>
 
@@ -597,6 +598,18 @@
                     </div>
                     <div style="text-align: right; margin-top: 5px;">
                         <button class="btn btn-secondary" id="reset-hotkey-oops">Reset Default</button>
+                    </div>
+                </div>
+
+                <!-- Note Hotkey (SPEC_020) -->
+                <div class="setting-group">
+                    <label>Note Hotkey</label>
+                    <span class="sub-label">Press to start/stop recording a note (appends to file)</span>
+                    <div id="note-hotkey-display" class="hotkey-display-box">
+                        Ctrl + Alt + N
+                    </div>
+                    <div style="text-align: right; margin-top: 5px;">
+                        <button class="btn btn-secondary" id="reset-hotkey-note">Reset Default</button>
                     </div>
                 </div>
             </div>
@@ -1186,6 +1199,76 @@
                 </div>
                 <span class="sub-label">Get your key from <a href="#" id="openai-docs-link"
                         data-external-link="https://platform.openai.com/api-keys">OpenAI Platform</a></span>
+            </div>
+        </div>
+
+        <!-- NOTES TAB (SPEC_020) -->
+        <div id="notes" class="tab-content">
+            <h2>Post-It Notes Settings</h2>
+
+            <div class="setting-group">
+                <label>Note File Path</label>
+                <span class="sub-label">Choose where your notes are saved (.md or .txt)</span>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="note-file-path" placeholder="C:\Users\...\.diktate\notes.md"
+                        style="flex: 1;">
+                    <button class="btn btn-secondary" id="browse-note-file">Browse</button>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-row">
+                    <div>
+                        <label>LLM Processing</label>
+                        <span class="sub-label">Clean up transcription into a professional note</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="note-use-processor">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label>Timestamp Format</label>
+                <span class="sub-label">How dates appear in your notes (e.g., %Y-%m-%d %H:%M:%S)</span>
+                <input type="text" id="note-timestamp-format" placeholder="%Y-%m-%d %H:%M:%S">
+            </div>
+
+            <!-- Future Configuration Placeholders -->
+            <div style="border-top: 1px solid var(--border-color); margin: 20px 0; padding-top: 20px; opacity: 0.6;">
+                <h3 style="font-size: 0.9rem; color: #aaa; margin-bottom: 15px;">ADVANCED (COMING SOON)</h3>
+                <div class="setting-group">
+                    <label>Default Folder</label>
+                    <input type="text" id="note-default-folder" placeholder="/december-notes/" value="" disabled>
+                </div>
+                <div class="setting-group">
+                    <label>File Name Template</label>
+                    <input type="text" id="note-filename-template" placeholder="note-{{date}}.md" value="" disabled>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <label>Note System Prompt</label>
+                <span class="sub-label">This prompt guides the AI in formatting your voice notes.</span>
+                <textarea id="note-prompt" rows="4"
+                    style="width: 100%; background: #111; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 4px; font-family: inherit; margin-bottom: 8px;"></textarea>
+                <div style="text-align: right; display: flex; justify-content: flex-end; gap: 8px;">
+                    <button class="btn btn-primary" id="save-note-prompt">Save Note Prompt</button>
+                    <button class="btn btn-secondary" id="reset-note-prompt">Reset to Default</button>
+                </div>
+            </div>
+
+            <!-- Live Preview -->
+            <div class="setting-group">
+                <label>Live Preview</label>
+                <div id="note-preview"
+                    style="background: #111; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.9rem; white-space: pre-wrap; border: 1px solid #333; color: #4ade80;">
+                    ---
+                    [2026-01-29 10:50:00]
+                    Sample transcription...
+                    ---
+                </div>
             </div>
         </div>
 

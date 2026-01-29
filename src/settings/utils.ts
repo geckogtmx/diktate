@@ -74,6 +74,18 @@ export function loadSettings(settings: any) {
         const d = document.getElementById('oops-hotkey-display');
         if (d) d.textContent = settings.oopsHotkey;
     }
+    if (settings.noteHotkey) {
+        const d = document.getElementById('note-hotkey-display');
+        if (d) d.textContent = settings.noteHotkey;
+    }
+
+    // Post-It Notes (SPEC_020)
+    setVal('note-file-path', settings.noteFilePath || '');
+    setCheck('note-use-processor', settings.noteUseProcessor !== false);
+    setVal('note-timestamp-format', settings.noteTimestampFormat || '%Y-%m-%d %H:%M:%S');
+    setVal('note-default-folder', settings.noteDefaultFolder || '');
+    setVal('note-filename-template', settings.noteFileNameTemplate || '');
+    setVal('note-prompt', settings.notePrompt || '');
 }
 
 

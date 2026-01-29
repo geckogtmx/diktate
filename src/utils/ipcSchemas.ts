@@ -36,7 +36,16 @@ export const SettingsKeySchema = z.enum([
     'trailingSpaceEnabled',   // NEW: Enable/disable trailing space (SPEC_006)
     'additionalKeyEnabled',   // NEW: Enable/disable additional key (SPEC_006)
     'additionalKey',          // NEW: Which additional key to press (SPEC_006)
-    'refineMode'              // NEW: Refine behavior mode - 'autopilot' or 'instruction' (SPEC_025)
+    'refineMode',             // NEW: Refine behavior mode - 'autopilot' or 'instruction' (SPEC_025)
+    // Note-taking settings (SPEC_020)
+    'noteHotkey',
+    'noteFilePath',
+    'noteFormat',
+    'noteUseProcessor',
+    'noteTimestampFormat',
+    'noteDefaultFolder',
+    'noteFileNameTemplate',
+    'notePrompt'
 ]);
 
 // API key provider schema

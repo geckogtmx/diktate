@@ -11,6 +11,7 @@ import { recordHotkey, resetHotkey } from './hotkeys.js';
 import { saveApiKey, testCurrentApiKey, testSavedApiKey, deleteApiKey, loadApiKeyStatuses } from './apiKeys.js';
 import { initializeModeConfiguration, selectMode, saveModeDetails, resetModeToDefault } from './modes.js';
 import { runHardwareTest, populateSoundDropdowns, previewSpecificSound, showRestartModal, hideRestartModal, relaunchApp } from './ui.js';
+import { initializeNotesSettings } from './notes.js';
 
 // 1. Flat exposure for legacy static HTML
 (window as any).switchTab = switchTab;
@@ -61,6 +62,10 @@ import { runHardwareTest, populateSoundDropdowns, previewSpecificSound, showRest
     showRestartModal,
     hideRestartModal,
     relaunchApp
+};
+
+(window as any).notes = {
+    initializeNotesSettings
 };
 
 // Aliases for legacy static HTML compatibility
@@ -177,6 +182,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     } catch (e) { console.error('Modes init failed:', e); }
 
+    try {
+        initializeNotesSettings();
+    } catch (e) { console.error('Notes init failed:', e); }
+
 
     // 6. Bind Remaining Interactive Components
 
@@ -197,7 +206,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         { id: 'ask-hotkey-display', mode: 'ask' },
         { id: 'translate-hotkey-display', mode: 'translate' },
         { id: 'refine-hotkey-display', mode: 'refine' },
-        { id: 'oops-hotkey-display', mode: 'oops' }
+        { id: 'oops-hotkey-display', mode: 'oops' },
+        { id: 'note-hotkey-display', mode: 'note' }
     ];
     hotkeyConfigs.forEach(cfg => {
         document.getElementById(cfg.id)?.addEventListener('click', () => recordHotkey(cfg.mode));

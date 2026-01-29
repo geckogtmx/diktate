@@ -24,5 +24,12 @@ export interface Settings {
     translateHotkey?: string;
     refineHotkey?: string;
     oopsHotkey?: string;
+    noteHotkey?: string;
+    noteFilePath?: string;
+    noteFormat?: 'md' | 'txt';
+    noteUseProcessor?: boolean;
+    noteDefaultFolder?: string;
+    noteFileNameTemplate?: string;
+    notePrompt?: string;
     [key: string]: any;
 }
