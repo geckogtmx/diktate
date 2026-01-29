@@ -864,7 +864,7 @@
                 <button id="hardware-test-btn" class="btn btn-secondary">🔬 Run Hardware Test</button>
             </div>
 
-            <!-- Service Status -->
+            <!-- Service Status & Control -->
             <div class="setting-group">
                 <label>Service Status</label>
                 <span class="sub-label">Local LLM inference engine</span>
@@ -883,46 +883,57 @@
                         <span id="ollama-loaded-models">--</span>
                     </div>
                 </div>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
+
+                <!-- Action Buttons -->
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
                     <button id="refresh-ollama-btn" class="btn btn-secondary">🔄 Refresh</button>
+                    <button id="restart-ollama-btn" class="btn btn-secondary">🔄 Restart Service</button>
+                    <button id="warmup-btn" class="btn btn-secondary">🔥 Warm Up Model</button>
                 </div>
+
+                <!-- Action Descriptions -->
+                <div
+                    style="margin-top: 12px; font-size: 0.85em; color: #888; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 4px;">
+                        <div style="color: #ccc; font-weight: 500; margin-bottom: 2px;">Restart Service</div>
+                        Restart to clear VRAM or fix connection issues.
+                    </div>
+                    <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 4px;">
+                        <div style="color: #ccc; font-weight: 500; margin-bottom: 2px;">Warm Up Model</div>
+                        Pre-load model into memory for instant first response.
+                    </div>
+                </div>
+
+                <div id="ollama-restart-status" style="margin-top: 12px; font-size: 0.9em; color: #888;"></div>
             </div>
 
-            <!-- Service Control -->
+            <!-- Safe Model Library (SPEC_033) -->
             <div class="setting-group">
-                <label>Service Control</label>
-                <span class="sub-label">Restart Ollama to clear memory and reload models</span>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button id="restart-ollama-btn" class="btn btn-secondary">🔄 Restart Ollama</button>
-                    <button id="warmup-btn" class="btn btn-secondary">🔥 Warm Up Current Model</button>
-                </div>
-                <div id="ollama-restart-status" style="margin-top: 8px; font-size: 0.9em; color: #888;"></div>
-            </div>
-
-            <!-- Model Management -->
-            <div class="setting-group">
-                <label>Pull New Model</label>
-                <span class="sub-label">Download a model from the Ollama registry</span>
-
-                <!-- Quick picks for popular models -->
-                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0;">
-                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85em;"
-                        data-quick-pull="gemma3:4b">gemma3:4b</button>
-                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85em;"
-                        data-quick-pull="llama3.2:3b">llama3.2:3b</button>
-                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85em;"
-                        data-quick-pull="phi3:mini">phi3:mini</button>
-                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85em;"
-                        data-quick-pull="qwen2.5:3b">qwen2.5:3b</button>
-                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.85em;"
-                        data-quick-pull="mistral:7b">mistral:7b</button>
+                <label>Verified Model Library</label>
+                <div
+                    style="margin-top: 15px; color: #888; font-style: italic; background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 6px; text-align: center;">
+                    🚧 Coming Soon: A curated library of verified models.
                 </div>
 
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="ollama-pull-model" placeholder="Or type model name..." style="flex: 1;">
-                    <button id="pull-model-btn" class="btn btn-secondary">⬇️ Pull</button>
+                <!-- Advanced / Dangerous Mode -->
+                <details style="margin-top: 20px; border-top: 1px solid #333; padding-top: 10px;">
+                    <summary style="color: #666; cursor: pointer; font-size: 0.85em; user-select: none;">Advanced:
+                        Manual Download</summary>
+                    <div style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+                        <div style="color: #fbbf24; font-size: 0.8em; margin-bottom: 8px;">⚠️ Warning: You can download
+                            incompatible models.</div>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="ollama-pull-model" placeholder="gemma2:27b" style="flex: 1;">
+                            <button id="pull-model-btn" class="btn btn-secondary" style="opacity: 0.7;">Pull</button>
+                        </div>
+                    </div>
+                </details>
+                <div id="ollama-pull-status" style="margin-top: 12px; font-size: 0.9em; color: #888;"></div>
+
+                <div style="margin-top: 15px; text-align: right; font-size: 0.8em;">
+                    <a href="#" id="ollama-help-link" style="color: #666; text-decoration: none;">ℹ️ Learn more about
+                        importing models</a>
                 </div>
-                <div id="ollama-pull-status" style="margin-top: 8px; font-size: 0.9em; color: #888;"></div>
             </div>
 
 

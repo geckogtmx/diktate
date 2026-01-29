@@ -24,6 +24,10 @@ export interface SettingsState {
     activeTestInterval: ReturnType<typeof setInterval> | null;
     activeTestAborted: boolean;
     currentSelectedMode: string;
+
+    // Visual Smoothing
+    currentMeterDb: number;
+    statusBuffer: number[];
 }
 
 export const state: SettingsState = {
@@ -42,5 +46,9 @@ export const state: SettingsState = {
 
     activeTestInterval: null,
     activeTestAborted: false,
-    currentSelectedMode: 'standard'
+    currentSelectedMode: 'standard',
+
+    // Visual Smoothing
+    currentMeterDb: -60,
+    statusBuffer: []
 };

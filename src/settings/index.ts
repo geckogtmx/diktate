@@ -5,7 +5,7 @@
 
 import { state } from './store.js';
 import { loadSettings, setVal, setCheck, switchTab, openExternalLink, saveSetting } from './utils.js';
-import { checkOllamaStatus, loadOllamaModels, onDefaultModelChange, saveOllamaSetting, restartOllama, warmupModel, pullOllamaModel, quickPullModel } from './ollama.js';
+import { checkOllamaStatus, loadOllamaModels, onDefaultModelChange, saveOllamaSetting, restartOllama, warmupModel, pullOllamaModel, quickPullModel, initSafeModelLibrary, installVerifiedModel } from './ollama.js';
 import { refreshAudioDevices } from './audio.js';
 import { updateOAuthUI, initializeOAuthFlow, switchAccount, disconnectAccount, initOAuthListeners } from './oauth.js';
 import { recordHotkey, resetHotkey } from './hotkeys.js';
@@ -116,7 +116,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         'anthropic-docs-link': 'https://console.anthropic.com/',
         'openai-docs-link': 'https://platform.openai.com/api-keys',
         'website-link': 'https://dikta.me',
-        'github-link': 'https://github.com/diktate/diktate'
+        'github-link': 'https://github.com/diktate/diktate',
+        'ollama-help-link': 'https://docs.ollama.com/import'
     };
     Object.keys(urls).forEach(id => {
         document.getElementById(id)?.addEventListener('click', () => openExternalLink(urls[id]));
@@ -146,6 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         await checkOllamaStatus();
         await loadOllamaModels();
+        await initSafeModelLibrary();
     } catch (e) { console.error('Ollama init failed:', e); }
 
     // 2. LOAD VALUES INTO POPULATED DROPDOWNS
@@ -174,6 +176,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
         await initializeModeConfiguration();
+        // Bind Mode Selector Click Events
+        document.querySelectorAll('.mode-list-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const mode = (e.currentTarget as HTMLElement).getAttribute('data-mode');
+                if (mode) selectMode(mode);
+            });
+        });
     } catch (e) { console.error('Modes init failed:', e); }
 
 

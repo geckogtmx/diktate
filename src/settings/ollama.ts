@@ -4,6 +4,7 @@
 
 import { state } from './store.js';
 import { formatBytes, saveSetting } from './utils.js';
+import { VERIFIED_MODELS } from './constants.js';
 import {
     getRecommendedMaxModelSize,
     getModelSizeClass,
@@ -29,6 +30,13 @@ export async function checkOllamaStatus() {
     const setVersion = (ver: string) => {
         if (versionEl) versionEl.textContent = ver;
     };
+
+    // 1. Immediate Visual Feedback
+    setStatus('⏳ Checking...', '#fbbf24'); // Yellow
+    if (versionEl) versionEl.textContent = '--';
+
+    // 2. Artificial Delay for UX (so user sees the change)
+    await new Promise(r => setTimeout(r, 500));
 
     try {
         const response = await fetch('http://localhost:11434/api/version');
@@ -134,6 +142,77 @@ export async function onDefaultModelChange(model: string) {
     if (state.initialModels['default'] !== model) {
         showRestartModal();
     }
+}
+
+/**
+ * Safe Model Library Logic (SPEC_033)
+ */
+export async function initSafeModelLibrary() {
+    try {
+        // 1. Get Hardware Info
+        const result = await window.settingsAPI.runHardwareTest();
+        const vramGB = parseFloat(result.vram); // Assuming format like "8.0 GB" or similar, parse logic needed?
+        // Actually, runHardwareTest returns formatted strings. Let's assume we can get raw number or parse it.
+        // For robustness, let's look at how ui.ts does it or just re-implement a safe parse.
+        // Result.vram is likely string. Let's trust a conservative 4GB if parsing fails.
+        let vram = 4;
+        if (result.vram) {
+            const match = result.vram.match(/(\d+(\.\d+)?)/);
+            if (match) vram = parseFloat(match[1]);
+        }
+
+        // 2. Get Compatible Models
+        const compatible = getCompatibleModels(vram);
+
+        // 3. Populate Dropdown
+        const select = document.getElementById('verified-model-select') as HTMLSelectElement;
+        const info = document.getElementById('verified-model-info');
+
+        if (select) {
+            select.innerHTML = '<option value="">Select a model...</option>';
+            compatible.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.text = `${m.name} (${m.sizeGb}GB)`;
+
+                // Warning for models > 50% VRAM
+                if (m.sizeGb > vram * 0.5) {
+                    opt.text += ' ⚠️ High VRAM';
+                    opt.style.color = '#fbbf24'; // Yellow in supported browsers
+                }
+
+                // Check if already installed
+                const isInstalled = state.availableModels?.some((am: any) => am.name === m.id);
+                if (isInstalled) {
+                    opt.text += ' ✅ Installed';
+                    opt.disabled = true;
+                }
+                select.appendChild(opt);
+            });
+
+            // Bind change event
+            select.onchange = () => {
+                const model = VERIFIED_MODELS.find(m => m.id === select.value);
+                if (info) info.textContent = model ? model.description : '';
+            };
+        }
+
+    } catch (e) {
+        console.error('Failed to init Safe Model Library:', e);
+    }
+}
+
+export function installVerifiedModel() {
+    const select = document.getElementById('verified-model-select') as HTMLSelectElement;
+    if (select && select.value) {
+        quickPullModel(select.value);
+    }
+}
+
+export function getCompatibleModels(vramGB: number): any[] {
+    return VERIFIED_MODELS.filter(m => {
+        return m.sizeGb <= vramGB;
+    });
 }
 
 export function saveOllamaSetting(key: string, value: any) {

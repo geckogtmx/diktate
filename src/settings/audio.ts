@@ -170,6 +170,20 @@ function updateSignalMeter() {
     const peak = state.audioAnalyzer.getPeak();
     const peakDb = state.audioAnalyzer.toDecibels(peak);
 
+    // 1. Visual Smoothing (LERP)
+    // Move current value 10% closer to target each frame (slower)
+    if (!state.currentMeterDb) state.currentMeterDb = -60;
+    state.currentMeterDb = state.currentMeterDb + (peakDb - state.currentMeterDb) * 0.1;
+
+    // 2. Status Smoothing (Buffer)
+    // Keep last 15 samples (~250ms) to average classification
+    if (!state.statusBuffer) state.statusBuffer = [];
+    state.statusBuffer.push(peakDb);
+    if (state.statusBuffer.length > 15) state.statusBuffer.shift();
+
+    // Calculate average for text classification
+    const avgPeakDb = state.statusBuffer.reduce((a, b) => a + b, 0) / state.statusBuffer.length;
+
     // Update peak hold
     if (peakDb > state.peakHoldValue) {
         state.peakHoldValue = peakDb;
@@ -188,11 +202,14 @@ function updateSignalMeter() {
 
     if (!meter || !status) return;
 
-    const level = classifyAudioLevel(peakDb);
+    // Use AVERAGE for text (stable)
+    const level = classifyAudioLevel(avgPeakDb);
+    // Use SMOOTHED for visual (fluid)
     meter.className = `meter-fill ${getAudioLevelClass(level)}`;
-    meter.style.width = `${Math.max(0, Math.min(100, (peakDb + 60) / 60 * 100))}%`;
+    meter.style.width = `${Math.max(0, Math.min(100, (state.currentMeterDb + 60) / 60 * 100))}%`;
 
     const now = Date.now();
+    // Slightly slower update rate for text (500ms -> 750ms if needed, but buffering helps most)
     if (now - state.lastStatusUpdate > STATUS_UPDATE_INTERVAL) {
         status.textContent = getAudioLevelMessage(level);
         state.lastStatusUpdate = now;

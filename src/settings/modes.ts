@@ -22,8 +22,13 @@ export async function initializeModeConfiguration() {
                 modelSelect.appendChild(option);
             });
 
-            modelSelect.onchange = () => {
-                updatePromptDisplay(state.currentSelectedMode, modelSelect.value);
+            modelSelect.onchange = async () => {
+                const newValue = modelSelect.value;
+                if (state.currentSelectedMode && state.currentSelectedMode !== 'raw') {
+                    // Save immediately to settings store
+                    await window.settingsAPI.set(`modeModel_${state.currentSelectedMode}`, newValue);
+                }
+                updatePromptDisplay(state.currentSelectedMode, newValue);
             };
         }
 
