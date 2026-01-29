@@ -28,9 +28,68 @@ if (menuBtn && mobileMenu) {
   });
 }
 
+// ---------------------------------------------------------
+// Core Loop Scrollytelling Logic (4 Cards)
+// ---------------------------------------------------------
+const coreTrack = document.getElementById('core-track');
+const corePairs = [
+  document.getElementById('core-pair-1'),
+  document.getElementById('core-pair-2')
+];
+const coreDots = [
+  document.getElementById('core-dot-1'),
+  document.getElementById('core-dot-2')
+];
+
+function updateCoreScroll() {
+  if (!coreTrack) return;
+
+  const rect = coreTrack.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const totalDistance = rect.height - viewportHeight;
+  const scrolled = -rect.top;
+
+  if (scrolled < 0) {
+    activateCorePair(-1);
+    return;
+  }
+
+  const progress = Math.min(scrolled / totalDistance, 1);
+
+  // Two pairs
+  if (progress < 0.5) activateCorePair(0);
+  else activateCorePair(1);
+}
+
+function activateCorePair(pairIndex) {
+  if (!corePairs[0]) return;
+
+  corePairs.forEach((pair, i) => {
+    if (i <= pairIndex) {
+      pair.style.opacity = "1";
+      pair.style.transform = "scale(1)";
+    } else {
+      pair.style.opacity = "0";
+      pair.style.transform = "scale(0.98)";
+    }
+  });
+
+  // Update dots based on progress (only 2 dots now)
+  coreDots.forEach((dot, i) => {
+    if (i <= pairIndex) {
+      dot.classList.add('bg-primary');
+      dot.classList.remove('bg-white/10');
+    } else {
+      dot.classList.remove('bg-primary');
+      dot.classList.add('bg-white/10');
+    }
+  });
+}
+
 // Navbar scroll effect
 const navbar = document.querySelector('nav');
 window.addEventListener('scroll', () => {
+  updateCoreScroll();
   if (window.scrollY > 20) {
     navbar.classList.add('bg-background/90', 'backdrop-blur-xl', 'shadow-lg', 'border-white/5');
     navbar.classList.remove('bg-transparent', 'border-transparent');
@@ -367,6 +426,7 @@ window.addEventListener('scroll', () => {
 });
 
 // Initial Init
+updateCoreScroll();
 updateManifestoScroll();
 updateHeroScroll();
 updateSpecsScroll();

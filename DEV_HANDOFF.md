@@ -1,50 +1,35 @@
 # DEV_HANDOFF.md
 
-> **Last Updated:** 2026-01-28 21:23:00
-> **Last Model:** Antigravity (Gemini)
-> **Session Focus:** `sitex` Restoration & Workspace Cleanup
+## Session Summary: 2026-01-29
 
----
+### ✅ Completed
+- **Feature Cards Polish**: Renamed and expanded descriptions for multiple "Specs" cards (Whisper V3 Turbo, Local Small Model Brain, Global Configurable Hotkeys, etc.).
+- **Hero Section Overhaul**: 
+  - Updated headline to focus on "ideas" and added the tagline: *-- "Work at the speed of your thoughts, not the speed of fingers" --*.
+  - Fixed button asymmetry: Windows download is now the primary single-row CTA, while macOS/iOS/Android are grouped symmetrically below in ghost style.
+- **The Core Arsenal (New Section)**:
+  - Implemented a sticky scrollytelling track.
+  - Features 4 workflow cards: **Dictate**, **Ask**, **Refine**, and **Structured Notes**.
+  - Refined into a 2-pair linked reveal (Dictate+Ask then Refine+Notes).
+  - Replaced emojis with professional monochrome SVG icons.
+  - Fixed "left-lean" alignment using scale/opacity transitions and removing hardcoded translation offsets.
+- **Ask Mode Demo**: Updated the animated code block to use a Madagascar fact (Capital & Population) instead of the airspeed swallow joke.
 
-## ✅ Completed This Session
+### 🚧 In Progress
+- The "Spec" grid icons: Currently using placeholders/names; could benefit from custom SVGs like the Core Arsenal.
+- General site-wide accessibility checks.
 
-- **Restored `sitex` Source Files**: Recovered `package.json`, `index.html`, and `src/` directory from commit `7d0bb22` after accidental deletion in `f0308b5`.
-- **Restored `site` and `mobile_site`**: Also recovered source files for other internal website paths.
-- **Fixed Root `.gitignore`**: Updated to track source directories while correctly ignoring build artifacts (`dist/`, `node_modules/`).
-- **Verified Dashboard**: Confirmed `sitex` Vite server starts correctly on [http://localhost:5174/](http://localhost:5174/).
+### 📋 Next Steps (Priority Order)
+1. **Refactor 'Versus' Section**: Improve the scrollytelling flow and visual impact of the comparison table.
+2. **Icons for Specs Grid**: Add professional SVG icons to the remaining feature cards.
+3. **Performance Optimization**: Confirm smooth scroll performance across different browser/GPU combinations.
 
-## ⚠️ Known Issues / Broken
+### 🔍 Key Context
+- **Files Modified**: 
+  - [index.html](file:///e:/git/diktate/sitex/index.html)
+  - [main.js](file:///e:/git/diktate/sitex/src/main.js)
+- **Known Issues**: None found during manual review. The "left lean" and "missing cards" bugs from earlier in the session were successfully resolved.
 
-- [ ] None identified in the restoration work. Existing Phase D items remain pending.
-
-## 🔄 In Progress / Pending
-
-- [ ] **Distribution (Phase D)**: Still pending sidecar integration and auto-tiering.
-
-## 📋 Instructions for Next Model
-
-1. Continue with the **Sidecar Integration (Phase D.4)** as planned in existing specs.
-2. Monitor `sitex` directory to ensure no future accidental deletions occur during syncs.
-3. Read `docs/internal/specs/SPEC_032_SETTINGS_MODULES.md` for context on the settings refactor.
-
-### Priority Order
-1. **Sidecar Integration (Phase D.4)**: Bundle `ollama.exe`.
-2. **Auto-Tiering (Phase D.5)**: GPU/VRAM detection.
-
----
-
-## Session Log (Last 3 Sessions)
-
-### 2026-01-28 - Antigravity (Gemini)
-- Restored `sitex`, `site`, and `mobile_site` source files deleted in `f0308b5`.
-- Updated root `.gitignore` to protect source files while ignoring build artifacts.
-- Verified dashboard accessibility.
-
-### 2026-01-28 (Earlier) - Antigravity (Gemini)
-- Decommissioned Google Hub (OAuth) integration (SPEC_016).
-- Modularized Settings Page (SPEC_032) into `src/settings/`.
-- Updated API key regex and validation logic.
-
-### 2026-01-27 - Claude (Previous)
-- Implemented SQLite History Logging (SPEC_029).
-- Finalized Audio Doctor initial specs.
+### 💡 Notes for Next Session
+- The Core Loop animation is now center-weighted. Avoid adding horizontal `translate` classes to the `core-pair` containers as they can cause alignment bias.
+- The scrollytelling logic in `main.js` is becoming quite robust; new sections should follow the `update[Name]Scroll` pattern.

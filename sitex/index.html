@@ -87,28 +87,150 @@
           </div>
         </h1>
 
-        <p class="text-xl text-muted max-w-2xl mx-auto mb-10 reveal delay-100 leading-relaxed">
-          The only open-source, local-first voice engine for Windows. Your voice never leaves your GPU.
+        <p class="text-xl text-muted max-w-2xl mx-auto mb-10 reveal delay-100 leading-relaxed italic">
+          The only open-source, local-first voice engine for Windows. Your ideas never leave your GPU. <br>
+          <span class="text-primary not-italic font-mono text-sm tracking-tight mt-4 block">-- "Work at the speed of
+            your thoughts, not the speed of fingers" --</span>
         </p>
 
-        <div class="flex flex-col items-center gap-6 reveal delay-200">
-          <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button class="btn-primary justify-center w-full sm:w-auto text-lg px-8 py-4">
-              Download for Windows
-              <span class="text-xs font-normal opacity-80 block ml-2 border-l border-white/20 pl-2">v0.1 • Free</span>
-            </button>
-            <button class="btn-secondary justify-center w-full sm:w-auto text-lg px-8 py-4 opacity-70">
-              MacOS
-              <span class="text-xs font-normal opacity-60 block ml-2">Soon™</span>
-            </button>
-          </div>
-          <div class="text-sm text-muted">
-            iOS & Android <span class="opacity-50 ml-1">Soon™</span>
+        <div class="flex flex-col items-center gap-8 reveal delay-200">
+          <!-- Primary Action: Windows -->
+          <button
+            class="btn-primary justify-center w-full sm:w-auto text-lg px-12 py-5 shadow-glow hover:scale-105 transition-all">
+            Download for Windows
+            <span class="text-xs font-normal opacity-80 block ml-2 border-l border-white/20 pl-2">v0.1 • Free</span>
+          </button>
+
+          <!-- Symmetrical Secondary Actions -->
+          <div
+            class="flex flex-wrap items-center justify-center gap-8 text-xs font-medium text-muted/60 uppercase tracking-widest">
+            <div class="flex items-center gap-2 group hover:text-white transition-colors cursor-default">
+              <span class="opacity-50">macOS</span>
+              <span
+                class="px-1.5 py-0.5 rounded border border-white/10 text-[8px] group-hover:border-white/20">Soon™</span>
+            </div>
+            <div class="flex items-center gap-2 group hover:text-white transition-colors cursor-default">
+              <span class="opacity-50">iOS</span>
+              <span
+                class="px-1.5 py-0.5 rounded border border-white/10 text-[8px] group-hover:border-white/20">Soon™</span>
+            </div>
+            <div class="flex items-center gap-2 group hover:text-white transition-colors cursor-default">
+              <span class="opacity-50">Android</span>
+              <span
+                class="px-1.5 py-0.5 rounded border border-white/10 text-[8px] group-hover:border-white/20">Soon™</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- THE CORE LOOP - Sticky Scrollytelling -->
+  <div id="core-track" class="relative h-[400vh]">
+    <div class="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
+      <!-- Background Effects -->
+      <div class="absolute inset-0 bg-background z-0"></div>
+      <div
+        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[160px] pointer-events-none">
+      </div>
+
+      <div class="section-container relative z-10 w-full">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl md:text-5xl font-bold mb-4 text-white">The Core Arsenal.</h2>
+          <p class="text-muted">Four modes. Infinite productivity. Zero latency.</p>
+        </div>
+
+        <div class="flex flex-col gap-8 max-w-5xl mx-auto px-4">
+          <!-- Pair 1: Dictate & Ask -->
+          <div id="core-pair-1"
+            class="flex flex-col md:flex-row gap-6 transition-all duration-1000 ease-out will-change-transform opacity-0 scale-[0.98] transform transition-all duration-1000">
+            <!-- Card 1: Dictate -->
+            <div id="core-card-1" class="card flex-1 p-8 border-primary/20 backdrop-blur-2xl">
+              <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 text-primary">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z">
+                  </path>
+                </svg>
+              </div>
+              <div class="text-primary mb-2 font-mono text-[10px] uppercase tracking-widest flex justify-between">
+                <span>Mode 01</span>
+                <span>Ctrl+Alt+D</span>
+              </div>
+              <h3 class="text-xl font-bold text-white mb-3">Dictate</h3>
+              <p class="text-sm text-muted leading-relaxed">The Input. 1,000 WPM local transcription with RAW Mode for
+                instant, unfiltered injection into any application.</p>
+            </div>
+
+            <!-- Card 2: Ask -->
+            <div id="core-card-2" class="card flex-1 p-8 border-primary/20 backdrop-blur-2xl">
+              <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 text-primary">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0012 18.75c-1.03 0-1.9.4-2.593 1.02l-.547.547z">
+                  </path>
+                </svg>
+              </div>
+              <div class="text-primary mb-2 font-mono text-[10px] uppercase tracking-widest flex justify-between">
+                <span>Mode 02</span>
+                <span>Ctrl+Alt+A</span>
+              </div>
+              <h3 class="text-xl font-bold text-white mb-3">Ask</h3>
+              <p class="text-sm text-muted leading-relaxed">The Brain. Query your local LLM instantly for definitions,
+                math, or quick facts without ever leaving your active window.</p>
+            </div>
+          </div>
+
+          <!-- Pair 2: Refine & Notes -->
+          <div id="core-pair-2"
+            class="flex flex-col md:flex-row gap-6 transition-all duration-1000 ease-out will-change-transform opacity-0 scale-[0.98] transform transition-all duration-1000">
+            <!-- Card 3: Refine -->
+            <div id="core-card-3" class="card flex-1 p-8 border-primary/20 backdrop-blur-2xl">
+              <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 text-primary">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                  </path>
+                </svg>
+              </div>
+              <div class="text-primary mb-2 font-mono text-[10px] uppercase tracking-widest flex justify-between">
+                <span>Mode 03</span>
+                <span>Ctrl+Alt+R</span>
+              </div>
+              <h3 class="text-xl font-bold text-white mb-3">Refine</h3>
+              <p class="text-sm text-muted leading-relaxed">The Finish. Professional-grade AI editing. Transform rough
+                transcripts into polished emails or documentation instantly.</p>
+            </div>
+
+            <!-- Card 4: Notes -->
+            <div id="core-card-4" class="card flex-1 p-8 border-primary/20 backdrop-blur-2xl">
+              <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 text-primary">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                  </path>
+                </svg>
+              </div>
+              <div class="text-primary mb-2 font-mono text-[10px] uppercase tracking-widest flex justify-between">
+                <span>Mode 04</span>
+                <span>Ctrl+Alt+N</span>
+              </div>
+              <h3 class="text-xl font-bold text-white mb-3">Structured Notes</h3>
+              <p class="text-sm text-muted leading-relaxed">The Memory. Capture thoughts with automatic timestamps and
+                metatags. Sequential formatting ready for batch processing.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Steps (2 pairs) -->
+        <div class="mt-12 flex justify-center gap-4">
+          <div id="core-dot-1" class="w-24 h-1 bg-white/10 rounded-full transition-all duration-300"></div>
+          <div id="core-dot-2" class="w-24 h-1 bg-white/10 rounded-full transition-all duration-300"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Versus (Comparison) - Sticky Scrollytelling -->
   <div id="versus-track" class="relative h-[250vh]">
     <div class="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
@@ -191,42 +313,60 @@
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Core</div>
               <h3 class="text-lg font-bold text-text mb-2 text-white">Whisper V3 Turbo</h3>
-              <p class="text-sm text-muted">State-of-the-art accuracy running locally.</p>
+              <p class="text-sm text-muted">State-of-the-art accuracy running locally. Use it in RAW Mode for instant
+                transcription and injection with good tolerance for filler and punctuation correction.</p>
             </div>
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Intelligence</div>
-              <h3 class="text-lg font-bold text-text mb-2 text-white">Small 4b Model</h3>
-              <p class="text-sm text-muted">Intelligent formatting and filler removal.</p>
+              <h3 class="text-lg font-bold text-text mb-2 text-white">Local Small Model Brain</h3>
+              <p class="text-sm text-muted">Intelligent formatting, filler removal, excellent math, and general
+                knowledge. Utilize different models for various simple tasks, all local, all private, and all
+                exceptionally fast.</p>
             </div>
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Speed</div>
-              <h3 class="text-lg font-bold text-text mb-2 text-white">Global Hotkeys</h3>
-              <p class="text-sm text-muted">Ctrl+Alt+D (Dictate) & Ctrl+Alt+A (Ask).</p>
+              <h3 class="text-lg font-bold text-text mb-2 text-white">Global Configurable Hotkeys</h3>
+              <div class="text-xs text-muted leading-relaxed space-y-1">
+                <p>Ctrl+Alt+D (Dictate)</p>
+                <p>Ctrl+Alt+A (Ask)</p>
+                <p>Ctrl+Alt+R (Refine Auto & Freeform)</p>
+                <p>Ctrl+Alt+T (Translate)</p>
+                <p>Ctrl+Alt+V (Re-inject Last)</p>
+              </div>
             </div>
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Integration</div>
-              <h3 class="text-lg font-bold text-text mb-2 text-white">Auto-Injection</h3>
-              <p class="text-sm text-muted">Pastes text directly into active window.</p>
+              <h3 class="text-lg font-bold text-text mb-2 text-white">Precision Injection</h3>
+              <p class="text-sm text-muted">Zero-latency, 1,000 WPM text injection with native window emulation across
+                every application.</p>
             </div>
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Workflow</div>
               <h3 class="text-lg font-bold text-text mb-2 text-white">Intelligent Modes</h3>
-              <p class="text-sm text-muted">Context-aware presets for Coding/Writing.</p>
+              <div class="text-xs text-muted leading-relaxed space-y-1">
+                <p>Standard - Direct Injection</p>
+                <p>Professional - Polished Output</p>
+                <p>Prompt - AI Instruction mode</p>
+                <p>Raw - Unfiltered Stream</p>
+              </div>
             </div>
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Cloud</div>
-              <h3 class="text-lg font-bold text-text mb-2 text-white">Google Login</h3>
-              <p class="text-sm text-muted">One-click OAuth for Gemini 2.0.</p>
+              <h3 class="text-lg font-bold text-text mb-2 text-white">Hybrid Cloud Bridge</h3>
+              <p class="text-sm text-muted">Seamlessly transition from local execution to Gemini 2.0 via one-click
+                Google OAuth.</p>
             </div>
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Power User</div>
-              <h3 class="text-lg font-bold text-text mb-2 text-white">BYO Keys</h3>
-              <p class="text-sm text-muted">Plug in OpenAI, Anthropic, or DeepSeek keys.</p>
+              <h3 class="text-lg font-bold text-text mb-2 text-white">API Freedom</h3>
+              <p class="text-sm text-muted">No markup, no middleman. Plug in your own OpenAI, Anthropic, or DeepSeek
+                keys directly.</p>
             </div>
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Translation</div>
-              <h3 class="text-lg font-bold text-text mb-2 text-white">ES ↔ EN Bridge</h3>
-              <p class="text-sm text-muted">Bilingual support at the model level.</p>
+              <h3 class="text-lg font-bold text-text mb-2 text-white">Cross-Lingual Engine</h3>
+              <p class="text-sm text-muted">Real-time ES ↔ EN translation integrated at the model level for zero-latency
+                bridging.</p>
             </div>
           </div>
 
@@ -235,13 +375,15 @@
             class="absolute inset-0 grid md:grid-cols-4 gap-6 transition-all duration-700 ease-out will-change-transform opacity-0 translate-y-10 scale-95 pointer-events-none">
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Privacy</div>
-              <h3 class="text-lg font-bold text-text mb-2 text-white">Log Redaction</h3>
-              <p class="text-sm text-muted">PII and Keys are scrubbed. Paranoia enabled.</p>
+              <h3 class="text-lg font-bold text-text mb-2 text-white">Local Privacy Guard</h3>
+              <p class="text-sm text-muted">100% local processing with automatic PII and sensitive data scrubbing from
+                all logs.</p>
             </div>
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Security</div>
-              <h3 class="text-lg font-bold text-text mb-2 text-white">SafeStorage</h3>
-              <p class="text-sm text-muted">Platform-encrytped secrets management.</p>
+              <h3 class="text-lg font-bold text-text mb-2 text-white">Encrypted SafeStorage</h3>
+              <p class="text-sm text-muted">Secrets and keys are managed via OS-level AES-256 encryption. Never exposed,
+                never raw.</p>
             </div>
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">UI</div>
@@ -250,8 +392,9 @@
             </div>
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Deploy</div>
-              <h3 class="text-lg font-bold text-text mb-2 text-white">Single Binary</h3>
-              <p class="text-sm text-muted">One .exe file. Includes Python & Ollama.</p>
+              <h3 class="text-lg font-bold text-text mb-2 text-white">Self-Contained Binary</h3>
+              <p class="text-sm text-muted">Single 150MB portable .exe includes a full Python runtime and embedded
+                Ollama engine.</p>
             </div>
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Productivity</div>
@@ -266,7 +409,8 @@
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Reliability</div>
               <h3 class="text-lg font-bold text-text mb-2 text-white">Smart Fallback</h3>
-              <p class="text-sm text-muted">Never lose text if the AI hangs.</p>
+              <p class="text-sm text-muted">Intelligent session recovery—never lose a word of dictation if a model hangs
+                or crashes.</p>
             </div>
             <div class="card p-6">
               <div class="text-primary mb-4 font-mono text-xs uppercase tracking-widest">Architecture</div>
@@ -332,10 +476,10 @@
             <span class="text-xs border border-white/20 px-2 py-0.5 rounded text-muted">Ctrl+Alt+A</span>
           </div>
           <div class="text-secondary mb-8 overflow-hidden whitespace-nowrap border-r-2 border-secondary" id="ask-input"
-            style="width: 0%;">"What is the airspeed velocity of an unladen swallow?"</div>
+            style="width: 0%;">"What is the capital of madagascar and its population"</div>
           <div class="text-muted mb-4 border-b border-white/10 pb-2">Output (Clipboard/Type)</div>
           <div class="text-primary overflow-hidden whitespace-nowrap border-r-2 border-primary" id="ask-output"
-            style="width: 0%;">"About 24 miles per hour (roughly 11 meters per second)"</div>
+            style="width: 0%;">"Antananarivo, 4,413,000 as of early 2026"</div>
         </div>
 
         <!-- Text (Right) -->
