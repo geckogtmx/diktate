@@ -1,35 +1,25 @@
-# DEV_HANDOFF.md
+# Session Handoff: 2026-01-29
 
-## Session Summary: 2026-01-29
+## ✅ Completed
+- **SPEC_020: Post-It Notes**: Full implementation of dedicated note-taking mode (`Ctrl+Alt+N`).
+  - **Hallucination Fixed**: Resolved the "Project Phoenix" issue by implementing a backend "Anti-Hallucination Guard" that force-appends context if the `{text}` placeholder is missing.
+  - **Manual Save UI**: Added a dedicated "Save Note Prompt" button to Settings > Notes, replacing unreliable auto-save logic.
+  - **History Logging**: Enabled full SQLite logging for note-taking sessions, including performance metrics.
+  - **Performance Fix**: Patched `ipc_server.py` to correctly track `total_time_ms` for notes (was showing 0.0ms).
 
-### ✅ Completed
-- **Feature Cards Polish**: Renamed and expanded descriptions for multiple "Specs" cards (Whisper V3 Turbo, Local Small Model Brain, Global Configurable Hotkeys, etc.).
-- **Hero Section Overhaul**: 
-  - Updated headline to focus on "ideas" and added the tagline: *-- "Work at the speed of your thoughts, not the speed of fingers" --*.
-  - Fixed button asymmetry: Windows download is now the primary single-row CTA, while macOS/iOS/Android are grouped symmetrically below in ghost style.
-- **The Core Arsenal (New Section)**:
-  - Implemented a sticky scrollytelling track.
-  - Features 4 workflow cards: **Dictate**, **Ask**, **Refine**, and **Structured Notes**.
-  - Refined into a 2-pair linked reveal (Dictate+Ask then Refine+Notes).
-  - Replaced emojis with professional monochrome SVG icons.
-  - Fixed "left-lean" alignment using scale/opacity transitions and removing hardcoded translation offsets.
-- **Ask Mode Demo**: Updated the animated code block to use a Madagascar fact (Capital & Population) instead of the airspeed swallow joke.
+- **Documentation Sync**:
+  - Updated `README.md`, `ARCHITECTURE.md`, `DEVELOPMENT_ROADMAP.md`, `TASKS.md`, and `AI_CODEX.md` to reflect the new feature and governance rules.
 
-### 🚧 In Progress
-- The "Spec" grid icons: Currently using placeholders/names; could benefit from custom SVGs like the Core Arsenal.
-- General site-wide accessibility checks.
+## 🔍 Key Context
+- **Anti-Hallucination Guard**: A new governance rule in `AI_CODEX.md` mandates that all LLM pipelines MUST independently verify the presence of input variables (like `{text}`) in system prompts to prevent model reversion to training data (e.g., "Project Phoenix").
+- **Persistence**: Note settings are now strictly manual-save. Users must click "Save Note Prompt" to persist changes.
 
-### 📋 Next Steps (Priority Order)
-1. **Refactor 'Versus' Section**: Improve the scrollytelling flow and visual impact of the comparison table.
-2. **Icons for Specs Grid**: Add professional SVG icons to the remaining feature cards.
-3. **Performance Optimization**: Confirm smooth scroll performance across different browser/GPU combinations.
+## 📋 Next Steps (Priority Order)
+1. **Validation**: Continue using the note feature in daily workflows to verify long-term stability.
+2. **Distribution**: Proceed with Phase D tasks (packaging, licensing) as outlined in the roadmap.
+3. **Hardware Tiering**: Implement the auto-detection logic for VRAM-based model selection.
 
-### 🔍 Key Context
-- **Files Modified**: 
-  - [index.html](file:///e:/git/diktate/sitex/index.html)
-  - [main.js](file:///e:/git/diktate/sitex/src/main.js)
-- **Known Issues**: None found during manual review. The "left lean" and "missing cards" bugs from earlier in the session were successfully resolved.
-
-### 💡 Notes for Next Session
-- The Core Loop animation is now center-weighted. Avoid adding horizontal `translate` classes to the `core-pair` containers as they can cause alignment bias.
-- The scrollytelling logic in `main.js` is becoming quite robust; new sections should follow the `update[Name]Scroll` pattern.
+## 💡 Notes for Next Session
+- The "Project Phoenix" hallucination was confirmed to be a training data artifact (common business template example).
+- The system is now robust against prompt misconfiguration.
+- `history.db` contains valuable performance data for the upcoming optimizations.
