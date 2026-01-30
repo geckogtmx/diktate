@@ -60,8 +60,24 @@ def sanitize_log_message(message: str) -> str:
         (r'(Bearer\s+[a-zA-Z0-9_-]{20,})', r'Bearer [REDACTED]'),
     ]
     
-    result = message
-    for pattern, replacement in patterns:
-        result = re.sub(pattern, replacement, result)
-    
     return result
+
+
+def scrub_pii(text: str) -> str:
+    """
+    Mask emails, phone numbers and other PII from text.
+    Used for privacy levels where metrics are saved but identifying content is not.
+    """
+    if not text:
+        return text
+    
+    # Emails
+    text = re.sub(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', '[EMAIL]', text)
+    
+    # Phone numbers (common formats: +1-234-567-8901, (123) 456-7890, etc.)
+    text = re.sub(r'\+?\d{1,4}[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}', '[PHONE]', text)
+    
+    # Sanitize known API key patterns too
+    text = sanitize_log_message(text)
+    
+    return text

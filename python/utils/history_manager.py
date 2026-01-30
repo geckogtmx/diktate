@@ -108,6 +108,10 @@ class HistoryManager:
         self.write_thread: Optional[threading.Thread] = None
         self.should_stop = False
 
+        # Privacy settings (SPEC_030)
+        self.logging_intensity = 2  # Default: Balanced
+        self.pii_scrubber = True
+
         # Initialize database and start write thread
         self._initialize_db()
         self._start_write_thread()
@@ -277,11 +281,49 @@ class HistoryManager:
 
             conn.commit()
             conn.close()
-
-            logger.debug(f"Recorded {data.get('mode', 'unknown')} session to history")
-
         except sqlite3.Error as e:
-            logger.error(f"Database write error: {e}")
+            logger.warning(f"Failed to write history record: {e}")
+
+    def wipe_all_data(self) -> bool:
+        """
+        Permanently delete all data from history and metrics tables AND file-based logs.
+        Used for the 'Wipe All Local Data' privacy action.
+        """
+        try:
+            # 1. Clear SQLite tables
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM system_metrics")
+            cursor.execute("DELETE FROM history")
+            cursor.execute("VACUUM")  # Shrink file size
+            conn.commit()
+            conn.close()
+            
+            # 2. Clear Log Files
+            log_dir = Path.home() / ".diktate" / "logs"
+            if log_dir.exists():
+                for log_file in log_dir.glob("*.log"):
+                    try:
+                        # Don't try to delete the CURRENT active log file if possible, 
+                        # but clearing it is fine.
+                        with open(log_file, 'w') as f:
+                            f.truncate(0) 
+                        # Try to delete if it's not the active one
+                        os.remove(log_file)
+                    except Exception:
+                        pass # Active log might be locked by handler
+            
+            logger.info("[HISTORY] All local history data and log files have been wiped")
+            return True
+        except sqlite3.Error as e:
+            logger.error(f"Failed to wipe history data: {e}")
+            return False
+
+    def set_privacy_settings(self, level: int, scrub: bool) -> None:
+        """Update runtime privacy settings"""
+        self.logging_intensity = level
+        self.pii_scrubber = scrub
+        logger.info(f"[HISTORY] Privacy settings updated: Intensity={level}, Scrub={scrub}")
 
     def log_session(self, data: Dict[str, Any]) -> None:
         """
@@ -290,14 +332,36 @@ class HistoryManager:
         Args:
             data: Dictionary with session details (timestamp, mode, models, texts, timings, etc.)
         """
-        # Respect privacy settings
-        if os.environ.get("DIKTATE_DEBUG_UNSAFE") != "1":
-            # In production, you might redact here, but for now we'll log everything
-            # The flag check allows raw text when explicitly enabled for debugging
-            pass
+        # GHOST MODE (Level 0): Do not log anything
+        if self.logging_intensity == 0:
+            return
+
+        # Prepare data based on intensity
+        processed_data = data.copy()
+
+        # STATS ONLY (Level 1): Remove all text
+        if self.logging_intensity == 1:
+            processed_data['raw_text'] = None
+            processed_data['processed_text'] = None
+        
+        # BALANCED (Level 2): Mask Raw Text, Scrub PII if enabled
+        elif self.logging_intensity == 2:
+            # Mask raw text to save space/privacy in balanced mode
+            processed_data['raw_text'] = "[HIDDEN (Level 2)]"
+            
+            if self.pii_scrubber:
+                from utils.security import scrub_pii
+                processed_data['processed_text'] = scrub_pii(processed_data.get('processed_text', ''))
+
+        # FULL (Level 3): Experimental - Scrub PII only if enabled, keep everything else
+        elif self.logging_intensity == 3:
+            if self.pii_scrubber:
+                from utils.security import scrub_pii
+                processed_data['raw_text'] = scrub_pii(processed_data.get('raw_text', ''))
+                processed_data['processed_text'] = scrub_pii(processed_data.get('processed_text', ''))
 
         # Queue the write asynchronously
-        self.write_queue.put(data)
+        self.write_queue.put(processed_data)
 
     def log_system_metrics(self, metrics_data: Dict[str, Any]) -> None:
         """

@@ -86,6 +86,9 @@ export function loadSettings(settings: any) {
     setVal('note-default-folder', settings.noteDefaultFolder || '');
     setVal('note-filename-template', settings.noteFileNameTemplate || '');
     setVal('note-prompt', settings.notePrompt || '');
+
+    // Privacy (SPEC_030)
+    import('./privacy.js').then(m => m.loadPrivacySettings(settings));
 }
 
 

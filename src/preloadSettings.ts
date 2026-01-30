@@ -70,7 +70,10 @@ const settingsAPI = {
     relaunchApp: () => ipcRenderer.invoke('app:relaunch'),
 
     // Post-It Notes (SPEC_020)
-    selectNoteFile: () => ipcRenderer.invoke('settings:select-note-file')
+    selectNoteFile: () => ipcRenderer.invoke('settings:select-note-file'),
+
+    // Backend Interaction (SPEC_030)
+    invokeBackend: (command: string, args: any) => ipcRenderer.invoke('settings:invoke-backend', command, args)
 };
 
 contextBridge.exposeInMainWorld('settingsAPI', settingsAPI);

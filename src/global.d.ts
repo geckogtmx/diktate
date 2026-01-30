@@ -36,6 +36,9 @@ interface SettingsAPI {
 
     // App Control
     relaunchApp: () => void;
+
+    // Backend Interaction (SPEC_030)
+    invokeBackend: (command: string, args: any) => Promise<any>;
 }
 
 // Extend the Window interface

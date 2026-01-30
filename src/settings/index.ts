@@ -12,6 +12,7 @@ import { saveApiKey, testCurrentApiKey, testSavedApiKey, deleteApiKey, loadApiKe
 import { initializeModeConfiguration, selectMode, saveModeDetails, resetModeToDefault } from './modes.js';
 import { runHardwareTest, populateSoundDropdowns, previewSpecificSound, showRestartModal, hideRestartModal, relaunchApp } from './ui.js';
 import { initializeNotesSettings } from './notes.js';
+import { initializePrivacySettings } from './privacy.js';
 
 // 1. Flat exposure for legacy static HTML
 (window as any).switchTab = switchTab;
@@ -188,6 +189,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         initializeNotesSettings();
     } catch (e) { console.error('Notes init failed:', e); }
+
+    try {
+        initializePrivacySettings();
+    } catch (e) { console.error('Privacy init failed:', e); }
 
 
     // 6. Bind Remaining Interactive Components

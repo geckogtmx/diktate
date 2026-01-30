@@ -1678,6 +1678,25 @@ class IpcServer:
                 self.mode_providers = {k: v for k, v in mode_providers.items() if v}
                 updates.append("ModeProviders")
             
+            # 7. Privacy Settings (SPEC_030)
+            privacy_int = config.get("privacyLoggingIntensity")
+            pii_scrub = config.get("privacyPiiScrubber")
+            if privacy_int is not None or pii_scrub is not None:
+                intensity = privacy_int if privacy_int is not None else (self.history_manager.logging_intensity if self.history_manager else 2)
+                scrub = pii_scrub if pii_scrub is not None else (self.history_manager.pii_scrubber if self.history_manager else True)
+
+                if self.history_manager:
+                    self.history_manager.set_privacy_settings(intensity, scrub)
+                
+                # Adjust System Logger (Ghost Mode silences INFO logs to disk and console)
+                if intensity == 0:
+                    logging.getLogger().setLevel(logging.WARNING) 
+                    logger.warning("[PRIVACY] Ghost Mode active: System logs silenced to WARNING level (no trace)")
+                else:
+                    logging.getLogger().setLevel(logging.INFO)
+
+                updates.append(f"Privacy: Int={intensity}, Scrub={scrub}")
+            
             # Store all incoming API keys
             for p in ["gemini", "anthropic", "openai"]:
                 key = config.get(f"{p}ApiKey")
@@ -1786,6 +1805,44 @@ class IpcServer:
                     return {"success": True}
                 else:
                     return {"success": False, "error": "Injector not initialized"}
+            elif cmd_name == "clear_history_data":
+                if self.history_manager:
+                    success = self.history_manager.wipe_all_data()
+                    return {"success": success}
+                return {"success": False, "error": "History manager not initialized"}
+            elif cmd_name == "launch_dashboard":
+                import subprocess
+                try:
+                    # Check if port 8765 is in use
+                    import socket
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        in_use = s.connect_ex(('127.0.0.1', 8765)) == 0
+                    
+                    if not in_use:
+                        # Launch as detached process
+                        # Path is relative to the python directory (CWD)
+                        dashboard_path = os.path.join("tools", "history_dashboard.py")
+                        subprocess.Popen([sys.executable, dashboard_path], 
+                                       creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0)
+                        logger.info("[HISTORY] Launched history dashboard process")
+                    else:
+                        logger.info("[HISTORY] Dashboard already running")
+                    return {"success": True}
+                except Exception as e:
+                    logger.error(f"[HISTORY] Failed to launch dashboard: {e}")
+                    return {"success": False, "error": str(e)}
+            elif cmd_name == "run_baseline":
+                import subprocess
+                try:
+                    samples = command.get("samples", 10)
+                    stress_test_path = os.path.join("tools", "endurance_stress_test.py")
+                    subprocess.Popen([sys.executable, stress_test_path, "--samples", str(samples)],
+                                   creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0)
+                    logger.info(f"[DIAG] Started baseline test with {samples} samples")
+                    return {"success": True}
+                except Exception as e:
+                    logger.error(f"[DIAG] Failed to start baseline: {e}")
+                    return {"success": False, "error": str(e)}
             elif cmd_name == "refine_selection":
                 # Refine mode: Capture selection, process, paste back
                 if self.state not in [State.IDLE, State.ERROR]:

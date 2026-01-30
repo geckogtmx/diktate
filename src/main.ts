@@ -80,6 +80,8 @@ interface UserSettings {
   modeProvider_refine: string;
   modeProvider_refine_instruction: string;
   modeProvider_raw: string;
+  privacyLoggingIntensity: number; // NEW: SPEC_030
+  privacyPiiScrubber: boolean;     // NEW: SPEC_030
 }
 
 // Initialize Store with defaults
@@ -134,7 +136,9 @@ const store = new Store<UserSettings>({
     modeProvider_ask: 'local',
     modeProvider_refine: 'local',
     modeProvider_refine_instruction: 'local',
-    modeProvider_raw: 'local'
+    modeProvider_raw: 'local',
+    privacyLoggingIntensity: 2, // Balanced
+    privacyPiiScrubber: true
   }
 });
 
@@ -950,6 +954,8 @@ async function syncPythonConfig(): Promise<void> {
   const trailingSpaceEnabled = store.get('trailingSpaceEnabled', true);
   const additionalKeyEnabled = store.get('additionalKeyEnabled', false);
   const additionalKey = store.get('additionalKey', 'none');
+  const privacyLoggingIntensity = store.get('privacyLoggingIntensity', 2);
+  const privacyPiiScrubber = store.get('privacyPiiScrubber', true);
 
   const config: any = {
     provider: processingMode,
@@ -986,7 +992,9 @@ async function syncPythonConfig(): Promise<void> {
     noteFormat: store.get('noteFormat'),
     noteUseProcessor: store.get('noteUseProcessor'),
     noteTimestampFormat: store.get('noteTimestampFormat'),
-    notePrompt: store.get('notePrompt')
+    notePrompt: store.get('notePrompt'),
+    privacyLoggingIntensity: store.get('privacyLoggingIntensity', 2),
+    privacyPiiScrubber: store.get('privacyPiiScrubber', true)
   };
 
   // Get API credentials for all providers (SPEC_033: support multi-processor routing)
@@ -1190,6 +1198,8 @@ function setupIpcHandlers(): void {
       'noteUseProcessor',
       'noteTimestampFormat',
       'notePrompt',
+      'privacyLoggingIntensity',
+      'privacyPiiScrubber',
       'modeProvider_standard',
       'modeProvider_prompt',
       'modeProvider_professional',
@@ -1244,6 +1254,23 @@ function setupIpcHandlers(): void {
     logger.info('MAIN', 'Application relaunch requested');
     app.relaunch();
     app.exit(0);
+  });
+
+  // Backend Command Invocation (SPEC_030)
+  ipcMain.handle('settings:invoke-backend', async (_event, command: string, args: any) => {
+    if (!pythonManager) {
+      logger.error('MAIN', `Cannot invoke ${command}: Python backend not ready`);
+      return { success: false, error: 'Backend not ready' };
+    }
+
+    try {
+      logger.info('MAIN', `Invoking backend command: ${command}`, args);
+      const result = await pythonManager.sendCommand(command, args);
+      return result;
+    } catch (err) {
+      logger.error('MAIN', `Backend command ${command} failed`, err);
+      return { success: false, error: String(err) };
+    }
   });
 }
 

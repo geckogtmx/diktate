@@ -9,12 +9,13 @@
 
 dIKtate is designed with **privacy-first** principles. Your voice and data stay on your machine.
 
-| What | Where | Retention |
-|------|-------|-----------|
+| What | Where | Retention / Control |
+|------|-------|---------------------|
 | Audio recordings | Temporary local file | Deleted immediately after processing |
-| Transcribed text | In-memory only | Never persisted |
+| Transcribed text | In-memory only | Managed by **Logging Intensity** (Ghost to Full) |
 | API keys | Encrypted via OS (DPAPI/Keychain) | Until you delete them |
-| Performance logs | `~/.diktate/logs/` | Last 10 sessions |
+| History Database | `~/.diktate/history.db` | User-managed (Wipe command / Ghost mode) |
+| System Logs | `~/.diktate/logs/` | Last 10 sessions (Wiped on demand) |
 
 ---
 

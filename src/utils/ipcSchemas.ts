@@ -55,7 +55,9 @@ export const SettingsKeySchema = z.enum([
     'noteTimestampFormat',
     'noteDefaultFolder',
     'noteFileNameTemplate',
-    'notePrompt'
+    'notePrompt',
+    'privacyLoggingIntensity', // NEW: SPEC_030
+    'privacyPiiScrubber'      // NEW: SPEC_030
 ]);
 
 // API key provider schema

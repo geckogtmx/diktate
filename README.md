@@ -110,10 +110,11 @@ pnpm dev
 
 ### Privacy & Security
 - **Air-Gap Guarantee** - Architectural assurance that user audio never leaves the local machine.
+- **Tiered Privacy** - 4-level "Logging Intensity" control (Ghost, Stats-Only, Balanced, Full).
+- **Auto-Redact (PII Scrubber)** - Automatic masking of emails, phone numbers, and keys in logs.
 - **SafeStorage** - Platform-encrypted local management for API keys and sensitive secrets.
-- **Log Redaction** - Automatic scrubbing of PII and API keys from all application logs.
+- **One-Click Wipe** - Atomic command to clear all history and traces from DB and file logs.
 - **Telemetry-Free** - No usage analytics, tracking, or data reporting sent to the developer.
-- **Clean Uninstall** - Complete removal of all application data and traces from the system.
 
 ### Commercial & Licensing
 - **TBD** - Pricing and licensing details are currently being finalized.

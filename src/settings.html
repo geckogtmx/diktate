@@ -491,6 +491,7 @@
         <div class="tab-btn" data-tab="ollama">Ollama</div>
         <div class="tab-btn" data-tab="modes">Modes</div>
         <div class="tab-btn" data-tab="apikeys">API Keys</div>
+        <div class="tab-btn" data-tab="privacy">Privacy</div>
         <div class="tab-btn" data-tab="notes">Notes</div>
         <div class="tab-btn" data-tab="about">About</div>
     </div>
@@ -1228,6 +1229,108 @@
                 </div>
                 <span class="sub-label">Get your key from <a href="#" id="openai-docs-link"
                         data-external-link="https://platform.openai.com/api-keys">OpenAI Platform</a></span>
+            </div>
+        </div>
+
+        <!-- PRIVACY & DIAGNOSTICS TAB -->
+        <div id="privacy" class="tab-content">
+            <h2>Privacy & Diagnostics</h2>
+
+            <!-- 1. Logging Intensity -->
+            <div class="setting-group">
+                <label>Logging Intensity</label>
+                <span class="sub-label">Control how much information is saved locally to your device.</span>
+                <div style="margin-top: 15px;">
+                    <div
+                        style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.8em; color: #888;">
+                        <span>Ghost</span>
+                        <span>Stats</span>
+                        <span>Balanced</span>
+                        <span>Full</span>
+                    </div>
+                    <input type="range" id="logging-intensity" min="0" max="3" step="1" value="2"
+                        style="width: 100%; accent-color: var(--accent-color); height: 6px; border-radius: 3px; background: #333; appearance: none; cursor: pointer;">
+                    <div id="intensity-desc"
+                        style="margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.2); border-left: 3px solid var(--accent-color); font-size: 0.9em; color: #ccc;">
+                        <strong>Balanced</strong>: Saves processed text and performance metrics. Redacts sensitive info
+                        if scrubber is on.
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. PII Scrubber -->
+            <div class="setting-group">
+                <div class="setting-row">
+                    <div>
+                        <label>Auto-Redact Privacy Info (PII)</label>
+                        <span class="sub-label">Mask emails, phone numbers, and API keys in your local history
+                            logs.</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="privacy-pii-scrubber" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 3. Data Cleanup -->
+            <div class="setting-group" style="border-top: 1px solid var(--border-color); padding-top: 20px;">
+                <label>Local Data Cleanup</label>
+                <span class="sub-label">Permanently delete all locally stored history and metrics. This cannot be
+                    undone.</span>
+                <div style="margin-top: 10px;">
+                    <button id="wipe-history-btn" class="btn btn-danger">🗑️ Wipe All Local Data</button>
+                    <span id="wipe-status" style="margin-left: 10px; font-size: 0.9em; color: #4ade80; display: none;">✓
+                        History cleared!</span>
+                </div>
+            </div>
+
+            <!-- 4. Power User Diagnostics -->
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                <h3 style="font-size: 0.9rem; color: #aaa; margin-bottom: 15px;">DIAGNOSTICS & BENCHMARKS</h3>
+
+                <div class="diagnostic-tools">
+                    <div class="diagnostic-card">
+                        <h4>Local Performance Dashboard</h4>
+                        <p>Launch a real-time visualization of your local dictation metrics and system resource usage.
+                            (Standalone Web Tool)</p>
+                        <button id="launch-dashboard-btn" class="btn btn-secondary">Launch Web Dashboard</button>
+                    </div>
+
+                    <div class="diagnostic-card">
+                        <h4>Performance Baseline Test</h4>
+                        <p>Run the 10-query stress test to benchmark your current hardware (Ollama + Whisper) and check
+                            for hallucination drift.</p>
+                        <button id="run-benchmark-btn" class="btn btn-secondary">Run Stress Test</button>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                style="margin-top: 30px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                <h3
+                    style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                    ℹ️ Understanding Local Data
+                </h3>
+                <div style="font-size: 0.8rem; line-height: 1.5; color: #bbb;">
+                    <p style="margin-bottom: 8px;">
+                        <strong>Local History (Database)</strong>: Managed data for your own use. Powers the "Stats" tab
+                        and history search.
+                    </p>
+                    <p>
+                        <strong>System Logs (Files)</strong>: Raw technical traces used for troubleshooting and bug
+                        reports.
+                    </p>
+                    <p
+                        style="margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; font-style: italic;">
+                        Both are managed by the "Wipe" command and "Ghost Mode" setting.
+                    </p>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; font-size: 0.85em; color: #666; font-style: italic;">
+                🛡️ Audio Policy: Dictation audio is never saved to disk long-term. Temporary fragments are deleted
+                automatically when you exit the app.
             </div>
         </div>
 
