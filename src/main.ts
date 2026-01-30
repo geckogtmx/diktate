@@ -579,8 +579,9 @@ function setupPythonEventHandlers(): void {
       }
 
       // Defer notification and status sync to avoid event loop starvation
+      // This is the FINAL truth-in-UI signal: Only show when everything is IDLE
       setTimeout(() => {
-        showNotification('dIKtate Ready', 'Models loaded. Press Ctrl+Alt+D to start.', false);
+        showNotification('dIKtate Ready', 'AI Engine loaded. Press Ctrl+Alt+D to start.', false);
 
         if (pythonManager) {
           pythonManager.sendCommand('status').then(result => {
@@ -589,7 +590,7 @@ function setupPythonEventHandlers(): void {
             }
           }).catch(err => logger.error('MAIN', 'Failed to fetch status on ready', err));
         }
-      }, 1000);
+      }, 200);
     }
 
     updateTrayState(state);
@@ -630,12 +631,8 @@ function setupPythonEventHandlers(): void {
   });
 
   pythonManager.on('ready', () => {
-    logger.info('MAIN', 'Python manager ready');
-    showNotification(
-      'dIKtate Ready',
-      'Press Ctrl+Alt+D to start dictating',
-      false
-    );
+    logger.info('MAIN', 'Python manager process spawned');
+    // REMOVED premature 'Ready' notification here to prevent UX stall (UX_001)
   });
 
   pythonManager.on('disconnected', () => {
@@ -2305,7 +2302,7 @@ app.on('ready', () => {
   // Yield to allow UI to paint before heavy initialization
   setTimeout(() => {
     initialize();
-  }, 800);
+  }, 300);
 });
 
 /**

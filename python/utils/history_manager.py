@@ -591,12 +591,14 @@ class HistoryManager:
             deleted_count = cursor.rowcount
             conn.commit()
 
-            # Optimize database file
-            cursor.execute("VACUUM")
+            # Optimize database file ONLY if we actually removed data (SPEC_035)
+            if deleted_count > 0:
+                logger.info(f"Pruned {deleted_count} records older than {days} days. Running VACUUM...")
+                cursor.execute("VACUUM")
+            else:
+                logger.debug(f"No records older than {days} days found, skipping VACUUM")
 
             conn.close()
-
-            logger.info(f"Pruned {deleted_count} records older than {days} days")
             return deleted_count
         except sqlite3.Error as e:
             logger.error(f"Prune error: {e}")

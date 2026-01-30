@@ -38,6 +38,7 @@ export class PythonManager extends EventEmitter {
   private reconnectDelay: number = 2000;
   private ipcToken: string = '';
   private tokenFilePath: string = '';
+  private isSyncing: boolean = false; // SPEC_035: Track config sync phase
 
   constructor(pythonExePath: string, pythonScriptPath: string) {
     super();
@@ -232,7 +233,16 @@ export class PythonManager extends EventEmitter {
    * Set configuration for the Python pipeline
    */
   async setConfig(config: object): Promise<any> {
-    return this.sendCommand('configure', { config });
+    this.isSyncing = true;
+    try {
+      // Yield to let UI process any pending clicks before heavy sync
+      await new Promise(resolve => setImmediate(resolve));
+      const result = await this.sendCommand('configure', { config });
+      return result;
+    } finally {
+      // Small delay before turning logs back on to catch trailing noise
+      setTimeout(() => { this.isSyncing = false; }, 500);
+    }
   }
 
   /**
@@ -331,9 +341,9 @@ export class PythonManager extends EventEmitter {
     const isDebug = line.includes(' - DEBUG - ');
     const isError = line.includes(' - ERROR - ') || line.includes('Exception:') || line.includes('Error:');
 
-    // SPEC_035: Total silence during warmup for ANYTHING that isn't a critical error
+    // SPEC_035: Total silence during warmup OR initial sync for ANYTHING that isn't a critical error
     // This is the absolute key to preventing the 12-15s event loop stall on Windows
-    if (this.currentState === 'warmup') {
+    if (this.currentState === 'warmup' || this.isSyncing) {
       if (!isError && !isWarn) {
         return; // Silent discard
       }

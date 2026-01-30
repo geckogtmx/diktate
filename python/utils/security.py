@@ -7,6 +7,19 @@ import re
 from typing import Optional
 
 
+# Sensitive data patterns for log redaction (SPEC_030)
+patterns = [
+    # API Keys (Gemini, OpenAI, Anthropic)
+    (r'AIza[0-9A-Za-z-_]{35}', '[GEMINI_KEY]'),
+    (r'sk-[a-zA-Z0-9]{20,}', '[OPENAI_KEY]'),
+    (r'sk-ant-[a-zA-Z0-9\-_]{20,}', '[CLAUDE_KEY]'),
+    # OAuth Tokens
+    (r'ya29\.[a-zA-Z0-9\-_]{50,}', '[OAUTH_TOKEN]'),
+    # Emails
+    (r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', '[EMAIL]'),
+]
+
+
 def redact_text(text: str, max_visible: int = 20, show_length: bool = True) -> str:
     """
     Redact sensitive text for logging.

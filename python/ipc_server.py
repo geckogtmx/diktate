@@ -338,6 +338,8 @@ class IpcServer:
 
         self.warmup_complete = False  # Track full readiness (LLM)
         self.dictation_ready = False  # Track partial readiness (Whisper)
+        self.is_loading_transcriber = False # Component lock (SPEC_035)
+        self.is_loading_processor = False   # Component lock (SPEC_035)
 
         logger.info("Initializing IPC Server (Tiered Protocol)...")
         self._initialize_components()
@@ -377,7 +379,7 @@ class IpcServer:
 
             # Final non-blocking maintenance tasks: DEFERRED by 30s to avoid CPU contention
             def delayed_maintenance():
-                time.sleep(30)
+                time.sleep(60)
                 self._run_maintenance_tasks()
             
             threading.Thread(target=delayed_maintenance, daemon=True).start()
@@ -388,6 +390,10 @@ class IpcServer:
 
     def _load_transcriber_async(self):
         """Asynchronously load the Whisper model."""
+        if self.is_loading_transcriber:
+            return
+        
+        self.is_loading_transcriber = True
         try:
             self._emit_event("startup-progress", {"message": "Loading transcription model...", "progress": 30})
             if not self.transcriber:
@@ -397,9 +403,15 @@ class IpcServer:
         except Exception as e:
             logger.error(f"Failed to initialize Transcriber: {e}")
             self._emit_event("startup-progress", {"message": f"Transcription error: {e}", "progress": 60})
+        finally:
+            self.is_loading_transcriber = False
 
     def _load_processor_async(self):
         """Asynchronously warm up the LLM processor."""
+        if self.is_loading_processor:
+            return
+            
+        self.is_loading_processor = True
         try:
             self._ensure_ollama_ready()
             self._emit_event("startup-progress", {"message": "Warming up LLM...", "progress": 70})
@@ -412,6 +424,8 @@ class IpcServer:
         except Exception as e:
             logger.error(f"Failed to initialize Processor: {e}")
             self._emit_event("startup-progress", {"message": f"AI Engine error: {e}", "progress": 90})
+        finally:
+            self.is_loading_processor = False
 
     def _run_maintenance_tasks(self):
         """Handle non-critical startup tasks."""
@@ -1686,16 +1700,21 @@ class IpcServer:
             # 1. Transcriber Model
             model_size = config.get("model")
             if model_size:
-                self.transcriber = Transcriber(model_size=model_size, device="auto")
-                updates.append(f"Model: {model_size}")
+                # Optimized: Don't re-init if model hasn't changed (SPEC_035)
+                current_size = getattr(self.transcriber, "model_size", "")
+                if not self.transcriber or model_size != current_size:
+                    self.transcriber = Transcriber(model_size=model_size, device="auto")
+                    updates.append(f"Model: {model_size}")
+                else:
+                    logger.debug(f"[CONFIG] Transcriber model already set to {model_size}")
 
             # 2. Global Default Provider
             provider = config.get("provider")
             api_key = config.get("apiKey")
             
-            # Guard: Don't re-init if provider hasn't changed and processor exists
+            # Guard: Don't re-init if provider hasn't changed and processor exists (or is loading)
             current_provider = os.environ.get("PROCESSING_MODE", "local")
-            if provider and (provider != current_provider or self.processor is None):
+            if provider and (provider != current_provider or (self.processor is None and not self.is_loading_processor)):
                 os.environ["PROCESSING_MODE"] = provider
                 if api_key:
                     self.api_keys[provider] = api_key
