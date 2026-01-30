@@ -30,15 +30,12 @@ interface PerformanceMetrics {
 const statusPanel = document.getElementById('status-panel');
 const statusText = document.getElementById('status-text');
 const liveMessage = document.getElementById('live-message');
-// const logContainer = document.getElementById('log-container'); // Removed
 
 // Stats elements
 const statSessions = document.getElementById('stat-sessions');
 const statChars = document.getElementById('stat-chars');
 const statSpeed = document.getElementById('stat-speed');
 const statLast = document.getElementById('stat-last');
-// const statTokens = document.getElementById('stat-tokens'); // Removed
-// const statCost = document.getElementById('stat-cost'); // Removed
 
 // Badge elements
 const badgeTranscriber = document.getElementById('badge-transcriber');
@@ -75,12 +72,6 @@ const modeBtns: Record<string, HTMLElement | null> = {
 let sessionCount = 0;
 let totalChars = 0;
 let totalTime = 0;
-let totalTokensSaved = 0;
-
-// Rough token estimation: ~4 chars per token (like OpenAI's tokenizer)
-// Cost estimate: ~$0.002 per 1K tokens (GPT-4o-mini pricing)
-const CHARS_PER_TOKEN = 4;
-const COST_PER_1K_TOKENS = 0.002;
 
 // Live status messages for each state
 const STATUS_MESSAGES: Record<string, { text: string; message: string; typing?: boolean }> = {
@@ -180,7 +171,6 @@ function updateBadges(models?: { transcriber?: string; processor?: string }, aut
 
 function addLogEntry(level: string, message: string, _data?: any) {
     // Log UI Removed - internal logging only
-    // This function is kept stubbed to avoid breaking calls
 }
 
 // Setup toggle handlers
@@ -231,84 +221,6 @@ function updateModeUI(mode: string) {
     addLogEntry('INFO', `Mode switched to: ${mode.toUpperCase()}`);
 };
 
-// Toggle functions for metrics and logs panels (CSP-compliant)
-function toggleLogs() {
-    const panel = document.getElementById('log-panel');
-    const icon = document.getElementById('toggle-icon');
-    if (panel && icon) {
-        if (panel.style.height === '25px') {
-            panel.style.height = '120px';
-            icon.textContent = '▼';
-        } else {
-            panel.style.height = '25px';
-            icon.textContent = '▲';
-        }
-    }
-}
-
-function toggleMetrics() {
-    const content = document.getElementById('metrics-content');
-    const icon = document.getElementById('metrics-toggle-icon');
-    if (content && icon) {
-        if (content.style.display === 'none') {
-            content.style.display = 'block';
-            icon.textContent = '▲';
-        } else {
-            content.style.display = 'none';
-            icon.textContent = '▼';
-        }
-    }
-}
-
-// Update metrics panel with recent data (A.2 observability)
-async function updateMetricsPanel() {
-    const metricsChart = document.getElementById('metrics-chart');
-    const metricsSummary = document.getElementById('metrics-summary');
-
-    if (!metricsChart || !metricsSummary) return;
-
-    try {
-        // For now, we'll track metrics locally until we have file system access
-        // This would ideally read from metrics.json
-        const recentMetrics: number[] = [];
-
-        // Store metrics locally on performance events
-        if ((window as any)._recentMetrics) {
-            const metrics = (window as any)._recentMetrics.slice(-10);
-
-            if (metrics.length === 0) {
-                metricsChart.textContent = 'No metrics yet. Run a dictation to see data here.';
-                metricsSummary.textContent = '';
-                return;
-            }
-
-            // Create simple list of durations
-            const chart = metrics.map((time: number, i: number) => {
-                return `• ${(time / 1000).toFixed(1)}s`;
-            }).join('  ');
-
-            metricsChart.textContent = `Last ${metrics.length}: ${chart}`;
-
-            // Calculate summary stats
-            const avg = metrics.reduce((a: number, b: number) => a + b, 0) / metrics.length;
-            const min = Math.min(...metrics);
-            const max = Math.max(...metrics);
-
-            metricsSummary.innerHTML = `
-                <span>Avg: ${(avg / 1000).toFixed(1)}s</span>
-                <span>Min: ${(min / 1000).toFixed(1)}s</span>
-                <span>Max: ${(max / 1000).toFixed(1)}s</span>
-            `;
-        } else {
-            metricsChart.textContent = 'No metrics yet. Run a dictation to see data here.';
-            metricsSummary.textContent = '';
-        }
-    } catch (e) {
-        metricsChart.textContent = 'Error loading metrics';
-        metricsSummary.textContent = '';
-    }
-}
-
 // Initialize
 if (window.electronAPI) {
     window.electronAPI.onLog((level, message, data) => addLogEntry(level, message, data));
@@ -318,18 +230,6 @@ if (window.electronAPI) {
     if (window.electronAPI.onPerformanceMetrics) {
         window.electronAPI.onPerformanceMetrics((metrics) => {
             updatePerformanceMetrics(metrics);
-
-            // Store for metrics panel
-            if (!((window as any)._recentMetrics)) {
-                (window as any)._recentMetrics = [];
-            }
-            if (metrics.total) {
-                (window as any)._recentMetrics.push(metrics.total);
-                if ((window as any)._recentMetrics.length > 20) {
-                    (window as any)._recentMetrics.shift();
-                }
-                updateMetricsPanel();
-            }
         });
     }
 
@@ -389,9 +289,6 @@ if (window.electronAPI) {
             if (state.defaultMode) {
                 updateModeUI(state.defaultMode);
             }
-
-            // Load metrics panel
-            updateMetricsPanel();
         }
     }).catch(err => addLogEntry('ERROR', 'Init failed'));
 
@@ -416,5 +313,3 @@ document.getElementById('mode-standard')?.addEventListener('click', () => (windo
 document.getElementById('mode-prompt')?.addEventListener('click', () => (window as any).switchExecutionMode('prompt'));
 document.getElementById('mode-professional')?.addEventListener('click', () => (window as any).switchExecutionMode('professional'));
 document.getElementById('mode-raw')?.addEventListener('click', () => (window as any).switchExecutionMode('raw'));
-document.getElementById('metrics-header')?.addEventListener('click', toggleMetrics);
-// document.getElementById('log-header')?.addEventListener('click', toggleLogs); // Removed

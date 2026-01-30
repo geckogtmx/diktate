@@ -124,7 +124,7 @@ export class PythonManager extends EventEmitter {
           DIKTATE_IPC_TOKEN: this.ipcToken
         };
 
-        this.process = spawn(this.pythonExePath, [this.pythonScriptPath], {
+        this.process = spawn(this.pythonExePath, ['-u', this.pythonScriptPath], {
           stdio: ['pipe', 'pipe', 'pipe'],
           detached: false,
           cwd: require('path').dirname(this.pythonScriptPath),

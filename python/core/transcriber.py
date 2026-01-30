@@ -56,11 +56,22 @@ class Transcriber:
             model_name = self.MODEL_MAPPING.get(self.model_size, self.model_size)
 
             logger.info(f"Loading Whisper model '{model_name}' on {device}...")
-            self.model = WhisperModel(
-                model_name,
-                device=device,
-                compute_type="int8" if device == "cpu" else "float16"  # int8 for CPU, float16 for GPU
-            )
+            try:
+                # Optimized: Try local files first to avoid HF Hub network check (can take 30s+)
+                self.model = WhisperModel(
+                    model_name,
+                    device=device,
+                    compute_type="int8" if device == "cpu" else "float16",
+                    local_files_only=True
+                )
+            except Exception as e:
+                logger.info(f"Local model not found or check failed, attempting online load: {e}")
+                self.model = WhisperModel(
+                    model_name,
+                    device=device,
+                    compute_type="int8" if device == "cpu" else "float16",
+                    local_files_only=False
+                )
             logger.info("Model loaded successfully")
         except Exception as e:
             logger.error(f"Failed to load Whisper model: {e}")

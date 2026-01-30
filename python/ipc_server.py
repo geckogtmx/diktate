@@ -330,57 +330,87 @@ class IpcServer:
         except Exception as e:
             logger.error(f"[HISTORY] Failed to initialize history manager: {e}")
 
-        logger.info("Initializing IPC Server...")
+        self.warmup_complete = False  # Track full readiness (LLM)
+        self.dictation_ready = False  # Track partial readiness (Whisper)
+
+        logger.info("Initializing IPC Server (Tiered Protocol)...")
         self._initialize_components()
 
-        # Start warmup in background thread to allow Electron to connect immediately
-        threading.Thread(target=self._startup_warmup, daemon=True).start()
+        # Start tiered warmup in background
+        threading.Thread(target=self._startup_tiered_warmup, daemon=True).start()
 
-    def _startup_warmup(self):
-        """Asynchronous startup warmup sequence"""
+    def _startup_tiered_warmup(self):
+        """Standard parallel startup: Load components simultaneously for a reliable 10-12s ready state."""
         try:
-            self._ensure_ollama_ready()
+            # 1. Start Transcriber and Processor loading in parallel
+            t_thread = threading.Thread(target=self._load_transcriber_async)
+            p_thread = threading.Thread(target=self._load_processor_async)
+            
+            t_thread.start()
+            p_thread.start()
 
-            # CRITICAL FIX: Re-initialize processor if it failed during __init__
-            if self.processor is None:
-                logger.info("[RECOVERY] Attempting to re-initialize processor after Ollama startup...")
-                try:
-                    self.processor = create_processor()
-                    logger.info("[OK] Processor initialized successfully after Ollama startup")
-                except Exception as e:
-                    logger.error(f"[RECOVERY] Failed to re-initialize processor: {e}")
-                    logger.warning("Text processing will use raw transcription fallback")
+            # Wait for both to complete
+            # We target ~10s total, so a 60s timeout is a safe upper bound
+            t_thread.join(timeout=60)
+            p_thread.join(timeout=60)
 
-            logger.info("Startup warmup complete")
+            if self.transcriber:
+                self.dictation_ready = True
+            
+            if self.processor:
+                self.warmup_complete = True
 
-            # Auto-prune history on startup (SPEC_029)
-            if self.history_manager:
-                try:
-                    deleted = self.history_manager.prune_history(days=90)
-                    if deleted > 0:
-                        logger.info(f"[HISTORY] Pruned {deleted} old records during startup")
-                except Exception as e:
-                    logger.warning(f"[HISTORY] Auto-pruning failed: {e}")
+            # SIGNAL READY: Transition to IDLE once both are finished
+            # This ensures the user enters a completely stable state
+            self._set_state(State.IDLE)
+            logger.info(f"[STARTUP] System Ready. Transcriber: {self.dictation_ready}, Processor: {self.warmup_complete}")
 
-            # Emit startup system metrics (SPEC_027)
-            try:
-                startup_metrics = self.system_monitor.get_snapshot()
-                self._emit_event('system-metrics', {
-                    'phase': 'startup',
-                    'metrics': startup_metrics
-                })
-                logger.info(f"[SystemMonitor] Startup metrics: {self.system_monitor.get_summary()}")
-            except Exception as e:
-                logger.warning(f"[SystemMonitor] Failed to emit startup metrics: {e}")
-
-            # Start background metrics monitoring (Phase 2)
-            self._start_metrics_monitoring()
+            # Final non-blocking maintenance tasks: DEFERRED by 30s to avoid CPU contention
+            def delayed_maintenance():
+                time.sleep(30)
+                self._run_maintenance_tasks()
+            
+            threading.Thread(target=delayed_maintenance, daemon=True).start()
 
         except Exception as e:
-            logger.warning(f"Startup warmup encountered issues: {e}")
-        finally:
-            self._set_state(State.IDLE)
-            logger.info("IPC Server ready")
+            logger.error(f"Startup failed: {e}")
+            self._set_state(State.IDLE) # Fallback to allow manual recovery
+
+    def _load_transcriber_async(self):
+        """Asynchronously load the Whisper model."""
+        try:
+            if not self.transcriber:
+                self.transcriber = Transcriber(model_size="turbo", device="auto")
+                logger.info("[OK] Transcriber initialized (Turbo V3)")
+        except Exception as e:
+            logger.error(f"Failed to initialize Transcriber: {e}")
+
+    def _load_processor_async(self):
+        """Asynchronously warm up the LLM processor."""
+        try:
+            self._ensure_ollama_ready()
+            if not self.processor:
+                self.processor = create_processor()
+                current_provider = os.environ.get("PROCESSING_MODE", "local")
+                self.processors[current_provider] = self.processor
+                logger.info(f"[OK] Processor initialized ({current_provider})")
+        except Exception as e:
+            logger.error(f"Failed to initialize Processor: {e}")
+
+    def _run_maintenance_tasks(self):
+        """Handle non-critical startup tasks."""
+        if self.history_manager:
+            try:
+                self.history_manager.prune_history(days=90)
+            except: pass
+        
+        try:
+            self._start_metrics_monitoring()
+        except: pass
+
+    def _startup_warmup(self):
+        """Deprecated: Replaced by _startup_tiered_warmup"""
+        pass
 
     def _ensure_ollama_ready(self):
         """Ensure Ollama is running and model is warmed up at startup."""
@@ -545,31 +575,13 @@ class IpcServer:
                 time.sleep(60)  # Back off on error
 
     def _initialize_components(self) -> None:
-        """Initialize all pipeline components"""
+        """Initialize lightweight components (Heavy ones moved to warmup thread)"""
         try:
             self.recorder = Recorder()
             logger.info("[OK] Recorder initialized")
         except Exception as e:
             logger.error(f"Failed to initialize Recorder: {e}")
             self._send_error(f"Recorder initialization failed: {e}")
-
-        try:
-            # Default to Turbo for speed (V3)
-            self.transcriber = Transcriber(model_size="turbo", device="auto")
-            logger.info("[OK] Transcriber initialized (Turbo V3)")
-        except Exception as e:
-            logger.error(f"Failed to initialize Transcriber: {e}")
-            self._send_error(f"Transcriber initialization failed: {e}")
-
-        try:
-            self.processor = create_processor()
-            # Register default processor in the multi-processor registry
-            current_provider = os.environ.get("PROCESSING_MODE", "local")
-            self.processors[current_provider] = self.processor
-            logger.info(f"[OK] Processor initialized ({current_provider})")
-        except Exception as e:
-            logger.error(f"Failed to initialize Processor: {e}")
-            logger.warning("Text processing will be skipped if unavailable")
 
         try:
             self.injector = Injector()
@@ -635,12 +647,15 @@ class IpcServer:
             mode: 'dictate' for normal dictation, 'ask' for Q&A mode, 'refine' for instruction mode, 'translate' for translation
             max_duration: Maximum recording duration in seconds (0 = unlimited)
         """
+        # Tiered guard: Only need Transcriber for recording
+        if not self.dictation_ready:
+            error_msg = "Acoustic models are still loading... (usually < 5s)"
+            logger.warning(f"[BLOCK] {error_msg}")
+            return {"success": False, "error": error_msg, "code": "WARMING_UP"}
+
         # Allow starting from IDLE or ERROR states (to recover from errors)
         if self.state not in [State.IDLE, State.ERROR]:
-            if self.state == State.WARMUP:
-                error_msg = "Still loading model, please wait..."
-            else:
-                error_msg = f"Cannot start recording in {self.state.value} state"
+            error_msg = f"Cannot start recording in {self.state.value} state"
             logger.warning(error_msg)
             return {"success": False, "error": error_msg}
 
@@ -1606,17 +1621,29 @@ class IpcServer:
             # 2. Global Default Provider
             provider = config.get("provider")
             api_key = config.get("apiKey")
-            if provider:
+            
+            # Guard: Don't re-init if provider hasn't changed and processor exists
+            current_provider = os.environ.get("PROCESSING_MODE", "local")
+            if provider and (provider != current_provider or self.processor is None):
                 os.environ["PROCESSING_MODE"] = provider
                 if api_key:
                     self.api_keys[provider] = api_key
                 
                 try:
-                    self.processor = create_processor(provider, api_key)
-                    self.processors[provider] = self.processor
+                    # Optimized: Only create if not already in registry to avoid double-loading
+                    if provider in self.processors and not api_key:
+                         self.processor = self.processors[provider]
+                    else:
+                        self.processor = create_processor(provider, api_key)
+                        self.processors[provider] = self.processor
                     updates.append(f"Provider: {provider}")
                 except Exception as e:
                     logger.error(f"Failed to switch provider to {provider}: {e}")
+            elif provider:
+                # Still update reference if registry has it
+                if provider in self.processors:
+                    self.processor = self.processors[provider]
+                logger.info(f"[CONFIG] Provider '{provider}' already active, skipping re-init")
 
             # 3. Custom Prompts
             custom_prompts = config.get("customPrompts")
@@ -1632,10 +1659,16 @@ class IpcServer:
 
             # 5. Default Ollama Model
             default_model = config.get("defaultModel")
-            if default_model and hasattr(self.processors.get("local", {}), "set_model"):
+            local_proc = self.processors.get("local")
+            if default_model and local_proc and hasattr(local_proc, "set_model"):
                 try:
-                    self.processors["local"].set_model(default_model)
-                    updates.append(f"OllamaModel: {default_model}")
+                    # Optimized: Check current model before setting to avoid redundant Ollama wakeup
+                    current_model = getattr(local_proc, "model", None)
+                    if current_model != default_model:
+                        local_proc.set_model(default_model)
+                        updates.append(f"OllamaModel: {default_model}")
+                    else:
+                        logger.debug(f"[CONFIG] Ollama model already set to {default_model}")
                 except Exception as e:
                     logger.warning(f"Failed to set Ollama model: {e}")
 
@@ -1978,22 +2011,27 @@ class IpcServer:
                 "error_message": err_msg
             })
 
-    def _emit_event(self, event_type: str, data: dict) -> None:
+    def _emit_event(self, event_type: str, data: dict = None) -> None:
         """Emit an event to Electron"""
-        event = {"event": event_type, **data}
-        self._send_json(event)
+        event = {"event": event_type}
+        if data:
+            event.update(data)
+        sys.stdout.write(json.dumps(event) + "\n")
+        sys.stdout.flush()  # CRITICAL: Prevent buffering delay
 
     def _send_error(self, error_msg: str) -> None:
         """Send error event to Electron"""
         self._emit_event("error", {"message": error_msg})
 
-    def _send_json(self, data: dict) -> None:
-        """Send JSON data to stdout"""
-        try:
-            json_str = json.dumps(data)
-            print(json_str, flush=True)
-        except Exception as e:
-            logger.error(f"Failed to send JSON: {e}")
+    def _send_response(self, command_id: str, success: bool, data: dict = None, error: str = None) -> None:
+        """Send a response to a command"""
+        response = {"id": command_id, "success": success}
+        if data:
+            response["data"] = data
+        if error:
+            response["error"] = error
+        sys.stdout.write(json.dumps(response) + "\n")
+        sys.stdout.flush()  # CRITICAL: Prevent buffering delay
 
     def _handle_message(self, line: str) -> None:
         """Process a single line (command) from stdin"""
@@ -2003,11 +2041,13 @@ class IpcServer:
 
         try:
             command = json.loads(line)
-            response = self.handle_command(command)
+            command_id = command.get("id")
+            result = self.handle_command(command)
 
-            # Send response
-            response["id"] = command.get("id")
-            self._send_json(response)
+            if result.get("success"):
+                self._send_response(command_id, True, data=result.get("metrics") or result.get("char_count") or result)
+            else:
+                self._send_response(command_id, False, error=result.get("error", "Unknown error"))
 
             # Check for shutdown
             if command.get("command") == "shutdown":

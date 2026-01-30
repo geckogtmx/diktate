@@ -511,7 +511,25 @@ function setupPythonEventHandlers(): void {
     if (isWarmupLock && state === 'idle') {
       isWarmupLock = false;
       logger.info('MAIN', 'Warmup lock released - App is fully ready');
+
+      // SPEC_035: Auto-open Control Panel on first ready
+      createDebugWindow();
+
       showNotification('dIKtate Ready', 'Models loaded. Press Ctrl+Alt+D to start.', false);
+
+      // Trigger status check to populate badges (Whisper/LLM names)
+      if (pythonManager) {
+        pythonManager.sendCommand('status').then(result => {
+          if (result.success && result.data) {
+            if (debugWindow && !debugWindow.isDestroyed()) {
+              debugWindow.webContents.send('badge-update', {
+                transcriber: result.data.transcriber,
+                processor: result.data.processor
+              });
+            }
+          }
+        }).catch(err => logger.error('MAIN', 'Failed to fetch status on ready', err));
+      }
     }
 
     updateTrayState(state);
@@ -604,7 +622,7 @@ function setupPythonEventHandlers(): void {
   // Listen for explicit status responses if we implement polling
   pythonManager.on('status-check', (statusData: any) => {
     if (debugWindow && !debugWindow.isDestroyed()) {
-      debugWindow.webContents.send('model-info', {
+      debugWindow.webContents.send('badge-update', {
         transcriber: statusData.transcriber,
         processor: statusData.processor
       });
@@ -1065,9 +1083,9 @@ function setupIpcHandlers(): void {
     if (pythonManager && pythonManager.isProcessRunning()) {
       try {
         const result = await pythonManager.sendCommand('status');
-        if (result) {
-          if (result.transcriber) models.transcriber = result.transcriber;
-          if (result.processor) models.processor = result.processor;
+        if (result && result.success && result.data) {
+          if (result.data.transcriber) models.transcriber = result.data.transcriber;
+          if (result.data.processor) models.processor = result.data.processor;
         }
       } catch (e) {
         logger.warn('MAIN', 'Failed to fetch python status for initial state', e);
@@ -1727,6 +1745,7 @@ ipcMain.handle('ollama:warmup', async () => {
 async function toggleRecording(mode: 'dictate' | 'ask' | 'translate' | 'refine' | 'note' = 'dictate'): Promise<void> {
   if (isWarmupLock) {
     logger.warn('MAIN', 'Recording blocked: App is still warming up');
+    showNotification('Warming Up', 'AI services are still loading... please wait.', false);
     return;
   }
 
@@ -2089,10 +2108,9 @@ async function initialize(): Promise<void> {
     initializeTray();
     logger.info('MAIN', 'System tray initialized');
 
-    // Create debug window hidden
-    createDebugWindow();
+    // SPEC_035: Removed early createDebugWindow() to speed up appearance
 
-    // Hook up logger to window
+    // Hook up logger to window - will be active once window is created later
     logger.setLogCallback((level, message, data) => {
       if (debugWindow && !debugWindow.isDestroyed()) {
         debugWindow.webContents.send('log-message', { level, message, data });
