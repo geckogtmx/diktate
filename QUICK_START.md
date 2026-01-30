@@ -1,204 +1,48 @@
-# Quick Start - Phase 1 Testing
+# Quick Start: Your First 5 Minutes with dIKtate
 
-## Prerequisites
-
-✅ Already done:
-- Python 3.12 installed
-- Virtual environment created at `python/venv/`
-- All dependencies installed
-- Whisper model will download on first run (~3.1 GB)
-
-## Setup Verification (5 minutes)
-
-Run this to verify everything is installed:
-
-```bash
-cd python
-source venv/Scripts/activate  # On Windows: venv\Scripts\activate
-python verify_setup.py
-```
-
-Expected output: `[SUCCESS] All checks passed!`
+This guide is designed to get you to your first successful local dictation in under two minutes. For a full list of features, tech stack, and roadmap, see the [README.md](./README.md).
 
 ---
 
-## Test Checkpoint 1: Record → Transcribe (10-15 minutes)
+## 🛠️ Step 0: Choose Your Path
 
-### Option A: Run Integration Tests
+- **Users**: Ensure **Ollama** is installed and running (`ollama serve`).
+- **Developers**: From the root directory, run `pnpm install` then `pnpm dev`.
 
-```bash
-cd python
-source venv/Scripts/activate
-pip install -r requirements.txt  # Add pytest if not included
-pytest ../tests/test_integration_cp1.py -v -s
-```
+## 🚀 Step 1: Launch & Warmup
 
-This tests:
-- Recorder initialization
-- Transcriber model loading
-- Audio file saving
-- Basic transcription
+1.  **Start the Application**: Launch dIKtate. It will initialize in your system tray.
+2.  **Observe the Warmup**: dIKtate performs a parallel load of the Whisper (Audio) and LLM (Intelligence) models. This takes **10–12 seconds**.
+3.  **Wait for the Dashboard**: The **Control Panel** (Status Window) will automatically appear once the system transitions from `Warmup` to `Ready`.
 
-### Option B: Manual Recording Test
+## 🎙️ Step 2: Your First Dictation
 
-```bash
-cd python
-source venv/Scripts/activate
+1.  Open **Notepad**, a browser address bar, or any text editor.
+2.  Click to ensure the cursor is active.
+3.  **Press and hold `Ctrl+Alt+D`**.
+4.  Speak clearly: *"Hello world, this is my first local dictation using dIKtate."*
+5.  **Release** the keys.
 
-# This will download Whisper model on first run (3.1 GB)
-python -c "
-from core import Recorder, Transcriber
-import time
+## ✅ Step 3: Verify Success
 
-# Create recorder
-recorder = Recorder()
-recorder.start()
-print('Recording for 5 seconds...')
-time.sleep(5)
-recorder.stop()
-
-# Save recording
-recorder.save_to_file('test_recording.wav')
-
-# Transcribe
-print('Transcribing...')
-transcriber = Transcriber(model_size='medium', device='auto')
-text = transcriber.transcribe('test_recording.wav')
-print(f'Result: {text}')
-"
-```
+- You should see the Status Window transition to **Processing**.
+- Polished, formatted text will be typed into your active application instantly.
 
 ---
 
-## Test Checkpoint 2: Full End-to-End (5-10 minutes)
+## 🔍 Common "First Run" Hurdles
 
-### Prerequisites for Checkpoint 2
-
-1. **Install Ollama** (recommended but optional):
-   ```bash
-   # Download from https://ollama.ai
-   # Then in a separate terminal:
-   ollama pull llama3:8b
-   ollama serve
-   ```
-
-2. **Verify Ollama is running:**
-   ```bash
-   # In another terminal:
-   curl http://localhost:11434/api/tags
-   ```
-
-### Run Main Pipeline
-
-```bash
-cd python
-source venv/Scripts/activate
-
-# Start recording/processing service
-python main.py
-```
-
-The output should show:
-```
-============================================================
-dIKtate is running
-Press Ctrl+Shift+Space to start recording
-Release to stop and process
-============================================================
-```
-
-### Test the Hotkey
-
-1. Open **Notepad** (or VS Code, Word, etc.)
-2. Click in the text editor to focus it
-3. **Press and hold Ctrl+Shift+Space**
-4. **Speak clearly** (e.g., "Hello, this is a test")
-5. **Release** Ctrl+Shift+Space
-
-Expected behavior:
-- Console shows `🎤 Recording started - speak now`
-- Say something clear (5-10 seconds)
-- Release the hotkey
-- Console shows transcription: `Transcribed: ...`
-- If Ollama is running: Shows processed text with cleanup
-- Text appears in Notepad automatically
-
-### Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "Ollama not found" warning | Install Ollama or run with text processing skipped |
-| No text appears | Check microphone is selected and working |
-| Slow transcription (30+ seconds) | Expected on CPU; GPU needed for <5 second latency |
-| Whisper model not found | First run downloads 3.1 GB; wait for completion |
-| Hotkey not working | Try focus app first, may need admin privileges |
+| Issue | Quick Fix |
+| :--- | :--- |
+| **No Dashboard Appears** | Check the system tray. If the icon is gray, models are still loading. |
+| **Nothing is Typed** | Ensure the cursor was active in your text field *before* you released the keys. |
+| **Ollama Error** | Ensure you have pulled your configured model (Default: `gemma3:4b`). |
+| **Microphone Muted** | dIKtate will notify you if your hardware mute is active. |
 
 ---
 
-## File Locations
+## 📚 Deep Dive
 
-### Core modules (fully implemented):
-- `python/core/recorder.py` - Microphone recording
-- `python/core/transcriber.py` - Whisper transcription
-- `python/core/processor.py` - Ollama text cleanup
-- `python/core/injector.py` - Keyboard text injection
-- `python/main.py` - Pipeline orchestration
-
-### Logs:
-- `logs/diktate.log` - Full execution log (check here for errors)
-
-### Tests:
-- `tests/test_integration_cp1.py` - Integration test suite
-
----
-
-## Expected Performance
-
-### CPU Mode (Current)
-- **Whisper transcription:** 30-60 seconds for 5 seconds of audio
-- **Text processing:** 5-10 seconds (if Ollama running)
-- **Total E2E time:** 40-80 seconds
-
-### With GPU (Optional)
-- **Whisper transcription:** 2-3 seconds
-- **Text processing:** 2-3 seconds
-- **Total E2E time:** ~5-10 seconds (target: <15 seconds)
-
-See `CUDA_SETUP.md` for GPU installation.
-
----
-
-## Success Criteria Checklist
-
-- [ ] Setup verification passes
-- [ ] Checkpoint 1: Recorder → Transcriber works
-- [ ] Checkpoint 1: Audio file saved correctly
-- [ ] Checkpoint 2: Hotkey listener activates
-- [ ] Checkpoint 2: Recording captures audio
-- [ ] Checkpoint 2: Text appears in application
-- [ ] Checkpoint 2: No crashes during 5-minute test
-- [ ] Optional: Ollama text processing works
-
----
-
-## Next Steps After Testing
-
-If all tests pass:
-1. Proceed to **Phase 2: Electron Shell**
-2. Set up Node.js project
-3. Implement system tray icon
-4. Connect Electron to Python backend
-
----
-
-## Support
-
-For issues:
-1. Check `logs/diktate.log` for error messages
-2. Run `python verify_setup.py` to verify installation
-3. See `CUDA_SETUP.md` for GPU issues
-4. See `ARCHITECTURE.md` for system design
-
----
-
-**Status:** Phase 1 complete, ready for testing ✅
+- **Full Mode Guide**: Learn about Refine, Ask, and Note modes in the [README](./README.md).
+- **Configuration**: Right-click the Tray icon and select **Settings** to change models or hotkeys.
+- **Source Code**: See the [Developer Guide](./docs/developer_guide/index.md) for architecture and testing depth.
