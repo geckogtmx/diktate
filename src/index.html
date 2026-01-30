@@ -234,7 +234,7 @@
         /* STATS GRID */
         #stats-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 1px;
             background: var(--border-color);
             margin: 0 12px;
@@ -571,14 +571,6 @@
                 <div class="stat-value" id="stat-last">--</div>
                 <div class="stat-label">Last Total</div>
             </div>
-            <div class="stat-cell stat-highlight" id="tokens-cell">
-                <div class="stat-value" id="stat-tokens">0</div>
-                <div class="stat-label">🪙 Tokens Saved</div>
-            </div>
-            <div class="stat-cell">
-                <div class="stat-value" id="stat-cost">$0.00</div>
-                <div class="stat-label">💰 Est. Savings</div>
-            </div>
         </div>
 
         <!-- TOGGLES -->
@@ -666,21 +658,15 @@
         </div>
     </div>
 
-    <!-- LOGS -->
-    <div id="log-panel" style="height: 25px;">
-        <div id="log-header">
-            <span>LOGS</span>
-            <span id="toggle-icon">▲</span>
-        </div>
-        <div id="log-container"></div>
-    </div>
+
 
     <footer>
         <div>Hotkey: <span id="hotkey-hint">Ctrl+Alt+D</span></div>
         <div style="font-size: 0.6rem; opacity: 0.5;">v0.2.0-DASH</div>
     </footer>
 
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';">
     <script src="./renderer.js"></script>
 </body>
 

@@ -30,15 +30,15 @@ interface PerformanceMetrics {
 const statusPanel = document.getElementById('status-panel');
 const statusText = document.getElementById('status-text');
 const liveMessage = document.getElementById('live-message');
-const logContainer = document.getElementById('log-container');
+// const logContainer = document.getElementById('log-container'); // Removed
 
 // Stats elements
 const statSessions = document.getElementById('stat-sessions');
 const statChars = document.getElementById('stat-chars');
 const statSpeed = document.getElementById('stat-speed');
 const statLast = document.getElementById('stat-last');
-const statTokens = document.getElementById('stat-tokens');
-const statCost = document.getElementById('stat-cost');
+// const statTokens = document.getElementById('stat-tokens'); // Removed
+// const statCost = document.getElementById('stat-cost'); // Removed
 
 // Badge elements
 const badgeTranscriber = document.getElementById('badge-transcriber');
@@ -159,20 +159,10 @@ function updatePerformanceMetrics(metrics: PerformanceMetrics) {
         }
     }
 
-    // Update char count and token savings
+    // Update char count
     if (metrics.charCount !== undefined) {
         totalChars += metrics.charCount;
         if (statChars) statChars.textContent = totalChars.toLocaleString();
-
-        // Calculate tokens saved (only counts when on Local mode)
-        const tokensThisSession = Math.ceil(metrics.charCount / CHARS_PER_TOKEN);
-        totalTokensSaved += tokensThisSession;
-
-        if (statTokens) statTokens.textContent = totalTokensSaved.toLocaleString();
-
-        // Calculate estimated cost savings
-        const costSaved = (totalTokensSaved / 1000) * COST_PER_1K_TOKENS;
-        if (statCost) statCost.textContent = `$${costSaved.toFixed(3)}`;
     }
 }
 
@@ -189,39 +179,8 @@ function updateBadges(models?: { transcriber?: string; processor?: string }, aut
 }
 
 function addLogEntry(level: string, message: string, _data?: any) {
-    if (!logContainer) return;
-
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
-
-    const timeStr = new Date().toLocaleTimeString().split(' ')[0];
-
-    const timeSpan = document.createElement('span');
-    timeSpan.className = 'log-time';
-    timeSpan.textContent = timeStr;
-
-    const levelSpan = document.createElement('span');
-    levelSpan.className = `log-level ${level}`;
-    levelSpan.textContent = level;
-
-    const msgSpan = document.createElement('span');
-    // Truncate long messages for cleaner logs
-    msgSpan.textContent = message.length > 80 ? message.substring(0, 77) + '...' : message;
-
-    entry.appendChild(timeSpan);
-    entry.appendChild(document.createTextNode(' '));
-    entry.appendChild(levelSpan);
-    entry.appendChild(document.createTextNode(' '));
-    entry.appendChild(msgSpan);
-
-    logContainer.appendChild(entry);
-
-    // Keep only last 50 entries
-    while (logContainer.children.length > 50) {
-        logContainer.removeChild(logContainer.children[0]);
-    }
-
-    logContainer.scrollTop = logContainer.scrollHeight;
+    // Log UI Removed - internal logging only
+    // This function is kept stubbed to avoid breaking calls
 }
 
 // Setup toggle handlers
@@ -458,4 +417,4 @@ document.getElementById('mode-prompt')?.addEventListener('click', () => (window 
 document.getElementById('mode-professional')?.addEventListener('click', () => (window as any).switchExecutionMode('professional'));
 document.getElementById('mode-raw')?.addEventListener('click', () => (window as any).switchExecutionMode('raw'));
 document.getElementById('metrics-header')?.addEventListener('click', toggleMetrics);
-document.getElementById('log-header')?.addEventListener('click', toggleLogs);
+// document.getElementById('log-header')?.addEventListener('click', toggleLogs); // Removed
