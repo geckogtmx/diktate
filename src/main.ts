@@ -166,6 +166,8 @@ let isRecording: boolean = false;
 let isWarmupLock: boolean = true; // NEW: Lock interaction until fully initialized
 let recordingMode: 'dictate' | 'ask' | 'translate' | 'refine' | 'note' = 'dictate';
 let settingsWindow: BrowserWindow | null = null;
+let debugWindow: BrowserWindow | null = null; // SPEC_035: Explicitly track Control Panel
+let loadingWindow: BrowserWindow | null = null; // SPEC_035: New Startup Window
 
 /**
  * Create a simple colored icon programmatically
@@ -232,7 +234,7 @@ function getIcon(state: string): NativeImage {
   return createSimpleIcon(color);
 }
 
-let debugWindow: BrowserWindow | null = null;
+// debugWindow is now declared globally at the top of the file
 
 /**
  * Create debug dashboard window
@@ -427,8 +429,14 @@ function buildTrayMenu(state: string = 'Idle'): Electron.MenuItemConstructorOpti
  * Initialize system tray icon
  */
 function initializeTray(): void {
-  const icon = getIcon('idle');
-  tray = new Tray(icon);
+  // tray is now declared globally at top
+  tray = new Tray(getIcon('Idle'));
+
+  // SPEC_035: Double-click tray to open Control Panel
+  tray.on('double-click', () => {
+    logger.info('MAIN', 'Tray double-click: Opening Control Panel');
+    createDebugWindow();
+  });
 
   const contextMenu = Menu.buildFromTemplate(buildTrayMenu('Idle'));
   tray.setContextMenu(contextMenu);
@@ -503,6 +511,50 @@ function showNotification(title: string, body: string, isError: boolean = false)
 }
 
 /**
+ * Create the Loading Window (SPEC_035)
+ */
+function createLoadingWindow(): void {
+  if (loadingWindow) return;
+
+  loadingWindow = new BrowserWindow({
+    width: 450,
+    height: 380,
+    frame: false,
+    resizable: false,
+    alwaysOnTop: true,
+    backgroundColor: '#002029',
+    icon: getIcon('idle'),
+    show: true, // SPEC_035: Show immediately
+    webPreferences: {
+      preload: path.join(__dirname, 'preloadLoading.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+    }
+  });
+
+  loadingWindow.loadFile(path.join(__dirname, 'loading.html'));
+
+  loadingWindow.on('closed', () => {
+    loadingWindow = null;
+  });
+}
+
+// IPC handler for Loading Window actions
+ipcMain.on('loading-action', (_event, action: string) => {
+  logger.info('MAIN', `Loading window action received: ${action}`);
+
+  if (action === 'open-cp') {
+    createDebugWindow();
+    if (loadingWindow) loadingWindow.close();
+  } else if (action === 'open-settings') {
+    createSettingsWindow();
+    if (loadingWindow) loadingWindow.close();
+  } else if (action === 'close') {
+    if (loadingWindow) loadingWindow.close();
+  }
+});
+
+/**
  * Handle Python manager events
  */
 function setupPythonEventHandlers(): void {
@@ -511,33 +563,50 @@ function setupPythonEventHandlers(): void {
   pythonManager.on('state-change', (state: string) => {
     logger.info('MAIN', 'Python state changed', { state });
 
+    // forward state to loading window if it exists
+    if (loadingWindow && !loadingWindow.isDestroyed()) {
+      loadingWindow.webContents.send('startup-progress', { message: `System State: ${state.toUpperCase()}` });
+    }
+
     // Release lock on first transition to idle after warmup
     if (isWarmupLock && state === 'idle') {
       isWarmupLock = false;
       logger.info('MAIN', 'Warmup lock released - App is fully ready');
 
-      // SPEC_035: Auto-open Control Panel on first ready
-      createDebugWindow();
-
-      showNotification('dIKtate Ready', 'Models loaded. Press Ctrl+Alt+D to start.', false);
-
-      // Trigger status check to populate badges (Whisper/LLM names)
-      if (pythonManager) {
-        pythonManager.sendCommand('status').then(result => {
-          if (result.success && result.data) {
-            if (debugWindow && !debugWindow.isDestroyed()) {
-              debugWindow.webContents.send('badge-update', {
-                transcriber: result.data.transcriber,
-                processor: result.data.processor
-              });
-            }
-          }
-        }).catch(err => logger.error('MAIN', 'Failed to fetch status on ready', err));
+      // SPEC_035: Signal loading window to show ready state instead of auto-opening CP
+      if (loadingWindow && !loadingWindow.isDestroyed()) {
+        loadingWindow.webContents.send('startup-complete');
       }
+
+      // Defer notification and status sync to avoid event loop starvation
+      setTimeout(() => {
+        showNotification('dIKtate Ready', 'Models loaded. Press Ctrl+Alt+D to start.', false);
+
+        if (pythonManager) {
+          pythonManager.sendCommand('status').then(result => {
+            if (result.success && result.data) {
+              logger.info('MAIN', 'Status synced on ready', result.data);
+            }
+          }).catch(err => logger.error('MAIN', 'Failed to fetch status on ready', err));
+        }
+      }, 1000);
     }
 
     updateTrayState(state);
     updateTrayIcon(state);
+  });
+
+  // SPEC_035: Forward granular progress to loading window (now simplified to single status)
+  pythonManager.on('startup-progress', (data: any) => {
+    if (loadingWindow && !loadingWindow.isDestroyed()) {
+      loadingWindow.webContents.send('startup-progress', data);
+    }
+  });
+
+  pythonManager.on('startup-complete', () => {
+    if (loadingWindow && !loadingWindow.isDestroyed()) {
+      loadingWindow.webContents.send('startup-complete');
+    }
   });
 
   pythonManager.on('error', (error: Error) => {
@@ -2119,6 +2188,9 @@ function setupGlobalHotkey(): void {
  * Initialize the application
  */
 async function initialize(): Promise<void> {
+  // SPEC_035: Show Loading Window immediately (before everything else)
+  createLoadingWindow();
+
   try {
     // Initialize logger first
     logger.initialize();
@@ -2134,8 +2206,6 @@ async function initialize(): Promise<void> {
     // Initialize tray
     initializeTray();
     logger.info('MAIN', 'System tray initialized');
-
-    // SPEC_035: Removed early createDebugWindow() to speed up appearance
 
     // Hook up logger to window - will be active once window is created later
     logger.setLogCallback((level, message, data) => {
@@ -2169,6 +2239,11 @@ async function initialize(): Promise<void> {
     logger.info('MAIN', 'Initializing Python manager', { pythonExePath, pythonScriptPath });
     pythonManager = new PythonManager(pythonExePath, pythonScriptPath);
     setupPythonEventHandlers();
+
+    // SPEC_035: Status update for UI
+    if (loadingWindow && !loadingWindow.isDestroyed()) {
+      loadingWindow.webContents.send('startup-progress', { message: 'Starting AI Engine...', progress: 5 });
+    }
 
     await pythonManager.start();
     await syncPythonConfig();
@@ -2205,15 +2280,21 @@ app.on('ready', () => {
       settingsWindow.focus();
     }
   });
+  // SPEC_035: Show loading window first
+  createLoadingWindow();
 
-  initialize();
+  // Yield to allow UI to paint before heavy initialization
+  setTimeout(() => {
+    initialize();
+  }, 800);
 });
 
 /**
  * Quit when all windows are closed
  */
 app.on('window-all-closed', () => {
-  app.quit();
+  // dIKtate runs in the system tray, so we don't quit when all windows are closed.
+  // The app will stay alive until explicitly quit from the tray menu.
 });
 
 /**

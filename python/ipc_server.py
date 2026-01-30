@@ -342,6 +342,8 @@ class IpcServer:
     def _startup_tiered_warmup(self):
         """Standard parallel startup: Load components simultaneously for a reliable 10-12s ready state."""
         try:
+            self._emit_event("startup-progress", {"message": "Starting background services...", "progress": 10})
+            
             # 1. Start Transcriber and Processor loading in parallel
             t_thread = threading.Thread(target=self._load_transcriber_async)
             p_thread = threading.Thread(target=self._load_processor_async)
@@ -362,6 +364,8 @@ class IpcServer:
 
             # SIGNAL READY: Transition to IDLE once both are finished
             # This ensures the user enters a completely stable state
+            self._emit_event("startup-progress", {"message": "System Ready!", "progress": 100})
+            self._emit_event("startup-complete", {})
             self._set_state(State.IDLE)
             logger.info(f"[STARTUP] System Ready. Transcriber: {self.dictation_ready}, Processor: {self.warmup_complete}")
 
@@ -379,23 +383,29 @@ class IpcServer:
     def _load_transcriber_async(self):
         """Asynchronously load the Whisper model."""
         try:
+            self._emit_event("startup-progress", {"message": "Loading transcription model...", "progress": 30})
             if not self.transcriber:
                 self.transcriber = Transcriber(model_size="turbo", device="auto")
                 logger.info("[OK] Transcriber initialized (Turbo V3)")
+                self._emit_event("startup-progress", {"message": "Transcription ready", "progress": 60})
         except Exception as e:
             logger.error(f"Failed to initialize Transcriber: {e}")
+            self._emit_event("startup-progress", {"message": f"Transcription error: {e}", "progress": 60})
 
     def _load_processor_async(self):
         """Asynchronously warm up the LLM processor."""
         try:
             self._ensure_ollama_ready()
+            self._emit_event("startup-progress", {"message": "Warming up LLM...", "progress": 70})
             if not self.processor:
                 self.processor = create_processor()
                 current_provider = os.environ.get("PROCESSING_MODE", "local")
                 self.processors[current_provider] = self.processor
                 logger.info(f"[OK] Processor initialized ({current_provider})")
+                self._emit_event("startup-progress", {"message": "AI Engine ready", "progress": 90})
         except Exception as e:
             logger.error(f"Failed to initialize Processor: {e}")
+            self._emit_event("startup-progress", {"message": f"AI Engine error: {e}", "progress": 90})
 
     def _run_maintenance_tasks(self):
         """Handle non-critical startup tasks."""
@@ -412,22 +422,41 @@ class IpcServer:
         """Deprecated: Replaced by _startup_tiered_warmup"""
         pass
 
+    def _check_ollama_port(self):
+        """Check if Ollama port (11434) is already open/responding."""
+        try:
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex(('127.0.0.1', 11434))
+            sock.close()
+            return result == 0
+        except:
+            return False
+
     def _ensure_ollama_ready(self):
         """Ensure Ollama is running and model is warmed up at startup."""
         try:
             import requests
             import subprocess
             
-            # 1. Check if Ollama is running
-            try:
-                response = requests.get("http://localhost:11434/api/tags", timeout=2)
-                if response.status_code == 200:
-                    logger.info("[STARTUP] Ollama is already running")
-                else:
-                    logger.warning(f"[STARTUP] Ollama returned status {response.status_code}")
-                    return
-            except requests.ConnectionError:
-                logger.warning("[STARTUP] Ollama not running, attempting to start...")
+            # 1. Check if Ollama is running (Check port first, then API)
+            self._emit_event("startup-progress", {"message": "Checking Ollama...", "progress": 15})
+            
+            if self._check_ollama_port():
+                logger.info("[STARTUP] Ollama port is open, verifying API...")
+                try:
+                    response = requests.get("http://localhost:11434/api/tags", timeout=2)
+                    if response.status_code == 200:
+                        logger.info("[STARTUP] Ollama API responded successfully")
+                        self._emit_event("startup-progress", {"message": "Ollama connected", "progress": 25})
+                    else:
+                        logger.warning(f"[STARTUP] Ollama API returned status {response.status_code}")
+                except requests.ConnectionError:
+                    logger.warning("[STARTUP] Ollama port open but API not responding. Maybe starting up?")
+            else:
+                logger.warning("[STARTUP] Ollama port (11434) closed, attempting to start...")
+                self._emit_event("startup-progress", {"message": "Starting Ollama...", "progress": 20})
                 
                 # 2. Try to start Ollama (Windows)
                 try:
@@ -438,13 +467,21 @@ class IpcServer:
                         stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL
                     )
-                    time.sleep(3)  # Wait for startup
-                    logger.info("[STARTUP] Ollama started successfully")
+                    
+                    # Wait for port to open (max 10s)
+                    for _ in range(20):
+                        if self._check_ollama_port():
+                            logger.info("[STARTUP] Ollama process spawned and port open")
+                            self._emit_event("startup-progress", {"message": "Ollama started", "progress": 25})
+                            break
+                        time.sleep(0.5)
                 except FileNotFoundError:
                     logger.error("[STARTUP] Ollama not found in PATH - user must start manually")
+                    self._emit_event("startup-progress", {"message": "Ollama not found", "progress": 25})
                     return
                 except Exception as e:
                     logger.error(f"[STARTUP] Failed to start Ollama: {e}")
+                    self._emit_event("startup-progress", {"message": "Ollama startup failed", "progress": 25})
                     return
             
             # 3. Warm up default model (gemma3:4b)

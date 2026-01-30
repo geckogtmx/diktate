@@ -4,6 +4,7 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
+import * as readline from 'readline';
 import { EventEmitter } from 'events';
 import { logger } from '../utils/logger';
 import * as crypto from 'crypto';
@@ -136,26 +137,25 @@ export class PythonManager extends EventEmitter {
         }
 
         // Setup output handlers
-        this.process.stdout?.on('data', (data) => {
-          this.handlePythonOutput(data.toString());
-        });
+        if (this.process.stdout) {
+          const stdoutReader = readline.createInterface({
+            input: this.process.stdout,
+            terminal: false
+          });
+          stdoutReader.on('line', (line) => {
+            this.handlePythonLine(line);
+          });
+        }
 
-        this.process.stderr?.on('data', (data) => {
-          const line = data.toString().trim();
-          if (!line) return;
-
-          // Smart log level detection for Python standard logging
-          if (line.includes(' - INFO - ')) {
-            logger.info('Python', line);
-          } else if (line.includes(' - WARNING - ') || line.includes('UserWarning:') || line.includes('DeprecationWarning:')) {
-            logger.warn('Python', line);
-          } else if (line.includes(' - DEBUG - ')) {
-            logger.debug('Python', line);
-          } else {
-            // Default to error for stderr if no clear level is found
-            logger.error('Python', line);
-          }
-        });
+        if (this.process.stderr) {
+          const stderrReader = readline.createInterface({
+            input: this.process.stderr,
+            terminal: false
+          });
+          stderrReader.on('line', (line) => {
+            this.handlePythonStderr(line);
+          });
+        }
 
         this.process.on('error', (error) => {
           logger.error('PythonManager', 'Process error occurred', error);
@@ -285,31 +285,48 @@ export class PythonManager extends EventEmitter {
   }
 
   /**
-   * Handle output from Python process
+   * Handle a single line of output from Python process
    */
-  private handlePythonOutput(output: string): void {
-    const lines = output.split('\n').filter((line) => line.trim());
+  private handlePythonLine(line: string): void {
+    if (!line.trim()) return;
 
-    for (const line of lines) {
-      try {
-        // Try to parse as JSON (response)
-        const data = JSON.parse(line);
+    try {
+      // Try to parse as JSON (response)
+      const data = JSON.parse(line);
 
-        if (data.id) {
-          // It's a response to a command
-          const handler = this.pendingCommands.get(data.id);
-          if (handler) {
-            handler(data as Response);
-            this.pendingCommands.delete(data.id);
-          }
-        } else if (data.event) {
-          // It's an event
-          this.handlePythonEvent(data);
+      if (data.id) {
+        // It's a response to a command
+        const handler = this.pendingCommands.get(data.id);
+        if (handler) {
+          handler(data as Response);
+          this.pendingCommands.delete(data.id);
         }
-      } catch {
-        // Not JSON, just log it
-        logger.debug('Python', line);
+      } else if (data.event) {
+        // It's an event
+        this.handlePythonEvent(data);
       }
+    } catch {
+      // Not JSON, just log it
+      logger.debug('Python', line);
+    }
+  }
+
+  /**
+   * Handle a single line of stderr from Python
+   */
+  private handlePythonStderr(line: string): void {
+    if (!line.trim()) return;
+
+    // Smart log level detection for Python standard logging
+    if (line.includes(' - INFO - ')) {
+      logger.info('Python', line);
+    } else if (line.includes(' - WARNING - ') || line.includes('UserWarning:') || line.includes('DeprecationWarning:')) {
+      logger.warn('Python', line);
+    } else if (line.includes(' - DEBUG - ')) {
+      logger.debug('Python', line);
+    } else {
+      // Default to error for stderr if no clear level is found
+      logger.error('Python', line);
     }
   }
 

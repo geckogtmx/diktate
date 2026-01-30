@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dIKtate Launcher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./loading.css">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: file:; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;">
+</head>
+
+<body>
+    <div class="static-container">
+        <header>
+            <img src="../assets/loading-logo.png" alt="dIKtate Logo" id="main-logo">
+            <div class="version">v0.2.1</div>
+        </header>
+
+        <main id="status-container">
+            <h1 id="status-text">Warming Up</h1>
+            <p id="sub-status">Please wait while the AI engine initializes...</p>
+        </main>
+
+        <section id="ready-section" class="hidden">
+            <h1 class="ready-title">READY</h1>
+            <div class="action-buttons">
+                <button id="btn-cp" class="btn">Control Panel</button>
+                <button id="btn-settings" class="btn">Settings</button>
+                <button id="btn-close" class="btn secondary">Close</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="./loadingRenderer.js"></script>
+</body>
+
+</html>

@@ -4,9 +4,9 @@
   "description": "Privacy-first voice dictation for Windows",
   "main": "dist/main.js",
   "scripts": {
-    "dev": "tsc && tsc -p tsconfig.settings.json && copy src\\*.html dist\\ && electron . --dev",
+    "dev": "tsc && tsc -p tsconfig.settings.json && copy /y src\\*.html dist\\ && copy /y src\\*.css dist\\ && copy /y src\\*.js dist\\ && electron . --dev",
     "start": "electron .",
-    "build": "tsc && tsc -p tsconfig.settings.json && copy src\\*.html dist\\ && electron .",
+    "build": "tsc && tsc -p tsconfig.settings.json && copy /y src\\*.html dist\\ && copy /y src\\*.css dist\\ && copy /y src\\*.js dist\\ && electron .",
     "dist": "pnpm run package-python && electron-builder",
     "package-python": "cd python && build_backend.bat",
     "test": "node tests/smoke-test.cjs && pytest python/"
