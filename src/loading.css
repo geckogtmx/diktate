@@ -12,6 +12,11 @@
     user-select: none;
 }
 
+html,
+body {
+    cursor: default !important;
+}
+
 body {
     font-family: 'Outfit', sans-serif;
     background-color: var(--bg-color);

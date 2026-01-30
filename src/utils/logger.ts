@@ -67,42 +67,59 @@ class Logger {
     this.onLogCallback = callback;
   }
 
+  private consoleThreshold: LogLevel = LogLevel.INFO;
+
+  /**
+   * Set the threshold for console logging
+   */
+  setConsoleThreshold(level: LogLevel): void {
+    this.consoleThreshold = level;
+  }
+
   /**
    * Write log to file and console
    */
   private log(level: LogLevel, source: string, message: string, data?: any): void {
     const formattedMessage = this.formatMessage(level, source, message, data);
 
-    // Write to console
-    // Write to console with safety check (ignores EPIPE if terminal is closed)
-    try {
-      switch (level) {
-        case LogLevel.ERROR:
-          console.error(formattedMessage);
-          break;
-        case LogLevel.WARN:
-          console.warn(formattedMessage);
-          break;
-        case LogLevel.DEBUG:
-        case LogLevel.INFO:
-        default:
-          console.log(formattedMessage);
-          break;
-      }
-    } catch (error: any) {
-      // Ignore EPIPE errors (broken pipe to stdout)
-      if (error.code !== 'EPIPE') {
-        // If it's something else, try to write to stderr purely as fallback, or just ignore
-        try { process.stderr.write(`Logger error: ${error.message}\n`); } catch (e) { /* ignore */ }
+    // Map log levels to numeric values for comparison
+    const levelMap: Record<LogLevel, number> = {
+      [LogLevel.DEBUG]: 0,
+      [LogLevel.INFO]: 1,
+      [LogLevel.WARN]: 2,
+      [LogLevel.ERROR]: 3
+    };
+
+    // Write to console with threshold check and safety check
+    if (levelMap[level] >= levelMap[this.consoleThreshold]) {
+      try {
+        switch (level) {
+          case LogLevel.ERROR:
+            console.error(formattedMessage);
+            break;
+          case LogLevel.WARN:
+            console.warn(formattedMessage);
+            break;
+          case LogLevel.DEBUG:
+          case LogLevel.INFO:
+          default:
+            console.log(formattedMessage);
+            break;
+        }
+      } catch (error: any) {
+        // Ignore EPIPE errors (broken pipe to stdout)
+        if (error.code !== 'EPIPE') {
+          try { process.stderr.write(`Logger error: ${error.message}\n`); } catch (e) { /* ignore */ }
+        }
       }
     }
 
-    // Write to file
+    // Write to file (always, regardless of console threshold)
     if (this.logStream && this.initialized) {
       this.logStream.write(formattedMessage + '\n');
     }
 
-    // Stream to callback
+    // Stream to callback (always, the listener can filter)
     if (this.onLogCallback) {
       this.onLogCallback(level, `[${source}] ${message}`, data);
     }

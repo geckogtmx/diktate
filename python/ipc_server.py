@@ -484,9 +484,31 @@ class IpcServer:
                     self._emit_event("startup-progress", {"message": "Ollama startup failed", "progress": 25})
                     return
             
-            # 3. Warm up default model (gemma3:4b)
-            # Use environment or fallback
+            # 3. Warm up default model (gemma3:4b) if not already loaded
             default_model = os.environ.get("DEFAULT_OLLAMA_MODEL", "gemma3:4b")
+            
+            # Check if model is already loaded (SPEC_035 optimization)
+            try:
+                ps_response = requests.get("http://localhost:11434/api/ps", timeout=2)
+                if ps_response.status_code == 200:
+                    loaded_models = ps_response.json().get("models", [])
+                    # Robust matching: check for exact name, name with tag, or case-insensitive match
+                    target_lower = default_model.lower()
+                    is_loaded = False
+                    for m in loaded_models:
+                        m_name = m.get("name", "").lower()
+                        m_model = m.get("model", "").lower()
+                        if target_lower == m_name or target_lower == m_model or \
+                           target_lower + ":latest" == m_name or m_name.startswith(target_lower + ":"):
+                            is_loaded = True
+                            break
+                    
+                    if is_loaded:
+                        logger.info(f"[STARTUP] Model {default_model} already loaded in VRAM, skipping warmup")
+                        return # Success!
+            except Exception as e:
+                logger.debug(f"[STARTUP] Failed to check loaded models: {e}")
+
             logger.info(f"[STARTUP] Warming up {default_model}...")
             
             try:

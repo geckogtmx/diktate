@@ -30,7 +30,7 @@ export class PythonManager extends EventEmitter {
   private pythonScriptPath: string;
   private process: ChildProcess | null = null;
   private isRunning: boolean = false;
-  private currentState: string = 'idle';
+  private currentState: string = 'warmup'; // SPEC_035: Start in warmup to match backend
   private commandQueue: Command[] = [];
   private pendingCommands: Map<string, (response: Response) => void> = new Map();
   private reconnectAttempts: number = 0;
@@ -44,6 +44,7 @@ export class PythonManager extends EventEmitter {
     this.pythonExePath = pythonExePath;
     this.pythonScriptPath = pythonScriptPath;
     this.tokenFilePath = path.join(os.homedir(), '.diktate', '.ipc_token');
+    this.currentState = 'warmup'; // Guarantee warmup state at start
   }
 
   /**
@@ -143,7 +144,7 @@ export class PythonManager extends EventEmitter {
             terminal: false
           });
           stdoutReader.on('line', (line) => {
-            this.handlePythonLine(line);
+            setImmediate(() => this.handlePythonLine(line));
           });
         }
 
@@ -153,7 +154,13 @@ export class PythonManager extends EventEmitter {
             terminal: false
           });
           stderrReader.on('line', (line) => {
-            this.handlePythonStderr(line);
+            // SPEC_035: Aggressive decimation - don't even schedule the task if it's just noisy INFO during warmup
+            if (this.currentState === 'warmup') {
+              if (line.includes(' - INFO - ') || line.includes(' - DEBUG - ')) {
+                return;
+              }
+            }
+            setImmediate(() => this.handlePythonStderr(line));
           });
         }
 
@@ -315,18 +322,35 @@ export class PythonManager extends EventEmitter {
    * Handle a single line of stderr from Python
    */
   private handlePythonStderr(line: string): void {
-    if (!line.trim()) return;
+    const trimmed = line.trim();
+    if (!trimmed) return;
 
     // Smart log level detection for Python standard logging
-    if (line.includes(' - INFO - ')) {
+    const isInfo = line.includes(' - INFO - ');
+    const isWarn = line.includes(' - WARNING - ') || line.includes('UserWarning:') || line.includes('DeprecationWarning:');
+    const isDebug = line.includes(' - DEBUG - ');
+    const isError = line.includes(' - ERROR - ') || line.includes('Exception:') || line.includes('Error:');
+
+    // SPEC_035: Total silence during warmup for ANYTHING that isn't a critical error
+    // This is the absolute key to preventing the 12-15s event loop stall on Windows
+    if (this.currentState === 'warmup') {
+      if (!isError && !isWarn) {
+        return; // Silent discard
+      }
+    }
+
+    if (isInfo) {
       logger.info('Python', line);
-    } else if (line.includes(' - WARNING - ') || line.includes('UserWarning:') || line.includes('DeprecationWarning:')) {
+    } else if (isWarn) {
       logger.warn('Python', line);
-    } else if (line.includes(' - DEBUG - ')) {
+    } else if (isDebug) {
       logger.debug('Python', line);
-    } else {
-      // Default to error for stderr if no clear level is found
+    } else if (isError) {
       logger.error('Python', line);
+    } else {
+      // Default to DEBUG for unknown noise instead of ERROR
+      // This ensures it goes to file but NOT to console (blocking) in production
+      logger.debug('Python', line);
     }
   }
 

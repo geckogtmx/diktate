@@ -10,7 +10,7 @@ dotenv.config();
 import * as path from 'path';
 import * as fs from 'fs';
 import { PythonManager } from './services/pythonManager';
-import { logger } from './utils/logger';
+import { logger, LogLevel } from './utils/logger';
 import { performanceMetrics } from './utils/performanceMetrics';
 
 import Store from 'electron-store';
@@ -2203,6 +2203,14 @@ async function initialize(): Promise<void> {
       fs.mkdirSync(logsPath, { recursive: true });
     }
 
+    // Set console threshold: DEBUG for dev/debug modes, INFO for production
+    // This prevents synchronous console.log from blocking the loop during bursts
+    if (isDev || process.env.DEBUG === '1') {
+      logger.setConsoleThreshold(LogLevel.DEBUG);
+    } else {
+      logger.setConsoleThreshold(LogLevel.INFO);
+    }
+
     // Initialize tray
     initializeTray();
     logger.info('MAIN', 'System tray initialized');
@@ -2245,8 +2253,19 @@ async function initialize(): Promise<void> {
       loadingWindow.webContents.send('startup-progress', { message: 'Starting AI Engine...', progress: 5 });
     }
 
+    // Yield before backend orchestration
+    await new Promise(resolve => setImmediate(resolve));
+
     await pythonManager.start();
+
+    // Yield after process spawn
+    await new Promise(resolve => setImmediate(resolve));
+
     await syncPythonConfig();
+
+    // Yield before finalizing
+    await new Promise(resolve => setImmediate(resolve));
+
     logger.info('MAIN', 'dIKtate initialized and config synced successfully');
 
   } catch (error) {
