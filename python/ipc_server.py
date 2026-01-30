@@ -19,6 +19,11 @@ import wave
 import socket
 from pynput import keyboard
 
+# --- FIX: Prevent OpenMP runtime conflict (Error #15) ---
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+# --------------------------------------------------------
+
 # --- FIX: Inject NVIDIA DLL paths for ctranslate2/faster-whisper ---
 import os
 import sys
@@ -109,13 +114,14 @@ log_handlers = [logging.FileHandler(session_log_file)]
 if os.environ.get("DEBUG") == "1":
     log_handlers.append(logging.StreamHandler())
 
+# SPEC_035: Start with WARNING to avoid task queue flooding during warmup
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=log_handlers
 )
 logger = logging.getLogger(__name__)
-logger.info(f"Session log: {session_log_file}")
+logger.warning(f"Session log: {session_log_file} (Initial level: WARNING)")
 
 
 
@@ -653,6 +659,12 @@ class IpcServer:
     def _set_state(self, new_state: State) -> None:
         """Set pipeline state and emit event"""
         old_state = self.state
+
+        # SPEC_035: Restore INFO level once we reach IDLE for the first time
+        if old_state == State.WARMUP and new_state == State.IDLE:
+            logging.getLogger().setLevel(logging.INFO)
+            logger.info("[SPEC_035] Warmup complete - Logging level restored to INFO.")
+
         logger.info(f"State transition: {old_state.value} -> {new_state.value}")
         self.state = new_state
         self._emit_event("state-change", {"state": new_state.value})

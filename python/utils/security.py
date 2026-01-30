@@ -52,15 +52,11 @@ def sanitize_log_message(message: str) -> str:
     - Email addresses
     - Long text blocks
     """
-    # Redact API key patterns
-    patterns = [
-        (r'(sk-ant-[a-zA-Z0-9_-]+)', r'sk-ant-[REDACTED]'),  # Anthropic (must be before generic sk-)
-        (r'(sk-[a-zA-Z0-9]{20,})', r'sk-[REDACTED]'),  # OpenAI
-        (r'(AIza[a-zA-Z0-9_-]{30,})', r'AIza[REDACTED]'),  # Google
-        (r'(Bearer\s+[a-zA-Z0-9_-]{20,})', r'Bearer [REDACTED]'),
-    ]
+    msg = message
+    for pattern, replacement in patterns:
+        msg = re.sub(pattern, replacement, msg)
     
-    return result
+    return msg
 
 
 def scrub_pii(text: str) -> str:
