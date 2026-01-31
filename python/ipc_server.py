@@ -690,29 +690,10 @@ class IpcServer:
             self.activity_counter += 1
             logger.debug(f"[SystemMonitor] Activity count: {self.activity_counter}")
 
-            # Start parallel monitoring every Nth activity
-            if self.activity_counter % self.sample_interval == 0:
-                logger.info(f"[SystemMonitor] Starting parallel monitoring for activity #{self.activity_counter}")
-                self._start_parallel_monitoring()
-
         # Stop monitoring and emit post-activity snapshot when returning to idle
         if new_state == State.IDLE and old_state != State.IDLE:
-            # Stop monitoring thread if running
-            if self.should_monitor:
-                self._stop_parallel_monitoring()
-
-                # Emit post-activity snapshot if this was a sampled activity
-                if self.activity_counter % self.sample_interval == 0:
-                    try:
-                        post_metrics = self.system_monitor.get_snapshot()
-                        self._emit_event('system-metrics', {
-                            'phase': 'post-activity',
-                            'activity_count': self.activity_counter,
-                            'metrics': post_metrics
-                        })
-                        logger.debug(f"[SystemMonitor] Post-activity metrics: {self.system_monitor.get_summary()}")
-                    except Exception as e:
-                        logger.warning(f"[SystemMonitor] Failed to emit post-activity metrics: {e}")
+            # Parallel monitoring removed per user request (reduced to one reading at end)
+            pass
 
     def _on_recording_auto_stopped(self, max_duration: int) -> None:
         """Callback when recording is auto-stopped due to duration limit."""
@@ -1017,7 +998,9 @@ class IpcServer:
                     logger.warning(f"[HISTORY] Failed to log session: {e}")
 
             # Capture system metrics after successful recording (Phase 2)
-            self._capture_system_metrics('post_recording')
+            # Only every 10 sessions per user request for silent telemetry
+            if self.activity_counter % self.sample_interval == 0:
+                self._capture_system_metrics('post_recording')
 
             # Cleanup
             if self.audio_file:
@@ -1165,7 +1148,9 @@ class IpcServer:
                     logger.warning(f"[HISTORY] Failed to log ask session: {e}")
 
             # Capture system metrics after successful ask (Phase 2)
-            self._capture_system_metrics('post_recording')
+            # Only every 10 sessions per user request for silent telemetry
+            if self.activity_counter % self.sample_interval == 0:
+                self._capture_system_metrics('post_recording')
 
             # Cleanup
             if self.audio_file:
@@ -1390,7 +1375,9 @@ class IpcServer:
                             logger.warning(f"[HISTORY] Failed to log refine session: {e}")
 
                     # Capture system metrics after successful refine (Phase 2)
-                    self._capture_system_metrics('post_recording')
+                    # Only every 10 sessions per user request for silent telemetry
+                    if self.activity_counter % self.sample_interval == 0:
+                        self._capture_system_metrics('post_recording')
 
                 except Exception as e:
                     logger.error(f"[REFINE-INST] Processing failed: {e}")
@@ -1562,6 +1549,11 @@ class IpcServer:
                     logger.info(f"[HISTORY] Logged note session. Prompt used: {the_prompt_used[:50]}...")
                 except Exception as e:
                     logger.warning(f"[HISTORY] Failed to log note session: {e}")
+
+            # Capture system metrics after successful note (Phase 2)
+            # Only every 10 sessions per user request for silent telemetry
+            if self.activity_counter % self.sample_interval == 0:
+                self._capture_system_metrics('post_recording')
 
             # Cleanup
             if self.audio_file and os.path.exists(self.audio_file):
@@ -2091,11 +2083,14 @@ class IpcServer:
             while self.should_monitor:
                 try:
                     metrics = self.system_monitor.get_snapshot()
+                    phase = f'during-{self.state.value}'
                     self._emit_event('system-metrics', {
-                        'phase': f'during-{self.state.value}',
+                        'phase': phase,
                         'activity_count': self.activity_counter,
                         'metrics': metrics
                     })
+                    # Log to database as well
+                    self._capture_system_metrics(phase)
                 except Exception as e:
                     logger.warning(f"[SystemMonitor] Failed to sample metrics: {e}")
 
