@@ -1,317 +1,405 @@
 /**
- * Mode Configuration (SPEC_016, SPEC_029)
+ * Mode Configuration - Dual-Profile System (SPEC_034_EXTRAS)
+ * Manages Local and Cloud profiles for each mode with a unified toggle
  */
 
 import { state } from './store.js';
 
+/**
+ * Initialize the dual-profile mode configuration system
+ */
 export async function initializeModeConfiguration() {
     try {
-        const providerSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
-        if (providerSelect) {
-            providerSelect.innerHTML = '';
+        // Initialize global processing mode toggle
+        await initializeGlobalToggle();
 
-            // Add "Local (App Default)" option
-            const defaultOption = document.createElement('option');
-            defaultOption.value = 'local';
-            defaultOption.text = 'Local (App Default)';
-            providerSelect.appendChild(defaultOption);
+        // Setup mode list click handlers
+        const modeListItems = document.querySelectorAll('.mode-list-item');
+        modeListItems.forEach(item => {
+            item.addEventListener('click', async () => {
+                const mode = item.getAttribute('data-mode');
+                if (mode) selectMode(mode);
+            });
+        });
 
-            // Add divider
-            const divider = document.createElement('option');
-            divider.disabled = true;
-            divider.text = '──────────';
-            providerSelect.appendChild(divider);
+        // Setup button handlers
+        setupButtonHandlers();
 
-            // Fetch API key statuses to show available cloud providers
-            const apiKeys = await window.settingsAPI.getApiKeys();
+        // Setup listener for external toggle changes (from Control Panel)
+        setupToggleChangeListener();
 
-            if (apiKeys.geminiApiKey) {
-                const opt = document.createElement('option');
-                opt.value = 'gemini';
-                opt.text = 'Gemini (Cloud)';
-                providerSelect.appendChild(opt);
-            }
-            if (apiKeys.anthropicApiKey) {
-                const opt = document.createElement('option');
-                opt.value = 'anthropic';
-                opt.text = 'Claude (Cloud)';
-                providerSelect.appendChild(opt);
-            }
-            if (apiKeys.openaiApiKey) {
-                const opt = document.createElement('option');
-                opt.value = 'openai';
-                opt.text = 'OpenAI (Cloud)';
-                providerSelect.appendChild(opt);
-            }
-
-            providerSelect.onchange = async () => {
-                const newValue = providerSelect.value;
-                if (state.currentSelectedMode && state.currentSelectedMode !== 'raw') {
-                    await window.settingsAPI.set(`modeProvider_${state.currentSelectedMode}`, newValue);
-                    // Legacy cleanup: remove model override if switching to cloud
-                    if (newValue !== 'local') {
-                        await window.settingsAPI.set(`modeModel_${state.currentSelectedMode}`, '');
-                    }
-                }
-                updatePromptDisplay(state.currentSelectedMode, newValue);
-            };
-        }
-
-        await loadPrompts();
+        // Load initial mode (Standard)
         await selectMode('standard');
     } catch (error) {
         console.error('Failed to initialize mode configuration:', error);
     }
 }
 
-export async function loadPrompts() {
-    try {
-        const customPrompts = await window.settingsAPI.getCustomPrompts();
-        const defaults = await window.settingsAPI.getDefaultPrompts();
-        (window as any).customPrompts = customPrompts || {};
-        state.defaultPrompts = defaults || {};
-    } catch (error) {
-        console.error('Failed to load prompts:', error);
+/**
+ * Initialize the global processing mode toggle
+ */
+async function initializeGlobalToggle() {
+    const toggle = document.getElementById('global-processing-toggle') as HTMLInputElement;
+    const statusText = document.getElementById('processing-mode-status');
+
+    if (!toggle) return;
+
+    // Load current processing mode
+    const settings = await window.settingsAPI.getAll();
+    const processingMode = settings.processingMode || 'local';
+    toggle.checked = processingMode === 'cloud';
+    updateProcessingModeStatus(processingMode);
+    updateProfileSections(processingMode);
+
+    // Toggle change handler
+    toggle.addEventListener('change', async () => {
+        const newMode = toggle.checked ? 'cloud' : 'local';
+        await window.settingsAPI.set('processingMode', newMode);
+        updateProcessingModeStatus(newMode);
+        updateProfileSections(newMode);
+
+        // Show feedback
+        if (statusText) {
+            const message = newMode === 'local' ? 'Saved! Now using: Local' : 'Saved! Now using: Cloud';
+            statusText.textContent = message;
+            setTimeout(() => updateProcessingModeStatus(newMode), 2000);
+        }
+    });
+}
+
+/**
+ * Update the status text display
+ */
+function updateProcessingModeStatus(mode: string) {
+    const statusText = document.getElementById('processing-mode-status');
+    if (!statusText) return;
+
+    if (mode === 'local') {
+        statusText.textContent = 'Currently using: Local (Offline, Confidential)';
+        statusText.style.color = '#4ade80';
+    } else {
+        statusText.textContent = 'Currently using: Cloud (Faster, Paid)';
+        statusText.style.color = '#60a5fa';
     }
 }
 
+/**
+ * Update profile sections visibility and styling based on active mode
+ */
+function updateProfileSections(mode: string) {
+    const localSection = document.getElementById('local-profile-section');
+    const cloudSection = document.getElementById('cloud-profile-section');
+    const localBadge = localSection?.querySelector('.profile-badge');
+    const cloudBadge = cloudSection?.querySelector('.profile-badge');
+
+    if (mode === 'local') {
+        localSection?.setAttribute('data-active', 'true');
+        cloudSection?.setAttribute('data-active', 'false');
+        if (localBadge) {
+            localBadge.textContent = 'Active';
+            localBadge.className = 'profile-badge active-badge';
+        }
+        if (cloudBadge) {
+            cloudBadge.textContent = 'Inactive';
+            cloudBadge.className = 'profile-badge inactive-badge';
+        }
+    } else {
+        localSection?.setAttribute('data-active', 'false');
+        cloudSection?.setAttribute('data-active', 'true');
+        if (localBadge) {
+            localBadge.textContent = 'Inactive';
+            localBadge.className = 'profile-badge inactive-badge';
+        }
+        if (cloudBadge) {
+            cloudBadge.textContent = 'Active';
+            cloudBadge.className = 'profile-badge active-badge';
+        }
+    }
+}
+
+/**
+ * Select a mode and load its dual-profile configuration
+ */
 export async function selectMode(mode: string) {
     state.currentSelectedMode = mode;
 
+    // Update mode list UI
     const modeListItems = document.querySelectorAll('.mode-list-item');
     modeListItems.forEach(item => {
         const content = item.textContent?.trim().toLowerCase();
         item.classList.toggle('active', content?.includes(mode));
     });
 
+    // Update title
     const modeNames: Record<string, string> = {
         'standard': 'Standard',
         'prompt': 'Prompt',
         'professional': 'Professional',
         'raw': 'Raw',
         'ask': 'Ask (Q&A)',
-        'refine': 'Refine'
+        'refine': 'Refine',
+        'refine_instruction': 'Refine (Instruction)',
+        'note': 'Note'
     };
 
     const titleEl = document.getElementById('mode-detail-title');
     if (titleEl) {
-        titleEl.textContent = modeNames[mode] || mode;
+        titleEl.textContent = `${modeNames[mode] || mode} Mode`;
     }
 
-    const providerSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
-    if (providerSelect) {
-        const settings = await window.settingsAPI.getAll();
-        const savedProvider = settings[`modeProvider_${mode}`];
-        providerSelect.value = savedProvider || 'local';
+    // Load both profiles for this mode
+    await loadDualProfileForMode(mode);
+}
 
-        // SPEC_034: Add provider change handler to reload models
-        providerSelect.onchange = async () => {
-            const newProvider = providerSelect.value;
-            if (state.currentSelectedMode && state.currentSelectedMode !== 'raw') {
-                await window.settingsAPI.set(`modeProvider_${state.currentSelectedMode}`, newProvider);
-                // Clear saved model when provider changes
-                await window.settingsAPI.set(`modeModel_${state.currentSelectedMode}`, '');
-            }
-            // Reload models for new provider
-            await loadModelsForProvider(mode, newProvider);
-            updatePromptDisplay(mode, newProvider);
+/**
+ * Load both local and cloud profiles for a mode
+ */
+async function loadDualProfileForMode(mode: string) {
+    const settings = await window.settingsAPI.getAll();
+
+    // Load Local Profile
+    const localModel = settings[`localModel_${mode}`] || '';
+    const localPrompt = settings[`localPrompt_${mode}`] || '';
+
+    const localModelSelect = document.getElementById('local-model-select') as HTMLSelectElement;
+    const localPromptTextarea = document.getElementById('local-prompt-textarea') as HTMLTextAreaElement;
+    const localPromptInfo = document.getElementById('local-prompt-info');
+
+    if (localModelSelect) {
+        await loadOllamaModels(localModelSelect, mode);
+        if (localModel) localModelSelect.value = localModel;
+    }
+
+    if (localPromptTextarea) {
+        localPromptTextarea.value = localPrompt;
+    }
+
+    if (localPromptInfo) {
+        localPromptInfo.textContent = localPrompt ? '✓ Custom prompt in use' : 'No custom prompt';
+        localPromptInfo.style.color = localPrompt ? '#4ade80' : '#888';
+    }
+
+    // Load Cloud Profile
+    const cloudProvider = settings[`cloudProvider_${mode}`] || 'gemini';
+    const cloudModel = settings[`cloudModel_${mode}`] || '';
+    const cloudPrompt = settings[`cloudPrompt_${mode}`] || '';
+
+    const cloudProviderSelect = document.getElementById('cloud-provider-select') as HTMLSelectElement;
+    const cloudModelSelect = document.getElementById('cloud-model-select') as HTMLSelectElement;
+    const cloudPromptTextarea = document.getElementById('cloud-prompt-textarea') as HTMLTextAreaElement;
+    const cloudPromptInfo = document.getElementById('cloud-prompt-info');
+
+    if (cloudProviderSelect) {
+        cloudProviderSelect.value = cloudProvider;
+        // Trigger model load for selected provider
+        await loadCloudModels(cloudModelSelect, cloudProvider, mode);
+    }
+
+    if (cloudModelSelect && cloudModel) {
+        cloudModelSelect.value = cloudModel;
+    }
+
+    if (cloudPromptTextarea) {
+        cloudPromptTextarea.value = cloudPrompt;
+    }
+
+    if (cloudPromptInfo) {
+        cloudPromptInfo.textContent = cloudPrompt ? '✓ Custom prompt in use' : 'No custom prompt';
+        cloudPromptInfo.style.color = cloudPrompt ? '#4ade80' : '#888';
+    }
+
+    // Setup provider change handler
+    if (cloudProviderSelect) {
+        cloudProviderSelect.onchange = async () => {
+            const newProvider = cloudProviderSelect.value;
+            await loadCloudModels(cloudModelSelect, newProvider, mode);
+        };
+    }
+}
+
+/**
+ * Setup all button event handlers
+ */
+function setupButtonHandlers() {
+    const saveLocalBtn = document.getElementById('save-local-profile');
+    const saveCloudBtn = document.getElementById('save-cloud-profile');
+    const resetLocalBtn = document.getElementById('reset-local-profile');
+    const resetCloudBtn = document.getElementById('reset-cloud-profile');
+    const localRefreshBtn = document.getElementById('local-model-refresh');
+    const cloudRefreshBtn = document.getElementById('cloud-model-refresh');
+
+    if (saveLocalBtn) saveLocalBtn.onclick = () => saveLocalProfile();
+    if (saveCloudBtn) saveCloudBtn.onclick = () => saveCloudProfile();
+    if (resetLocalBtn) resetLocalBtn.onclick = () => resetLocalProfile();
+    if (resetCloudBtn) resetCloudBtn.onclick = () => resetCloudProfile();
+
+    if (localRefreshBtn) {
+        localRefreshBtn.onclick = async () => {
+            const select = document.getElementById('local-model-select') as HTMLSelectElement;
+            await loadOllamaModels(select, state.currentSelectedMode);
         };
     }
 
-    const modelSection = document.getElementById('mode-detail-model')?.parentElement;
-    const promptTextarea = document.getElementById('mode-detail-prompt') as HTMLTextAreaElement;
-    const promptLabel = promptTextarea?.previousElementSibling as HTMLElement;
-    const buttonContainer = document.querySelector('button[onclick="window.modes.saveModeDetails()"]')?.parentElement;
-    const infoEl = document.getElementById('prompt-info');
-
-    if (mode === 'raw') {
-        if (modelSection) modelSection.style.display = 'none';
-        if (promptTextarea) promptTextarea.style.display = 'none';
-        if (promptLabel) promptLabel.style.display = 'none';
-        if (buttonContainer) buttonContainer.style.display = 'none';
-
-        if (infoEl) {
-            infoEl.style.marginTop = '0';
-            infoEl.innerHTML = `
-                <div style="color: #e0e0e0; font-family: sans-serif; line-height: 1.6;">
-                    <p style="margin-top: 0;">Raw mode injects text directly from Whisper with <strong>zero latency</strong>.</p>
-                </div>
-            `;
-            infoEl.style.color = 'inherit';
-        }
-    } else {
-        if (modelSection) modelSection.style.display = 'block';
-        if (promptTextarea) promptTextarea.style.display = 'block';
-        if (promptLabel) promptLabel.style.display = 'block';
-        if (buttonContainer) buttonContainer.style.display = 'flex';
-        if (infoEl) infoEl.style.marginTop = '4px';
-
-        // SPEC_034: Load models for selected provider
-        const selectedProvider = providerSelect?.value || 'local';
-        await loadModelsForProvider(mode, selectedProvider);
-        await updatePromptDisplay(mode, selectedProvider);
+    if (cloudRefreshBtn) {
+        cloudRefreshBtn.onclick = async () => {
+            const providerSelect = document.getElementById('cloud-provider-select') as HTMLSelectElement;
+            const modelSelect = document.getElementById('cloud-model-select') as HTMLSelectElement;
+            await loadCloudModels(modelSelect, providerSelect.value, state.currentSelectedMode);
+        };
     }
 }
 
-export async function updatePromptDisplay(mode: string, model: string) {
-    const promptTextarea = document.getElementById('mode-detail-prompt') as HTMLTextAreaElement;
-    if (!promptTextarea) return;
-
-    const customPrompts = (window as any).customPrompts || {};
-    const customPrompt = customPrompts[mode];
-
-    if (customPrompt && customPrompt.length > 0) {
-        promptTextarea.value = customPrompt;
-    } else {
-        try {
-            const defaultPrompt = await window.settingsAPI.getDefaultPrompt(mode, model);
-            promptTextarea.value = defaultPrompt;
-        } catch (e) {
-            promptTextarea.value = '';
-        }
-    }
-
-    const infoEl = document.getElementById('prompt-info');
-    if (infoEl) {
-        const hasCustom = customPrompt && customPrompt.length > 0;
-        infoEl.textContent = hasCustom ? `✓ Custom prompt in use` : 'No custom prompt';
-        infoEl.style.color = hasCustom ? '#4ade80' : '#888';
+/**
+ * Setup listener for toggle changes from other windows (Control Panel, etc)
+ * Listens for 'setting-changed' IPC event from main process
+ */
+function setupToggleChangeListener() {
+    // Try to listen via electronAPI if available
+    if ((window as any).electronAPI?.on) {
+        (window as any).electronAPI.on('setting-changed', (key: string, value: any) => {
+            if (key === 'processingMode') {
+                const toggle = document.getElementById('global-processing-toggle') as HTMLInputElement;
+                if (toggle) {
+                    toggle.checked = value === 'cloud';
+                    updateProcessingModeStatus(value);
+                    updateProfileSections(value);
+                }
+            }
+        });
     }
 }
 
-export async function saveModeDetails() {
-    const promptTextarea = document.getElementById('mode-detail-prompt') as HTMLTextAreaElement;
-    const providerSelect = document.getElementById('mode-detail-model') as HTMLSelectElement;
-    let promptText = promptTextarea?.value?.trim() || '';
+/**
+ * Save local profile
+ */
+async function saveLocalProfile() {
+    const mode = state.currentSelectedMode;
+    const modelSelect = document.getElementById('local-model-select') as HTMLSelectElement;
+    const promptTextarea = document.getElementById('local-prompt-textarea') as HTMLTextAreaElement;
 
-    const currentDefaultPrompt = await window.settingsAPI.getDefaultPrompt(state.currentSelectedMode, providerSelect?.value || '');
-    if (promptText === currentDefaultPrompt) {
-        promptText = '';
-    }
+    if (!modelSelect || !promptTextarea) return;
 
-    if (promptText && !promptText.includes('{text}')) {
+    const model = modelSelect.value;
+    const prompt = promptTextarea.value.trim();
+
+    // Validate prompt if provided
+    if (prompt && !prompt.includes('{text}')) {
         alert('❌ Prompt must include {text} placeholder');
         return;
     }
 
     try {
-        await window.settingsAPI.saveCustomPrompt(state.currentSelectedMode, promptText);
-        if (providerSelect && state.currentSelectedMode !== 'raw') {
-            await window.settingsAPI.set(`modeProvider_${state.currentSelectedMode}`, providerSelect.value);
-        }
+        await window.settingsAPI.set(`localModel_${mode}`, model);
+        await window.settingsAPI.set(`localPrompt_${mode}`, prompt);
 
-        // feedback
-        const saveBtn = document.getElementById('save-mode-btn');
+        // Show success feedback
+        const saveBtn = document.getElementById('save-local-profile');
         if (saveBtn) {
             const originalText = saveBtn.textContent;
-            saveBtn.textContent = 'Saved!';
-            saveBtn.style.backgroundColor = '#22c55e'; // Green
+            saveBtn.textContent = '✓ Saved!';
+            saveBtn.style.backgroundColor = '#22c55e';
             setTimeout(() => {
-                if (saveBtn) {
-                    saveBtn.textContent = originalText;
-                    saveBtn.style.backgroundColor = ''; // Revert to default
-                }
+                saveBtn.textContent = originalText;
+                saveBtn.style.backgroundColor = '';
             }, 2000);
         }
 
-        await loadPrompts();
-        selectMode(state.currentSelectedMode);
-    } catch (error) {
-        alert(`❌ Error: ${error}`);
-    }
-}
-
-export async function resetModeToDefault() {
-    if (!confirm(`Reset ${state.currentSelectedMode} mode to default?`)) return;
-    try {
-        const result = await window.settingsAPI.resetCustomPrompt(state.currentSelectedMode);
-        if (result.success) {
-            await loadPrompts();
-            selectMode(state.currentSelectedMode);
+        // Update prompt info
+        const promptInfo = document.getElementById('local-prompt-info');
+        if (promptInfo) {
+            promptInfo.textContent = prompt ? '✓ Custom prompt in use' : 'No custom prompt';
+            promptInfo.style.color = prompt ? '#4ade80' : '#888';
         }
     } catch (error) {
         alert(`❌ Error: ${error}`);
     }
 }
 
-// SPEC_034: Load models for a given provider
-export async function loadModelsForProvider(mode: string, provider: string) {
-    const modelSelect = document.getElementById('mode-detail-specific-model') as HTMLSelectElement;
-    const modelSelector = document.getElementById('mode-model-selector') as HTMLElement;
-    const refreshBtn = document.getElementById('mode-model-refresh-btn') as HTMLElement;
+/**
+ * Save cloud profile
+ */
+async function saveCloudProfile() {
+    const mode = state.currentSelectedMode;
+    const providerSelect = document.getElementById('cloud-provider-select') as HTMLSelectElement;
+    const modelSelect = document.getElementById('cloud-model-select') as HTMLSelectElement;
+    const promptTextarea = document.getElementById('cloud-prompt-textarea') as HTMLTextAreaElement;
 
-    if (!modelSelect) return;
+    if (!providerSelect || !modelSelect || !promptTextarea) return;
 
-    // Hide model selector for raw mode
-    if (mode === 'raw') {
-        if (modelSelector) modelSelector.style.display = 'none';
+    const provider = providerSelect.value;
+    const model = modelSelect.value;
+    const prompt = promptTextarea.value.trim();
+
+    // Validate prompt if provided
+    if (prompt && !prompt.includes('{text}')) {
+        alert('❌ Prompt must include {text} placeholder');
         return;
     }
 
-    // Show model selector
-    if (modelSelector) modelSelector.style.display = 'block';
+    try {
+        await window.settingsAPI.set(`cloudProvider_${mode}`, provider);
+        await window.settingsAPI.set(`cloudModel_${mode}`, model);
+        await window.settingsAPI.set(`cloudPrompt_${mode}`, prompt);
 
-    // Load models based on provider
-    if (provider === 'local') {
-        await loadOllamaModels(modelSelect, mode);
-    } else if (['gemini', 'anthropic', 'openai'].includes(provider)) {
-        await loadCloudModels(modelSelect, provider, mode);
-    }
+        // Show success feedback
+        const saveBtn = document.getElementById('save-cloud-profile');
+        if (saveBtn) {
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '✓ Saved!';
+            saveBtn.style.backgroundColor = '#22c55e';
+            setTimeout(() => {
+                saveBtn.textContent = originalText;
+                saveBtn.style.backgroundColor = '';
+            }, 2000);
+        }
 
-    // Setup refresh button
-    if (refreshBtn) {
-        refreshBtn.onclick = async () => {
-            await loadModelsForProvider(mode, provider);
-        };
+        // Update prompt info
+        const promptInfo = document.getElementById('cloud-prompt-info');
+        if (promptInfo) {
+            promptInfo.textContent = prompt ? '✓ Custom prompt in use' : 'No custom prompt';
+            promptInfo.style.color = prompt ? '#4ade80' : '#888';
+        }
+    } catch (error) {
+        alert(`❌ Error: ${error}`);
     }
 }
 
-async function loadCloudModels(selectElement: HTMLSelectElement, provider: string, mode: string) {
-    selectElement.innerHTML = '<option value="">Loading...</option>';
+/**
+ * Reset local profile to defaults
+ */
+async function resetLocalProfile() {
+    const mode = state.currentSelectedMode;
+    if (!confirm(`Reset Local profile for ${mode} mode to default?`)) return;
 
     try {
-        const result = await window.settingsAPI.getModels(provider);
-
-        if (!result.success) {
-            selectElement.innerHTML = '<option value="">Failed to load models</option>';
-            return;
-        }
-
-        selectElement.innerHTML = '';
-
-        // Add default option
-        const defaultOpt = document.createElement('option');
-        defaultOpt.value = '';
-        defaultOpt.text = 'Use provider default';
-        selectElement.appendChild(defaultOpt);
-
-        // Add fetched models (with null safety)
-        if (result.models && result.models.length > 0) {
-            result.models.forEach((model: any) => {
-                const opt = document.createElement('option');
-                opt.value = model.id;
-                opt.text = model.name + (model.tier ? ` (${model.tier})` : '');
-                selectElement.appendChild(opt);
-            });
-        }
-
-        // Load saved selection
-        const settings = await window.settingsAPI.getAll();
-        const savedModel = settings[`modeModel_${mode}`];
-        if (savedModel) {
-            selectElement.value = savedModel;
-        }
-
-        // Save on change
-        selectElement.onchange = async () => {
-            await window.settingsAPI.set(`modeModel_${mode}`, selectElement.value);
-        };
+        await window.settingsAPI.set(`localModel_${mode}`, '');
+        await window.settingsAPI.set(`localPrompt_${mode}`, '');
+        await selectMode(mode); // Reload
     } catch (error) {
-        console.error(`Failed to load ${provider} models:`, error);
-        selectElement.innerHTML = '<option value="">Error loading models</option>';
+        alert(`❌ Error: ${error}`);
     }
 }
 
+/**
+ * Reset cloud profile to defaults
+ */
+async function resetCloudProfile() {
+    const mode = state.currentSelectedMode;
+    if (!confirm(`Reset Cloud profile for ${mode} mode to default?`)) return;
+
+    try {
+        await window.settingsAPI.set(`cloudProvider_${mode}`, '');
+        await window.settingsAPI.set(`cloudModel_${mode}`, '');
+        await window.settingsAPI.set(`cloudPrompt_${mode}`, '');
+        await selectMode(mode); // Reload
+    } catch (error) {
+        alert(`❌ Error: ${error}`);
+    }
+}
+
+/**
+ * Load Ollama models into a select element
+ */
 async function loadOllamaModels(selectElement: HTMLSelectElement, mode: string) {
     selectElement.innerHTML = '<option value="">Loading...</option>';
 
@@ -331,7 +419,7 @@ async function loadOllamaModels(selectElement: HTMLSelectElement, mode: string) 
         defaultOpt.text = 'gemma3:4b (default)';
         selectElement.appendChild(defaultOpt);
 
-        // Add installed models (with null safety)
+        // Add installed models
         if (result.models && result.models.length > 0) {
             result.models.forEach((model: any) => {
                 const opt = document.createElement('option');
@@ -341,19 +429,58 @@ async function loadOllamaModels(selectElement: HTMLSelectElement, mode: string) 
             });
         }
 
-        // Load saved selection
+        // Load saved value
         const settings = await window.settingsAPI.getAll();
-        const savedModel = settings[`modeModel_${mode}`];
+        const savedModel = settings[`localModel_${mode}`];
         if (savedModel) {
             selectElement.value = savedModel;
         }
-
-        // Save on change
-        selectElement.onchange = async () => {
-            await window.settingsAPI.set(`modeModel_${mode}`, selectElement.value);
-        };
     } catch (error) {
         console.error('Failed to load Ollama models:', error);
+        selectElement.innerHTML = '<option value="">Error loading models</option>';
+    }
+}
+
+/**
+ * Load cloud provider models into a select element
+ */
+async function loadCloudModels(selectElement: HTMLSelectElement, provider: string, mode: string) {
+    selectElement.innerHTML = '<option value="">Loading...</option>';
+
+    try {
+        const result = await window.settingsAPI.getModels(provider);
+
+        if (!result.success) {
+            selectElement.innerHTML = '<option value="">Failed to load models</option>';
+            return;
+        }
+
+        selectElement.innerHTML = '';
+
+        // Add default option
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.text = 'Use provider default';
+        selectElement.appendChild(defaultOpt);
+
+        // Add fetched models
+        if (result.models && result.models.length > 0) {
+            result.models.forEach((model: any) => {
+                const opt = document.createElement('option');
+                opt.value = model.id;
+                opt.text = model.name + (model.tier ? ` (${model.tier})` : '');
+                selectElement.appendChild(opt);
+            });
+        }
+
+        // Load saved value
+        const settings = await window.settingsAPI.getAll();
+        const savedModel = settings[`cloudModel_${mode}`];
+        if (savedModel) {
+            selectElement.value = savedModel;
+        }
+    } catch (error) {
+        console.error(`Failed to load ${provider} models:`, error);
         selectElement.innerHTML = '<option value="">Error loading models</option>';
     }
 }

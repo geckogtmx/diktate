@@ -9,7 +9,7 @@ import { checkOllamaStatus, loadOllamaModels, onDefaultModelChange, saveOllamaSe
 import { refreshAudioDevices } from './audio.js';
 import { recordHotkey, resetHotkey } from './hotkeys.js';
 import { saveApiKey, testCurrentApiKey, testSavedApiKey, deleteApiKey, loadApiKeyStatuses } from './apiKeys.js';
-import { initializeModeConfiguration, selectMode, saveModeDetails, resetModeToDefault } from './modes.js';
+import { initializeModeConfiguration, selectMode } from './modes.js';
 import { runHardwareTest, populateSoundDropdowns, previewSpecificSound, showRestartModal, hideRestartModal, relaunchApp } from './ui.js';
 import { initializeNotesSettings } from './notes.js';
 import { initializePrivacySettings } from './privacy.js';
@@ -51,9 +51,7 @@ import { initializePrivacySettings } from './privacy.js';
 
 (window as any).modes = {
     initializeModeConfiguration,
-    selectMode,
-    saveModeDetails,
-    resetModeToDefault
+    selectMode
 };
 
 (window as any).ui = {
@@ -82,8 +80,6 @@ import { initializePrivacySettings } from './privacy.js';
 (window as any).restartOllama = restartOllama;
 (window as any).warmupModel = warmupModel;
 (window as any).selectMode = selectMode;
-(window as any).saveModeDetails = saveModeDetails;
-(window as any).resetModeToDefault = resetModeToDefault;
 (window as any).runHardwareTest = runHardwareTest;
 (window as any).relaunchApp = relaunchApp;
 (window as any).previewSpecificSound = previewSpecificSound;
@@ -259,9 +255,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         pullOllamaModel();
     });
 
-    // Modes
-    document.getElementById('save-mode-btn')?.addEventListener('click', saveModeDetails);
-    document.getElementById('reset-mode-btn')?.addEventListener('click', resetModeToDefault);
+    // Modes - Note: Save/Reset buttons are handled within modes.ts for dual-profile system
 
     document.getElementById('trailing-space-toggle')?.addEventListener('change', (e) => {
         saveSetting('trailingSpaceEnabled', (e.target as HTMLInputElement).checked);

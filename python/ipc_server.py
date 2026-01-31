@@ -318,6 +318,10 @@ class IpcServer:
         }
         self.api_keys = {}  # provider_name -> api_key
 
+        # SPEC_034_EXTRAS: Dual-profile system
+        self.local_profiles = {}   # mode -> {model, prompt}
+        self.cloud_profiles = {}   # mode -> {provider, model, prompt}
+
         # IPC Authentication (SPEC_007)
         self.ipc_token = os.environ.get("DIKTATE_IPC_TOKEN", "")
         if not self.ipc_token:
@@ -1737,6 +1741,25 @@ class IpcServer:
                     self.processor = self.processors[provider]
                 logger.info(f"[CONFIG] Provider '{provider}' already active, skipping re-init")
 
+            # 2.5. SPEC_034_EXTRAS: Dual-profile configuration
+            processing_mode = config.get("processingMode")
+            if processing_mode:
+                os.environ["PROCESSING_MODE"] = processing_mode
+                logger.info(f"[SPEC_034_EXTRAS] Global processing mode: {processing_mode}")
+                updates.append(f"ProcessingMode: {processing_mode}")
+
+            local_profiles = config.get("localProfiles")
+            if local_profiles:
+                self.local_profiles = local_profiles
+                logger.debug(f"[SPEC_034_EXTRAS] Loaded {len(local_profiles)} local profiles")
+                updates.append("LocalProfiles")
+
+            cloud_profiles = config.get("cloudProfiles")
+            if cloud_profiles:
+                self.cloud_profiles = cloud_profiles
+                logger.debug(f"[SPEC_034_EXTRAS] Loaded {len(cloud_profiles)} cloud profiles")
+                updates.append("CloudProfiles")
+
             # 3. Custom Prompts
             custom_prompts = config.get("customPrompts")
             if custom_prompts is not None:
@@ -1820,41 +1843,69 @@ class IpcServer:
             return {"success": False, "error": str(e)}
 
     def _get_processor_for_mode(self, mode_name: str):
-        """Get or create the processor for a specific mode (SPEC_033, SPEC_034)."""
-        provider = self.mode_providers.get(mode_name)
-        if not provider:
-            provider = os.environ.get("PROCESSING_MODE", "local")
+        """Get or create the processor using dual-profile system (SPEC_034_EXTRAS)."""
+        # Get global processing mode toggle
+        processing_mode = os.environ.get("PROCESSING_MODE", "local")
 
-        provider = provider.lower()
-        if provider == "cloud": provider = "gemini"
+        # Default fallback models
+        default_models = {
+            'standard': {'local': 'gemma3:4b', 'cloud': {'provider': 'gemini', 'model': 'gemini-2.0-flash'}},
+            'prompt': {'local': 'gemma3:4b', 'cloud': {'provider': 'gemini', 'model': 'gemini-2.0-flash'}},
+            'professional': {'local': 'llama3:8b', 'cloud': {'provider': 'anthropic', 'model': 'claude-3-5-sonnet-20241022'}},
+            'ask': {'local': 'gemma3:4b', 'cloud': {'provider': 'gemini', 'model': 'gemini-2.0-pro'}},
+            'refine': {'local': 'gemma3:4b', 'cloud': {'provider': 'anthropic', 'model': 'claude-3-5-haiku-20241022'}},
+            'refine_instruction': {'local': 'gemma3:4b', 'cloud': {'provider': 'anthropic', 'model': 'claude-3-5-haiku-20241022'}},
+            'raw': {'local': 'gemma3:4b', 'cloud': {'provider': 'gemini', 'model': 'gemini-2.0-flash'}},
+            'note': {'local': 'gemma3:4b', 'cloud': {'provider': 'gemini', 'model': 'gemini-2.0-flash'}}
+        }
 
-        # Fallback if no key
-        if provider != "local" and not self.api_keys.get(provider) and not os.environ.get(f"{provider.upper()}_API_KEY"):
-            logger.warning(f"[ROUTING] No key for {provider}, falling back to local for {mode_name}")
+        mode_defaults = default_models.get(mode_name, default_models['standard'])
+
+        # Select profile based on global toggle
+        if processing_mode == "local":
+            # Use Local Profile
+            profile = self.local_profiles.get(mode_name, {})
             provider = "local"
+            model = profile.get('model') or mode_defaults['local']
+            custom_prompt = profile.get('prompt') or ''
 
-        # SPEC_034: Get per-mode model selection (if any)
-        model = os.environ.get(f"MODE_MODEL_{mode_name.upper()}")
+            logger.info(f"[ROUTING] Mode '{mode_name}' -> LOCAL profile: model={model}")
+        else:
+            # Use Cloud Profile
+            profile = self.cloud_profiles.get(mode_name, {})
+            provider = profile.get('provider') or mode_defaults['cloud']['provider']
+            model = profile.get('model') or mode_defaults['cloud']['model']
+            custom_prompt = profile.get('prompt') or ''
 
-        # Use cache key that includes both provider and model for granular control
+            # Fallback if no API key for the selected provider
+            if provider != "local" and not self.api_keys.get(provider):
+                logger.warning(f"[ROUTING] No key for {provider}, falling back to local for {mode_name}")
+                provider = "local"
+                model = self.local_profiles.get(mode_name, {}).get('model') or mode_defaults['standard']['local']
+                custom_prompt = self.local_profiles.get(mode_name, {}).get('prompt') or ''
+
+            logger.info(f"[ROUTING] Mode '{mode_name}' -> CLOUD profile: provider={provider}, model={model}")
+
+        # Use cache key that includes both provider and model
         cache_key = f"{provider}:{model or 'default'}"
-
-        logger.info(f"[ROUTING] Mode '{mode_name}' -> Provider '{provider}'{f' Model {model}' if model else ''}")
 
         if cache_key not in self.processors:
             try:
                 key = self.api_keys.get(provider)
                 self.processors[cache_key] = create_processor(provider, key, model)
+                logger.info(f"[ROUTING] Created processor: {cache_key}")
             except Exception as e:
                 logger.error(f"[ROUTING] Failed to init {provider}: {e}")
-                # Fallback to local if init fails
+                # Ultimate fallback to local
                 provider = "local"
+                model = mode_defaults['standard']['local']
                 cache_key = f"{provider}:default"
                 if cache_key not in self.processors:
                     self.processors[cache_key] = create_processor(provider)
 
         p = self.processors[cache_key]
-        custom_prompt = self.custom_prompts.get(mode_name)
+
+        # Apply custom prompt if provided, otherwise use mode-specific defaults
         if custom_prompt and hasattr(p, "prompt"):
             p.prompt = custom_prompt
         elif hasattr(p, "set_mode"):
