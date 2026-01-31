@@ -15,6 +15,17 @@ interface SettingsAPI {
     getApiKeys: () => Promise<Record<string, boolean>>;
     setApiKey: (provider: string, key: string) => Promise<void>;
     testApiKey: (provider: string, key: string) => Promise<{ success: boolean; error?: string }>;
+    getModels: (provider: string) => Promise<{
+        success: boolean;
+        models?: Array<{
+            id: string;
+            name: string;
+            description?: string;
+            size?: string;
+            tier?: string;
+        }>;
+        error?: string;
+    }>;
 
     // Sound methods
     playSound: (soundName: string) => Promise<void>;
@@ -36,6 +47,9 @@ interface SettingsAPI {
 
     // App Control
     relaunchApp: () => void;
+
+    // Post-It Notes (SPEC_020)
+    selectNoteFile: () => Promise<string>;
 
     // Backend Interaction (SPEC_030)
     invokeBackend: (command: string, args: any) => Promise<any>;

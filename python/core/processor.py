@@ -225,7 +225,7 @@ class LocalProcessor:
 class CloudProcessor:
     """Processes transcribed text using Gemini API (cloud) with API key or OAuth support (SPEC_016)."""
 
-    def __init__(self, api_key: Optional[str] = None, prompt: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, prompt: Optional[str] = None, model: Optional[str] = None):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY not found in environment")
@@ -237,12 +237,22 @@ class CloudProcessor:
         # Detect auth type
         self.is_oauth = self.api_key.startswith('ya29.')
 
-        # SPEC_033: Identify as Gemini 2.5 Flash (Latest Stable)
-        self.model = "gemini-2.5-flash"
+        # SPEC_034: Dynamic model selection with fallback to default
+        self.model = model or os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+
+        # Validate model ID format (security)
+        if not re.match(r'^[a-zA-Z0-9.-]+$', self.model.replace('models/', '')):
+            logger.warning(f"Invalid model ID format: {self.model}, using default")
+            self.model = "gemini-2.5-flash"
+
+        # Ensure model has 'models/' prefix if not already present
+        if not self.model.startswith('models/'):
+            self.model = f"models/{self.model}"
+
         self.prompt = prompt or get_prompt(DEFAULT_CLEANUP_PROMPT, self.model)
-        
+
         # Use stable v1beta model endpoint
-        self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
+        self.api_url = f"https://generativelanguage.googleapis.com/v1beta/{self.model}:generateContent"
         self.mode = "standard"
 
         auth_method = "OAuth Bearer Token" if self.is_oauth else "API Key"
@@ -389,7 +399,7 @@ class CloudProcessor:
 class AnthropicProcessor:
     """Processes transcribed text using Anthropic Claude API."""
 
-    def __init__(self, api_key: Optional[str] = None, prompt: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, prompt: Optional[str] = None, model: Optional[str] = None):
         self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not self.api_key:
             raise ValueError("ANTHROPIC_API_KEY not found in environment")
@@ -397,11 +407,18 @@ class AnthropicProcessor:
         # SPEC_013: Validate key format
         validate_api_key('anthropic', self.api_key)
 
+        # SPEC_034: Dynamic model selection with fallback to default
+        self.model = model or os.environ.get("ANTHROPIC_MODEL", "claude-3-5-haiku-20241022")
+
+        # Validate model ID format (security)
+        if not re.match(r'^claude-[a-zA-Z0-9.-]+$', self.model):
+            logger.warning(f"Invalid model ID format: {self.model}, using default")
+            self.model = "claude-3-5-haiku-20241022"
+
         self.prompt = prompt or DEFAULT_CLEANUP_PROMPT
         self.api_url = "https://api.anthropic.com/v1/messages"
-        self.model = "claude-3-haiku-20240307"  # Fastest Claude model
         self.mode = "standard"
-        logger.info(f"Anthropic processor initialized (Claude 3.5 Haiku)")
+        logger.info(f"Anthropic processor initialized ({self.model})")
 
     def set_mode(self, mode: str) -> None:
         """Update processing mode (standard, prompt, professional, raw)."""
@@ -488,7 +505,7 @@ class AnthropicProcessor:
 class OpenAIProcessor:
     """Processes transcribed text using OpenAI API."""
 
-    def __init__(self, api_key: Optional[str] = None, prompt: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, prompt: Optional[str] = None, model: Optional[str] = None):
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY not found in environment")
@@ -496,11 +513,18 @@ class OpenAIProcessor:
         # SPEC_013: Validate key format
         validate_api_key('openai', self.api_key)
 
+        # SPEC_034: Dynamic model selection with fallback to default
+        self.model = model or os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+
+        # Validate model ID format (security)
+        if not re.match(r'^gpt-[a-zA-Z0-9.-]+$', self.model):
+            logger.warning(f"Invalid model ID format: {self.model}, using default")
+            self.model = "gpt-4o-mini"
+
         self.prompt = prompt or DEFAULT_CLEANUP_PROMPT
         self.api_url = "https://api.openai.com/v1/chat/completions"
-        self.model = "gpt-4o-mini"  # Fast and cheap
         self.mode = "standard"
-        logger.info(f"OpenAI processor initialized (GPT-4o-mini)")
+        logger.info(f"OpenAI processor initialized ({self.model})")
 
     def set_mode(self, mode: str) -> None:
         """Update processing mode (standard, prompt, professional, raw)."""
@@ -574,28 +598,29 @@ class OpenAIProcessor:
 
 
 # Factory function to create the right processor based on environment or explicit provider
-def create_processor(provider_name: Optional[str] = None, api_key: Optional[str] = None):
+def create_processor(provider_name: Optional[str] = None, api_key: Optional[str] = None, model: Optional[str] = None):
     """Create processor based on provider name or PROCESSING_MODE env var.
-    
+
     Args:
         provider_name: Explicit provider ('local', 'gemini', 'anthropic', 'openai')
         api_key: Optional API key to use (overrides env var)
+        model: Optional model ID to use (SPEC_034: Granular Model Control)
     """
     mode = provider_name or os.environ.get("PROCESSING_MODE", "local")
     mode = mode.lower()
-    
+
     if mode in ("gemini", "cloud"):
-        logger.info(f"Using GEMINI processing mode (Gemini Flash) {'(custom key)' if api_key else ''}")
-        return CloudProcessor(api_key=api_key)
+        logger.info(f"Using GEMINI processing mode {'(custom key)' if api_key else ''}")
+        return CloudProcessor(api_key=api_key, model=model)
     elif mode == "anthropic":
-        logger.info(f"Using ANTHROPIC processing mode (Claude Haiku) {'(custom key)' if api_key else ''}")
-        return AnthropicProcessor(api_key=api_key)
+        logger.info(f"Using ANTHROPIC processing mode {'(custom key)' if api_key else ''}")
+        return AnthropicProcessor(api_key=api_key, model=model)
     elif mode == "openai":
-        logger.info(f"Using OPENAI processing mode (GPT-4o-mini) {'(custom key)' if api_key else ''}")
-        return OpenAIProcessor(api_key=api_key)
+        logger.info(f"Using OPENAI processing mode {'(custom key)' if api_key else ''}")
+        return OpenAIProcessor(api_key=api_key, model=model)
     else:
         logger.info("Using LOCAL processing mode (Ollama)")
-        return LocalProcessor()
+        return LocalProcessor(model=model) if model else LocalProcessor()
 
 
 # Backward compatibility alias

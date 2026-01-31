@@ -998,6 +998,29 @@
                             </div>
                         </div>
 
+                        <!-- Model Selection (SPEC_034) -->
+                        <div id="mode-model-selector" style="margin-bottom: 20px; display: none;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500;">
+                                Model
+                                <span style="display: inline; margin-left: 8px; font-weight: normal; color: #888; font-size: 0.9em;">
+                                    Choose specific model for this mode
+                                </span>
+                            </label>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                                <select id="mode-detail-specific-model" style="flex: 1; padding: 8px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0;">
+                                    <option value="">Use provider default</option>
+                                </select>
+                                <button id="mode-model-refresh-btn" class="btn btn-secondary"
+                                        style="padding: 8px 12px; min-width: auto; flex-shrink: 0;"
+                                        title="Refresh model list">
+                                    🔄
+                                </button>
+                            </div>
+                            <div style="font-size: 0.85em; color: #888;">
+                                <span id="model-info-badge"></span>
+                            </div>
+                        </div>
+
                         <!-- System Prompt -->
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; margin-bottom: 8px; font-weight: 500;">System Prompt</label>

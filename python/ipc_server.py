@@ -305,7 +305,17 @@ class IpcServer:
         
         # New for SPEC_033: Multi-processor support
         self.processors = {}  # provider_name -> Processor instance
-        self.mode_providers = {}  # mode_name -> provider_name (gemini, anthropic, openai, local)
+        # SPEC_034: Initialize mode_providers with default values (can be overridden by set_config)
+        self.mode_providers = {  # mode_name -> provider_name (gemini, anthropic, openai, local)
+            'standard': 'local',
+            'prompt': 'local',
+            'professional': 'local',
+            'ask': 'local',
+            'refine': 'local',
+            'refine_instruction': 'local',
+            'raw': 'local',
+            'note': 'local'  # Post-It Notes (SPEC_020)
+        }
         self.api_keys = {}  # provider_name -> api_key
 
         # IPC Authentication (SPEC_007)
@@ -1759,6 +1769,17 @@ class IpcServer:
             if mode_providers:
                 self.mode_providers = {k: v for k, v in mode_providers.items() if v}
                 updates.append("ModeProviders")
+
+            # 6a. Mode-specific Model Selection (SPEC_034)
+            for mode in ['standard', 'prompt', 'professional', 'ask', 'refine', 'refine_instruction', 'raw', 'note']:
+                model_key = f'modeModel_{mode}'
+                if model_key in config and config[model_key]:
+                    os.environ[f"MODE_MODEL_{mode.upper()}"] = config[model_key]
+                    updates.append(f"ModeModel_{mode}")
+
+            # Clear processor cache when models change (SPEC_034)
+            self.processors.clear()
+            logger.info("[CONFIG] Processor cache cleared for model changes")
             
             # 7. Privacy Settings (SPEC_030)
             privacy_int = config.get("privacyLoggingIntensity")
@@ -1799,11 +1820,11 @@ class IpcServer:
             return {"success": False, "error": str(e)}
 
     def _get_processor_for_mode(self, mode_name: str):
-        """Get or create the processor for a specific mode (SPEC_033)."""
+        """Get or create the processor for a specific mode (SPEC_033, SPEC_034)."""
         provider = self.mode_providers.get(mode_name)
         if not provider:
             provider = os.environ.get("PROCESSING_MODE", "local")
-        
+
         provider = provider.lower()
         if provider == "cloud": provider = "gemini"
 
@@ -1811,27 +1832,34 @@ class IpcServer:
         if provider != "local" and not self.api_keys.get(provider) and not os.environ.get(f"{provider.upper()}_API_KEY"):
             logger.warning(f"[ROUTING] No key for {provider}, falling back to local for {mode_name}")
             provider = "local"
-        
-        logger.info(f"[ROUTING] Mode '{mode_name}' -> Provider '{provider}'")
 
-        if provider not in self.processors:
+        # SPEC_034: Get per-mode model selection (if any)
+        model = os.environ.get(f"MODE_MODEL_{mode_name.upper()}")
+
+        # Use cache key that includes both provider and model for granular control
+        cache_key = f"{provider}:{model or 'default'}"
+
+        logger.info(f"[ROUTING] Mode '{mode_name}' -> Provider '{provider}'{f' Model {model}' if model else ''}")
+
+        if cache_key not in self.processors:
             try:
                 key = self.api_keys.get(provider)
-                self.processors[provider] = create_processor(provider, key)
+                self.processors[cache_key] = create_processor(provider, key, model)
             except Exception as e:
                 logger.error(f"[ROUTING] Failed to init {provider}: {e}")
                 # Fallback to local if init fails
                 provider = "local"
-                if provider not in self.processors:
-                    self.processors[provider] = create_processor(provider)
+                cache_key = f"{provider}:default"
+                if cache_key not in self.processors:
+                    self.processors[cache_key] = create_processor(provider)
 
-        p = self.processors[provider]
+        p = self.processors[cache_key]
         custom_prompt = self.custom_prompts.get(mode_name)
         if custom_prompt and hasattr(p, "prompt"):
             p.prompt = custom_prompt
         elif hasattr(p, "set_mode"):
             p.set_mode(mode_name)
-            
+
         return p, provider
 
     def handle_command(self, command: dict) -> dict:

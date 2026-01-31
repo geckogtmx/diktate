@@ -103,6 +103,19 @@ export async function selectMode(mode: string) {
         const settings = await window.settingsAPI.getAll();
         const savedProvider = settings[`modeProvider_${mode}`];
         providerSelect.value = savedProvider || 'local';
+
+        // SPEC_034: Add provider change handler to reload models
+        providerSelect.onchange = async () => {
+            const newProvider = providerSelect.value;
+            if (state.currentSelectedMode && state.currentSelectedMode !== 'raw') {
+                await window.settingsAPI.set(`modeProvider_${state.currentSelectedMode}`, newProvider);
+                // Clear saved model when provider changes
+                await window.settingsAPI.set(`modeModel_${state.currentSelectedMode}`, '');
+            }
+            // Reload models for new provider
+            await loadModelsForProvider(mode, newProvider);
+            updatePromptDisplay(mode, newProvider);
+        };
     }
 
     const modelSection = document.getElementById('mode-detail-model')?.parentElement;
@@ -133,7 +146,10 @@ export async function selectMode(mode: string) {
         if (buttonContainer) buttonContainer.style.display = 'flex';
         if (infoEl) infoEl.style.marginTop = '4px';
 
-        await updatePromptDisplay(mode, providerSelect?.value);
+        // SPEC_034: Load models for selected provider
+        const selectedProvider = providerSelect?.value || 'local';
+        await loadModelsForProvider(mode, selectedProvider);
+        await updatePromptDisplay(mode, selectedProvider);
     }
 }
 
@@ -215,5 +231,129 @@ export async function resetModeToDefault() {
         }
     } catch (error) {
         alert(`❌ Error: ${error}`);
+    }
+}
+
+// SPEC_034: Load models for a given provider
+export async function loadModelsForProvider(mode: string, provider: string) {
+    const modelSelect = document.getElementById('mode-detail-specific-model') as HTMLSelectElement;
+    const modelSelector = document.getElementById('mode-model-selector') as HTMLElement;
+    const refreshBtn = document.getElementById('mode-model-refresh-btn') as HTMLElement;
+
+    if (!modelSelect) return;
+
+    // Hide model selector for raw mode
+    if (mode === 'raw') {
+        if (modelSelector) modelSelector.style.display = 'none';
+        return;
+    }
+
+    // Show model selector
+    if (modelSelector) modelSelector.style.display = 'block';
+
+    // Load models based on provider
+    if (provider === 'local') {
+        await loadOllamaModels(modelSelect, mode);
+    } else if (['gemini', 'anthropic', 'openai'].includes(provider)) {
+        await loadCloudModels(modelSelect, provider, mode);
+    }
+
+    // Setup refresh button
+    if (refreshBtn) {
+        refreshBtn.onclick = async () => {
+            await loadModelsForProvider(mode, provider);
+        };
+    }
+}
+
+async function loadCloudModels(selectElement: HTMLSelectElement, provider: string, mode: string) {
+    selectElement.innerHTML = '<option value="">Loading...</option>';
+
+    try {
+        const result = await window.settingsAPI.getModels(provider);
+
+        if (!result.success) {
+            selectElement.innerHTML = '<option value="">Failed to load models</option>';
+            return;
+        }
+
+        selectElement.innerHTML = '';
+
+        // Add default option
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.text = 'Use provider default';
+        selectElement.appendChild(defaultOpt);
+
+        // Add fetched models (with null safety)
+        if (result.models && result.models.length > 0) {
+            result.models.forEach((model: any) => {
+                const opt = document.createElement('option');
+                opt.value = model.id;
+                opt.text = model.name + (model.tier ? ` (${model.tier})` : '');
+                selectElement.appendChild(opt);
+            });
+        }
+
+        // Load saved selection
+        const settings = await window.settingsAPI.getAll();
+        const savedModel = settings[`modeModel_${mode}`];
+        if (savedModel) {
+            selectElement.value = savedModel;
+        }
+
+        // Save on change
+        selectElement.onchange = async () => {
+            await window.settingsAPI.set(`modeModel_${mode}`, selectElement.value);
+        };
+    } catch (error) {
+        console.error(`Failed to load ${provider} models:`, error);
+        selectElement.innerHTML = '<option value="">Error loading models</option>';
+    }
+}
+
+async function loadOllamaModels(selectElement: HTMLSelectElement, mode: string) {
+    selectElement.innerHTML = '<option value="">Loading...</option>';
+
+    try {
+        const result = await window.settingsAPI.getModels('local');
+
+        if (!result.success) {
+            selectElement.innerHTML = '<option value="">Ollama not running</option>';
+            return;
+        }
+
+        selectElement.innerHTML = '';
+
+        // Add default option
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.text = 'gemma3:4b (default)';
+        selectElement.appendChild(defaultOpt);
+
+        // Add installed models (with null safety)
+        if (result.models && result.models.length > 0) {
+            result.models.forEach((model: any) => {
+                const opt = document.createElement('option');
+                opt.value = model.id;
+                opt.text = `${model.name}${model.size ? ` (${model.size})` : ''}`;
+                selectElement.appendChild(opt);
+            });
+        }
+
+        // Load saved selection
+        const settings = await window.settingsAPI.getAll();
+        const savedModel = settings[`modeModel_${mode}`];
+        if (savedModel) {
+            selectElement.value = savedModel;
+        }
+
+        // Save on change
+        selectElement.onchange = async () => {
+            await window.settingsAPI.set(`modeModel_${mode}`, selectElement.value);
+        };
+    } catch (error) {
+        console.error('Failed to load Ollama models:', error);
+        selectElement.innerHTML = '<option value="">Error loading models</option>';
     }
 }

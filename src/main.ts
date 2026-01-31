@@ -1028,17 +1028,16 @@ async function syncPythonConfig(): Promise<void> {
     mode: defaultMode,
     transMode: transMode,
     defaultModel: defaultOllamaModel,
-    // Send all mode-specific model overrides (Legacy SPEC_033)
-    modeModels: {
-      standard: store.get('modeModel_standard') || '',
-      prompt: store.get('modeModel_prompt') || '',
-      professional: store.get('modeModel_professional') || '',
-      ask: store.get('modeModel_ask') || '',
-      refine: store.get('modeModel_refine') || '',
-      refine_instruction: store.get('modeModel_refine_instruction') || '',
-      raw: store.get('modeModel_raw') || ''
-    },
-    // NEW: Send all mode-specific provider overrides (SPEC_033 Phase 2)
+    // SPEC_034: Send per-mode model selections
+    modeModel_standard: store.get('modeModel_standard') || '',
+    modeModel_prompt: store.get('modeModel_prompt') || '',
+    modeModel_professional: store.get('modeModel_professional') || '',
+    modeModel_ask: store.get('modeModel_ask') || '',
+    modeModel_refine: store.get('modeModel_refine') || '',
+    modeModel_refine_instruction: store.get('modeModel_refine_instruction') || '',
+    modeModel_raw: store.get('modeModel_raw') || '',
+    modeModel_note: store.get('modeModel_note') || '',
+    // SPEC_033: Send all mode-specific provider overrides
     modeProviders: {
       standard: store.get('modeProvider_standard') || '',
       prompt: store.get('modeProvider_prompt') || '',
@@ -1046,7 +1045,8 @@ async function syncPythonConfig(): Promise<void> {
       ask: store.get('modeProvider_ask') || '',
       refine: store.get('modeProvider_refine') || '',
       refine_instruction: store.get('modeProvider_refine_instruction') || '',
-      raw: store.get('modeProvider_raw') || ''
+      raw: store.get('modeProvider_raw') || '',
+      note: store.get('modeProvider_note') || ''
     },
     customPrompts: customPrompts,
     audioDeviceLabel: audioDeviceLabel,
@@ -1251,7 +1251,7 @@ function setupIpcHandlers(): void {
       setupGlobalHotkey(); // Re-register with new key
     }
 
-    // Trigger sync for core processing modes (non-model changes)
+    // Trigger sync for core processing modes and model changes
     const syncKeys = [
       'defaultMode',
       'processingMode',
@@ -1266,13 +1266,24 @@ function setupIpcHandlers(): void {
       'notePrompt',
       'privacyLoggingIntensity',
       'privacyPiiScrubber',
+      // SPEC_033: Mode-specific provider overrides
       'modeProvider_standard',
       'modeProvider_prompt',
       'modeProvider_professional',
       'modeProvider_ask',
       'modeProvider_refine',
       'modeProvider_refine_instruction',
-      'modeProvider_raw'
+      'modeProvider_raw',
+      'modeProvider_note',
+      // SPEC_034: Mode-specific model selections
+      'modeModel_standard',
+      'modeModel_prompt',
+      'modeModel_professional',
+      'modeModel_ask',
+      'modeModel_refine',
+      'modeModel_refine_instruction',
+      'modeModel_raw',
+      'modeModel_note'
     ];
 
     if (syncKeys.includes(key as string)) {
@@ -1747,6 +1758,182 @@ ipcMain.handle('apikey:test', async (_event, provider: string, key: string) => {
     }
     return { success: false, error: 'Unknown provider' };
   } catch (e) {
+    return { success: false, error: String(e) };
+  }
+});
+
+// SPEC_034: Granular Model Control - Get available models for each provider
+ipcMain.handle('apikey:get-models', async (_event, provider: string) => {
+  try {
+    provider = provider.toLowerCase();
+
+    // Get the stored API key if not provided inline
+    const storeKey = `encrypted${provider.charAt(0).toUpperCase() + provider.slice(1)}ApiKey`;
+    const storedKey = store.get(storeKey);
+
+    let apiKey: string | null = null;
+    if (storedKey && safeStorage.isEncryptionAvailable()) {
+      try {
+        apiKey = safeStorage.decryptString(Buffer.from(storedKey as string, 'base64'));
+      } catch (e) {
+        logger.error('IPC', `Failed to decrypt ${provider} API key`, e);
+        return { success: false, error: 'Failed to decrypt API key' };
+      }
+    }
+
+    if (!apiKey && provider !== 'local') {
+      return { success: false, error: `No API key found for ${provider}` };
+    }
+
+    // Fetch models from each provider
+    if (provider === 'gemini') {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+          { signal: controller.signal }
+        );
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          return { success: false, error: `Gemini API error: ${response.status}` };
+        }
+
+        const data = await response.json();
+        const models = data.models
+          ?.filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
+          .map((m: any) => ({
+            id: m.name,
+            name: m.displayName || m.name,
+            description: m.description || ''
+          })) || [];
+
+        return { success: true, models };
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          return { success: false, error: 'Request timed out after 10 seconds' };
+        }
+        throw error;
+      }
+    } else if (provider === 'anthropic') {
+      // Anthropic doesn't have a public models endpoint, so return hardcoded list with API fallback
+      try {
+        // Try to get live list from Anthropic API
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        try {
+          const response = await fetch('https://api.anthropic.com/v1/models', {
+            headers: {
+              'x-api-key': apiKey!,
+              'anthropic-version': '2023-06-01'
+            },
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            const data = await response.json();
+            const models = data.data?.map((m: any) => ({
+              id: m.id,
+              name: m.id,
+              description: ''
+            })) || [];
+            return { success: true, models };
+          }
+        } catch (e: any) {
+          clearTimeout(timeoutId);
+          if ((e as any).name === 'AbortError') {
+            logger.debug('IPC', 'Anthropic API request timed out, using hardcoded list');
+          } else {
+            logger.debug('IPC', 'Anthropic live API not available, using hardcoded list');
+          }
+        }
+      } catch (e) {
+        logger.debug('IPC', 'Anthropic live API not available, using hardcoded list');
+      }
+
+      // Fallback: hardcoded list of Anthropic models
+      return {
+        success: true,
+        models: [
+          { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet' },
+          { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku' },
+          { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus' }
+        ]
+      };
+    } else if (provider === 'openai') {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      try {
+        const response = await fetch('https://api.openai.com/v1/models', {
+          headers: { 'Authorization': `Bearer ${apiKey}` },
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          return { success: false, error: `OpenAI API error: ${response.status}` };
+        }
+
+        const data = await response.json();
+        // Filter for chat-capable models, exclude deprecated and instruct variants
+        const models = data.data
+          ?.filter((m: any) => m.id.includes('gpt') && !m.id.includes('instruct') && !m.deprecated)
+          .map((m: any) => ({
+            id: m.id,
+            name: m.id,
+            description: ''
+          })) || [];
+
+        return { success: true, models };
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          return { success: false, error: 'Request timed out after 10 seconds' };
+        }
+        throw error;
+      }
+    } else if (provider === 'local') {
+      // Ollama model discovery
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      try {
+        const response = await fetch('http://localhost:11434/api/tags', {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          return { success: false, error: 'Ollama not running or not responding' };
+        }
+
+        const data = await response.json();
+        const models = data.models
+          ?.map((m: any) => ({
+            id: m.name,
+            name: m.name,
+            size: m.size ? `${(m.size / 1e9).toFixed(1)} GB` : 'Unknown'
+          })) || [];
+
+        return { success: true, models };
+      } catch (e: any) {
+        clearTimeout(timeoutId);
+        if (e.name === 'AbortError') {
+          return { success: false, error: 'Ollama request timed out' };
+        }
+        return { success: false, error: 'Ollama not running or not responding' };
+      }
+    }
+
+    return { success: false, error: 'Unknown provider' };
+  } catch (e) {
+    logger.error('IPC', `Failed to fetch models for ${provider}`, e);
     return { success: false, error: String(e) };
   }
 });

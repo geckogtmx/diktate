@@ -47,6 +47,7 @@ const settingsAPI = {
     getApiKeys: () => ipcRenderer.invoke('apikey:get-all'),
     setApiKey: (provider: string, key: string) => ipcRenderer.invoke('apikey:set', provider, key),
     testApiKey: (provider: string, key: string) => ipcRenderer.invoke('apikey:test', provider, key),
+    getModels: (provider: string) => ipcRenderer.invoke('apikey:get-models', provider),
 
     // Sound playback
     playSound: (soundName: string) => ipcRenderer.invoke('settings:play-sound', soundName),
