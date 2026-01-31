@@ -136,15 +136,75 @@ async function loadDualProfileForMode(mode: string) {
     const cloudModel = settings[`cloudModel_${mode}`] || '';
     const cloudPrompt = settings[`cloudPrompt_${mode}`] || '';
 
+    let displayPrompt = cloudPrompt;
+    if (!displayPrompt) {
+        try {
+            const defaults = await window.settingsAPI.getDefaultPrompts();
+            displayPrompt = defaults[mode] || defaults['standard'] || '';
+        } catch (err) {
+            console.error('Failed to load default prompts', err);
+        }
+    }
+
     const cloudProviderSelect = document.getElementById('cloud-provider-select') as HTMLSelectElement;
     const cloudModelSelect = document.getElementById('cloud-model-select') as HTMLSelectElement;
     const cloudPromptTextarea = document.getElementById('cloud-prompt-textarea') as HTMLTextAreaElement;
     const cloudPromptInfo = document.getElementById('cloud-prompt-info');
 
     if (cloudProviderSelect) {
-        cloudProviderSelect.value = cloudProvider;
-        // Trigger model load for selected provider
-        await loadCloudModels(cloudModelSelect, cloudProvider, mode);
+        // Dynamic Provider Population based on API Keys
+        try {
+            const apiKeys = await window.settingsAPI.getApiKeys();
+            cloudProviderSelect.innerHTML = ''; // Clear "Loading..."
+
+            const providers = [
+                { id: 'gemini', name: 'Google Gemini', hasKey: apiKeys.geminiApiKey },
+                { id: 'anthropic', name: 'Anthropic Claude', hasKey: apiKeys.anthropicApiKey },
+                { id: 'openai', name: 'OpenAI GPT', hasKey: apiKeys.openaiApiKey }
+            ];
+
+            const availableProviders = providers.filter(p => p.hasKey);
+
+            if (availableProviders.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.text = 'No providers configured (check API Keys)';
+                cloudProviderSelect.appendChild(opt);
+                cloudProviderSelect.disabled = true;
+            } else {
+                cloudProviderSelect.disabled = false;
+                availableProviders.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.text = p.name;
+                    cloudProviderSelect.appendChild(opt);
+                });
+            }
+
+            // Determine which provider to select
+            let providerToSelect = cloudProvider;
+
+            // If the saved provider is not in the available list, default to the first available one
+            const isSavedProviderAvailable = availableProviders.some(p => p.id === cloudProvider);
+            if (!isSavedProviderAvailable && availableProviders.length > 0) {
+                providerToSelect = availableProviders[0].id;
+            } else if (!isSavedProviderAvailable) {
+                providerToSelect = '';
+            }
+
+            cloudProviderSelect.value = providerToSelect;
+
+            // Trigger model load for selected provider (if any)
+            if (providerToSelect) {
+                await loadCloudModels(cloudModelSelect, providerToSelect, mode);
+            } else {
+                if (cloudModelSelect) cloudModelSelect.innerHTML = '<option value="">No provider selected</option>';
+            }
+
+        } catch (err) {
+            console.error('Failed to load API keys for provider dropdown:', err);
+            cloudProviderSelect.innerHTML = '<option value="">Error loading providers</option>';
+        }
     }
 
     if (cloudModelSelect && cloudModel) {
@@ -152,12 +212,20 @@ async function loadDualProfileForMode(mode: string) {
     }
 
     if (cloudPromptTextarea) {
-        cloudPromptTextarea.value = cloudPrompt;
+        cloudPromptTextarea.value = displayPrompt;
     }
 
     if (cloudPromptInfo) {
-        cloudPromptInfo.textContent = cloudPrompt ? '✓ Custom prompt in use' : 'No custom prompt';
-        cloudPromptInfo.style.color = cloudPrompt ? '#4ade80' : '#888';
+        if (cloudPrompt) {
+            cloudPromptInfo.textContent = '✓ Custom prompt in use';
+            cloudPromptInfo.style.color = '#4ade80';
+        } else if (displayPrompt) {
+            cloudPromptInfo.textContent = 'ℹ️ Using default prompt';
+            cloudPromptInfo.style.color = '#94a3b8'; // Slate-400
+        } else {
+            cloudPromptInfo.textContent = 'No custom prompt';
+            cloudPromptInfo.style.color = '#888';
+        }
     }
 
     // Setup provider change handler
@@ -405,11 +473,38 @@ async function loadCloudModels(selectElement: HTMLSelectElement, provider: strin
             });
         }
 
-        // Load saved value
+        // Load saved value with fuzzy matching
         const settings = await window.settingsAPI.getAll();
         const savedModel = settings[`cloudModel_${mode}`];
+
         if (savedModel) {
-            selectElement.value = savedModel;
+            // 1. Try exact match
+            let optionToSelect = Array.from(selectElement.options).find(opt => opt.value === savedModel);
+
+            // 2. Try adding 'models/' prefix (for Gemini legacy data)
+            if (!optionToSelect && !savedModel.startsWith('models/')) {
+                const prefixed = `models/${savedModel}`;
+                optionToSelect = Array.from(selectElement.options).find(opt => opt.value === prefixed);
+            }
+
+            // 3. Try removing 'models/' prefix (if API returns without it but we stored with it)
+            if (!optionToSelect && savedModel.startsWith('models/')) {
+                const stripped = savedModel.replace('models/', '');
+                optionToSelect = Array.from(selectElement.options).find(opt => opt.value === stripped);
+            }
+
+            if (optionToSelect) {
+                selectElement.value = optionToSelect.value;
+                // Auto-heal: Update the stored setting if we had to fuzzy match
+                if (optionToSelect.value !== savedModel) {
+                    console.log(`[Modes] Auto-healing model setting from '${savedModel}' to '${optionToSelect.value}'`);
+                    window.settingsAPI.set(`cloudModel_${mode}`, optionToSelect.value);
+                }
+            } else {
+                // Fallback: If saved model is totally invalid for this provider, stay on default or pick first
+                console.warn(`[Modes] Saved model '${savedModel}' not found for provider ${provider}`);
+                selectElement.selectedIndex = 0; // "Use provider default"
+            }
         }
     } catch (error) {
         console.error(`Failed to load ${provider} models:`, error);

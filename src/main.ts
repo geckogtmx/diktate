@@ -198,14 +198,14 @@ const store = new Store<UserSettings>({
     cloudProvider_refine_instruction: 'anthropic',
     cloudProvider_raw: 'gemini',
     cloudProvider_note: 'gemini',
-    cloudModel_standard: 'gemini-2.0-flash',
-    cloudModel_prompt: 'gemini-2.0-flash',
+    cloudModel_standard: 'models/gemini-2.0-flash',
+    cloudModel_prompt: 'models/gemini-2.0-flash',
     cloudModel_professional: 'claude-3-5-sonnet-20241022',
-    cloudModel_ask: 'gemini-2.0-pro',
+    cloudModel_ask: 'models/gemini-2.0-pro-exp-02-05', // Updated to latest stable pro
     cloudModel_refine: 'claude-3-5-haiku-20241022',
     cloudModel_refine_instruction: 'claude-3-5-haiku-20241022',
-    cloudModel_raw: 'gemini-2.0-flash',
-    cloudModel_note: 'gemini-2.0-flash',
+    cloudModel_raw: 'models/gemini-2.0-flash',
+    cloudModel_note: 'models/gemini-2.0-flash',
     cloudPrompt_standard: '',
     cloudPrompt_prompt: '',
     cloudPrompt_professional: '',
@@ -1327,7 +1327,7 @@ async function syncPythonConfig(): Promise<void> {
   }
 
   try {
-    logger.info('MAIN', 'Syncing dual-profile config to Python', {
+    logger.debug('MAIN', 'Syncing dual-profile config to Python', {
       mode: config.mode,
       processingMode: config.processingMode,
       model: config.defaultModel
@@ -1477,7 +1477,9 @@ function setupIpcHandlers(): void {
       throw new Error(`Invalid payload: ${validation.error}`);
     }
 
-    logger.info('IPC', `Setting update: ${key} = ${value}`);
+    // Log update (redact long values like prompts)
+    const logValue = typeof value === 'string' && value.length > 50 ? redactSensitive(value, 50) : value;
+    logger.info('IPC', `Setting update: ${key} = ${logValue}`);
     store.set(key, value);
 
     // If hotkey changed, re-register
