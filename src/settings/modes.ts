@@ -25,9 +25,6 @@ export async function initializeModeConfiguration() {
         // Setup button handlers
         setupButtonHandlers();
 
-        // Setup listener for external toggle changes (from Control Panel)
-        setupToggleChangeListener();
-
         // Load initial mode (Standard)
         await selectMode('standard');
     } catch (error) {
@@ -36,84 +33,39 @@ export async function initializeModeConfiguration() {
 }
 
 /**
- * Initialize the global processing mode toggle
+ * Initialize the profile editor toggle (UI view switcher only)
  */
 async function initializeGlobalToggle() {
     const toggle = document.getElementById('global-processing-toggle') as HTMLInputElement;
-    const statusText = document.getElementById('processing-mode-status');
 
     if (!toggle) return;
 
-    // Load current processing mode
-    const settings = await window.settingsAPI.getAll();
-    const processingMode = settings.processingMode || 'local';
-    toggle.checked = processingMode === 'cloud';
-    updateProcessingModeStatus(processingMode);
-    updateProfileSections(processingMode);
+    // Start with Local profile visible by default
+    toggle.checked = false;
+    updateProfileSections('local');
 
-    // Toggle change handler
-    toggle.addEventListener('change', async () => {
-        const newMode = toggle.checked ? 'cloud' : 'local';
-        await window.settingsAPI.set('processingMode', newMode);
-        updateProcessingModeStatus(newMode);
-        updateProfileSections(newMode);
-
-        // Show feedback
-        if (statusText) {
-            const message = newMode === 'local' ? 'Saved! Now using: Local' : 'Saved! Now using: Cloud';
-            statusText.textContent = message;
-            setTimeout(() => updateProcessingModeStatus(newMode), 2000);
-        }
+    // Toggle change handler - only switches UI view
+    toggle.addEventListener('change', () => {
+        const viewMode = toggle.checked ? 'cloud' : 'local';
+        updateProfileSections(viewMode);
     });
 }
 
 /**
- * Update the status text display
+ * Update profile sections visibility based on which profile is being edited
  */
-function updateProcessingModeStatus(mode: string) {
-    const statusText = document.getElementById('processing-mode-status');
-    if (!statusText) return;
+function updateProfileSections(viewMode: string) {
+    const localSection = document.getElementById('local-profile-section') as HTMLElement;
+    const cloudSection = document.getElementById('cloud-profile-section') as HTMLElement;
 
-    if (mode === 'local') {
-        statusText.textContent = 'Currently using: Local (Offline, Confidential)';
-        statusText.style.color = '#4ade80';
+    if (!localSection || !cloudSection) return;
+
+    if (viewMode === 'local') {
+        localSection.style.display = 'block';
+        cloudSection.style.display = 'none';
     } else {
-        statusText.textContent = 'Currently using: Cloud (Faster, Paid)';
-        statusText.style.color = '#60a5fa';
-    }
-}
-
-/**
- * Update profile sections visibility and styling based on active mode
- */
-function updateProfileSections(mode: string) {
-    const localSection = document.getElementById('local-profile-section');
-    const cloudSection = document.getElementById('cloud-profile-section');
-    const localBadge = localSection?.querySelector('.profile-badge');
-    const cloudBadge = cloudSection?.querySelector('.profile-badge');
-
-    if (mode === 'local') {
-        localSection?.setAttribute('data-active', 'true');
-        cloudSection?.setAttribute('data-active', 'false');
-        if (localBadge) {
-            localBadge.textContent = 'Active';
-            localBadge.className = 'profile-badge active-badge';
-        }
-        if (cloudBadge) {
-            cloudBadge.textContent = 'Inactive';
-            cloudBadge.className = 'profile-badge inactive-badge';
-        }
-    } else {
-        localSection?.setAttribute('data-active', 'false');
-        cloudSection?.setAttribute('data-active', 'true');
-        if (localBadge) {
-            localBadge.textContent = 'Inactive';
-            localBadge.className = 'profile-badge inactive-badge';
-        }
-        if (cloudBadge) {
-            cloudBadge.textContent = 'Active';
-            cloudBadge.className = 'profile-badge active-badge';
-        }
+        localSection.style.display = 'none';
+        cloudSection.style.display = 'block';
     }
 }
 
@@ -246,26 +198,6 @@ function setupButtonHandlers() {
             const modelSelect = document.getElementById('cloud-model-select') as HTMLSelectElement;
             await loadCloudModels(modelSelect, providerSelect.value, state.currentSelectedMode);
         };
-    }
-}
-
-/**
- * Setup listener for toggle changes from other windows (Control Panel, etc)
- * Listens for 'setting-changed' IPC event from main process
- */
-function setupToggleChangeListener() {
-    // Try to listen via electronAPI if available
-    if ((window as any).electronAPI?.on) {
-        (window as any).electronAPI.on('setting-changed', (key: string, value: any) => {
-            if (key === 'processingMode') {
-                const toggle = document.getElementById('global-processing-toggle') as HTMLInputElement;
-                if (toggle) {
-                    toggle.checked = value === 'cloud';
-                    updateProcessingModeStatus(value);
-                    updateProfileSections(value);
-                }
-            }
-        });
     }
 }
 

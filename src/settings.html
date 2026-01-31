@@ -941,12 +941,14 @@
                 </select>
             </div>
 
-            <!-- SPEC_034_EXTRAS: Global Processing Mode Toggle -->
-            <div class="setting-group" style="background: linear-gradient(135deg, #1a2f1a 0%, #0f1f0f 100%); border: 2px solid #22c55e; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+            <!-- SPEC_034_EXTRAS: Profile Editor Toggle -->
+            <div class="setting-group"
+                style="background: #1a1a1a; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 30px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <label style="font-size: 1.1em; font-weight: 600; margin-bottom: 8px; display: block;">Processing Mode</label>
-                        <span class="sub-label" id="processing-mode-status">Currently using: Local (Offline, Confidential)</span>
+                        <label style="font-size: 1.1em; font-weight: 600; margin-bottom: 8px; display: block;">Configure
+                            Profile:</label>
+                        <span class="sub-label">Switch between editing Local or Cloud settings</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <span style="font-weight: 500; color: #888;">🏠 Local</span>
@@ -957,8 +959,9 @@
                         <span style="font-weight: 500; color: #888;">☁️ Cloud</span>
                     </div>
                 </div>
-                <div style="margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px; font-size: 0.85em; color: #ccc;">
-                    💡 This toggle controls which profile (Local or Cloud) is used for ALL modes. Synced with Control Panel.
+                <div
+                    style="margin-top: 12px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px; font-size: 0.85em; color: #ccc;">
+                    ℹ️ Actual processing mode is controlled by the Control Panel toggle.
                 </div>
             </div>
 
@@ -1004,14 +1007,14 @@
                         <h3 id="mode-detail-title" style="margin: 0;">Standard Mode</h3>
 
                         <!-- Local Profile Section -->
-                        <div id="local-profile-section" class="profile-section" data-active="true">
+                        <div id="local-profile-section" class="profile-section" style="display: block;">
                             <div class="profile-header">
                                 <h4>🏠 Local Profile</h4>
-                                <span class="profile-badge active-badge">Active</span>
                             </div>
 
                             <div style="margin-bottom: 16px;">
-                                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Ollama Model</label>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Ollama
+                                    Model</label>
                                 <div style="display: flex; gap: 8px;">
                                     <select id="local-model-select"
                                         style="flex: 1; padding: 8px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0;">
@@ -1021,40 +1024,46 @@
                                         style="padding: 8px 12px; min-width: auto; flex-shrink: 0;"
                                         title="Refresh models">🔄</button>
                                 </div>
-                                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;">Model used when Local mode is active</span>
+                                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;">Model
+                                    used when Local mode is active</span>
                             </div>
 
                             <div style="margin-bottom: 16px;">
-                                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Custom System Prompt (Optional)</label>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Custom System
+                                    Prompt (Optional)</label>
                                 <textarea id="local-prompt-textarea" rows="6"
                                     placeholder="Leave empty to use default prompt. Must contain {text} placeholder."
                                     style="width: 100%; padding: 10px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0; font-family: 'Courier New', monospace; font-size: 0.9em; resize: vertical;">
                                 </textarea>
-                                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;" id="local-prompt-info">No custom prompt</span>
+                                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;"
+                                    id="local-prompt-info">No custom prompt</span>
                             </div>
 
                             <div style="display: flex; gap: 10px;">
-                                <button id="save-local-profile" class="btn" style="flex: 1; background: #059669;">Save Local Profile</button>
-                                <button id="reset-local-profile" class="btn btn-secondary" style="flex: 1;">Reset to Default</button>
+                                <button id="save-local-profile" class="btn" style="flex: 1; background: #059669;">Save
+                                    Local Profile</button>
+                                <button id="reset-local-profile" class="btn btn-secondary" style="flex: 1;">Reset to
+                                    Default</button>
                             </div>
                         </div>
 
                         <!-- Cloud Profile Section -->
-                        <div id="cloud-profile-section" class="profile-section" data-active="false">
+                        <div id="cloud-profile-section" class="profile-section" style="display: none;">
                             <div class="profile-header">
                                 <h4>☁️ Cloud Profile</h4>
-                                <span class="profile-badge inactive-badge">Inactive</span>
                             </div>
 
                             <div style="margin-bottom: 16px;">
-                                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Cloud Provider</label>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Cloud
+                                    Provider</label>
                                 <select id="cloud-provider-select"
                                     style="width: 100%; padding: 8px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0;">
                                     <option value="gemini">Google Gemini</option>
                                     <option value="anthropic">Anthropic Claude</option>
                                     <option value="openai">OpenAI GPT</option>
                                 </select>
-                                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;">API key must be configured in API Keys tab</span>
+                                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;">API key
+                                    must be configured in API Keys tab</span>
                             </div>
 
                             <div style="margin-bottom: 16px;">
@@ -1068,21 +1077,26 @@
                                         style="padding: 8px 12px; min-width: auto; flex-shrink: 0;"
                                         title="Refresh models">🔄</button>
                                 </div>
-                                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;">Specific model for this mode</span>
+                                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;">Specific
+                                    model for this mode</span>
                             </div>
 
                             <div style="margin-bottom: 16px;">
-                                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Custom System Prompt (Optional)</label>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Custom System
+                                    Prompt (Optional)</label>
                                 <textarea id="cloud-prompt-textarea" rows="6"
                                     placeholder="Leave empty to use default prompt. Must contain {text} placeholder."
                                     style="width: 100%; padding: 10px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0; font-family: 'Courier New', monospace; font-size: 0.9em; resize: vertical;">
                                 </textarea>
-                                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;" id="cloud-prompt-info">No custom prompt</span>
+                                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;"
+                                    id="cloud-prompt-info">No custom prompt</span>
                             </div>
 
                             <div style="display: flex; gap: 10px;">
-                                <button id="save-cloud-profile" class="btn" style="flex: 1; background: #059669;">Save Cloud Profile</button>
-                                <button id="reset-cloud-profile" class="btn btn-secondary" style="flex: 1;">Reset to Default</button>
+                                <button id="save-cloud-profile" class="btn" style="flex: 1; background: #059669;">Save
+                                    Cloud Profile</button>
+                                <button id="reset-cloud-profile" class="btn btn-secondary" style="flex: 1;">Reset to
+                                    Default</button>
                             </div>
                         </div>
                     </div>
