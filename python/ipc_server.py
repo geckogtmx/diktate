@@ -1900,39 +1900,6 @@ class IpcServer:
                     success = self.history_manager.wipe_all_data()
                     return {"success": success}
                 return {"success": False, "error": "History manager not initialized"}
-            elif cmd_name == "launch_dashboard":
-                import subprocess
-                try:
-                    # Check if port 8765 is in use
-                    import socket
-                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                        in_use = s.connect_ex(('127.0.0.1', 8765)) == 0
-                    
-                    if not in_use:
-                        # Launch as detached process
-                        # Path is relative to the python directory (CWD)
-                        dashboard_path = os.path.join("tools", "history_dashboard.py")
-                        subprocess.Popen([sys.executable, dashboard_path], 
-                                       creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0)
-                        logger.info("[HISTORY] Launched history dashboard process")
-                    else:
-                        logger.info("[HISTORY] Dashboard already running")
-                    return {"success": True}
-                except Exception as e:
-                    logger.error(f"[HISTORY] Failed to launch dashboard: {e}")
-                    return {"success": False, "error": str(e)}
-            elif cmd_name == "run_baseline":
-                import subprocess
-                try:
-                    samples = command.get("samples", 10)
-                    stress_test_path = os.path.join("tools", "endurance_stress_test.py")
-                    subprocess.Popen([sys.executable, stress_test_path, "--samples", str(samples)],
-                                   creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0)
-                    logger.info(f"[DIAG] Started baseline test with {samples} samples")
-                    return {"success": True}
-                except Exception as e:
-                    logger.error(f"[DIAG] Failed to start baseline: {e}")
-                    return {"success": False, "error": str(e)}
             elif cmd_name == "refine_selection":
                 # Refine mode: Capture selection, process, paste back
                 if self.state not in [State.IDLE, State.ERROR]:

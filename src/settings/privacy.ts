@@ -21,8 +21,6 @@ export async function initializePrivacySettings() {
     const piiScrubber = document.getElementById('privacy-pii-scrubber') as HTMLInputElement;
     const wipeBtn = document.getElementById('wipe-history-btn');
     const wipeStatus = document.getElementById('wipe-status');
-    const launchDashboardBtn = document.getElementById('launch-dashboard-btn');
-    const runBenchmarkBtn = document.getElementById('run-benchmark-btn');
 
     if (!intensitySlider || !intensityDesc || !piiScrubber) return;
 
@@ -62,15 +60,7 @@ export async function initializePrivacySettings() {
         }
     });
 
-    // Handle Diagnostic Launchers
-    launchDashboardBtn?.addEventListener('click', () => {
-        window.settingsAPI.invokeBackend('launch_dashboard', {});
-    });
 
-    runBenchmarkBtn?.addEventListener('click', () => {
-        window.settingsAPI.invokeBackend('run_baseline', { samples: 10 });
-        alert('Stress test started in the background. Check the local dashboard to see results in real-time.');
-    });
 }
 
 /**
