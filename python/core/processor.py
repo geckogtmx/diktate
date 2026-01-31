@@ -64,7 +64,7 @@ class LocalProcessor:
         self.model = model
         self.mode = mode
         self.prompt = get_prompt(mode, model)
-        self._verify_ollama()
+        # self._verify_ollama() # REMOVED: Caused Double-Warmup race condition. Rely on set_model() from App.
 
     def set_mode(self, mode: str) -> None:
         """Update processing mode (standard, professional, literal)."""
