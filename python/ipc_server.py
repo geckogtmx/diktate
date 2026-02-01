@@ -566,13 +566,44 @@ class IpcServer:
                 
                 if warmup_response.status_code == 200:
                     logger.info(f"[STARTUP] Model {default_model} ready and cached")
+
+                    # HOTFIX_002: Check GPU performance
+                    self._check_gpu_availability(warmup_response.json(), default_model)
                 else:
                     logger.warning(f"[STARTUP] Model warmup returned status {warmup_response.status_code}")
             except Exception as e:
                 logger.warning(f"[STARTUP] Model warmup failed (will retry on first use): {e}")
-                
+
         except Exception as e:
             logger.warning(f"[STARTUP] Ollama startup check failed (non-fatal): {e}")
+
+    def _check_gpu_availability(self, warmup_result, model_name):
+        """
+        HOTFIX_002: Verify Ollama is using GPU, not CPU.
+        Checks tokens/sec performance to detect CPU fallback.
+        """
+        try:
+            logger.info("🔍 [STARTUP] Checking GPU availability...")
+
+            # Calculate tokens/sec from warmup response
+            eval_duration = warmup_result.get("eval_duration", 0)
+            tokens = warmup_result.get("eval_count", 1)
+            tokens_per_sec = (tokens / eval_duration) * 1e9 if eval_duration > 0 else 0
+
+            # GPU inference: >50 tokens/sec (gemma3:4b baseline)
+            # CPU inference: <10 tokens/sec (7x slower)
+            # Warning threshold: <20 tokens/sec (suspicious)
+
+            if tokens_per_sec < 20:
+                logger.warning(f"⚠️ [STARTUP] GPU NOT DETECTED! Only {tokens_per_sec:.1f} tok/s (expected >50 for GPU)")
+                logger.warning(f"⚠️ [STARTUP] Ollama appears to be using CPU for {model_name}")
+                logger.warning("⚠️ [STARTUP] Performance will be SLOW (~2500ms vs ~350ms)")
+                logger.warning("⚠️ [STARTUP] Fix: Restart Ollama with 'set CUDA_VISIBLE_DEVICES=0'")
+            else:
+                logger.info(f"✅ [STARTUP] GPU ACTIVE: {tokens_per_sec:.1f} tok/s")
+
+        except Exception as e:
+            logger.warning(f"[STARTUP] GPU health check failed (non-fatal): {e}")
 
     def _start_mute_monitoring(self):
         """Start background thread to monitor microphone mute state."""
@@ -997,7 +1028,7 @@ class IpcServer:
             # Record session stats (A.2)
             self.session_stats.record_success(len(processed_text), metrics.get('total', 0))
 
-            # Log to history database (SPEC_029)
+            # Log to history database (SPEC_029 + HOTFIX_002)
             if self.history_manager:
                 try:
                     self.history_manager.log_session({
@@ -1012,7 +1043,8 @@ class IpcServer:
                         'processing_time_ms': metrics.get('processing', 0),
                         'total_time_ms': metrics.get('total', 0),
                         'success': True,
-                        'error_message': None
+                        'error_message': None,
+                        'tokens_per_sec': getattr(active_processor, 'last_tokens_per_sec', None) if 'active_processor' in locals() and active_processor else None  # HOTFIX_002
                     })
                 except Exception as e:
                     logger.warning(f"[HISTORY] Failed to log session: {e}")

@@ -62,6 +62,7 @@ class LocalProcessor:
     ):
         self.ollama_url = ollama_url
         self.model = model
+        self.last_tokens_per_sec = None  # HOTFIX_002: Store last inference performance
         self.mode = mode
         self.prompt = get_prompt(mode, model)
         # self._verify_ollama() # REMOVED: Caused Double-Warmup race condition. Rely on set_model() from App.
@@ -190,7 +191,7 @@ class LocalProcessor:
                         "stream": False,
                         "options": {
                             "temperature": 0.1,
-                            "num_ctx": 2048  # Small context to save VRAM
+                            "num_ctx": 2048  # MUST match warmup's num_ctx to avoid 2.6s model reload
                         },
                         "keep_alive": "10m"  # Keep model loaded for 10 min
                     },
@@ -200,7 +201,26 @@ class LocalProcessor:
                 if response.status_code == 200:
                     result = response.json()
                     processed_text = result.get("response", "").strip()
-                    logger.info("Text processed successfully")
+
+                    # HOTFIX_002: Log tokens/sec to detect GPU vs CPU inference
+                    if "eval_duration" in result and "eval_count" in result:
+                        eval_duration = result["eval_duration"]
+                        tokens = result["eval_count"]
+                        tokens_per_sec = (tokens / eval_duration) * 1e9 if eval_duration > 0 else 0
+
+                        # Store for DB logging
+                        self.last_tokens_per_sec = tokens_per_sec
+
+                        logger.info(f"Text processed successfully ({tokens_per_sec:.1f} tok/s)")
+
+                        # Alert if suspiciously slow (CPU fallback indicator)
+                        if tokens_per_sec < 20:
+                            logger.warning(f"⚠️ SLOW INFERENCE: {tokens_per_sec:.1f} tok/s (expected >50 for GPU)")
+                            logger.warning("⚠️ GPU may not be active! Check nvidia-smi during dictation")
+                    else:
+                        self.last_tokens_per_sec = None
+                        logger.info("Text processed successfully")
+
                     return processed_text
                 else:
                     logger.warning(f"Ollama returned status {response.status_code}")

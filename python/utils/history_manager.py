@@ -165,6 +165,11 @@ class HistoryManager:
                 logger.info("Migrating history table: adding 'provider' column")
                 cursor.execute("ALTER TABLE history ADD COLUMN provider TEXT")
 
+            # HOTFIX_002 Migration: Add tokens_per_sec for GPU health monitoring
+            if 'tokens_per_sec' not in columns:
+                logger.info("Migrating history table: adding 'tokens_per_sec' column (HOTFIX_002)")
+                cursor.execute("ALTER TABLE history ADD COLUMN tokens_per_sec REAL")
+
             # Create system_metrics table for Phase 2 monitoring
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS system_metrics (
@@ -255,14 +260,14 @@ class HistoryManager:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
 
-            # Insert the record
+            # Insert the record (HOTFIX_002: Added tokens_per_sec)
             cursor.execute("""
                 INSERT INTO history (
                     timestamp, mode, transcriber_model, processor_model, provider,
                     raw_text, processed_text, audio_duration_s,
                     transcription_time_ms, processing_time_ms, total_time_ms,
-                    success, error_message
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    success, error_message, tokens_per_sec
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 data.get('timestamp', datetime.now().isoformat()),
                 data.get('mode'),
@@ -276,7 +281,8 @@ class HistoryManager:
                 data.get('processing_time_ms'),
                 data.get('total_time_ms'),
                 data.get('success', True),
-                data.get('error_message')
+                data.get('error_message'),
+                data.get('tokens_per_sec')  # HOTFIX_002: GPU performance indicator
             ))
 
             conn.commit()
