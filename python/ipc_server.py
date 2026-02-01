@@ -1718,6 +1718,7 @@ class IpcServer:
         # Global settings
         if "provider" in config: parts.append(f"Provider: {config['provider']}")
         if "defaultModel" in config: parts.append(f"Model: {config['defaultModel']}")
+        if "mode" in config: parts.append(f"Mode: {config['mode']}")
         
         # Mode-specific overrides
         mode_prov = config.get("modeProviders", {})
@@ -1800,6 +1801,13 @@ class IpcServer:
             if trans_mode is not None and trans_mode != self.trans_mode:
                 self.trans_mode = trans_mode
                 updates.append(f"TransMode: {trans_mode}")
+
+            # 4.5. Execution Mode (SPEC_034/Raw Mode Bypass)
+            mode = config.get("mode")
+            if mode and mode != self.current_mode:
+                self.current_mode = mode
+                should_clear_processors = True
+                updates.append(f"Mode: {mode}")
 
             # 5. Default Ollama Model
             default_model = config.get("defaultModel")
