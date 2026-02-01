@@ -44,14 +44,16 @@
 ### Changes Reverted
 - **`python/ipc_server.py`**: Reverted `device="cpu"` back to `auto`.
 
-## HOTFIX_004: Persistent Speed Attempt
-> **Status:** FAILED / REVERTED
-> **Result:** Inference times remained >2500ms for 1s dictations despite 60m keep-alive and Int8 optimization.
-> **Action:** Reverted `keep_alive` to 10m. Kept Int8 optimization as it provides 1.4GB headroom, though insufficient to solve the current latency anomaly.
+## HOTFIX_004: Persistence Revert & VRAM Optimization
+> **Status:** PARTIAL REVERT (Optimized)
+> **Result:** Persistence (60m) did not solve the >2500ms latency on 1s sessions. Reverted to 10m.
+> **Action:** Kept Int8 optimization as it provides **1.4 GB VRAM headroom**, which is best practice for 8GB hardware even if latency remains high.
 
 ### Changes Reverted
-- **`python/core/processor.py`**: Reverted `keep_alive` to `10m`.
-- **`python/ipc_server.py`**: Reverted `keep_alive` to `10m` in startup.
+- **`keep_alive`**: Back to `10m` (Original behavior).
+
+### Changes Kept
+- **Whisper Compute**: `int8_float16` (Active). Reclaims 1.4 GB VRAM.
 
 ### Lessons
 - Persistence alone does not solve the >2500ms latency.
