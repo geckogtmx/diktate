@@ -1,35 +1,29 @@
-# HOTFIX_001: Restore <500ms Inference Speed
- 
-## Status: Implemented / Monitoring
-**Target**: Current repository (Master)
-**Goal**: Restore the <500ms inference speeds observed on Jan 30th.
-**Executed**: 2026-02-01
+# HOTFIX_001: Inference Speed Restoration
 
-## 🔍 Diagnosis
-- **VRAM Saturation (95.5%)**: On 8GB cards (like 4060 Ti), the app is accidentally loading multiple models (Gemma + Llama) or keeping them loaded too long.
-- **Cache Clearing Bug**: `python/ipc_server.py` wipes the processor cache on every settings sync, forcing a 3-second disk-to-VRAM reload penalty on every dictation.
-- **Zombie Llama Default**: `ipc_server.py` had `llama3:8b` hardcoded as the default for Professional mode, causing it to load unexpectedly if settings werent explicit.
+> **Status:** COMPLETED (Corrected)
+> **Goal:** Restore inference speed to < 500ms and reduce VRAM usage.
 
-## 🛠️ Surgical Fixes
+## Problem Analysis
+- **Root Cause:** VRAM saturation due to `keep_alive` interactions between startup sequences and processor calls.
+- **Specific Failure:** User observed persistent slowness.
+- **Investigation:** Found that `ipc_server.py` startup warmup was hardcoded to `10m`, overriding the `processor.py` fix of `1m`.
 
-### 1. Fix Cache Wiping (`python/ipc_server.py`)
-- **Action**: Stop `self.processors.clear()` from running on every `configure` call.
-- **Implementation**: Only clear the cache if the `localProfiles`, `cloudProfiles`, or `defaultModel` keys actually changed compared to the previous config.
+## Changes Applied
 
-### 2. VRAM Relief (`python/core/processor.py`)
-- **Action**: Change `keep_alive` from `10m` to `1m`.
-- **Reason**: This ensures that if a model swap occurs, the "Zombie" model is evicted within 60 seconds, freeing 3-5GB of VRAM instantly.
+### 1. IPC Server (`python/ipc_server.py`)
+- [x] **Smart Cache Clearing**: Only clear `self.processors` on relevant config changes.
+- [x] **Cloud Mode Isolation**: Skip local warmup if `PROCESSING_MODE` is cloud.
+- [x] **Startup Warmup Fix**: Changed `keep_alive` from `10m` to `1m` in `_startup_warmup`.
 
-### 3. Cloud Isolation (`python/ipc_server.py`)
-- **Action**: If `PROCESSING_MODE == 'cloud'`, disable the background local engine warmup.
-- **Reason**: Frees up the GPU for Electron UI rendering, eliminating lag when displaying Cloud results.
+### 2. Processor (`python/core/processor.py`)
+- [x] **Runtime Cleanup**: Changed `keep_alive` from `10m` to `1m` for all inference calls.
 
-### 4. Fix Defaults (`python/ipc_server.py`)
-- **Action**: Changed hardcoded Professional Mode default from `llama3:8b` to `gemma3:4b`.
-- **Reason**: Prevents accidental loading of the 5GB model on consumer cards.
-
-## ✅ Verification
-1. Run `ollama unload --all` manually once.
-2. Update code.
-3. Verify VRAM stays ~40% (3.2GB) for Gemma sessions.
-4. Measure dictation latency (Target: < 500ms).
+## Verification Checklist
+1.  **Restart App**: Ensure new code loads.
+2.  **VRAM Check**:
+    -   Launch App.
+    -   Wait 1 minute.
+    -   Confirm VRAM drops (Ollama unloads).
+3.  **Latency Check**:
+    -   Dictate.
+    -   Confirm < 500ms response.
