@@ -1950,6 +1950,9 @@ class IpcServer:
 
         p = self.processors[cache_key]
 
+        # SPEC_034_EXTRAS: Update current processor reference so 'status' command reports correct model
+        self.processor = p
+
         # Apply custom prompt if provided, otherwise use mode-specific defaults
         if custom_prompt and hasattr(p, "prompt"):
             p.prompt = custom_prompt

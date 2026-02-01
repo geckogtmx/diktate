@@ -1269,6 +1269,13 @@ async function syncPythonConfig(): Promise<void> {
     displayModel = cloudModel || (cloudProvider === 'gemini' ? 'Gemini 2.0 Flash' :
       cloudProvider === 'anthropic' ? 'Claude 3.5 Haiku' :
         cloudProvider === 'openai' ? 'GPT-4o Mini' : 'Cloud Default');
+  } else {
+    // SPEC_034_EXTRAS: Check local profile for this mode
+    // (Fixes bug where badge showed global default instead of granular selection)
+    const localModel = localProfiles[defaultMode]?.model;
+    if (localModel) {
+      displayModel = localModel;
+    }
   }
 
   const config: any = {
