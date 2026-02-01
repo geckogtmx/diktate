@@ -470,6 +470,12 @@ class IpcServer:
 
     def _ensure_ollama_ready(self):
         """Ensure Ollama is running and model is warmed up at startup."""
+        # HOTFIX: Skip local warmup if processing mode is cloud (VRAM Isolation)
+        if os.environ.get("PROCESSING_MODE", "local") in ["cloud", "gemini", "anthropic", "openai"]:
+            logger.info("[STARTUP] Cloud mode active - Skipping local engine warmup")
+            self._emit_event("startup-progress", {"message": "Cloud mode active", "progress": 90})
+            return
+
         try:
             import requests
             import subprocess
@@ -1699,14 +1705,14 @@ class IpcServer:
         """Configure the pipeline (switch models, modes, providers, etc)"""
         try:
             summary = self._get_config_summary(config)
-            logger.info(f"[CONFIG] Update: {summary}")
-            self.config = config
+            
+            # Change Detection Logic (HOTFIX_001)
+            should_clear_processors = False
             updates = []
 
             # 1. Transcriber Model
             model_size = config.get("model")
             if model_size:
-                # Optimized: Don't re-init if model hasn't changed (SPEC_035)
                 current_size = getattr(self.transcriber, "model_size", "")
                 if not self.transcriber or model_size != current_size:
                     self.transcriber = Transcriber(model_size=model_size, device="auto")
@@ -1718,91 +1724,90 @@ class IpcServer:
             provider = config.get("provider")
             api_key = config.get("apiKey")
             
-            # Guard: Don't re-init if provider hasn't changed and processor exists (or is loading)
             current_provider = os.environ.get("PROCESSING_MODE", "local")
-            if provider and (provider != current_provider or (self.processor is None and not self.is_loading_processor)):
-                os.environ["PROCESSING_MODE"] = provider
-                if api_key:
-                    self.api_keys[provider] = api_key
-                
-                try:
-                    # Optimized: Only create if not already in registry to avoid double-loading
-                    if provider in self.processors and not api_key:
-                         self.processor = self.processors[provider]
-                    else:
-                        self.processor = create_processor(provider, api_key)
-                        self.processors[provider] = self.processor
-                    updates.append(f"Provider: {provider}")
-                except Exception as e:
-                    logger.error(f"Failed to switch provider to {provider}: {e}")
-            elif provider:
-                # Still update reference if registry has it
-                if provider in self.processors:
-                    self.processor = self.processors[provider]
-                logger.info(f"[CONFIG] Provider '{provider}' already active, skipping re-init")
-
+            if provider and provider != current_provider:
+                 should_clear_processors = True
+                 os.environ["PROCESSING_MODE"] = provider
+                 updates.append(f"Provider: {provider}")
+                 
+            if api_key:
+                # If provider changed OR just key update
+                self.api_keys[provider or current_provider] = api_key
+                should_clear_processors = True 
+            
             # 2.5. SPEC_034_EXTRAS: Dual-profile configuration
             processing_mode = config.get("processingMode")
-            if processing_mode:
+            if processing_mode and processing_mode != os.environ.get("PROCESSING_MODE"):
                 os.environ["PROCESSING_MODE"] = processing_mode
-                logger.info(f"[SPEC_034_EXTRAS] Global processing mode: {processing_mode}")
+                should_clear_processors = True
                 updates.append(f"ProcessingMode: {processing_mode}")
 
             local_profiles = config.get("localProfiles")
-            if local_profiles:
+            if local_profiles and local_profiles != self.local_profiles:
                 self.local_profiles = local_profiles
-                logger.debug(f"[SPEC_034_EXTRAS] Loaded {len(local_profiles)} local profiles")
+                should_clear_processors = True
                 updates.append("LocalProfiles")
 
             cloud_profiles = config.get("cloudProfiles")
-            if cloud_profiles:
+            if cloud_profiles and cloud_profiles != self.cloud_profiles:
                 self.cloud_profiles = cloud_profiles
-                logger.debug(f"[SPEC_034_EXTRAS] Loaded {len(cloud_profiles)} cloud profiles")
+                should_clear_processors = True
                 updates.append("CloudProfiles")
 
             # 3. Custom Prompts
             custom_prompts = config.get("customPrompts")
-            if custom_prompts is not None:
-                self.custom_prompts = {k: v for k, v in custom_prompts.items() if v}
+            # Convert to dict for comparison (remove empty values)
+            new_prompts = {k: v for k, v in custom_prompts.items() if v} if custom_prompts else {}
+            if custom_prompts is not None and new_prompts != self.custom_prompts:
+                self.custom_prompts = new_prompts
+                should_clear_processors = True
                 updates.append("CustomPrompts")
 
             # 4. Translation Mode
             trans_mode = config.get("transMode")
-            if trans_mode is not None:
+            if trans_mode is not None and trans_mode != self.trans_mode:
                 self.trans_mode = trans_mode
                 updates.append(f"TransMode: {trans_mode}")
 
             # 5. Default Ollama Model
             default_model = config.get("defaultModel")
             local_proc = self.processors.get("local")
-            if default_model and local_proc and hasattr(local_proc, "set_model"):
-                try:
-                    # Optimized: Check current model before setting to avoid redundant Ollama wakeup
-                    current_model = getattr(local_proc, "model", None)
-                    if current_model != default_model:
-                        local_proc.set_model(default_model)
-                        updates.append(f"OllamaModel: {default_model}")
-                    else:
-                        logger.debug(f"[CONFIG] Ollama model already set to {default_model}")
-                except Exception as e:
-                    logger.warning(f"Failed to set Ollama model: {e}")
+            if default_model:
+                 if local_proc and hasattr(local_proc, "model") and getattr(local_proc, "model") != default_model:
+                      local_proc.set_model(default_model)
+                      updates.append(f"OllamaModel: {default_model}")
+                 elif not local_proc:
+                      should_clear_processors = True
 
             # 6. Mode-specific Provider Overrides (SPEC_033)
             mode_providers = config.get("modeProviders")
             if mode_providers:
-                self.mode_providers = {k: v for k, v in mode_providers.items() if v}
-                updates.append("ModeProviders")
+                new_providers = {k: v for k, v in mode_providers.items() if v}
+                if new_providers != self.mode_providers:
+                    self.mode_providers = new_providers
+                    should_clear_processors = True
+                    updates.append("ModeProviders")
 
             # 6a. Mode-specific Model Selection (SPEC_034)
             for mode in ['standard', 'prompt', 'professional', 'ask', 'refine', 'refine_instruction', 'raw', 'note']:
                 model_key = f'modeModel_{mode}'
                 if model_key in config and config[model_key]:
-                    os.environ[f"MODE_MODEL_{mode.upper()}"] = config[model_key]
-                    updates.append(f"ModeModel_{mode}")
+                    val = config[model_key]
+                    env_key = f"MODE_MODEL_{mode.upper()}"
+                    if val != os.environ.get(env_key):
+                        os.environ[env_key] = val
+                        should_clear_processors = True
+                        updates.append(f"ModeModel_{mode}")
 
-            # Clear processor cache when models change (SPEC_034)
-            self.processors.clear()
-            logger.info("[CONFIG] Processor cache cleared for model changes")
+            # Clear processor cache ONLY if relevant settings changed
+            if should_clear_processors:
+                self.processors.clear()
+                logger.info("[CONFIG] Processor cache cleared (Configuration Changed)")
+            
+            if updates or should_clear_processors:
+                logger.info(f"[CONFIG] Update: {self._get_config_summary(config)}")
+
+            self.config = config # Update internal state
             
             # 7. Privacy Settings (SPEC_030)
             privacy_int = config.get("privacyLoggingIntensity")
@@ -1811,30 +1816,30 @@ class IpcServer:
                 intensity = privacy_int if privacy_int is not None else (self.history_manager.logging_intensity if self.history_manager else 2)
                 scrub = pii_scrub if pii_scrub is not None else (self.history_manager.pii_scrubber if self.history_manager else True)
 
-                if self.history_manager:
-                    self.history_manager.set_privacy_settings(intensity, scrub)
-                
-                # Adjust System Logger (Ghost Mode silences INFO logs to disk and console)
-                if intensity == 0:
-                    logging.getLogger().setLevel(logging.WARNING) 
-                    logger.warning("[PRIVACY] Ghost Mode active: System logs silenced to WARNING level (no trace)")
-                else:
-                    logging.getLogger().setLevel(logging.INFO)
+                # Check if changed (Optimization)
+                if self.history_manager and (intensity != self.history_manager.logging_intensity or scrub != self.history_manager.pii_scrubber):
+                     if self.history_manager:
+                        self.history_manager.set_privacy_settings(intensity, scrub)
+                     
+                     if intensity == 0:
+                        logging.getLogger().setLevel(logging.WARNING) 
+                        logger.warning("[PRIVACY] Ghost Mode active: System logs silenced to WARNING level (no trace)")
+                     else:
+                        logging.getLogger().setLevel(logging.INFO)
 
-                updates.append(f"Privacy: Int={intensity}, Scrub={scrub}")
+                     updates.append(f"Privacy: Int={intensity}, Scrub={scrub}")
             
             # Store all incoming API keys
             for p in ["gemini", "anthropic", "openai"]:
                 key = config.get(f"{p}ApiKey")
                 if key:
                     self.api_keys[p] = key
-                    updates.append(f"{p.capitalize()}Key")
 
             # 7. Audio Device
             device_label = config.get("audioDeviceLabel")
             if device_label and self.mute_detector:
-                self.mute_detector.update_device_label(device_label)
-                updates.append(f"AudioDevice: {device_label}")
+                 self.mute_detector.update_device_label(device_label)
+                 updates.append(f"AudioDevice: {device_label}")
 
             return {"success": True, "updates": updates}
 
@@ -1851,7 +1856,7 @@ class IpcServer:
         default_models = {
             'standard': {'local': 'gemma3:4b', 'cloud': {'provider': 'gemini', 'model': 'gemini-2.0-flash'}},
             'prompt': {'local': 'gemma3:4b', 'cloud': {'provider': 'gemini', 'model': 'gemini-2.0-flash'}},
-            'professional': {'local': 'llama3:8b', 'cloud': {'provider': 'anthropic', 'model': 'claude-3-5-sonnet-20241022'}},
+            'professional': {'local': 'gemma3:4b', 'cloud': {'provider': 'anthropic', 'model': 'claude-3-5-sonnet-20241022'}},
             'ask': {'local': 'gemma3:4b', 'cloud': {'provider': 'gemini', 'model': 'gemini-2.0-pro'}},
             'refine': {'local': 'gemma3:4b', 'cloud': {'provider': 'anthropic', 'model': 'claude-3-5-haiku-20241022'}},
             'refine_instruction': {'local': 'gemma3:4b', 'cloud': {'provider': 'anthropic', 'model': 'claude-3-5-haiku-20241022'}},
