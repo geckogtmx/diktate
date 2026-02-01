@@ -47,7 +47,10 @@
 ## HOTFIX_004: Persistence Revert & VRAM Optimization
 > **Status:** PARTIAL REVERT (Optimized)
 > **Result:** Persistence (60m) did not solve the >2500ms latency on 1s sessions. Reverted to 10m.
-> **Action:** Kept Int8 optimization as it provides **1.4 GB VRAM headroom**, which is best practice for 8GB hardware even if latency remains high.
+> **Action:** Kept Int8 optimization as it provides **1.4 GB VRAM headroom**, though latency remains high.
+>
+> **CRITICAL DISCOVERY:**
+> The 1.4 GB space was successfully created (VRAM dropped from 7.4GB to 6.2GB), but it **solved nothing**. This proves that **VRAM saturation is NOT the core problem**. Even with 2 GB of headroom, local inference today is slower than Friday. Future investigation must look beyond memory limits (e.g., driver overhead, Ollama processing logic, or hardware-specific delays).
 
 ### Changes Reverted
 - **`keep_alive`**: Back to `10m` (Original behavior).
@@ -57,4 +60,4 @@
 
 ### Lessons
 - Persistence alone does not solve the >2500ms latency.
-- There is an underlying discrepancy between "Hot" model performance today vs. previous sessions that remains undocumented by metrics.
+- VRAM saturation is not the bottleneck; performance remains poor even with ample headroom.
