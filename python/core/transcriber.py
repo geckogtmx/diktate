@@ -61,7 +61,7 @@ class Transcriber:
                 self.model = WhisperModel(
                     model_name,
                     device=device,
-                    compute_type="int8" if device == "cpu" else "float16",
+                    compute_type="int8" if device == "cpu" else "int8_float16",
                     local_files_only=True
                 )
             except Exception as e:
@@ -69,7 +69,7 @@ class Transcriber:
                 self.model = WhisperModel(
                     model_name,
                     device=device,
-                    compute_type="int8" if device == "cpu" else "float16",
+                    compute_type="int8" if device == "cpu" else "int8_float16",
                     local_files_only=False
                 )
             logger.info("Model loaded successfully")
