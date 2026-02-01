@@ -44,22 +44,15 @@
 ### Changes Reverted
 - **`python/ipc_server.py`**: Reverted `device="cpu"` back to `auto`.
 
-## HOTFIX_004: The "Magic Bullet" (Persistent Speed)
-> **Status:** APPLIED
-> **Goal:** Restore consistent <500ms sessions and solve the VRAM Deadlock.
-> **Fix:** Combined VRAM reduction with Persistence.
+## HOTFIX_004: Persistent Speed Attempt
+> **Status:** FAILED / REVERTED
+> **Result:** Inference times remained >2500ms for 1s dictations despite 60m keep-alive and Int8 optimization.
+> **Action:** Reverted `keep_alive` to 10m. Kept Int8 optimization as it provides 1.4GB headroom, though insufficient to solve the current latency anomaly.
 
-### Changes Applied
-1. **`python/core/processor.py`**: Changed `keep_alive` from `1m` to `60m`.
-2. **`python/ipc_server.py`**: Changed `keep_alive` from `1m` to `60m` in startup sequence.
-3. **`python/core/transcriber.py`**: Switched GPU compute to `int8_float16`.
+### Changes Reverted
+- **`python/core/processor.py`**: Reverted `keep_alive` to `10m`.
+- **`python/ipc_server.py`**: Reverted `keep_alive` to `10m` in startup.
 
-### Why this works:
-- **Persistence**: 60m keep-alive ensures the "Hot Cache" remains active between sessions, removing the 2500ms reload tax.
-- **VRAM Margin**: `int8_float16` reclaims **1.4 GB** of VRAM. This allows the system to reach the 400ms speed zone even with background apps active, because the total load now fits under the 8GB "Swap Cliff."
-
-## Final Verification Checklist (Jan 1)
-1. [ ] **First Run**: Load models (may take ~5s).
-2. [ ] **Gap Test**: Wait 5 minutes.
-3. [ ] **Success**: Dictate again -> Response must be **< 500ms**.
-4. [ ] **Stress Test**: Open Chrome video -> Dictate -> Response must be **< 1000ms**.
+### Lessons
+- Persistence alone does not solve the >2500ms latency.
+- There is an underlying discrepancy between "Hot" model performance today vs. previous sessions that remains undocumented by metrics.
