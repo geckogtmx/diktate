@@ -675,7 +675,7 @@ function createLoadingWindow(): void {
     alwaysOnTop: true,
     backgroundColor: '#002029',
     icon: getIcon('idle'),
-    show: true, // SPEC_035: Show immediately
+    show: false, // Don't show until ready-to-show to prevent "not responding"
     webPreferences: {
       preload: path.join(__dirname, 'preloadLoading.js'),
       nodeIntegration: false,
@@ -684,6 +684,13 @@ function createLoadingWindow(): void {
   });
 
   loadingWindow.loadFile(path.join(__dirname, 'loading.html'));
+
+  // Show window only when it's ready to prevent "not responding" flash
+  loadingWindow.once('ready-to-show', () => {
+    if (loadingWindow) {
+      loadingWindow.show();
+    }
+  });
 
   loadingWindow.on('closed', () => {
     loadingWindow = null;
