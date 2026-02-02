@@ -637,9 +637,11 @@ class IpcServer:
     def _quick_warmup(self) -> dict:
         """
         Quick warmup for Ollama API endpoint (triggered from loading screen buttons).
-        Sends a single "Hi" message to the configured default model using the production
-        HTTP session. This primes the connection pool and initializes the API endpoint
-        before the user's first real inference.
+        Uses the EXACT same pipeline as a real dictation: goes through _get_processor_for_mode()
+        to get or create the cached processor, then uses that processor's session to send "Hi".
+
+        This ensures we're warming up the actual production session that will be used for
+        the first real inference, not a separate throwaway session.
 
         Non-fatal: returns success status but doesn't block if it fails.
         """
@@ -648,37 +650,28 @@ class IpcServer:
             return {"success": True, "message": "No model configured"}
 
         try:
-            logger.info(f"[WARMUP] Quick warmup starting for {self.local_global_model}...")
+            logger.info(f"[WARMUP] Quick warmup starting (using production pipeline)...")
             warmup_start = time.time()
 
-            # Use a fresh request session for this warmup (not the ollama_session from startup)
-            # This ensures we're using the same pattern as production LocalProcessor instances
-            warmup_session = requests.Session()
-            warmup_session.headers.update({
-                "Connection": "keep-alive",
-                "Keep-Alive": "timeout=60, max=100"
-            })
+            # Use the EXACT same processor routing as real dictations (standard mode as default)
+            processor, provider = self._get_processor_for_mode("standard")
 
-            response = warmup_session.post(
-                "http://localhost:11434/api/generate",
-                json={
-                    "model": self.local_global_model,
-                    "prompt": "Hi",
-                    "stream": False,
-                    "options": {"num_ctx": 128, "num_predict": 1},
-                    "keep_alive": "10m"
-                },
-                timeout=30
-            )
+            # Only warmup local processors (skip cloud to avoid API charges)
+            if provider != "local":
+                logger.info("[WARMUP] Processor is cloud-based, skipping warmup")
+                return {"success": True, "message": "Cloud processor, no warmup needed"}
+
+            # Use the processor's process() method to send "Hi" through the real pipeline
+            result = processor.process("Hi")
 
             elapsed = (time.time() - warmup_start) * 1000
 
-            if response.status_code == 200:
-                logger.info(f"[WARMUP] Quick warmup completed in {elapsed:.0f}ms")
+            if result:
+                logger.info(f"[WARMUP] Quick warmup completed in {elapsed:.0f}ms (processor cached)")
                 return {"success": True, "elapsed_ms": elapsed}
             else:
-                logger.warn(f"[WARMUP] Quick warmup returned status {response.status_code}")
-                return {"success": False, "error": f"Status {response.status_code}"}
+                logger.warn(f"[WARMUP] Quick warmup returned empty result")
+                return {"success": False, "error": "Empty result"}
 
         except Exception as e:
             logger.warning(f"[WARMUP] Quick warmup failed (non-fatal): {e}")
