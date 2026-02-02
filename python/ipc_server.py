@@ -634,6 +634,56 @@ class IpcServer:
         except Exception as e:
             logger.warning(f"[STARTUP] GPU health check failed (non-fatal): {e}")
 
+    def _quick_warmup(self) -> dict:
+        """
+        Quick warmup for Ollama API endpoint (triggered from loading screen buttons).
+        Sends a single "Hi" message to the configured default model using the production
+        HTTP session. This primes the connection pool and initializes the API endpoint
+        before the user's first real inference.
+
+        Non-fatal: returns success status but doesn't block if it fails.
+        """
+        if not self.local_global_model:
+            logger.info("[WARMUP] No model configured, skipping quick warmup")
+            return {"success": True, "message": "No model configured"}
+
+        try:
+            logger.info(f"[WARMUP] Quick warmup starting for {self.local_global_model}...")
+            warmup_start = time.time()
+
+            # Use a fresh request session for this warmup (not the ollama_session from startup)
+            # This ensures we're using the same pattern as production LocalProcessor instances
+            warmup_session = requests.Session()
+            warmup_session.headers.update({
+                "Connection": "keep-alive",
+                "Keep-Alive": "timeout=60, max=100"
+            })
+
+            response = warmup_session.post(
+                "http://localhost:11434/api/generate",
+                json={
+                    "model": self.local_global_model,
+                    "prompt": "Hi",
+                    "stream": False,
+                    "options": {"num_ctx": 128, "num_predict": 1},
+                    "keep_alive": "10m"
+                },
+                timeout=30
+            )
+
+            elapsed = (time.time() - warmup_start) * 1000
+
+            if response.status_code == 200:
+                logger.info(f"[WARMUP] Quick warmup completed in {elapsed:.0f}ms")
+                return {"success": True, "elapsed_ms": elapsed}
+            else:
+                logger.warn(f"[WARMUP] Quick warmup returned status {response.status_code}")
+                return {"success": False, "error": f"Status {response.status_code}"}
+
+        except Exception as e:
+            logger.warning(f"[WARMUP] Quick warmup failed (non-fatal): {e}")
+            return {"success": False, "error": str(e)}
+
     def _start_mute_monitoring(self):
         """Start background thread to monitor microphone mute state."""
         # Get selected device label from config
@@ -2076,6 +2126,11 @@ class IpcServer:
                     data["processor"] = "NO MODEL SELECTED"
 
                 return {"success": True, "data": data}
+            elif cmd_name == "quick_warmup":
+                # Quick warmup: Send "Hi" to the default model to prime the HTTP session
+                # This is triggered when user clicks buttons on the loading screen
+                # and uses the production HTTP session from LocalProcessor
+                return self._quick_warmup()
             elif cmd_name == "configure":
                 return self.configure(command.get("config", {}))
             elif cmd_name == "health_check":

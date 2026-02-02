@@ -694,6 +694,14 @@ function createLoadingWindow(): void {
 ipcMain.on('loading-action', (_event, action: string) => {
   logger.info('MAIN', `Loading window action received: ${action}`);
 
+  // Trigger quick Ollama warmup in Python (uses the production HTTP session)
+  // This primes the connection pool and API endpoint before first inference
+  if (pythonManager && pythonManager.isProcessRunning()) {
+    pythonManager.sendCommand('quick_warmup').catch(err => {
+      logger.debug('MAIN', 'Quick warmup command failed (non-fatal)', err);
+    });
+  }
+
   if (action === 'open-cp') {
     createDebugWindow();
     if (loadingWindow) loadingWindow.close();
