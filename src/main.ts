@@ -2711,12 +2711,13 @@ async function initialize(): Promise<void> {
     // Yield after process spawn
     await new Promise(resolve => setImmediate(resolve));
 
-    await syncPythonConfig();
+    // Fire config sync without blocking - prevents "not responding" freeze
+    // Python will continue initializing in background while loading window stays responsive
+    syncPythonConfig().catch(err => {
+      logger.error('MAIN', 'Failed to sync config to Python', err);
+    });
 
-    // Yield before finalizing
-    await new Promise(resolve => setImmediate(resolve));
-
-    logger.info('MAIN', 'dIKtate initialized and config synced successfully');
+    logger.info('MAIN', 'dIKtate initialized (config sync in progress)');
 
   } catch (error) {
     logger.error('MAIN', 'Failed to initialize application', error);
