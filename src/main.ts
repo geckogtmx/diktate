@@ -649,7 +649,7 @@ function showNotification(title: string, body: string, isError: boolean = false)
     const notification = new Notification({
       title,
       body,
-      icon: icon.toDataURL(),
+      icon: icon,  // NativeImage accepted directly, no toDataURL() conversion needed
       silent: false,
       urgency: isError ? 'critical' : 'normal'
     });
