@@ -651,10 +651,16 @@ class IpcServer:
 
         try:
             logger.info(f"[WARMUP] Quick warmup starting (using production pipeline)...")
+            logger.info(f"[WARMUP] Model: {self.local_global_model}, Cache keys: {list(self.processors.keys())}")
             warmup_start = time.time()
 
             # Use the EXACT same processor routing as real dictations (standard mode as default)
             processor, provider = self._get_processor_for_mode("standard")
+
+            # Log processor details
+            processor_model = getattr(processor, 'model', 'unknown')
+            processor_id = id(processor)
+            logger.info(f"[WARMUP] Retrieved processor: model={processor_model}, provider={provider}, id={processor_id}")
 
             # Only warmup local processors (skip cloud to avoid API charges)
             if provider != "local":
@@ -662,12 +668,16 @@ class IpcServer:
                 return {"success": True, "message": "Cloud processor, no warmup needed"}
 
             # Use the processor's process() method to send "Hi" through the real pipeline
+            logger.info(f"[WARMUP] Calling processor.process('Hi')...")
+            process_start = time.time()
             result = processor.process("Hi")
+            process_elapsed = (time.time() - process_start) * 1000
 
             elapsed = (time.time() - warmup_start) * 1000
 
             if result:
-                logger.info(f"[WARMUP] Quick warmup completed in {elapsed:.0f}ms (processor cached)")
+                logger.info(f"[WARMUP] Quick warmup completed in {elapsed:.0f}ms (process: {process_elapsed:.0f}ms, result: {result[:50]}...)")
+                logger.info(f"[WARMUP] Processor now cached with key 'local:global', id={processor_id}")
                 return {"success": True, "elapsed_ms": elapsed}
             else:
                 logger.warn(f"[WARMUP] Quick warmup returned empty result")

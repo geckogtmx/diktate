@@ -697,9 +697,16 @@ ipcMain.on('loading-action', (_event, action: string) => {
   // Trigger quick Ollama warmup in Python (uses the production HTTP session)
   // This primes the connection pool and API endpoint before first inference
   if (pythonManager && pythonManager.isProcessRunning()) {
-    pythonManager.sendCommand('quick_warmup').catch(err => {
-      logger.debug('MAIN', 'Quick warmup command failed (non-fatal)', err);
-    });
+    logger.info('MAIN', `Sending quick_warmup command to Python (triggered by: ${action})`);
+    pythonManager.sendCommand('quick_warmup')
+      .then(result => {
+        logger.info('MAIN', `Quick warmup response: ${JSON.stringify(result)}`);
+      })
+      .catch(err => {
+        logger.warn('MAIN', `Quick warmup command failed (non-fatal): ${err}`);
+      });
+  } else {
+    logger.warn('MAIN', 'Python not running, skipping quick warmup');
   }
 
   if (action === 'open-cp') {
