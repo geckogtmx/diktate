@@ -726,9 +726,9 @@ async function warmupOllamaQuick(defaultModel: string): Promise<void> {
 ipcMain.on('loading-action', (_event, action: string) => {
   logger.info('MAIN', `Loading window action received: ${action}`);
 
-  // Trigger quick Ollama warmup before opening windows (for open-cp and open-settings)
+  // Trigger quick Ollama warmup for all actions (ensures API is ready regardless of user choice)
   const defaultModel = store.get('localModel');
-  if ((action === 'open-cp' || action === 'open-settings') && defaultModel) {
+  if (defaultModel) {
     warmupOllamaQuick(defaultModel); // Fire-and-forget, doesn't block
   }
 
