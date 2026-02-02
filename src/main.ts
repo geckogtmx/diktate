@@ -698,6 +698,9 @@ function createLoadingWindow(): void {
  */
 async function warmupOllamaQuick(defaultModel: string): Promise<void> {
   try {
+    logger.info('MAIN', `Quick Ollama warmup starting for model: ${defaultModel}`);
+    const startTime = Date.now();
+
     const response = await fetch('http://localhost:11434/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -711,14 +714,15 @@ async function warmupOllamaQuick(defaultModel: string): Promise<void> {
       signal: AbortSignal.timeout(30000) // 30s timeout
     });
 
+    const elapsed = Date.now() - startTime;
     if (response.ok) {
-      logger.info('MAIN', 'Quick Ollama warmup completed successfully');
+      logger.info('MAIN', `Quick Ollama warmup completed in ${elapsed}ms`);
     } else {
-      logger.warn('MAIN', `Quick warmup returned status ${response.status}`);
+      logger.warn('MAIN', `Quick warmup returned status ${response.status} after ${elapsed}ms`);
     }
   } catch (err) {
     // Non-fatal: warmup failed but app continues normally
-    logger.debug('MAIN', 'Quick Ollama warmup failed (non-fatal)', err);
+    logger.warn('MAIN', `Quick Ollama warmup failed (non-fatal): ${err}`);
   }
 }
 
@@ -729,7 +733,10 @@ ipcMain.on('loading-action', (_event, action: string) => {
   // Trigger quick Ollama warmup for all actions (ensures API is ready regardless of user choice)
   const defaultModel = store.get('localModel');
   if (defaultModel) {
+    logger.info('MAIN', `Triggering quick warmup from action: ${action}`);
     warmupOllamaQuick(defaultModel); // Fire-and-forget, doesn't block
+  } else {
+    logger.info('MAIN', 'No default model configured, skipping warmup');
   }
 
   if (action === 'open-cp') {
