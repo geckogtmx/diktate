@@ -11,7 +11,7 @@ export const DEFAULT_SETTINGS: Record<string, any> = {
     stopSound: 'a',
     askSound: 'c',
     maxRecordingDuration: 60,
-    defaultOllamaModel: 'gemma3:4b',
+    defaultOllamaModel: '',  // DEPRECATED: Use localModel instead (SPEC_038)
     defaultMode: 'standard',
     askOutputMode: 'type',
     trailingSpaceEnabled: true,

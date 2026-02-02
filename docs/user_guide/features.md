@@ -29,9 +29,11 @@ The Status Window (visible during recording) shows real-time metrics:
 ### 🎭 Context Modes
 Switch between different "personas" for the AI to adjust the output style:
 - **Standard**: General purpose cleanup.
-- **Developer**: Optimized for code and technical jargon.
-- **Email**: Formats text as a professional email.
-- **Creative**: Allows for more flowery language.
+- **Prompt**: Optimized for structuring text as an LLM prompt.
+- **Professional**: Business-ready, removes slang and polishes tone.
+- **Raw**: Whisper-only mode - preserves all words (including fillers), just adds punctuation. No AI processing.
+
+**Note:** All local modes use the same Ollama model (for VRAM optimization), but each mode can have custom prompts for different output styles. Cloud providers (Gemini, Claude, GPT) still support per-mode model selection. Raw mode does not use AI processing—it's pure transcription.
 
 ### 🌐 Bilingual Bridge
 dIKtate can automatically handle switching between **English** and **Spanish** during the same dictation session.

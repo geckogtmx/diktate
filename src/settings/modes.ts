@@ -78,8 +78,8 @@ export async function selectMode(mode: string) {
     // Update mode list UI
     const modeListItems = document.querySelectorAll('.mode-list-item');
     modeListItems.forEach(item => {
-        const content = item.textContent?.trim().toLowerCase();
-        item.classList.toggle('active', content?.includes(mode));
+        const itemMode = item.getAttribute('data-mode');
+        item.classList.toggle('active', itemMode === mode);
     });
 
     // Update title
@@ -99,6 +99,38 @@ export async function selectMode(mode: string) {
         titleEl.textContent = `${modeNames[mode] || mode} Mode`;
     }
 
+    // Handle Raw mode specially - it's Whisper-only, no profile configuration
+    const modeDetailContainer = document.getElementById('mode-detail-container');
+    if (!modeDetailContainer) return;
+
+    // Save original HTML on first load (if not already saved)
+    if (!state.originalModeDetailHTML) {
+        state.originalModeDetailHTML = modeDetailContainer.innerHTML;
+    }
+
+    if (mode === 'raw') {
+        // Show Raw mode info
+        modeDetailContainer.innerHTML = `
+            <h3 id="mode-detail-title" style="margin: 0;">${modeNames[mode] || mode} Mode</h3>
+            <div style="padding: 20px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border-left: 4px solid #3b82f6;">
+                <h4 style="margin-top: 0;">Raw Mode (Whisper Only)</h4>
+                <p style="margin: 8px 0; color: #ccc;">Raw mode returns the literal Whisper transcription with minimal processing (punctuation only).</p>
+                <ul style="margin: 8px 0; color: #ccc; padding-left: 20px;">
+                    <li>Preserves all words (including fillers, stutters)</li>
+                    <li>Adds punctuation and capitalization</li>
+                    <li>No AI processing or cleanup</li>
+                </ul>
+                <p style="margin: 8px 0; font-size: 0.9em; color: #999;">ℹ️ This mode does not use model or prompt configuration.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Restore original HTML structure if it was replaced by Raw mode
+    if (!document.getElementById('local-prompt-textarea')) {
+        modeDetailContainer.innerHTML = state.originalModeDetailHTML;
+    }
+
     // Load both profiles for this mode
     await loadDualProfileForMode(mode);
 }
@@ -109,18 +141,12 @@ export async function selectMode(mode: string) {
 async function loadDualProfileForMode(mode: string) {
     const settings = await window.settingsAPI.getAll();
 
-    // Load Local Profile
-    const localModel = settings[`localModel_${mode}`] || '';
+    // SPEC_038: Local profiles now only contain per-mode prompts (no model selection)
+    // Global local model is set in General Settings via the "Default Model" dropdown
     const localPrompt = settings[`localPrompt_${mode}`] || '';
 
-    const localModelSelect = document.getElementById('local-model-select') as HTMLSelectElement;
     const localPromptTextarea = document.getElementById('local-prompt-textarea') as HTMLTextAreaElement;
     const localPromptInfo = document.getElementById('local-prompt-info');
-
-    if (localModelSelect) {
-        await loadOllamaModels(localModelSelect, mode);
-        if (localModel) localModelSelect.value = localModel;
-    }
 
     if (localPromptTextarea) {
         localPromptTextarea.value = localPrompt;
@@ -245,7 +271,7 @@ function setupButtonHandlers() {
     const saveCloudBtn = document.getElementById('save-cloud-profile');
     const resetLocalBtn = document.getElementById('reset-local-profile');
     const resetCloudBtn = document.getElementById('reset-cloud-profile');
-    const localRefreshBtn = document.getElementById('local-model-refresh');
+    // SPEC_038: No local model refresh button (removed per-mode local model selection)
     const cloudRefreshBtn = document.getElementById('cloud-model-refresh');
 
     if (saveLocalBtn) saveLocalBtn.onclick = () => saveLocalProfile();
@@ -253,12 +279,7 @@ function setupButtonHandlers() {
     if (resetLocalBtn) resetLocalBtn.onclick = () => resetLocalProfile();
     if (resetCloudBtn) resetCloudBtn.onclick = () => resetCloudProfile();
 
-    if (localRefreshBtn) {
-        localRefreshBtn.onclick = async () => {
-            const select = document.getElementById('local-model-select') as HTMLSelectElement;
-            await loadOllamaModels(select, state.currentSelectedMode);
-        };
-    }
+    // SPEC_038: No local model refresh needed (removed per-mode local model selection)
 
     if (cloudRefreshBtn) {
         cloudRefreshBtn.onclick = async () => {
@@ -274,12 +295,10 @@ function setupButtonHandlers() {
  */
 async function saveLocalProfile() {
     const mode = state.currentSelectedMode;
-    const modelSelect = document.getElementById('local-model-select') as HTMLSelectElement;
     const promptTextarea = document.getElementById('local-prompt-textarea') as HTMLTextAreaElement;
 
-    if (!modelSelect || !promptTextarea) return;
+    if (!promptTextarea) return;
 
-    const model = modelSelect.value;
     const prompt = promptTextarea.value.trim();
 
     // Validate prompt if provided
@@ -289,7 +308,7 @@ async function saveLocalProfile() {
     }
 
     try {
-        await window.settingsAPI.set(`localModel_${mode}`, model);
+        // SPEC_038: Only save per-mode prompt (model is now global)
         await window.settingsAPI.set(`localPrompt_${mode}`, prompt);
 
         // Show success feedback
@@ -369,10 +388,10 @@ async function saveCloudProfile() {
  */
 async function resetLocalProfile() {
     const mode = state.currentSelectedMode;
-    if (!confirm(`Reset Local profile for ${mode} mode to default?`)) return;
+    if (!confirm(`Reset Local prompt for ${mode} mode to default?`)) return;
 
     try {
-        await window.settingsAPI.set(`localModel_${mode}`, '');
+        // SPEC_038: Only reset per-mode prompt (model is now global)
         await window.settingsAPI.set(`localPrompt_${mode}`, '');
         await selectMode(mode); // Reload
     } catch (error) {
@@ -413,10 +432,10 @@ async function loadOllamaModels(selectElement: HTMLSelectElement, mode: string) 
 
         selectElement.innerHTML = '';
 
-        // Add default option
+        // Add default option (empty = use global setting)
         const defaultOpt = document.createElement('option');
         defaultOpt.value = '';
-        defaultOpt.text = 'gemma3:4b (default)';
+        defaultOpt.text = 'Use Global Default';
         selectElement.appendChild(defaultOpt);
 
         // Add installed models

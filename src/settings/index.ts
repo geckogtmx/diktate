@@ -151,8 +151,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadSettings(settings);
 
         // 4. Initialize State base values (for change tracking)
+        // SPEC_038: Use localModel (global) instead of defaultOllamaModel
         state.initialModels = {
-            'default': settings.defaultOllamaModel || 'gemma3:4b',
+            'default': settings.localModel || settings.defaultOllamaModel || '',
             'modeModel_standard': settings.modeModel_standard || '',
             'modeModel_prompt': settings.modeModel_prompt || '',
             'modeModel_professional': settings.modeModel_professional || '',
@@ -197,9 +198,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('processing-mode')?.addEventListener('change', (e) => {
         saveSetting('processingMode', (e.target as HTMLSelectElement).value);
     });
-    document.getElementById('default-model')?.addEventListener('change', (e) => {
-        onDefaultModelChange((e.target as HTMLSelectElement).value);
+
+    // SPEC_038: Save Model button handler
+    document.getElementById('save-model-btn')?.addEventListener('click', async () => {
+        const select = document.getElementById('default-model') as HTMLSelectElement;
+        if (select && select.value) {
+            await onDefaultModelChange(select.value);
+
+            // Show confirmation
+            const statusDiv = document.getElementById('model-change-status');
+            if (statusDiv) {
+                statusDiv.style.display = 'block';
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
+            }
+
+            // Trigger warmup to load model and update UI badge
+            setTimeout(() => {
+                warmupModel();
+            }, 500);
+        }
     });
+
     document.getElementById('auto-start')?.addEventListener('change', (e) => {
         saveSetting('autoStart', (e.target as HTMLInputElement).checked);
     });

@@ -541,9 +541,12 @@
             <div class="setting-group">
                 <label>Default AI Model</label>
                 <span class="sub-label">Model used for local text processing</span>
-                <select id="default-model">
-                    <option value="">Loading models...</option>
-                </select>
+                <div style="display: flex; gap: 10px;">
+                    <select id="default-model" style="flex: 1;">
+                        <option value="">Loading models...</option>
+                    </select>
+                    <button id="save-model-btn" class="btn" style="background: var(--accent-color);">Save Model</button>
+                </div>
                 <div id="model-change-status"
                     style="display: none; margin-top: 8px; padding: 8px 12px; background: #1a3a1a; border: 1px solid #22c55e; border-radius: 4px; color: #4ade80;">
                     ✓ Model updated!
@@ -924,7 +927,6 @@
                     <option value="standard">Standard (General Purpose)</option>
                     <option value="prompt">Prompt (For LLM Prompts)</option>
                     <option value="professional">Professional (Business)</option>
-                    <option value="raw">Raw (Literal, Minimal)</option>
                 </select>
             </div>
 
@@ -970,6 +972,13 @@
                 <label>Dual-Profile Mode Configuration</label>
                 <span class="sub-label">Configure both Local and Cloud profiles for each mode</span>
 
+                <!-- SPEC_038: Model Info (no per-mode selection) -->
+                <div style="margin: 12px 0 16px 0; padding: 10px 12px; background: rgba(59, 130, 246, 0.08); border-left: 3px solid #3b82f6; border-radius: 4px;">
+                    <p style="margin: 0; color: #93c5fd; font-size: 0.88em; line-height: 1.4;">
+                        ℹ️ <strong>Local modes</strong> share one Ollama model (set in General → Default AI Model) for optimal VRAM usage. <strong>Cloud modes</strong> can use different models per mode.
+                    </p>
+                </div>
+
                 <!-- Master-Detail Layout -->
                 <div
                     style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; margin-top: 15px; min-height: 500px;">
@@ -1013,22 +1022,6 @@
                         <div id="local-profile-section" class="profile-section" style="display: block;">
                             <div class="profile-header">
                                 <h4>🏠 Local Profile</h4>
-                            </div>
-
-                            <div style="margin-bottom: 16px;">
-                                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Ollama
-                                    Model</label>
-                                <div style="display: flex; gap: 8px;">
-                                    <select id="local-model-select"
-                                        style="flex: 1; padding: 8px; background: #0a0a0a; border: 1px solid var(--border-color); border-radius: 4px; color: #e0e0e0;">
-                                        <option value="">Loading...</option>
-                                    </select>
-                                    <button id="local-model-refresh" class="btn btn-secondary"
-                                        style="padding: 8px 12px; min-width: auto; flex-shrink: 0;"
-                                        title="Refresh models">🔄</button>
-                                </div>
-                                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em;">Model
-                                    used when Local mode is active</span>
                             </div>
 
                             <div style="margin-bottom: 16px;">

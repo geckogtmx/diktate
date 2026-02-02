@@ -25,6 +25,9 @@ export interface SettingsState {
     activeTestAborted: boolean;
     currentSelectedMode: string;
 
+    // Mode detail HTML backup (for Raw mode restore)
+    originalModeDetailHTML: string | null;
+
     // Visual Smoothing
     currentMeterDb: number;
     statusBuffer: number[];
@@ -47,6 +50,9 @@ export const state: SettingsState = {
     activeTestInterval: null,
     activeTestAborted: false,
     currentSelectedMode: 'standard',
+
+    // Mode detail HTML backup (for Raw mode restore)
+    originalModeDetailHTML: null,
 
     // Visual Smoothing
     currentMeterDb: -60,

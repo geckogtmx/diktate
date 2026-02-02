@@ -39,8 +39,12 @@ export function loadSettings(settings: any) {
         radio.checked = parseInt(radio.value) === maxDuration;
     });
 
-    // Models
-    setVal('default-model', settings.defaultOllamaModel || 'gemma3:4b');
+    // Models - SPEC_038: Use localModel (global model for all local modes)
+    // Note: dropdown is populated by loadOllamaModels(), this just sets the selected value
+    const modelToSelect = settings.localModel || settings.defaultOllamaModel || '';
+    if (modelToSelect) {
+        setVal('default-model', modelToSelect);
+    }
 
     // Modes
     setVal('default-mode', settings.defaultMode || 'standard');

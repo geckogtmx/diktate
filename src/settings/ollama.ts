@@ -126,8 +126,10 @@ export async function loadOllamaModels() {
         });
 
         const settings = await window.settingsAPI.getAll();
-        if (settings.defaultOllamaModel) {
-            select.value = settings.defaultOllamaModel;
+        // SPEC_038: Prefer localModel (new global setting) over defaultOllamaModel (legacy)
+        const currentModel = settings.localModel || settings.defaultOllamaModel;
+        if (currentModel) {
+            select.value = currentModel;
         }
     } catch (e) {
         console.error('Failed to load Ollama models:', e);
@@ -137,6 +139,9 @@ export async function loadOllamaModels() {
 
 export async function onDefaultModelChange(model: string) {
     if (!model) return;
+    // SPEC_038: Update global local model (used for ALL local modes)
+    await window.settingsAPI.set('localModel', model);
+    // Keep defaultOllamaModel for backward compatibility
     await window.settingsAPI.set('defaultOllamaModel', model);
     await checkModelChanges();
     if (state.initialModels['default'] !== model) {

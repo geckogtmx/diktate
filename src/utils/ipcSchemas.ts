@@ -28,6 +28,7 @@ export const SettingsKeySchema = z.enum([
     'audioDeviceLabel',
     'audioDeviceProfiles',    // NEW: SPEC_021 - Audio device noise floor profiles
     'defaultOllamaModel',
+    'localModel',             // NEW: SPEC_038 - Global local model for all modes
     'maxRecordingDuration',
     'modeModel_standard',
     'modeModel_prompt',
