@@ -690,9 +690,47 @@ function createLoadingWindow(): void {
   });
 }
 
+/**
+ * Quick Ollama warmup - sends a single "Hi" inference to pre-warm the API
+ * This ensures the first real inference after the user opens Control Panel or Settings
+ * gets the benefit of connection pooling and API initialization.
+ * Fire-and-forget: doesn't block window opening, logs warnings if it fails.
+ */
+async function warmupOllamaQuick(defaultModel: string): Promise<void> {
+  try {
+    const response = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: defaultModel,
+        prompt: "Hi",
+        stream: false,
+        options: { num_ctx: 128, num_predict: 1 },
+        keep_alive: "10m"
+      }),
+      signal: AbortSignal.timeout(30000) // 30s timeout
+    });
+
+    if (response.ok) {
+      logger.info('MAIN', 'Quick Ollama warmup completed successfully');
+    } else {
+      logger.warn('MAIN', `Quick warmup returned status ${response.status}`);
+    }
+  } catch (err) {
+    // Non-fatal: warmup failed but app continues normally
+    logger.debug('MAIN', 'Quick Ollama warmup failed (non-fatal)', err);
+  }
+}
+
 // IPC handler for Loading Window actions
 ipcMain.on('loading-action', (_event, action: string) => {
   logger.info('MAIN', `Loading window action received: ${action}`);
+
+  // Trigger quick Ollama warmup before opening windows (for open-cp and open-settings)
+  const defaultModel = store.get('localModel');
+  if ((action === 'open-cp' || action === 'open-settings') && defaultModel) {
+    warmupOllamaQuick(defaultModel); // Fire-and-forget, doesn't block
+  }
 
   if (action === 'open-cp') {
     createDebugWindow();
