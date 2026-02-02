@@ -16,7 +16,11 @@ patterns = [
     # OAuth Tokens
     (r'ya29\.[a-zA-Z0-9\-_]{50,}', '[OAUTH_TOKEN]'),
     # Emails
+    # Emails (Standard)
     (r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', '[EMAIL]'),
+    # Emails (Spoken/Transcribed)
+    (r'\b[a-zA-Z0-9._%+-]+\s+at\s+[a-zA-Z0-9.-]+\s+dot\s+[a-zA-Z]{2,}\b', '[EMAIL]'),
+    (r'\b[a-zA-Z0-9._%+-]+\s+at\s+[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b', '[EMAIL]'),
 ]
 
 
@@ -82,6 +86,9 @@ def scrub_pii(text: str) -> str:
     
     # Emails
     text = re.sub(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', '[EMAIL]', text)
+    # Spoken Emails ("user at gmail dot com" or "user at gmail.com")
+    text = re.sub(r'\b[a-zA-Z0-9._%+-]+\s+at\s+[a-zA-Z0-9.-]+\s+dot\s+[a-zA-Z]{2,}\b', '[EMAIL]', text, flags=re.IGNORECASE)
+    text = re.sub(r'\b[a-zA-Z0-9._%+-]+\s+at\s+[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b', '[EMAIL]', text, flags=re.IGNORECASE)
     
     # Phone numbers (common formats: +1-234-567-8901, (123) 456-7890, etc.)
     text = re.sub(r'\+?\d{1,4}[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}', '[PHONE]', text)

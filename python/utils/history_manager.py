@@ -301,8 +301,14 @@ class HistoryManager:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM system_metrics")
             cursor.execute("DELETE FROM history")
-            cursor.execute("VACUUM")  # Shrink file size
             conn.commit()
+            
+            # VACUUM cannot run within a transaction
+            old_isolation = conn.isolation_level
+            conn.isolation_level = None
+            cursor.execute("VACUUM")
+            conn.isolation_level = old_isolation
+            
             conn.close()
             
             # 2. Clear Log Files

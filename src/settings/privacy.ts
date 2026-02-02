@@ -33,11 +33,22 @@ export async function initializePrivacySettings() {
     intensitySlider.addEventListener('change', (e) => {
         const val = parseInt((e.target as HTMLInputElement).value);
         saveSetting('privacyLoggingIntensity', val);
+        // Sync with backend immediately
+        window.settingsAPI.invokeBackend('set_privacy_settings', {
+            level: val,
+            scrub: piiScrubber.checked
+        });
     });
 
     // Handle PII Scrubber Toggle
     piiScrubber.addEventListener('change', (e) => {
-        saveSetting('privacyPiiScrubber', (e.target as HTMLInputElement).checked);
+        const val = (e.target as HTMLInputElement).checked;
+        saveSetting('privacyPiiScrubber', val);
+        // Sync with backend immediately
+        window.settingsAPI.invokeBackend('set_privacy_settings', {
+            level: parseInt(intensitySlider.value),
+            scrub: val
+        });
     });
 
     // Handle Wipe Data
