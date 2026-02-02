@@ -746,27 +746,24 @@ function setupPythonEventHandlers(): void {
       isWarmupLock = false;
       logger.info('MAIN', 'Warmup lock released - App is fully ready');
 
-      // Signal loading window first (highest priority - user is waiting)
-      if (loadingWindow && !loadingWindow.isDestroyed()) {
-        loadingWindow.webContents.send('startup-complete');
-      }
+      // Defer notification and status sync to avoid event loop starvation
+      // This is the FINAL truth-in-UI signal: Only show when everything is IDLE
+      setTimeout(() => {
+        showNotification('dIKtate Ready', 'AI Engine loaded. Press Ctrl+Alt+D to start.', false);
 
-      // Defer heavy operations to allow buttons to be interactive first
-      // Notification on Windows can block for 3-4 seconds on first show
-      setImmediate(() => {
-        // Give event loop chance to process button clicks first
-        setTimeout(() => {
-          showNotification('dIKtate Ready', 'AI Engine loaded. Press Ctrl+Alt+D to start.', false);
+        // SPEC_035: Signal loading window to show ready state ONLY when we are truly responsive
+        if (loadingWindow && !loadingWindow.isDestroyed()) {
+          loadingWindow.webContents.send('startup-complete');
+        }
 
-          if (pythonManager) {
-            pythonManager.sendCommand('status').then(result => {
-              if (result.success && result.data) {
-                logger.info('MAIN', 'Status synced on ready', result.data);
-              }
-            }).catch(err => logger.error('MAIN', 'Failed to fetch status on ready', err));
-          }
-        }, 1000); // Wait 1 second before showing notification
-      });
+        if (pythonManager) {
+          pythonManager.sendCommand('status').then(result => {
+            if (result.success && result.data) {
+              logger.info('MAIN', 'Status synced on ready', result.data);
+            }
+          }).catch(err => logger.error('MAIN', 'Failed to fetch status on ready', err));
+        }
+      }, 200);
     }
 
     updateTrayState(state);
