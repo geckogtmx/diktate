@@ -567,41 +567,9 @@ class IpcServer:
             except Exception as e:
                 logger.debug(f"[STARTUP] Failed to check loaded models: {e}")
 
-            # CRITICAL (SPEC_038): Always send warmup inference request, even if model is in VRAM
-            # Discovery: Ollama API endpoint needs full initialization beyond model being loaded
-            # Without this, first inference can take >2300ms even though model shows in `ollama ps`
-            logger.info(f"[STARTUP] Warming up Ollama API endpoint for {default_model}...")
-            
-            try:
-                # Send a test inference request to fully initialize the Ollama API endpoint
-                warmup_start = time.time()
-                # Fix: Use persistent session for warmup (connection pooling)
-                warmup_response = self.ollama_session.post(
-                    "http://localhost:11434/api/generate",
-                    json={
-                        "model": default_model,
-                        "prompt": "Test",
-                        "stream": False,
-                        "options": {"num_ctx": 128, "num_predict": 1},
-                        "keep_alive": "10m"
-                    },
-                    timeout=30
-                )
-                warmup_time = (time.time() - warmup_start) * 1000
-
-                if warmup_response.status_code == 200:
-                    logger.info(f"[STARTUP] Ollama API warmup complete in {warmup_time:.0f}ms")
-
-                    # Verify API is responding quickly (should be <500ms after warmup)
-                    if warmup_time > 1000:
-                        logger.warning(f"[STARTUP] Warmup took {warmup_time:.0f}ms (expected <500ms)")
-
-                    # HOTFIX_002: Check GPU performance
-                    self._check_gpu_availability(warmup_response.json(), default_model)
-                else:
-                    logger.warning(f"[STARTUP] API warmup returned status {warmup_response.status_code}")
-            except Exception as e:
-                logger.warning(f"[STARTUP] API warmup failed (will retry on first use): {e}")
+            # Startup warmup removed: Now handled by button-triggered quick_warmup
+            # which uses the production processor pipeline for better connection reuse
+            logger.info(f"[STARTUP] Ollama ready for {default_model} (warmup deferred to first use)")
 
         except Exception as e:
             logger.warning(f"[STARTUP] Ollama startup check failed (non-fatal): {e}")
