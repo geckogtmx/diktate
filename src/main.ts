@@ -746,15 +746,14 @@ function setupPythonEventHandlers(): void {
       isWarmupLock = false;
       logger.info('MAIN', 'Warmup lock released - App is fully ready');
 
-      // Defer notification and status sync to avoid event loop starvation
-      // This is the FINAL truth-in-UI signal: Only show when everything is IDLE
+      // Signal loading window first (highest priority - user is waiting)
+      if (loadingWindow && !loadingWindow.isDestroyed()) {
+        loadingWindow.webContents.send('startup-complete');
+      }
+
+      // Defer notification and status sync to avoid blocking loading window
       setTimeout(() => {
         showNotification('dIKtate Ready', 'AI Engine loaded. Press Ctrl+Alt+D to start.', false);
-
-        // SPEC_035: Signal loading window to show ready state ONLY when we are truly responsive
-        if (loadingWindow && !loadingWindow.isDestroyed()) {
-          loadingWindow.webContents.send('startup-complete');
-        }
 
         if (pythonManager) {
           pythonManager.sendCommand('status').then(result => {
@@ -763,7 +762,7 @@ function setupPythonEventHandlers(): void {
             }
           }).catch(err => logger.error('MAIN', 'Failed to fetch status on ready', err));
         }
-      }, 200);
+      }, 100);
     }
 
     updateTrayState(state);
