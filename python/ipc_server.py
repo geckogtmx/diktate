@@ -2069,6 +2069,9 @@ class IpcServer:
                         data["processor"] = "GPT-4o-MINI"
                     else:
                         data["processor"] = "LOCAL LLM"
+                elif self.local_global_model:
+                    # Processor not loaded yet, but show configured default model
+                    data["processor"] = self.local_global_model.upper()
                 else:
                     data["processor"] = "NO MODEL SELECTED"
 

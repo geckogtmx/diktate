@@ -116,7 +116,6 @@ export async function selectMode(mode: string) {
                 <h4 style="margin-top: 0;">Raw Mode (Whisper Only)</h4>
                 <p style="margin: 8px 0; color: #ccc;">Raw mode returns the literal Whisper transcription with minimal processing (punctuation only).</p>
                 <ul style="margin: 8px 0; color: #ccc; padding-left: 20px;">
-                    <li>Preserves all words (including fillers, stutters)</li>
                     <li>Adds punctuation and capitalization</li>
                     <li>No AI processing or cleanup</li>
                 </ul>
@@ -329,6 +328,9 @@ async function saveLocalProfile() {
             promptInfo.textContent = prompt ? '✓ Custom prompt in use' : 'No custom prompt';
             promptInfo.style.color = prompt ? '#4ade80' : '#888';
         }
+
+        // Reload profile to confirm save
+        await loadDualProfileForMode(mode);
     } catch (error) {
         alert(`❌ Error: ${error}`);
     }
@@ -378,6 +380,9 @@ async function saveCloudProfile() {
             promptInfo.textContent = prompt ? '✓ Custom prompt in use' : 'No custom prompt';
             promptInfo.style.color = prompt ? '#4ade80' : '#888';
         }
+
+        // Reload profile to confirm save
+        await loadDualProfileForMode(mode);
     } catch (error) {
         alert(`❌ Error: ${error}`);
     }
