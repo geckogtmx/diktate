@@ -751,18 +751,22 @@ function setupPythonEventHandlers(): void {
         loadingWindow.webContents.send('startup-complete');
       }
 
-      // Defer notification and status sync to avoid blocking loading window
-      setTimeout(() => {
-        showNotification('dIKtate Ready', 'AI Engine loaded. Press Ctrl+Alt+D to start.', false);
+      // Defer heavy operations to allow buttons to be interactive first
+      // Notification on Windows can block for 3-4 seconds on first show
+      setImmediate(() => {
+        // Give event loop chance to process button clicks first
+        setTimeout(() => {
+          showNotification('dIKtate Ready', 'AI Engine loaded. Press Ctrl+Alt+D to start.', false);
 
-        if (pythonManager) {
-          pythonManager.sendCommand('status').then(result => {
-            if (result.success && result.data) {
-              logger.info('MAIN', 'Status synced on ready', result.data);
-            }
-          }).catch(err => logger.error('MAIN', 'Failed to fetch status on ready', err));
-        }
-      }, 100);
+          if (pythonManager) {
+            pythonManager.sendCommand('status').then(result => {
+              if (result.success && result.data) {
+                logger.info('MAIN', 'Status synced on ready', result.data);
+              }
+            }).catch(err => logger.error('MAIN', 'Failed to fetch status on ready', err));
+          }
+        }, 1000); // Wait 1 second before showing notification
+      });
     }
 
     updateTrayState(state);
