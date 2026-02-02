@@ -1793,6 +1793,7 @@ class IpcServer:
         """Configure the pipeline (switch models, modes, providers, etc)"""
         try:
             summary = self._get_config_summary(config)
+            device_label = config.get("deviceLabel")
             
             # Change Detection Logic (HOTFIX_001)
             should_clear_processors = False
@@ -1944,24 +1945,7 @@ class IpcServer:
                  self.mute_detector.update_device_label(device_label)
                  updates.append(f"AudioDevice: {device_label}")
 
-            # 7. Privacy Settings (SPEC_030) - Startup Sync
-            privacy_int = config.get("privacyLoggingIntensity")
-            pii_scrub = config.get("privacyPiiScrubber")
-            if privacy_int is not None or pii_scrub is not None:
-                intensity = privacy_int if privacy_int is not None else (self.history_manager.logging_intensity if self.history_manager else 2)
-                scrub = pii_scrub if pii_scrub is not None else (self.history_manager.pii_scrubber if self.history_manager else True)
-                
-                if self.history_manager:
-                    self.history_manager.set_privacy_settings(intensity, scrub)
-                
-                # Apply log silencing for startup
-                if intensity == 0:
-                    logging.getLogger().setLevel(logging.WARNING)
-                    logger.warning("[PRIVACY] Ghost Mode active: System logs silenced to WARNING level")
-                else:
-                    logging.getLogger().setLevel(logging.INFO)
-                    
-                updates.append(f"Privacy: Int={intensity}")
+
 
             return {"success": True, "updates": updates}
 
