@@ -612,7 +612,7 @@ class IpcServer:
         Checks tokens/sec performance to detect CPU fallback.
         """
         try:
-            logger.info("🔍 [STARTUP] Checking GPU availability...")
+            logger.info("[STARTUP] Checking GPU availability...")
 
             # Calculate tokens/sec from warmup response
             eval_duration = warmup_result.get("eval_duration", 0)
@@ -623,13 +623,18 @@ class IpcServer:
             # CPU inference: <10 tokens/sec (7x slower)
             # Warning threshold: <20 tokens/sec (suspicious)
 
+            # Skip check if no valid timing data (warmup might have been too short)
+            if eval_duration == 0 or tokens <= 1:
+                logger.info("[STARTUP] GPU check skipped (insufficient warmup data)")
+                return
+
             if tokens_per_sec < 20:
-                logger.warning(f"⚠️ [STARTUP] GPU NOT DETECTED! Only {tokens_per_sec:.1f} tok/s (expected >50 for GPU)")
-                logger.warning(f"⚠️ [STARTUP] Ollama appears to be using CPU for {model_name}")
-                logger.warning("⚠️ [STARTUP] Performance will be SLOW (~2500ms vs ~350ms)")
-                logger.warning("⚠️ [STARTUP] Fix: Restart Ollama with 'set CUDA_VISIBLE_DEVICES=0'")
+                logger.warning(f"[STARTUP] WARNING: GPU NOT DETECTED! Only {tokens_per_sec:.1f} tok/s (expected >50 for GPU)")
+                logger.warning(f"[STARTUP] WARNING: Ollama appears to be using CPU for {model_name}")
+                logger.warning("[STARTUP] WARNING: Performance will be SLOW (~2500ms vs ~350ms)")
+                logger.warning("[STARTUP] WARNING: Fix: Restart Ollama with 'set CUDA_VISIBLE_DEVICES=0'")
             else:
-                logger.info(f"✅ [STARTUP] GPU ACTIVE: {tokens_per_sec:.1f} tok/s")
+                logger.info(f"[STARTUP] GPU ACTIVE: {tokens_per_sec:.1f} tok/s")
 
         except Exception as e:
             logger.warning(f"[STARTUP] GPU health check failed (non-fatal): {e}")
