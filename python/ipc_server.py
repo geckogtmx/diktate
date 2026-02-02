@@ -9,6 +9,7 @@ import threading
 import logging
 import time
 import warnings
+import requests
 from enum import Enum
 
 # Silence pycaw/comtypes deprecation warnings
@@ -297,6 +298,13 @@ class IpcServer:
         self.audio_file = None
         self.perf = PerformanceMetrics()
         self.session_stats = SessionStats()  # Session-level stats (A.2)
+        # Fix: Create persistent HTTP session for Ollama warmup
+        self.ollama_session = requests.Session()
+        self.ollama_session.headers.update({
+            "Connection": "keep-alive",
+            "Keep-Alive": "timeout=60, max=100"
+        })
+        logger.info("Ollama warmup session created with keep-alive")
         self.trans_mode = "none"  # Translation mode: none, es-en, en-es
         self.consecutive_failures = 0  # Track consecutive processor failures for auto-recovery
         self.custom_prompts = {}  # Custom prompts: mode -> prompt_text mapping
@@ -567,7 +575,8 @@ class IpcServer:
             try:
                 # Send a test inference request to fully initialize the Ollama API endpoint
                 warmup_start = time.time()
-                warmup_response = requests.post(
+                # Fix: Use persistent session for warmup (connection pooling)
+                warmup_response = self.ollama_session.post(
                     "http://localhost:11434/api/generate",
                     json={
                         "model": default_model,

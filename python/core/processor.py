@@ -64,6 +64,13 @@ class LocalProcessor:
         self.last_tokens_per_sec = None  # HOTFIX_002: Store last inference performance
         self.mode = mode
         self.prompt = get_prompt(mode, model)
+        # Fix: Use persistent HTTP session for connection pooling and keep-alive
+        self.session = requests.Session()
+        self.session.headers.update({
+            "Connection": "keep-alive",
+            "Keep-Alive": "timeout=60, max=100"
+        })
+        logger.info("HTTP session created with keep-alive enabled")
         # self._verify_ollama() # REMOVED: Caused Double-Warmup race condition. Rely on set_model() from App.
 
     def set_mode(self, mode: str) -> None:
@@ -150,7 +157,8 @@ class LocalProcessor:
         for attempt in range(max_retries):
             try:
                 logger.info(f"Processing text with {self.model} (attempt {attempt + 1}/{max_retries})...")
-                response = requests.post(
+                # Fix: Use persistent session instead of one-off requests.post()
+                response = self.session.post(
                     f"{self.ollama_url}/api/generate",
                     json={
                         "model": self.model,
