@@ -4,21 +4,21 @@ Provides persistent storage of dictation sessions with structured metadata.
 Replaces volatile session-based log files with a queryable database.
 """
 
-import sqlite3
-import threading
 import logging
 import os
-import subprocess
 import re
-from pathlib import Path
+import sqlite3
+import subprocess
+import threading
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from pathlib import Path
 from queue import Queue
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def get_ollama_status() -> Dict[str, Any]:
+def get_ollama_status() -> dict[str, Any]:
     """
     Get Ollama model status from 'ollama ps' command.
 
@@ -27,17 +27,12 @@ def get_ollama_status() -> Dict[str, Any]:
         Keys: model_name, vram_gb, processor, unload_minutes
     """
     try:
-        result = subprocess.run(
-            ['ollama', 'ps'],
-            capture_output=True,
-            text=True,
-            timeout=2.0
-        )
+        result = subprocess.run(["ollama", "ps"], capture_output=True, text=True, timeout=2.0)
 
         if result.returncode != 0:
             return {}
 
-        lines = result.stdout.strip().split('\n')
+        lines = result.stdout.strip().split("\n")
         if len(lines) < 2:  # No model loaded (only header)
             return {}
 
@@ -51,28 +46,28 @@ def get_ollama_status() -> Dict[str, Any]:
             return {}
 
         model_name = parts[0]
-        size_str = parts[2] + ' ' + parts[3]  # "4.3 GB"
-        processor = ' '.join(parts[4:6])  # "100% GPU" or "CPU"
-        until_str = ' '.join(parts[7:])  # "9 minutes from now" or similar
+        size_str = parts[2] + " " + parts[3]  # "4.3 GB"
+        processor = " ".join(parts[4:6])  # "100% GPU" or "CPU"
+        until_str = " ".join(parts[7:])  # "9 minutes from now" or similar
 
         # Parse VRAM size (e.g., "4.3 GB" -> 4.3)
-        vram_match = re.search(r'([\d.]+)\s*GB', size_str)
+        vram_match = re.search(r"([\d.]+)\s*GB", size_str)
         vram_gb = float(vram_match.group(1)) if vram_match else None
 
         # Parse unload time (e.g., "9 minutes from now" -> 9, "About a minute" -> 1)
-        unload_match = re.search(r'(\d+)\s*minutes?', until_str)
+        unload_match = re.search(r"(\d+)\s*minutes?", until_str)
         if unload_match:
             unload_minutes = int(unload_match.group(1))
-        elif 'about a minute' in until_str.lower():
+        elif "about a minute" in until_str.lower():
             unload_minutes = 1
         else:
             unload_minutes = None
 
         return {
-            'model_name': model_name,
-            'vram_gb': vram_gb,
-            'processor': processor,
-            'unload_minutes': unload_minutes
+            "model_name": model_name,
+            "vram_gb": vram_gb,
+            "processor": processor,
+            "unload_minutes": unload_minutes,
         }
 
     except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
@@ -91,7 +86,7 @@ class HistoryManager:
     - Automatic cleanup of old records (30-90 day retention)
     """
 
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: str | None = None):
         """
         Initialize the HistoryManager.
 
@@ -105,7 +100,7 @@ class HistoryManager:
 
         self.db_path = db_path
         self.write_queue: Queue = Queue()
-        self.write_thread: Optional[threading.Thread] = None
+        self.write_thread: threading.Thread | None = None
         self.should_stop = False
 
         # Privacy settings (SPEC_030)
@@ -161,12 +156,12 @@ class HistoryManager:
             # Migration: Add provider column if it doesn't exist
             cursor.execute("PRAGMA table_info(history)")
             columns = [info[1] for info in cursor.fetchall()]
-            if 'provider' not in columns:
+            if "provider" not in columns:
                 logger.info("Migrating history table: adding 'provider' column")
                 cursor.execute("ALTER TABLE history ADD COLUMN provider TEXT")
 
             # HOTFIX_002 Migration: Add tokens_per_sec for GPU health monitoring
-            if 'tokens_per_sec' not in columns:
+            if "tokens_per_sec" not in columns:
                 logger.info("Migrating history table: adding 'tokens_per_sec' column (HOTFIX_002)")
                 cursor.execute("ALTER TABLE history ADD COLUMN tokens_per_sec REAL")
 
@@ -216,9 +211,7 @@ class HistoryManager:
         """Start the background thread for non-blocking database writes."""
         self.should_stop = False
         self.write_thread = threading.Thread(
-            target=self._write_worker,
-            daemon=True,
-            name="HistoryWriteThread"
+            target=self._write_worker, daemon=True, name="HistoryWriteThread"
         )
         self.write_thread.start()
 
@@ -236,7 +229,7 @@ class HistoryManager:
 
                 # Write the item to database
                 # Check if it's a metrics tuple or regular history dict
-                if isinstance(item, tuple) and item[0] == 'metrics':
+                if isinstance(item, tuple) and item[0] == "metrics":
                     self._write_metrics_to_db(item[1])
                 else:
                     self._write_to_db(item)
@@ -249,7 +242,7 @@ class HistoryManager:
                 # Log unexpected errors only
                 logger.warning(f"Error in write worker: {e}")
 
-    def _write_to_db(self, data: Dict[str, Any]) -> None:
+    def _write_to_db(self, data: dict[str, Any]) -> None:
         """
         Write a single record to the database.
 
@@ -261,29 +254,32 @@ class HistoryManager:
             cursor = conn.cursor()
 
             # Insert the record (HOTFIX_002: Added tokens_per_sec)
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO history (
                     timestamp, mode, transcriber_model, processor_model, provider,
                     raw_text, processed_text, audio_duration_s,
                     transcription_time_ms, processing_time_ms, total_time_ms,
                     success, error_message, tokens_per_sec
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                data.get('timestamp', datetime.now().isoformat()),
-                data.get('mode'),
-                data.get('transcriber_model'),
-                data.get('processor_model'),
-                data.get('provider'),
-                data.get('raw_text'),
-                data.get('processed_text'),
-                data.get('audio_duration_s'),
-                data.get('transcription_time_ms'),
-                data.get('processing_time_ms'),
-                data.get('total_time_ms'),
-                data.get('success', True),
-                data.get('error_message'),
-                data.get('tokens_per_sec')  # HOTFIX_002: GPU performance indicator
-            ))
+            """,
+                (
+                    data.get("timestamp", datetime.now().isoformat()),
+                    data.get("mode"),
+                    data.get("transcriber_model"),
+                    data.get("processor_model"),
+                    data.get("provider"),
+                    data.get("raw_text"),
+                    data.get("processed_text"),
+                    data.get("audio_duration_s"),
+                    data.get("transcription_time_ms"),
+                    data.get("processing_time_ms"),
+                    data.get("total_time_ms"),
+                    data.get("success", True),
+                    data.get("error_message"),
+                    data.get("tokens_per_sec"),  # HOTFIX_002: GPU performance indicator
+                ),
+            )
 
             conn.commit()
             conn.close()
@@ -302,29 +298,29 @@ class HistoryManager:
             cursor.execute("DELETE FROM system_metrics")
             cursor.execute("DELETE FROM history")
             conn.commit()
-            
+
             # VACUUM cannot run within a transaction
             old_isolation = conn.isolation_level
             conn.isolation_level = None
             cursor.execute("VACUUM")
             conn.isolation_level = old_isolation
-            
+
             conn.close()
-            
+
             # 2. Clear Log Files
             log_dir = Path.home() / ".diktate" / "logs"
             if log_dir.exists():
                 for log_file in log_dir.glob("*.log"):
                     try:
-                        # Don't try to delete the CURRENT active log file if possible, 
+                        # Don't try to delete the CURRENT active log file if possible,
                         # but clearing it is fine.
-                        with open(log_file, 'w') as f:
-                            f.truncate(0) 
+                        with open(log_file, "w") as f:
+                            f.truncate(0)
                         # Try to delete if it's not the active one
                         os.remove(log_file)
                     except Exception:
-                        pass # Active log might be locked by handler
-            
+                        pass  # Active log might be locked by handler
+
             logger.info("[HISTORY] All local history data and log files have been wiped")
             return True
         except sqlite3.Error as e:
@@ -337,7 +333,7 @@ class HistoryManager:
         self.pii_scrubber = scrub
         logger.info(f"[HISTORY] Privacy settings updated: Intensity={level}, Scrub={scrub}")
 
-    def log_session(self, data: Dict[str, Any]) -> None:
+    def log_session(self, data: dict[str, Any]) -> None:
         """
         Queue a session for logging. Non-blocking.
 
@@ -353,29 +349,35 @@ class HistoryManager:
 
         # STATS ONLY (Level 1): Remove all text
         if self.logging_intensity == 1:
-            processed_data['raw_text'] = None
-            processed_data['processed_text'] = None
-        
+            processed_data["raw_text"] = None
+            processed_data["processed_text"] = None
+
         # BALANCED (Level 2): Mask Raw Text, Scrub PII if enabled
         elif self.logging_intensity == 2:
             # Mask raw text to save space/privacy in balanced mode
-            processed_data['raw_text'] = "[HIDDEN (Level 2)]"
-            
+            processed_data["raw_text"] = "[HIDDEN (Level 2)]"
+
             if self.pii_scrubber:
                 from utils.security import scrub_pii
-                processed_data['processed_text'] = scrub_pii(processed_data.get('processed_text', ''))
+
+                processed_data["processed_text"] = scrub_pii(
+                    processed_data.get("processed_text", "")
+                )
 
         # FULL (Level 3): Experimental - Scrub PII only if enabled, keep everything else
         elif self.logging_intensity == 3:
             if self.pii_scrubber:
                 from utils.security import scrub_pii
-                processed_data['raw_text'] = scrub_pii(processed_data.get('raw_text', ''))
-                processed_data['processed_text'] = scrub_pii(processed_data.get('processed_text', ''))
+
+                processed_data["raw_text"] = scrub_pii(processed_data.get("raw_text", ""))
+                processed_data["processed_text"] = scrub_pii(
+                    processed_data.get("processed_text", "")
+                )
 
         # Queue the write asynchronously
         self.write_queue.put(processed_data)
 
-    def log_system_metrics(self, metrics_data: Dict[str, Any]) -> None:
+    def log_system_metrics(self, metrics_data: dict[str, Any]) -> None:
         """
         Queue system metrics for logging. Non-blocking.
 
@@ -385,9 +387,9 @@ class HistoryManager:
                 Optional keys: history_id, cpu_percent, memory_percent, etc.
         """
         # Queue the write asynchronously (same queue as history)
-        self.write_queue.put(('metrics', metrics_data))
+        self.write_queue.put(("metrics", metrics_data))
 
-    def _write_metrics_to_db(self, data: Dict[str, Any]) -> None:
+    def _write_metrics_to_db(self, data: dict[str, Any]) -> None:
         """
         Write a single metrics record to the database.
 
@@ -399,7 +401,8 @@ class HistoryManager:
             cursor = conn.cursor()
 
             # Insert the metrics record
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO system_metrics (
                     timestamp, history_id, sample_type,
                     cpu_percent, memory_percent, memory_used_gb,
@@ -407,20 +410,22 @@ class HistoryManager:
                     ollama_model_loaded, ollama_vram_gb,
                     ollama_processor, ollama_unload_minutes
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                data.get('timestamp', datetime.now().isoformat()),
-                data.get('history_id'),
-                data.get('sample_type'),
-                data.get('cpu_percent'),
-                data.get('memory_percent'),
-                data.get('memory_used_gb'),
-                data.get('gpu_memory_used_gb'),
-                data.get('gpu_memory_percent'),
-                data.get('ollama_model_loaded'),
-                data.get('ollama_vram_gb'),
-                data.get('ollama_processor'),
-                data.get('ollama_unload_minutes')
-            ))
+            """,
+                (
+                    data.get("timestamp", datetime.now().isoformat()),
+                    data.get("history_id"),
+                    data.get("sample_type"),
+                    data.get("cpu_percent"),
+                    data.get("memory_percent"),
+                    data.get("memory_used_gb"),
+                    data.get("gpu_memory_used_gb"),
+                    data.get("gpu_memory_percent"),
+                    data.get("ollama_model_loaded"),
+                    data.get("ollama_vram_gb"),
+                    data.get("ollama_processor"),
+                    data.get("ollama_unload_minutes"),
+                ),
+            )
 
             conn.commit()
             conn.close()
@@ -446,12 +451,15 @@ class HistoryManager:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM history
                 WHERE raw_text LIKE ? OR processed_text LIKE ?
                 ORDER BY timestamp DESC
                 LIMIT ?
-            """, (f"%{phrase}%", f"%{phrase}%", limit))
+            """,
+                (f"%{phrase}%", f"%{phrase}%", limit),
+            )
 
             results = [dict(row) for row in cursor.fetchall()]
             conn.close()
@@ -477,12 +485,15 @@ class HistoryManager:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM history
                 WHERE mode = ?
                 ORDER BY timestamp DESC
                 LIMIT ?
-            """, (mode, limit))
+            """,
+                (mode, limit),
+            )
 
             results = [dict(row) for row in cursor.fetchall()]
             conn.close()
@@ -507,12 +518,15 @@ class HistoryManager:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM history
                 WHERE success = 0
                 ORDER BY timestamp DESC
                 LIMIT ?
-            """, (limit,))
+            """,
+                (limit,),
+            )
 
             results = [dict(row) for row in cursor.fetchall()]
             conn.close()
@@ -522,7 +536,7 @@ class HistoryManager:
             logger.error(f"Error query: {e}")
             return []
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get overall statistics from history database.
 
@@ -573,7 +587,7 @@ class HistoryManager:
                 "avg_processing_ms": round(avg_proc, 2) if avg_proc else 0,
                 "avg_total_ms": round(avg_total, 2) if avg_total else 0,
                 "avg_audio_duration_s": round(avg_audio, 2) if avg_audio else 0,
-                "by_mode": by_mode
+                "by_mode": by_mode,
             }
         except sqlite3.Error as e:
             logger.error(f"Statistics query error: {e}")
@@ -595,17 +609,22 @@ class HistoryManager:
 
             cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 DELETE FROM history
                 WHERE timestamp < ?
-            """, (cutoff_date,))
+            """,
+                (cutoff_date,),
+            )
 
             deleted_count = cursor.rowcount
             conn.commit()
 
             # Optimize database file ONLY if we actually removed data (SPEC_035)
             if deleted_count > 0:
-                logger.info(f"Pruned {deleted_count} records older than {days} days. Running VACUUM...")
+                logger.info(
+                    f"Pruned {deleted_count} records older than {days} days. Running VACUUM..."
+                )
                 cursor.execute("VACUUM")
             else:
                 logger.debug(f"No records older than {days} days found, skipping VACUUM")

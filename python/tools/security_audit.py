@@ -1,10 +1,11 @@
+import os
 import subprocess
 import sys
-import os
+
 
 def run_audit():
     print("--- Starting Python Dependency Security Audit ---")
-    
+
     # Target requirements file
     req_file = os.path.join(os.path.dirname(__file__), "..", "requirements.txt")
     if not os.path.exists(req_file):
@@ -35,6 +36,7 @@ def run_audit():
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     run_audit()

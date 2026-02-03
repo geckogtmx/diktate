@@ -1,23 +1,22 @@
 """Main orchestration script for dIKtate."""
 
+import logging
 import os
 import sys
-import json
-import logging
-import tempfile
+import time
 from enum import Enum
 from pathlib import Path
+
 from pynput import keyboard
-import time
-from typing import Optional
 
 # Add core module to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from core import Recorder, Transcriber, Processor, Injector
-
 # Configure logging - Session-based log files
 from datetime import datetime
+
+from core import Injector, Processor, Recorder, Transcriber
+
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
 
@@ -27,11 +26,8 @@ session_log_file = log_dir / f"diktate_{session_timestamp}.log"
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(session_log_file),
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler(session_log_file), logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 logger.info(f"Session log: {session_log_file}")
@@ -39,6 +35,7 @@ logger.info(f"Session log: {session_log_file}")
 
 class State(Enum):
     """Pipeline states."""
+
     IDLE = "idle"
     RECORDING = "recording"
     PROCESSING = "processing"
@@ -55,11 +52,11 @@ class DiktatePipeline:
     def __init__(self):
         """Initialize the pipeline."""
         self.state = State.IDLE
-        self.recorder: Optional[Recorder] = None
-        self.transcriber: Optional[Transcriber] = None
-        self.processor: Optional[Processor] = None
-        self.injector: Optional[Injector] = None
-        self.listener: Optional[keyboard.Listener] = None
+        self.recorder: Recorder | None = None
+        self.transcriber: Transcriber | None = None
+        self.processor: Processor | None = None
+        self.injector: Injector | None = None
+        self.listener: keyboard.Listener | None = None
         self.recording = False
         self.audio_file = None
 
@@ -78,7 +75,9 @@ class DiktatePipeline:
 
         try:
             self.transcriber = Transcriber(model_size="medium", device="auto")
-            logger.info("[OK] Transcriber initialized (this may take a moment for first-time model download...)")
+            logger.info(
+                "[OK] Transcriber initialized (this may take a moment for first-time model download...)"
+            )
         except Exception as e:
             logger.error(f"Failed to initialize Transcriber: {e}")
             raise
@@ -157,10 +156,14 @@ class DiktatePipeline:
                 processed_text = raw_text
 
             # Log side-by-side comparison for tuning
-            logger.info("\n" + "="*40 + "\n[COMPARISON]\n" + 
-                       f"RAW:      {raw_text}\n" + 
-                       f"CLEANED:  {processed_text}\n" + 
-                       "="*40)
+            logger.info(
+                "\n"
+                + "=" * 40
+                + "\n[COMPARISON]\n"
+                + f"RAW:      {raw_text}\n"
+                + f"CLEANED:  {processed_text}\n"
+                + "=" * 40
+            )
 
             # Inject text
             self._set_state(State.INJECTING)
@@ -203,9 +206,17 @@ class DiktatePipeline:
                     self.pressed_keys.add(key)
                     # Check for Ctrl+Alt+D combination
                     # Note: Alt is Key.alt_l or Key.alt_r
-                    if (keyboard.Key.ctrl_l in self.pressed_keys or keyboard.Key.ctrl_r in self.pressed_keys) and \
-                       (keyboard.Key.alt_l in self.pressed_keys or keyboard.Key.alt_r in self.pressed_keys) and \
-                       getattr(key, 'char', None) == 'd':
+                    if (
+                        (
+                            keyboard.Key.ctrl_l in self.pressed_keys
+                            or keyboard.Key.ctrl_r in self.pressed_keys
+                        )
+                        and (
+                            keyboard.Key.alt_l in self.pressed_keys
+                            or keyboard.Key.alt_r in self.pressed_keys
+                        )
+                        and getattr(key, "char", None) == "d"
+                    ):
                         self.on_hotkey_pressed()
                 except AttributeError:
                     pass
@@ -216,20 +227,17 @@ class DiktatePipeline:
                     # Remove key from pressed set
                     if key in self.pressed_keys:
                         self.pressed_keys.remove(key)
-                    
+
                     # Stop recording if D is released (for PTT)
-                    # Or should we wait for modifiers? 
+                    # Or should we wait for modifiers?
                     # Simpler PTT: If we are recording, and the main trigger key (D) is released, stop.
-                    if getattr(key, 'char', None) == 'd':
-                         self.on_hotkey_released()
+                    if getattr(key, "char", None) == "d":
+                        self.on_hotkey_released()
                 except AttributeError:
                     pass
 
             # Create and start listener
-            self.listener = keyboard.Listener(
-                on_press=on_press,
-                on_release=on_release
-            )
+            self.listener = keyboard.Listener(on_press=on_press, on_release=on_release)
             self.listener.start()
             logger.info("Global hotkey listener started (Ctrl+Shift+Space)")
         except Exception as e:

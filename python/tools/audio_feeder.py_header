@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+"""
+dIKtate Audio Feeder ("Couch Potato Test")
+feeds external audio into dIKtate by playing it through system speakers
+and synchronizing recording state via global hotkeys.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import signal
+import sys
+import threading
+import time
+from pathlib import Path
+
+try:
+    # FFmpeg auto-detection (especially for WinGet)
+    import shutil
+    import pysrt
+    import simpleaudio
+    from pydub import AudioSegment
+    from pynput.keyboard import Controller, Key
+
+    if not shutil.which("ffmpeg"):
+        winget_links = (
+            Path(os.environ.get("LOCALAPPDATA", "")) / "Microsoft/WinGet/Links/ffmpeg.exe"
+        )
+        if winget_links.exists():
+            AudioSegment.converter = str(winget_links)
+
+except ImportError as e:
+    print(f"Missing dependency: {e}")
+    print("Please run: pip install pydub simpleaudio pysrt pynput")
+    sys.exit(1)
+
+import socket

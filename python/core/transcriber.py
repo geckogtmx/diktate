@@ -1,8 +1,8 @@
 """Transcriber module using faster-whisper."""
 
-from faster_whisper import WhisperModel
 import logging
-from typing import Optional
+
+from faster_whisper import WhisperModel
 
 logger = logging.getLogger(__name__)
 
@@ -12,11 +12,9 @@ class Transcriber:
 
     # Supported models: tiny, base, small, medium, large, turbo
     SUPPORTED_MODELS = ["tiny", "base", "small", "medium", "large", "turbo"]
-    
+
     # Mapping for special model names to HF paths
-    MODEL_MAPPING = {
-        "turbo": "deepdml/faster-whisper-large-v3-turbo-ct2"
-    }
+    MODEL_MAPPING = {"turbo": "deepdml/faster-whisper-large-v3-turbo-ct2"}
 
     def __init__(self, model_size: str = "medium", device: str = "auto"):
         """
@@ -31,7 +29,7 @@ class Transcriber:
 
         self.model_size = model_size
         self.device = device
-        self.model: Optional[WhisperModel] = None
+        self.model: WhisperModel | None = None
         self._load_model()
 
     def _load_model(self) -> None:
@@ -42,9 +40,12 @@ class Transcriber:
             if device == "auto":
                 try:
                     import ctranslate2
+
                     if ctranslate2.get_cuda_device_count() > 0:
                         device = "cuda"
-                        logger.info(f"CUDA detected: Using GPU (Count: {ctranslate2.get_cuda_device_count()})")
+                        logger.info(
+                            f"CUDA detected: Using GPU (Count: {ctranslate2.get_cuda_device_count()})"
+                        )
                     else:
                         device = "cpu"
                         logger.info("CUDA not detected: Using CPU")
@@ -62,7 +63,7 @@ class Transcriber:
                     model_name,
                     device=device,
                     compute_type="int8" if device == "cpu" else "int8_float16",
-                    local_files_only=True
+                    local_files_only=True,
                 )
             except Exception as e:
                 logger.info(f"Local model not found or check failed, attempting online load: {e}")
@@ -70,14 +71,14 @@ class Transcriber:
                     model_name,
                     device=device,
                     compute_type="int8" if device == "cpu" else "int8_float16",
-                    local_files_only=False
+                    local_files_only=False,
                 )
             logger.info("Model loaded successfully")
         except Exception as e:
             logger.error(f"Failed to load Whisper model: {e}")
             raise
 
-    def transcribe(self, audio_path: str, language: Optional[str] = None) -> str:
+    def transcribe(self, audio_path: str, language: str | None = None) -> str:
         """
         Transcribe audio file to text.
 
@@ -93,11 +94,7 @@ class Transcriber:
 
         try:
             logger.info(f"Transcribing {audio_path}...")
-            segments, info = self.model.transcribe(
-                audio_path,
-                language=language,
-                task="transcribe"
-            )
+            segments, info = self.model.transcribe(audio_path, language=language, task="transcribe")
 
             # Combine all segments into single text
             text = " ".join([segment.text for segment in segments])

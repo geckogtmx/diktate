@@ -4,23 +4,22 @@ Provides log redaction and sensitive data handling.
 """
 
 import re
-from typing import Optional
-
 
 # Sensitive data patterns for log redaction (SPEC_030)
 patterns = [
     # API Keys (Gemini, OpenAI, Anthropic)
-    (r'AIza[0-9A-Za-z-_]{35}', '[GEMINI_KEY]'),
-    (r'sk-[a-zA-Z0-9]{20,}', '[OPENAI_KEY]'),
-    (r'sk-ant-[a-zA-Z0-9\-_]{20,}', '[CLAUDE_KEY]'),
-    # OAuth Tokens
-    (r'ya29\.[a-zA-Z0-9\-_]{50,}', '[OAUTH_TOKEN]'),
+    (r"AIza[0-9A-Za-z-_]{35}", "AIza[REDACTED]"),
+    (r"sk-[a-zA-Z0-9]{20,}", "sk-[REDACTED]"),
+    (r"sk-ant-[a-zA-Z0-9\-_]{20,}", "sk-ant-[REDACTED]"),
+    # OAuth/Bearer Tokens
+    (r"ya29\.[a-zA-Z0-9\-_]{50,}", "Bearer [REDACTED]"),
+    (r"Bearer eyJh[a-zA-Z0-9\-_.]+", "Bearer [REDACTED]"),
     # Emails
     # Emails (Standard)
-    (r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', '[EMAIL]'),
+    (r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", "[EMAIL]"),
     # Emails (Spoken/Transcribed)
-    (r'\b[a-zA-Z0-9._%+-]+\s+at\s+[a-zA-Z0-9.-]+\s+dot\s+[a-zA-Z]{2,}\b', '[EMAIL]'),
-    (r'\b[a-zA-Z0-9._%+-]+\s+at\s+[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b', '[EMAIL]'),
+    (r"\b[a-zA-Z0-9._%+-]+\s+at\s+[a-zA-Z0-9.-]+\s+dot\s+[a-zA-Z]{2,}\b", "[EMAIL]"),
+    (r"\b[a-zA-Z0-9._%+-]+\s+at\s+[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b", "[EMAIL]"),
 ]
 
 
@@ -28,28 +27,29 @@ def redact_text(text: str, max_visible: int = 20, show_length: bool = True) -> s
     """
     Redact sensitive text for logging.
     Shows first N characters and hides the rest.
-    
+
     Args:
         text: Text to redact
         max_visible: Maximum characters to show
         show_length: Whether to show total length
-    
+
     Returns:
         Redacted string like "Hello world...[REDACTED 150 chars]"
     """
     import os
+
     if os.environ.get("DIKTATE_DEBUG_UNSAFE") == "1":
         return text
 
     if not text:
         return "[EMPTY]"
-    
+
     if len(text) <= max_visible:
         return "[REDACTED]"
-    
+
     visible = text[:max_visible]
     hidden_count = len(text) - max_visible
-    
+
     if show_length:
         return f"{visible}...[REDACTED {hidden_count} chars]"
     return f"{visible}...[REDACTED]"
@@ -72,7 +72,7 @@ def sanitize_log_message(message: str) -> str:
     msg = message
     for pattern, replacement in patterns:
         msg = re.sub(pattern, replacement, msg)
-    
+
     return msg
 
 
@@ -83,17 +83,31 @@ def scrub_pii(text: str) -> str:
     """
     if not text:
         return text
-    
+
     # Emails
-    text = re.sub(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', '[EMAIL]', text)
+    text = re.sub(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", "[EMAIL]", text)
     # Spoken Emails ("user at gmail dot com" or "user at gmail.com")
-    text = re.sub(r'\b[a-zA-Z0-9._%+-]+\s+at\s+[a-zA-Z0-9.-]+\s+dot\s+[a-zA-Z]{2,}\b', '[EMAIL]', text, flags=re.IGNORECASE)
-    text = re.sub(r'\b[a-zA-Z0-9._%+-]+\s+at\s+[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b', '[EMAIL]', text, flags=re.IGNORECASE)
-    
+    text = re.sub(
+        r"\b[a-zA-Z0-9._%+-]+\s+at\s+[a-zA-Z0-9.-]+\s+dot\s+[a-zA-Z]{2,}\b",
+        "[EMAIL]",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(
+        r"\b[a-zA-Z0-9._%+-]+\s+at\s+[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b",
+        "[EMAIL]",
+        text,
+        flags=re.IGNORECASE,
+    )
+
     # Phone numbers (common formats: +1-234-567-8901, (123) 456-7890, etc.)
-    text = re.sub(r'\+?\d{1,4}[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}', '[PHONE]', text)
-    
+    text = re.sub(
+        r"\+?\d{1,4}[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}",
+        "[PHONE]",
+        text,
+    )
+
     # Sanitize known API key patterns too
     text = sanitize_log_message(text)
-    
+
     return text

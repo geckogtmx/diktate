@@ -1,11 +1,12 @@
 """Audio recorder module using PyAudio."""
 
-import pyaudio
-import wave
+import logging
 import os
 import time
-from typing import Optional, Callable
-import logging
+import wave
+from collections.abc import Callable
+
+import pyaudio
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ class Recorder:
         sample_rate: int = 16000,
         channels: int = 1,
         chunk_size: int = 1024,
-        temp_dir: str = "./temp_audio"
+        temp_dir: str = "./temp_audio",
     ):
         """
         Initialize the recorder.
@@ -35,17 +36,22 @@ class Recorder:
         self.temp_dir = temp_dir
         self.is_recording = False
         self.audio_data = []
-        self.p: Optional[pyaudio.PyAudio] = None
-        self.stream: Optional[pyaudio.Stream] = None
+        self.p: pyaudio.PyAudio | None = None
+        self.stream: pyaudio.Stream | None = None
         self.max_duration = 0  # seconds, 0 = unlimited
         self.start_time = 0
-        self.auto_stop_callback: Optional[Callable] = None
+        self.auto_stop_callback: Callable | None = None
 
         # Create temp directory if it doesn't exist
         os.makedirs(temp_dir, exist_ok=True)
 
-    def start(self, device_id: Optional[str] = None, device_label: Optional[str] = None,
-              max_duration: int = 0, auto_stop_callback: Optional[Callable] = None) -> None:
+    def start(
+        self,
+        device_id: str | None = None,
+        device_label: str | None = None,
+        max_duration: int = 0,
+        auto_stop_callback: Callable | None = None,
+    ) -> None:
         """
         Start recording from microphone.
 
@@ -63,31 +69,35 @@ class Recorder:
 
             # Resolve device index
             input_device_index = None
-            
-            if (device_id and device_id != 'default') or device_label:
+
+            if (device_id and device_id != "default") or device_label:
                 logger.info(f"Looking for audio device: ID={device_id}, Label={device_label}")
                 try:
                     info = self.p.get_host_api_info_by_index(0)
-                    numdevices = info.get('deviceCount')
-                    
+                    numdevices = info.get("deviceCount")
+
                     found_device = None
-                    
+
                     for i in range(0, numdevices):
                         device_info = self.p.get_device_info_by_host_api_device_index(0, i)
-                        if device_info.get('maxInputChannels') > 0:
-                            dev_name = device_info.get('name')
+                        if device_info.get("maxInputChannels") > 0:
+                            dev_name = device_info.get("name")
                             # Match against label if provided (fuzzy match)
                             if device_label and device_label.lower() in dev_name.lower():
                                 found_device = i
-                                logger.info(f"Found matching device by label: '{dev_name}' (Index: {i})")
+                                logger.info(
+                                    f"Found matching device by label: '{dev_name}' (Index: {i})"
+                                )
                                 break
                             # Fallback: check if mapped ID could work (unlikely with browser hashes)
-                            
+
                     if found_device is not None:
                         input_device_index = found_device
                     else:
-                        logger.warning(f"Device not found, falling back to default. Available devices checked: {numdevices}")
-                        
+                        logger.warning(
+                            f"Device not found, falling back to default. Available devices checked: {numdevices}"
+                        )
+
                 except Exception as e:
                     logger.error(f"Error enumerating devices: {e}")
 
@@ -97,17 +107,20 @@ class Recorder:
                 rate=self.sample_rate,
                 input=True,
                 input_device_index=input_device_index,
-                frames_per_buffer=self.chunk_size
+                frames_per_buffer=self.chunk_size,
             )
             self.is_recording = True
             self.audio_data = []
-            
+
             # Start background thread to read audio
             import threading
+
             self.record_thread = threading.Thread(target=self._record_loop)
             self.record_thread.start()
-            
-            logger.info(f"Recording started (Device: {input_device_index if input_device_index is not None else 'Default'})")
+
+            logger.info(
+                f"Recording started (Device: {input_device_index if input_device_index is not None else 'Default'})"
+            )
         except Exception as e:
             logger.error(f"Failed to start recording: {e}")
             raise
@@ -120,7 +133,9 @@ class Recorder:
                 if self.max_duration > 0:
                     elapsed = time.time() - self.start_time
                     if elapsed >= self.max_duration:
-                        logger.warning(f"Recording auto-stopped: max duration ({self.max_duration}s) reached")
+                        logger.warning(
+                            f"Recording auto-stopped: max duration ({self.max_duration}s) reached"
+                        )
                         self.is_recording = False
                         # Call callback if provided
                         if self.auto_stop_callback:
@@ -129,16 +144,16 @@ class Recorder:
 
                 self.read_chunk()
             except Exception as e:
-                if self.is_recording: # Only log if we expect to be recording
+                if self.is_recording:  # Only log if we expect to be recording
                     logger.error(f"Error in record loop: {e}")
                 break
 
     def stop(self) -> None:
         """Stop recording and clean up resources."""
         try:
-            self.is_recording = False # Signal thread to stop
-            
-            if hasattr(self, 'record_thread') and self.record_thread.is_alive():
+            self.is_recording = False  # Signal thread to stop
+
+            if hasattr(self, "record_thread") and self.record_thread.is_alive():
                 self.record_thread.join(timeout=1.0)
 
             if self.stream:
@@ -146,7 +161,7 @@ class Recorder:
                 self.stream.close()
             if self.p:
                 self.p.terminate()
-            
+
             logger.info("Recording stopped")
         except Exception as e:
             logger.error(f"Error stopping recording: {e}")

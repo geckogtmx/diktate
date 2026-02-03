@@ -2,14 +2,14 @@
 
 import logging
 import warnings
-from typing import Optional
 
 # Silence pycaw/comtypes deprecation warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="pycaw")
 
 try:
-    from comtypes import CLSCTX_ALL
-    from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+    from comtypes import CLSCTX_ALL  # noqa: E402
+    from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume  # noqa: E402
+
     PYCAW_AVAILABLE = True
 except ImportError:
     PYCAW_AVAILABLE = False
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class MuteDetector:
     """Detects mute state of a specific audio input device."""
 
-    def __init__(self, device_label: Optional[str] = None):
+    def __init__(self, device_label: str | None = None):
         """
         Initialize mute detector for a specific device.
 
@@ -43,7 +43,7 @@ class MuteDetector:
             for device in devices:
                 # Check if it's an input device
                 try:
-                    interface = device.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+                    device.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
                     # If we can activate volume interface, it's a valid device
 
                     # Fuzzy match on label
@@ -56,16 +56,21 @@ class MuteDetector:
                     continue  # Not an input device or can't query
 
             # Match failed
-            is_default = not self.device_label or self.device_label.lower() in ["default", "default microphone"]
+            is_default = not self.device_label or self.device_label.lower() in [
+                "default",
+                "default microphone",
+            ]
             if not is_default:
-                logger.info(f"[MUTE_DETECTOR] Device '{self.device_label}' not found (will use system default)")
+                logger.info(
+                    f"[MUTE_DETECTOR] Device '{self.device_label}' not found (will use system default)"
+                )
             return None
 
         except Exception as e:
             logger.error(f"[MUTE_DETECTOR] Error finding device: {e}")
             return None
 
-    def check_mute_state(self) -> Optional[bool]:
+    def check_mute_state(self) -> bool | None:
         """
         Check if the microphone is muted.
 
@@ -88,9 +93,7 @@ class MuteDetector:
                 self._device_cache = default_mic
 
             # Query mute state
-            interface = self._device_cache.Activate(
-                IAudioEndpointVolume._iid_, CLSCTX_ALL, None
-            )
+            interface = self._device_cache.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
             volume = interface.QueryInterface(IAudioEndpointVolume)
             mute_state = volume.GetMute()
 

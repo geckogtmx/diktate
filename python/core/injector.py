@@ -1,17 +1,17 @@
 """Text injector module using pynput and pyperclip."""
 
-from pynput.keyboard import Controller, Key
-import logging
-import time
-import pyperclip
-from typing import Optional
 import ctypes
+import logging
 import platform
+import time
+
+import pyperclip
+from pynput.keyboard import Controller, Key
 
 logger = logging.getLogger(__name__)
 
 # Windows-specific keyboard codes and SendInput structures
-if platform.system() == 'Windows':
+if platform.system() == "Windows":
     from ctypes import Structure, c_uint, c_ushort
 
     # Virtual key codes
@@ -44,14 +44,18 @@ if platform.system() == 'Windows':
             user32 = ctypes.windll.user32
 
             # Create INPUT structure for key down
-            input_down = INPUT(type=INPUT_KEYBOARD, ki=KEYBDINPUT(wVk=vk_code, dwFlags=KEYEVENTF_KEYDOWN))
+            input_down = INPUT(
+                type=INPUT_KEYBOARD, ki=KEYBDINPUT(wVk=vk_code, dwFlags=KEYEVENTF_KEYDOWN)
+            )
             input_array = (INPUT * 1)(input_down)
             user32.SendInput(1, ctypes.byref(input_array), ctypes.sizeof(INPUT))
 
             time.sleep(0.01)
 
             # Create INPUT structure for key up
-            input_up = INPUT(type=INPUT_KEYBOARD, ki=KEYBDINPUT(wVk=vk_code, dwFlags=KEYEVENTF_KEYUP))
+            input_up = INPUT(
+                type=INPUT_KEYBOARD, ki=KEYBDINPUT(wVk=vk_code, dwFlags=KEYEVENTF_KEYUP)
+            )
             input_array = (INPUT * 1)(input_up)
             user32.SendInput(1, ctypes.byref(input_array), ctypes.sizeof(INPUT))
         except Exception as e:
@@ -66,9 +70,9 @@ class Injector:
         self.keyboard = Controller()
         self.add_trailing_space = True  # Default: enabled (can be configured via IPC)
 
-    def type_text(self, text: str, delay: Optional[float] = None) -> None:
+    def type_text(self, text: str, delay: float | None = None) -> None:
         """
-        Legacy method for backward compatibility. 
+        Legacy method for backward compatibility.
         Forwards to paste_text for better performance.
         """
         self.paste_text(text)
@@ -95,21 +99,23 @@ class Injector:
             # 2. Add trailing space if enabled (configurable, default: enabled)
             if self.add_trailing_space:
                 text_to_paste = text + " "
-                logger.debug(f"Added trailing space to text ({len(text)} → {len(text_to_paste)} chars)")
+                logger.debug(
+                    f"Added trailing space to text ({len(text)} → {len(text_to_paste)} chars)"
+                )
             else:
                 text_to_paste = text
                 logger.debug("Trailing space disabled (pasting text as-is)")
 
             # 3. Copy text to clipboard
             pyperclip.copy(text_to_paste)
-            
+
             # 4. Simulate Ctrl+V
             # Small delay to ensure clipboard is ready
             time.sleep(0.05)
 
             with self.keyboard.pressed(Key.ctrl):
-                self.keyboard.press('v')
-                self.keyboard.release('v')
+                self.keyboard.press("v")
+                self.keyboard.release("v")
 
             # 5. Wait for paste to complete before restoring clipboard
             # Reduced from 100ms to 20ms (M2 security fix - minimize clipboard exposure)
@@ -121,7 +127,7 @@ class Injector:
             # but 100ms is usually safe for modern OS.
             if original_clipboard:
                 pyperclip.copy(original_clipboard)
-                
+
             logger.info("Text pasted successfully")
 
         except Exception as e:
@@ -145,9 +151,9 @@ class Injector:
 
             # Map string names to pynput Key constants
             key_map = {
-                'enter': Key.enter,
-                'return': Key.enter,  # Alias for enter
-                'tab': Key.tab,
+                "enter": Key.enter,
+                "return": Key.enter,  # Alias for enter
+                "tab": Key.tab,
             }
 
             key = key_map.get(key_name.lower())
@@ -167,7 +173,7 @@ class Injector:
             logger.error(f"Error pressing key '{key_name}': {e}")
             raise
 
-    def capture_selection(self, timeout_ms: int = 1500) -> Optional[str]:
+    def capture_selection(self, timeout_ms: int = 1500) -> str | None:  # noqa: C901
         """
         Capture currently selected text via clipboard.
 
@@ -203,7 +209,7 @@ class Injector:
             logger.info("[CAPTURE] Sending Ctrl+C...")
             try:
                 # Use pynput keyboard controller - it's reliable across platforms
-                self.press_keys(Key.ctrl, 'c')
+                self.press_keys(Key.ctrl, "c")
                 logger.debug("[CAPTURE] Ctrl+C sent successfully")
             except Exception as e:
                 logger.error(f"[CAPTURE] Failed to send Ctrl+C: {e}")
@@ -230,14 +236,18 @@ class Injector:
                         # Validate: Not empty
                         if current_clipboard and current_clipboard.strip():
                             elapsed_ms = (time.time() - start_time) * 1000
-                            logger.info(f"[CAPTURE] Captured {len(current_clipboard)} chars in {elapsed_ms:.0f}ms")
+                            logger.info(
+                                f"[CAPTURE] Captured {len(current_clipboard)} chars in {elapsed_ms:.0f}ms"
+                            )
 
                             # ✅ FIX: Restore original clipboard before returning
                             # This ensures paste_text() receives the user's real clipboard, not the selected text
                             try:
                                 if original_clipboard:
                                     pyperclip.copy(original_clipboard)
-                                    logger.debug(f"[CAPTURE] Restored original clipboard ({len(original_clipboard)} chars)")
+                                    logger.debug(
+                                        f"[CAPTURE] Restored original clipboard ({len(original_clipboard)} chars)"
+                                    )
                                 else:
                                     # If original was empty, clear clipboard
                                     pyperclip.copy("")
@@ -254,11 +264,15 @@ class Injector:
                             try:
                                 if original_clipboard:
                                     pyperclip.copy(original_clipboard)
-                                    logger.debug("[CAPTURE] Restored original clipboard (empty capture)")
+                                    logger.debug(
+                                        "[CAPTURE] Restored original clipboard (empty capture)"
+                                    )
                                 else:
                                     pyperclip.copy("")
                             except Exception as e:
-                                logger.warning(f"[CAPTURE] Failed to restore clipboard after empty capture: {e}")
+                                logger.warning(
+                                    f"[CAPTURE] Failed to restore clipboard after empty capture: {e}"
+                                )
 
                             return None
 
@@ -269,7 +283,9 @@ class Injector:
                     time.sleep(poll_interval)
 
             # 4. Timeout - no selection detected
-            logger.warning(f"[CAPTURE] Timeout after {timeout_ms}ms ({polls} polls) - no selection detected")
+            logger.warning(
+                f"[CAPTURE] Timeout after {timeout_ms}ms ({polls} polls) - no selection detected"
+            )
             logger.debug(f"[CAPTURE] Current clipboard length: {len(current_clipboard)}")
 
             # ✅ FIX: Clipboard is already in original state if no change detected
