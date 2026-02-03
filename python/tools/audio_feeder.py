@@ -4,6 +4,7 @@ dIKtate Audio Feeder ("Couch Potato Test")
 feeds external audio into dIKtate by playing it through system speakers
 and synchronizing recording state via global hotkeys.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -17,6 +18,7 @@ from pathlib import Path
 # Optional dependencies check
 try:
     import shutil
+
     import pysrt  # noqa: F401
     import simpleaudio  # noqa: F401
     from pydub import AudioSegment
@@ -180,7 +182,7 @@ def preflight_checks():
 
     # 1. Check simpleaudio
     try:
-        import simpleaudio
+        import simpleaudio  # noqa: F401
 
         checks.append(("[OK]", "simpleaudio installed"))
     except ImportError:
@@ -280,6 +282,7 @@ def play_audio_segment(segment):
 
             # Simpleaudio can crash on some systems - wrap in try/except
             import simpleaudio as sa
+
             play_obj = sa.play_buffer(data, channels, sample_width, sample_rate)
             if play_obj is None:
                 raise RuntimeError("play_buffer returned None")

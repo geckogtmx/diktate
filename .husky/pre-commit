@@ -1,0 +1,6 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+npx lint-staged
+python -m ruff check python/
+# detect-secrets-hook --baseline .secrets.baseline

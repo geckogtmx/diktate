@@ -11,7 +11,8 @@
     "package-python": "cd python && build_backend.bat",
     "test": "node tests/smoke-test.cjs && pytest python/",
     "lint": "eslint \"src/**/*.{ts,js}\" --fix",
-    "format": "prettier --write \"src/**/*.{ts,js,html,css}\""
+    "format": "prettier --write \"src/**/*.{ts,js,html,css}\"",
+    "prepare": "husky install"
   },
   "keywords": [
     "dictation",
@@ -31,9 +32,21 @@
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
+    "husky": "^8.0.0",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
     "typescript": "^5.3.0",
     "typescript-eslint": "^8.54.0"
+  },
+  "lint-staged": {
+    "*.{ts,js,json}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.py": [
+      "ruff format",
+      "ruff check --fix"
+    ]
   },
   "dependencies": {
     "dotenv": "^17.2.3",
