@@ -121,9 +121,16 @@ pnpm dev
 
 ---
 
+## 🤝 Contributing
 
+We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code quality standards and development workflow.
 
----
+**Quick Validation:**
+```bash
+# Full project check
+pnpm run lint
+python -m ruff check python/
+```
 
 ---
 

@@ -1,0 +1,8 @@
+# Global owners
+*       @diktate/core-team
+
+# Python Backend
+python/   @diktate/backend-owners
+
+# TypeScript/Electron Frontend
+src/      @diktate/frontend-owners

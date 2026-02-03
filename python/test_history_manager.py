@@ -21,6 +21,8 @@ class TestHistoryManager(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.db_path = os.path.join(self.temp_dir, "test_history.db")
         self.manager = HistoryManager(db_path=self.db_path)
+        # Enable full logging for tests to verify DB storage verification
+        self.manager.set_privacy_settings(level=3, scrub=False)
 
     def tearDown(self):
         """Clean up after each test"""
