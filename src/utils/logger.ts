@@ -11,7 +11,7 @@ export enum LogLevel {
   DEBUG = 'DEBUG',
   INFO = 'INFO',
   WARN = 'WARN',
-  ERROR = 'ERROR'
+  ERROR = 'ERROR',
 }
 
 class Logger {
@@ -87,7 +87,7 @@ class Logger {
       [LogLevel.DEBUG]: 0,
       [LogLevel.INFO]: 1,
       [LogLevel.WARN]: 2,
-      [LogLevel.ERROR]: 3
+      [LogLevel.ERROR]: 3,
     };
 
     // Write to console with threshold check and safety check
@@ -109,7 +109,11 @@ class Logger {
       } catch (error: any) {
         // Ignore EPIPE errors (broken pipe to stdout)
         if (error.code !== 'EPIPE') {
-          try { process.stderr.write(`Logger error: ${error.message}\n`); } catch (e) { /* ignore */ }
+          try {
+            process.stderr.write(`Logger error: ${error.message}\n`);
+          } catch (e) {
+            /* ignore */
+          }
         }
       }
     }
@@ -150,9 +154,8 @@ class Logger {
    * Log error message
    */
   error(source: string, message: string, error?: any): void {
-    const errorData = error instanceof Error
-      ? { message: error.message, stack: error.stack }
-      : error;
+    const errorData =
+      error instanceof Error ? { message: error.message, stack: error.stack } : error;
     this.log(LogLevel.ERROR, source, message, errorData);
   }
 

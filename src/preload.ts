@@ -10,7 +10,7 @@ const api = {
   python: {
     startRecording: () => ipcRenderer.invoke('python:start-recording'),
     stopRecording: () => ipcRenderer.invoke('python:stop-recording'),
-    getStatus: () => ipcRenderer.invoke('python:status')
+    getStatus: () => ipcRenderer.invoke('python:status'),
   },
   onPythonStateChange: (callback: (state: string) => void) => {
     ipcRenderer.on('python:state-change', (_, state: string) => {
@@ -21,7 +21,7 @@ const api = {
     ipcRenderer.on('python:error', (_, error: string) => {
       callback(error);
     });
-  }
+  },
 };
 
 const electronAPI = {
@@ -48,7 +48,7 @@ const electronAPI = {
   },
   onSettingChange: (callback: (key: string, value: any) => void) => {
     ipcRenderer.on('setting-changed', (_, { key, value }) => callback(key, value));
-  }
+  },
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

@@ -31,7 +31,7 @@ class PerformanceMetrics {
   startMetric(metricName: keyof PipelineMetrics, metadata?: any): void {
     this.currentSession[metricName] = {
       startTime: Date.now(),
-      metadata
+      metadata,
     };
     logger.debug('Metrics', `Started ${metricName} metric`, metadata);
   }
@@ -42,7 +42,10 @@ class PerformanceMetrics {
   endMetric(metricName: keyof PipelineMetrics, metadata?: any): number | undefined {
     const metric = this.currentSession[metricName];
     if (!metric || metric.endTime) {
-      logger.warn('Metrics', `Attempted to end non-existent or already-ended metric: ${metricName}`);
+      logger.warn(
+        'Metrics',
+        `Attempted to end non-existent or already-ended metric: ${metricName}`
+      );
       return undefined;
     }
 
@@ -55,7 +58,7 @@ class PerformanceMetrics {
 
     logger.info('Metrics', `Completed ${metricName}`, {
       duration: metric.duration,
-      ...metric.metadata
+      ...metric.metadata,
     });
 
     return metric.duration;
@@ -78,7 +81,7 @@ class PerformanceMetrics {
         this.currentSession.total = {
           startTime: this.currentSession.recording.startTime,
           endTime: latestEndTime,
-          duration: latestEndTime - this.currentSession.recording.startTime
+          duration: latestEndTime - this.currentSession.recording.startTime,
         };
       }
     }
@@ -108,7 +111,7 @@ class PerformanceMetrics {
       transcription: this.currentSession.transcription?.duration,
       processing: this.currentSession.processing?.duration,
       injection: this.currentSession.injection?.duration,
-      total: this.currentSession.total?.duration
+      total: this.currentSession.total?.duration,
     };
   }
 
@@ -126,7 +129,7 @@ class PerformanceMetrics {
       processing: 0,
       injection: 0,
       total: 0,
-      count: this.sessionHistory.length
+      count: this.sessionHistory.length,
     };
 
     for (const session of this.sessionHistory) {
@@ -143,7 +146,7 @@ class PerformanceMetrics {
       processing: Math.round(totals.processing / totals.count),
       injection: Math.round(totals.injection / totals.count),
       total: Math.round(totals.total / totals.count),
-      sessionCount: totals.count
+      sessionCount: totals.count,
     };
   }
 
@@ -158,7 +161,7 @@ class PerformanceMetrics {
       current,
       averages,
       historySize: this.sessionHistory.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 

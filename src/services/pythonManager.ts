@@ -74,7 +74,11 @@ export class PythonManager extends EventEmitter {
           fs.chmodSync(this.tokenFilePath, 0o600); // Make writable first
           fs.unlinkSync(this.tokenFilePath);
         } catch (unlinkError) {
-          logger.warn('PythonManager', 'Failed to remove old token file, will attempt overwrite', unlinkError);
+          logger.warn(
+            'PythonManager',
+            'Failed to remove old token file, will attempt overwrite',
+            unlinkError
+          );
         }
       }
 
@@ -105,90 +109,90 @@ export class PythonManager extends EventEmitter {
    * Start the Python process
    */
   async start(): Promise<void> {
-    return new Promise(async (resolve, reject) => {
+    try {
+      logger.info('PythonManager', 'Starting Python process', {
+        scriptPath: this.pythonScriptPath,
+      });
+
+      // Generate IPC authentication token
+      this.ipcToken = this.generateToken();
+      logger.debug('PythonManager', 'Generated IPC authentication token');
+
+      // Write token to file for external tools
       try {
-        logger.info('PythonManager', 'Starting Python process', { scriptPath: this.pythonScriptPath });
-
-        // Generate IPC authentication token
-        this.ipcToken = this.generateToken();
-        logger.debug('PythonManager', 'Generated IPC authentication token');
-
-        // Write token to file for external tools
-        try {
-          await this.writeTokenFile();
-        } catch (error) {
-          logger.error('PythonManager', 'Failed to write token file, continuing without it', error);
-          // Continue even if token file writing fails
-        }
-
-        // Prepare environment with IPC token
-        const env = {
-          ...process.env,
-          DIKTATE_IPC_TOKEN: this.ipcToken
-        };
-
-        this.process = spawn(this.pythonExePath, ['-u', this.pythonScriptPath], {
-          stdio: ['pipe', 'pipe', 'pipe'],
-          detached: false,
-          cwd: require('path').dirname(this.pythonScriptPath),
-          env: env
-        });
-
-        if (!this.process) {
-          throw new Error('Failed to spawn Python process');
-        }
-
-        // Setup output handlers
-        if (this.process.stdout) {
-          const stdoutReader = readline.createInterface({
-            input: this.process.stdout,
-            terminal: false
-          });
-          stdoutReader.on('line', (line) => {
-            setImmediate(() => this.handlePythonLine(line));
-          });
-        }
-
-        if (this.process.stderr) {
-          const stderrReader = readline.createInterface({
-            input: this.process.stderr,
-            terminal: false
-          });
-          stderrReader.on('line', (line) => {
-            // SPEC_035: Aggressive decimation - don't even schedule the task if it's just noisy INFO during warmup
-            if (this.currentState === 'warmup') {
-              if (line.includes(' - INFO - ') || line.includes(' - DEBUG - ')) {
-                return;
-              }
-            }
-            setImmediate(() => this.handlePythonStderr(line));
-          });
-        }
-
-        this.process.on('error', (error) => {
-          logger.error('PythonManager', 'Process error occurred', error);
-          this.emit('error', error);
-          this.handleProcessError();
-        });
-
-        this.process.on('exit', (code) => {
-          logger.warn('PythonManager', 'Python process exited', { exitCode: code });
-          this.isRunning = false;
-          this.process = null;
-          this.emit('disconnected');
-          this.attemptReconnect();
-        });
-
-        this.isRunning = true;
-        this.reconnectAttempts = 0;
-        this.emit('ready');
-
-        resolve();
+        await this.writeTokenFile();
       } catch (error) {
-        logger.error('PythonManager', 'Failed to start process', error);
-        reject(error);
+        logger.error('PythonManager', 'Failed to write token file, continuing without it', error);
+        // Continue even if token file writing fails
       }
-    });
+
+      // Prepare environment with IPC token
+      const env = {
+        ...process.env,
+        DIKTATE_IPC_TOKEN: this.ipcToken,
+      };
+
+      this.process = spawn(this.pythonExePath, ['-u', this.pythonScriptPath], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        detached: false,
+        cwd: path.dirname(this.pythonScriptPath),
+        env: env,
+      });
+
+      if (!this.process) {
+        throw new Error('Failed to spawn Python process');
+      }
+
+      // Setup output handlers
+      if (this.process.stdout) {
+        const stdoutReader = readline.createInterface({
+          input: this.process.stdout,
+          terminal: false,
+        });
+        stdoutReader.on('line', (line) => {
+          setImmediate(() => this.handlePythonLine(line));
+        });
+      }
+
+      if (this.process.stderr) {
+        const stderrReader = readline.createInterface({
+          input: this.process.stderr,
+          terminal: false,
+        });
+        stderrReader.on('line', (line) => {
+          // SPEC_035: Aggressive decimation - don't even schedule the task if it's just noisy INFO during warmup
+          if (this.currentState === 'warmup') {
+            if (line.includes(' - INFO - ') || line.includes(' - DEBUG - ')) {
+              return;
+            }
+          }
+          setImmediate(() => this.handlePythonStderr(line));
+        });
+      }
+
+      this.process.on('error', (error) => {
+        logger.error('PythonManager', 'Process error occurred', error);
+        this.emit('error', error);
+        this.handleProcessError();
+      });
+
+      this.process.on('exit', (code) => {
+        logger.warn('PythonManager', 'Python process exited', { exitCode: code });
+        this.isRunning = false;
+        this.process = null;
+        this.emit('disconnected');
+        this.attemptReconnect();
+      });
+
+      this.isRunning = true;
+      this.reconnectAttempts = 0;
+      this.emit('ready');
+
+      return Promise.resolve();
+    } catch (error) {
+      logger.error('PythonManager', 'Failed to start process', error);
+      throw error;
+    }
   }
 
   /**
@@ -209,7 +213,7 @@ export class PythonManager extends EventEmitter {
       // Send shutdown command
       this.sendRawCommand({
         id: 'shutdown',
-        command: 'shutdown'
+        command: 'shutdown',
       });
 
       // Force kill after 5 seconds
@@ -236,12 +240,14 @@ export class PythonManager extends EventEmitter {
     this.isSyncing = true;
     try {
       // Yield to let UI process any pending clicks before heavy sync
-      await new Promise(resolve => setImmediate(resolve));
+      await new Promise((resolve) => setImmediate(resolve));
       const result = await this.sendCommand('configure', { config });
       return result;
     } finally {
       // Small delay before turning logs back on to catch trailing noise
-      setTimeout(() => { this.isSyncing = false; }, 500);
+      setTimeout(() => {
+        this.isSyncing = false;
+      }, 500);
     }
   }
 
@@ -259,7 +265,7 @@ export class PythonManager extends EventEmitter {
       const fullCommand: Command = {
         id: commandId,
         command,
-        ...data
+        ...data,
       };
 
       // Register response handler
@@ -337,9 +343,13 @@ export class PythonManager extends EventEmitter {
 
     // Smart log level detection for Python standard logging
     const isInfo = line.includes(' - INFO - ');
-    const isWarn = line.includes(' - WARNING - ') || line.includes('UserWarning:') || line.includes('DeprecationWarning:');
+    const isWarn =
+      line.includes(' - WARNING - ') ||
+      line.includes('UserWarning:') ||
+      line.includes('DeprecationWarning:');
     const isDebug = line.includes(' - DEBUG - ');
-    const isError = line.includes(' - ERROR - ') || line.includes('Exception:') || line.includes('Error:');
+    const isError =
+      line.includes(' - ERROR - ') || line.includes('Exception:') || line.includes('Error:');
 
     // SPEC_035: Total silence during warmup OR initial sync for ANYTHING that isn't a critical error
     // This is the absolute key to preventing the 12-15s event loop stall on Windows
@@ -420,7 +430,7 @@ export class PythonManager extends EventEmitter {
       handler({
         id: '',
         success: false,
-        error: 'Python process crashed'
+        error: 'Python process crashed',
       });
     }
     this.pendingCommands.clear();
@@ -433,7 +443,7 @@ export class PythonManager extends EventEmitter {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       logger.error('PythonManager', 'Max reconnection attempts reached', {
         attempts: this.reconnectAttempts,
-        maxAttempts: this.maxReconnectAttempts
+        maxAttempts: this.maxReconnectAttempts,
       });
       this.emit('fatal-error', new Error('Python process connection lost'));
       return;
@@ -442,7 +452,7 @@ export class PythonManager extends EventEmitter {
     this.reconnectAttempts++;
     logger.info('PythonManager', 'Attempting to reconnect', {
       attempt: this.reconnectAttempts,
-      maxAttempts: this.maxReconnectAttempts
+      maxAttempts: this.maxReconnectAttempts,
     });
 
     setTimeout(() => {

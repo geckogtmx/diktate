@@ -1,576 +1,572 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Control Panel</title>
     <style>
-        :root {
-            --ink-black: #002029ff;
-            --jet-black: #00303dff;
-            --dark-teal: #004052ff;
-            --dark-teal-2: #005066ff;
-            --dark-teal-3: #00607aff;
+      :root {
+        --ink-black: #002029ff;
+        --jet-black: #00303dff;
+        --dark-teal: #004052ff;
+        --dark-teal-2: #005066ff;
+        --dark-teal-3: #00607aff;
 
-            --bg-color: var(--ink-black);
-            --text-color: #e0e0e0;
-            --recording-color: #ff3e3e;
-            --processing-color: var(--dark-teal-3);
-            --border-color: var(--dark-teal);
+        --bg-color: var(--ink-black);
+        --text-color: #e0e0e0;
+        --recording-color: #ff3e3e;
+        --processing-color: var(--dark-teal-3);
+        --border-color: var(--dark-teal);
+      }
+
+      body {
+        font-family: 'Segoe UI', sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* MAIN STATUS PANEL */
+      #status-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        transition:
+          background-color 0.4s ease,
+          border-color 0.4s ease;
+        border-left: 4px solid var(--dark-teal);
+      }
+
+      /* STATE BACKGROUNDS */
+      .state-idle {
+        background-color: var(--ink-black);
+        border-left-color: var(--dark-teal);
+      }
+
+      .state-recording {
+        background-color: rgba(255, 62, 62, 0.15);
+        border-left-color: var(--recording-color);
+        animation: recording-pulse 1.5s infinite;
+      }
+
+      .state-processing {
+        background-color: rgba(0, 96, 122, 0.2);
+        border-left-color: var(--dark-teal-3);
+      }
+
+      .state-transcribing {
+        background-color: rgba(0, 96, 122, 0.15);
+        border-left-color: var(--dark-teal-2);
+      }
+
+      .state-injecting {
+        background-color: rgba(0, 80, 102, 0.2);
+        border-left-color: var(--dark-teal-3);
+      }
+
+      .state-warmup {
+        background-color: rgba(255, 200, 0, 0.15);
+        border-left-color: #ffc800;
+        animation: panel-warmup-pulse 2s infinite ease-in-out;
+      }
+
+      @keyframes panel-warmup-pulse {
+        0%,
+        100% {
+          background-color: rgba(255, 200, 0, 0.1);
         }
 
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+        50% {
+          background-color: rgba(255, 200, 0, 0.25);
+        }
+      }
+
+      @keyframes recording-pulse {
+        0%,
+        100% {
+          background-color: rgba(255, 62, 62, 0.1);
         }
 
-        /* MAIN STATUS PANEL */
-        #status-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            transition: background-color 0.4s ease, border-color 0.4s ease;
-            border-left: 4px solid var(--dark-teal);
+        50% {
+          background-color: rgba(255, 62, 62, 0.25);
+        }
+      }
+
+      /* HEADER BAR */
+      #header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: var(--jet-black);
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      #status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+
+      #status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: var(--dark-teal-3);
+        transition: background-color 0.3s;
+      }
+
+      .state-recording #status-dot {
+        background-color: var(--recording-color);
+        animation: dot-pulse 1s infinite;
+      }
+
+      .state-processing #status-dot {
+        background-color: var(--dark-teal-3);
+        animation: dot-spin 1s linear infinite;
+      }
+
+      .state-warmup #status-dot {
+        background-color: #ffc800;
+        animation: dot-warmup 1s ease-in-out infinite;
+      }
+
+      @keyframes dot-pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
         }
 
-        /* STATE BACKGROUNDS */
-        .state-idle {
-            background-color: var(--ink-black);
-            border-left-color: var(--dark-teal);
+        50% {
+          opacity: 0.5;
+          transform: scale(1.3);
+        }
+      }
+
+      @keyframes dot-spin {
+        from {
+          box-shadow: 0 0 0 0 var(--dark-teal-3);
         }
 
-        .state-recording {
-            background-color: rgba(255, 62, 62, 0.15);
-            border-left-color: var(--recording-color);
-            animation: recording-pulse 1.5s infinite;
+        to {
+          box-shadow: 0 0 10px 3px transparent;
+        }
+      }
+
+      @keyframes dot-warmup {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
         }
 
-        .state-processing {
-            background-color: rgba(0, 96, 122, 0.2);
-            border-left-color: var(--dark-teal-3);
+        50% {
+          transform: scale(1.4);
+          opacity: 0.7;
+        }
+      }
+
+      .badge {
+        font-size: 0.65rem;
+        padding: 2px 6px;
+        background: var(--dark-teal);
+        border-radius: 3px;
+        color: var(--text-color);
+        font-weight: 500;
+      }
+
+      #badge-auth {
+        color: #ff8c00;
+        font-weight: 600;
+      }
+
+      #badges {
+        display: flex;
+        gap: 5px;
+      }
+
+      /* LIVE STATUS MESSAGE */
+      #live-status {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+        color: #aaa;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 20px;
+      }
+
+      .typing-dots::after {
+        content: '';
+        animation: typing 1.5s infinite;
+      }
+
+      @keyframes typing {
+        0% {
+          content: '';
         }
 
-        .state-transcribing {
-            background-color: rgba(0, 96, 122, 0.15);
-            border-left-color: var(--dark-teal-2);
+        25% {
+          content: '.';
         }
 
-        .state-injecting {
-            background-color: rgba(0, 80, 102, 0.2);
-            border-left-color: var(--dark-teal-3);
+        50% {
+          content: '..';
         }
 
-        .state-warmup {
-            background-color: rgba(255, 200, 0, 0.15);
-            border-left-color: #ffc800;
-            animation: panel-warmup-pulse 2s infinite ease-in-out;
+        75% {
+          content: '...';
         }
+      }
 
-        @keyframes panel-warmup-pulse {
+      /* STATS GRID */
+      #stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: var(--border-color);
+        margin: 0 12px;
+        border-radius: 4px;
+        overflow: hidden;
+      }
 
-            0%,
-            100% {
-                background-color: rgba(255, 200, 0, 0.1);
-            }
+      .stat-cell {
+        background: var(--jet-black);
+        padding: 6px;
+        text-align: center;
+      }
 
-            50% {
-                background-color: rgba(255, 200, 0, 0.25);
-            }
-        }
+      .stat-cell.stat-highlight {
+        background: rgba(0, 96, 122, 0.3);
+      }
 
-        @keyframes recording-pulse {
+      .stat-value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: white;
+      }
 
-            0%,
-            100% {
-                background-color: rgba(255, 62, 62, 0.1);
-            }
+      .stat-label {
+        font-size: 0.55rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
 
-            50% {
-                background-color: rgba(255, 62, 62, 0.25);
-            }
-        }
+      /* TOGGLES */
+      #toggles-bar {
+        display: flex;
+        justify-content: space-around;
+        padding: 8px 12px;
+        gap: 10px;
+      }
 
-        /* HEADER BAR */
-        #header-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            background: var(--jet-black);
-            border-bottom: 1px solid var(--border-color);
-        }
+      .toggle-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        color: #aaa;
+      }
 
-        #status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 700;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
+      /* MODE TOGGLE */
+      #mode-toggle-bar {
+        padding: 8px 12px;
+        display: flex;
+        gap: 8px;
+        border-bottom: 1px solid var(--border-color);
+      }
 
-        #status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: var(--dark-teal-3);
-            transition: background-color 0.3s;
-        }
+      .mode-btn {
+        flex: 1;
+        padding: 10px 5px;
+        background: var(--jet-black);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        color: #888;
+        font-size: 0.8rem;
+        cursor: default;
+        transition: all 0.2s;
+        text-align: center;
+        font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 48px;
+      }
 
-        .state-recording #status-dot {
-            background-color: var(--recording-color);
-            animation: dot-pulse 1s infinite;
-        }
+      .mode-btn:hover {
+        background: var(--dark-teal);
+        color: white;
+      }
 
-        .state-processing #status-dot {
-            background-color: var(--dark-teal-3);
-            animation: dot-spin 1s linear infinite;
-        }
+      .mode-btn.active {
+        background: var(--dark-teal-3);
+        color: white;
+        border-color: var(--dark-teal-3);
+        box-shadow: 0 0 8px rgba(0, 96, 122, 0.5);
+      }
 
-        .state-warmup #status-dot {
-            background-color: #ffc800;
-            animation: dot-warmup 1s ease-in-out infinite;
-        }
+      /* WARMUP LOCK */
+      .state-warmup #toggles-bar,
+      .state-warmup #mode-toggle-bar {
+        pointer-events: none;
+        opacity: 0.5;
+        filter: grayscale(0.5);
+        transition: all 0.5s ease;
+      }
 
-        @keyframes dot-pulse {
+      .mode-btn .mode-desc {
+        display: block;
+        font-size: 0.6rem;
+        opacity: 0.7;
+        margin-top: 2px;
+      }
 
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
+      .toggle-switch {
+        position: relative;
+        width: 32px;
+        height: 18px;
+      }
 
-            50% {
-                opacity: 0.5;
-                transform: scale(1.3);
-            }
-        }
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
 
-        @keyframes dot-spin {
-            from {
-                box-shadow: 0 0 0 0 var(--dark-teal-3);
-            }
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #333;
+        border-radius: 18px;
+        transition: 0.3s;
+      }
 
-            to {
-                box-shadow: 0 0 10px 3px transparent;
-            }
-        }
+      .toggle-slider:before {
+        content: '';
+        position: absolute;
+        height: 12px;
+        width: 12px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        border-radius: 50%;
+        transition: 0.3s;
+      }
 
-        @keyframes dot-warmup {
+      input:checked + .toggle-slider {
+        background-color: var(--dark-teal-3);
+      }
 
-            0%,
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
+      input:checked + .toggle-slider:before {
+        transform: translateX(14px);
+      }
 
-            50% {
-                transform: scale(1.4);
-                opacity: 0.7;
-            }
-        }
+      /* PERFORMANCE GRID */
+      #perf-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 1px;
+        background: var(--border-color);
+        margin: 12px 12px 8px 12px;
+        /* Increased top margin for spacing */
+        border-radius: 4px;
+        overflow: hidden;
+        /* border-top removed as requested */
+      }
 
-        .badge {
-            font-size: 0.65rem;
-            padding: 2px 6px;
-            background: var(--dark-teal);
-            border-radius: 3px;
-            color: var(--text-color);
-            font-weight: 500;
-        }
+      .perf-cell {
+        background: var(--jet-black);
+        padding: 8px 6px;
+        text-align: center;
+        transition: background-color 0.3s;
+      }
 
-        #badge-auth {
-            color: #ff8c00;
-            font-weight: 600;
-        }
+      .perf-cell.active {
+        background: rgba(0, 96, 122, 0.4);
+        box-shadow: inset 0 0 10px rgba(0, 150, 190, 0.2);
+      }
 
-        #badges {
-            display: flex;
-            gap: 5px;
-        }
+      .perf-value {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: white;
+        font-family: 'Consolas', monospace;
+      }
 
-        /* LIVE STATUS MESSAGE */
-        #live-status {
-            padding: 10px 12px;
-            font-size: 0.85rem;
-            color: #aaa;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-height: 20px;
-        }
+      .perf-label {
+        font-size: 0.6rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 2px;
+      }
 
-        .typing-dots::after {
-            content: '';
-            animation: typing 1.5s infinite;
-        }
+      /* FOOTER */
+      footer {
+        background-color: var(--jet-black);
+        padding: 4px 10px;
+        font-size: 0.7rem;
+        color: #666;
+        display: flex;
+        justify-content: space-between;
+      }
 
-        @keyframes typing {
-            0% {
-                content: '';
-            }
+      #hotkey-hint {
+        font-weight: bold;
+        color: var(--text-color);
+        padding: 1px 5px;
+        background: var(--dark-teal);
+        border-radius: 2px;
+      }
 
-            25% {
-                content: '.';
-            }
-
-            50% {
-                content: '..';
-            }
-
-            75% {
-                content: '...';
-            }
-        }
-
-        /* STATS GRID */
-        #stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1px;
-            background: var(--border-color);
-            margin: 0 12px;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .stat-cell {
-            background: var(--jet-black);
-            padding: 6px;
-            text-align: center;
-        }
-
-        .stat-cell.stat-highlight {
-            background: rgba(0, 96, 122, 0.3);
-        }
-
-        .stat-value {
-            font-size: 1rem;
-            font-weight: 700;
-            color: white;
-        }
-
-        .stat-label {
-            font-size: 0.55rem;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* TOGGLES */
-        #toggles-bar {
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 12px;
-            gap: 10px;
-        }
-
-        .toggle-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.75rem;
-            color: #aaa;
-        }
-
-        /* MODE TOGGLE */
-        #mode-toggle-bar {
-            padding: 8px 12px;
-            display: flex;
-            gap: 8px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .mode-btn {
-            flex: 1;
-            padding: 10px 5px;
-            background: var(--jet-black);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            color: #888;
-            font-size: 0.8rem;
-            cursor: default;
-            transition: all 0.2s;
-            text-align: center;
-            font-weight: 600;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 48px;
-        }
-
-        .mode-btn:hover {
-            background: var(--dark-teal);
-            color: white;
-        }
-
-        .mode-btn.active {
-            background: var(--dark-teal-3);
-            color: white;
-            border-color: var(--dark-teal-3);
-            box-shadow: 0 0 8px rgba(0, 96, 122, 0.5);
-        }
-
-        /* WARMUP LOCK */
-        .state-warmup #toggles-bar,
-        .state-warmup #mode-toggle-bar {
-            pointer-events: none;
-            opacity: 0.5;
-            filter: grayscale(0.5);
-            transition: all 0.5s ease;
-        }
-
-        .mode-btn .mode-desc {
-            display: block;
-            font-size: 0.6rem;
-            opacity: 0.7;
-            margin-top: 2px;
-        }
-
-        .toggle-switch {
-            position: relative;
-            width: 32px;
-            height: 18px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #333;
-            border-radius: 18px;
-            transition: 0.3s;
-        }
-
-        .toggle-slider:before {
-            content: "";
-            position: absolute;
-            height: 12px;
-            width: 12px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            border-radius: 50%;
-            transition: 0.3s;
-        }
-
-        input:checked+.toggle-slider {
-            background-color: var(--dark-teal-3);
-        }
-
-        input:checked+.toggle-slider:before {
-            transform: translateX(14px);
-        }
-
-        /* PERFORMANCE GRID */
-        #perf-stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: auto auto;
-            gap: 1px;
-            background: var(--border-color);
-            margin: 12px 12px 8px 12px;
-            /* Increased top margin for spacing */
-            border-radius: 4px;
-            overflow: hidden;
-            /* border-top removed as requested */
-        }
-
-        .perf-cell {
-            background: var(--jet-black);
-            padding: 8px 6px;
-            text-align: center;
-            transition: background-color 0.3s;
-        }
-
-        .perf-cell.active {
-            background: rgba(0, 96, 122, 0.4);
-            box-shadow: inset 0 0 10px rgba(0, 150, 190, 0.2);
-        }
-
-        .perf-value {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: white;
-            font-family: 'Consolas', monospace;
-        }
-
-        .perf-label {
-            font-size: 0.6rem;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 2px;
-        }
-
-        /* FOOTER */
-        footer {
-            background-color: var(--jet-black);
-            padding: 4px 10px;
-            font-size: 0.7rem;
-            color: #666;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        #hotkey-hint {
-            font-weight: bold;
-            color: var(--text-color);
-            padding: 1px 5px;
-            background: var(--dark-teal);
-            border-radius: 2px;
-        }
-
-        #metrics-summary {
-            display: flex;
-            gap: 15px;
-            color: #888;
-            font-size: 0.65rem;
-        }
+      #metrics-summary {
+        display: flex;
+        gap: 15px;
+        color: #888;
+        font-size: 0.65rem;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div id="status-panel" class="state-warmup">
-        <!-- HEADER -->
-        <div id="header-bar">
-            <div id="status-indicator">
-                <span id="status-dot"></span>
-                <span id="status-text">WARMING UP</span>
-            </div>
-            <div id="badges">
-                <span class="badge" id="badge-transcriber">Turbo</span>
-                <span class="badge" id="badge-processor">Local</span>
-                <span class="badge" id="badge-auth">LOC</span>
-            </div>
+      <!-- HEADER -->
+      <div id="header-bar">
+        <div id="status-indicator">
+          <span id="status-dot"></span>
+          <span id="status-text">WARMING UP</span>
         </div>
+        <div id="badges">
+          <span class="badge" id="badge-transcriber">Turbo</span>
+          <span class="badge" id="badge-processor">Local</span>
+          <span class="badge" id="badge-auth">LOC</span>
+        </div>
+      </div>
 
-        <!-- LIVE STATUS -->
-        <div id="live-status">
-            <span id="live-message" class="typing-dots">Loading model into memory...</span>
-        </div>
+      <!-- LIVE STATUS -->
+      <div id="live-status">
+        <span id="live-message" class="typing-dots">Loading model into memory...</span>
+      </div>
 
-        <!-- STATS GRID -->
-        <div id="stats-grid">
-            <div class="stat-cell">
-                <div class="stat-value" id="stat-sessions">0</div>
-                <div class="stat-label">Sessions</div>
-            </div>
-            <div class="stat-cell">
-                <div class="stat-value" id="stat-chars">0</div>
-                <div class="stat-label">Characters</div>
-            </div>
-            <div class="stat-cell">
-                <div class="stat-value" id="stat-speed">--</div>
-                <div class="stat-label">⚡ Speed</div>
-            </div>
-            <div class="stat-cell">
-                <div class="stat-value" id="stat-last">--</div>
-                <div class="stat-label">Last Total</div>
-            </div>
+      <!-- STATS GRID -->
+      <div id="stats-grid">
+        <div class="stat-cell">
+          <div class="stat-value" id="stat-sessions">0</div>
+          <div class="stat-label">Sessions</div>
         </div>
+        <div class="stat-cell">
+          <div class="stat-value" id="stat-chars">0</div>
+          <div class="stat-label">Characters</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value" id="stat-speed">--</div>
+          <div class="stat-label">⚡ Speed</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value" id="stat-last">--</div>
+          <div class="stat-label">Last Total</div>
+        </div>
+      </div>
 
-        <!-- TOGGLES -->
-        <div id="toggles-bar">
-            <label class="toggle-item">
-                <span>Sound</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="toggle-sound" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </label>
-            <label class="toggle-item">
-                <span>Cloud</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="toggle-cloud">
-                    <span class="toggle-slider"></span>
-                </label>
-            </label>
-            <label class="toggle-item">
-                <span>+Key</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="toggle-additional-key">
-                    <span class="toggle-slider"></span>
-                </label>
-            </label>
-            <label class="toggle-item">
-                <span id="refine-mode-label">Refine: Auto</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="toggle-refine-mode">
-                    <span class="toggle-slider"></span>
-                </label>
-            </label>
-        </div>
+      <!-- TOGGLES -->
+      <div id="toggles-bar">
+        <label class="toggle-item">
+          <span>Sound</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-sound" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+        <label class="toggle-item">
+          <span>Cloud</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-cloud" />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+        <label class="toggle-item">
+          <span>+Key</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-additional-key" />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+        <label class="toggle-item">
+          <span id="refine-mode-label">Refine: Auto</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-refine-mode" />
+            <span class="toggle-slider"></span>
+          </label>
+        </label>
+      </div>
 
-        <!-- MODE SELECTION -->
-        <div id="mode-toggle-bar">
-            <div class="mode-btn active" id="mode-standard">
-                <span>Standard</span>
-                <span class="mode-desc">General</span>
-            </div>
-            <div class="mode-btn" id="mode-prompt">
-                <span>Prompt</span>
-                <span class="mode-desc">Engineered</span>
-            </div>
-            <div class="mode-btn" id="mode-professional">
-                <span>Professional</span>
-                <span class="mode-desc">Polished</span>
-            </div>
-            <div class="mode-btn" id="mode-raw">
-                <span>Dictation</span>
-                <span class="mode-desc">Literal</span>
-            </div>
+      <!-- MODE SELECTION -->
+      <div id="mode-toggle-bar">
+        <div class="mode-btn active" id="mode-standard">
+          <span>Standard</span>
+          <span class="mode-desc">General</span>
         </div>
+        <div class="mode-btn" id="mode-prompt">
+          <span>Prompt</span>
+          <span class="mode-desc">Engineered</span>
+        </div>
+        <div class="mode-btn" id="mode-professional">
+          <span>Professional</span>
+          <span class="mode-desc">Polished</span>
+        </div>
+        <div class="mode-btn" id="mode-raw">
+          <span>Dictation</span>
+          <span class="mode-desc">Literal</span>
+        </div>
+      </div>
 
-        <!-- PERFORMANCE GRID -->
-        <div id="perf-stats-grid">
-            <div class="perf-cell" id="perf-rec-cell">
-                <div class="perf-value" id="perf-rec">--</div>
-                <div class="perf-label">Recording</div>
-            </div>
-            <div class="perf-cell" id="perf-trans-cell">
-                <div class="perf-value" id="perf-trans">--</div>
-                <div class="perf-label">Transcription</div>
-            </div>
-            <div class="perf-cell" id="perf-proc-cell">
-                <div class="perf-value" id="perf-proc">--</div>
-                <div class="perf-label">AI Processing</div>
-            </div>
-            <div class="perf-cell" id="perf-inject-cell">
-                <div class="perf-value" id="perf-inject">--</div>
-                <div class="perf-label">Injection</div>
-            </div>
+      <!-- PERFORMANCE GRID -->
+      <div id="perf-stats-grid">
+        <div class="perf-cell" id="perf-rec-cell">
+          <div class="perf-value" id="perf-rec">--</div>
+          <div class="perf-label">Recording</div>
         </div>
+        <div class="perf-cell" id="perf-trans-cell">
+          <div class="perf-value" id="perf-trans">--</div>
+          <div class="perf-label">Transcription</div>
+        </div>
+        <div class="perf-cell" id="perf-proc-cell">
+          <div class="perf-value" id="perf-proc">--</div>
+          <div class="perf-label">AI Processing</div>
+        </div>
+        <div class="perf-cell" id="perf-inject-cell">
+          <div class="perf-value" id="perf-inject">--</div>
+          <div class="perf-label">Injection</div>
+        </div>
+      </div>
     </div>
 
-
-
     <footer>
-        <div>Hotkey: <span id="hotkey-hint">Ctrl+Alt+D</span></div>
-        <div style="font-size: 0.6rem; opacity: 0.5;">v0.2.0-DASH</div>
+      <div>Hotkey: <span id="hotkey-hint">Ctrl+Alt+D</span></div>
+      <div style="font-size: 0.6rem; opacity: 0.5">v0.2.0-DASH</div>
     </footer>
 
-    <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';"
+    />
     <script src="./renderer.js"></script>
-</body>
-
+  </body>
 </html>
