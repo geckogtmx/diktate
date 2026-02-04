@@ -3,4 +3,4 @@
 
 npx lint-staged
 python -m ruff check python/
-# detect-secrets-hook --baseline .secrets.baseline
+detect-secrets-hook --baseline .secrets.baseline
