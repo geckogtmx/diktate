@@ -748,11 +748,7 @@ context = ssl.create_default_context(cafile=certifi.where())
 - Use `textContent` or DOM construction methods
 - Low risk but good for consistency
 
-**10. Create Developer Onboarding Video**
 
-- 5-10 minute walkthrough of codebase
-- Setup instructions for new contributors
-- Architecture overview
 
 ---
 
@@ -830,7 +826,7 @@ context = ssl.create_default_context(cafile=certifi.where())
 
 1. **Test coverage** - Only 4 test files for 15,448 LOC
 2. **CI/CD pipeline** - No automated testing or deployment
-3. **main.ts size** - 2,700+ lines, needs modularization
+
 
 ### Recommendation
 
