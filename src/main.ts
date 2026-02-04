@@ -20,6 +20,10 @@ import {
 } from 'electron';
 import child_process from 'child_process';
 import * as dotenv from 'dotenv';
+// Fix for Windows Notifications (missing AUMID causes silent failure)
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.gecko.diktate');
+}
 dotenv.config();
 
 import * as path from 'path';
@@ -354,6 +358,7 @@ let recordingMode: 'dictate' | 'ask' | 'translate' | 'refine' | 'note' = 'dictat
 let settingsWindow: BrowserWindow | null = null;
 let debugWindow: BrowserWindow | null = null; // SPEC_035: Explicitly track Control Panel
 let loadingWindow: BrowserWindow | null = null; // SPEC_035: New Startup Window
+let isGlobalMute: boolean = false; // REQ: Track mute state for proactive blocking
 
 /**
  * Create a simple colored icon programmatically
@@ -1085,6 +1090,9 @@ function setupPythonEventHandlers(): void {
     } else {
       updateTrayTooltip();
     }
+
+    // REQ: Update global state
+    isGlobalMute = muted;
   });
 
   // Handle API errors from Python (OAuth, rate limits, network)
@@ -1804,9 +1812,19 @@ ipcMain.handle('settings:save-custom-prompt', async (_event, mode: string, promp
 
     // Validate {text} placeholder if prompt is not empty
     if (promptText && !promptText.includes('{text}')) {
+      const errorMessage =
+        'Prompt must include {text} placeholder where transcribed text will be inserted';
+      showNotification(
+        'Invalid Prompt',
+        errorMessage,
+        true // isError
+      );
+      if (store.get('soundFeedback')) {
+        playSound('c'); // Assuming 'c' is an error sound
+      }
       return {
         success: false,
-        error: 'Prompt must include {text} placeholder where transcribed text will be inserted',
+        error: errorMessage,
       };
     }
 
@@ -2386,6 +2404,22 @@ async function toggleRecording(
     return;
   }
 
+  // REQ: Proactively block if microphone is muted
+  if (isGlobalMute && !isRecording) {
+    logger.warn('MAIN', 'Recording blocked: Microphone is muted (Frontend Check)');
+    showNotification(
+      '🔇 Microphone Muted',
+      'Your microphone is muted. Please unmute to dictate.',
+      true
+    );
+    // Beep to indicate failure
+    if (store.get('soundFeedback')) {
+      // Use a distinct error sound or just the stop sound
+      playSound('c');
+    }
+    return;
+  }
+
   if (isRecording) {
     // Play feedback sound
     if (store.get('soundFeedback')) {
@@ -2423,15 +2457,6 @@ async function toggleRecording(
       updateTrayState('Idle');
     }
   } else {
-    // Play feedback sound
-    if (store.get('soundFeedback')) {
-      const sound =
-        mode === 'ask' || mode === 'translate' || mode === 'refine' || mode === 'note'
-          ? store.get('askSound')
-          : store.get('startSound');
-      playSound(sound);
-    }
-
     // Start recording
     recordingMode = mode;
     logger.info('MAIN', 'Starting recording', { mode });
@@ -2460,17 +2485,41 @@ async function toggleRecording(
       const audioDeviceLabel = store.get('audioDeviceLabel');
       const maxDuration = store.get('maxRecordingDuration', 60); // Default: 60 seconds
 
+      // Play feedback sound (Moved here to ensure it only plays if NOT blocked)
+      if (store.get('soundFeedback')) {
+        const sound =
+          mode === 'ask' || mode === 'translate' || mode === 'refine' || mode === 'note'
+            ? store.get('askSound')
+            : store.get('startSound');
+        playSound(sound);
+      }
+
       await pythonManager.sendCommand('start_recording', {
         deviceId: audioDeviceId,
         deviceLabel: audioDeviceLabel,
         mode: mode, // Pass the mode to Python
         maxDuration: maxDuration, // Pass max duration setting
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error('MAIN', 'Failed to start recording', error);
       isRecording = false;
       updateTrayIcon('idle');
       updateTrayState('Idle');
+
+      // SPEC_014: Don't show generic error if it's just a muted mic (handle race condition)
+      if (error.message && error.message.includes('Microphone is muted')) {
+        showNotification(
+          '🔇 Microphone Muted',
+          'Your microphone is muted. Please unmute to dictate.',
+          true
+        );
+        // Play error sound to cancel out the start sound
+        if (store.get('soundFeedback')) {
+          playSound('c');
+        }
+        return;
+      }
+
       showNotification('Recording Error', 'Failed to start recording. Please try again.', true);
     }
   }

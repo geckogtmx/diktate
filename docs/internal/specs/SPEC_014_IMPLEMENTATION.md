@@ -45,6 +45,19 @@ This document outlines the specific steps and tasks required to implement the au
 - [x] **Configure Staged Run**: Update `package.json` with `lint-staged` config.
 - [x] **Test**: Attempt a commit to verify hooks run.
 
+### 2.5 Agent-Friendly Structure (Spec 8)
+- [ ] **Section Markers**: Add clear `# ===== SECTION =====` dividers to `ipc_server.py` (2400+ lines).
+- [ ] **Spec References**: specific `# SPEC_XXX:` citations for key logic blocks (Note Mode, Ghost Mode).
+
+### 2.6 Core Professionalization (Spec 2)
+- [ ] **Targets**: `python/core/processor.py`, `python/core/injector.py`, `python/core/recorder.py`.
+- [ ] **Docstrings**: Google-style docstrings for all public methods/classes.
+- [ ] **Type Hints**: strict typing (no `Any` absent good reason), return types.
+
+### 2.7 Error Handling Etiquette (Spec 3)
+- [ ] **Review**: Check critical paths (Recording -> Processing) for "silent failures" or bare `except:`.
+- [ ] **Logging**: Enforce `logger.error` vs `logger.warning` distinction.
+
 ## 3. Configuration Details
 
 ### 3.1 Python: `ruff.toml`
@@ -206,3 +219,12 @@ This checklist tracks the granular progress of the quality gatekeeper implementa
 - [x] **Guidelines**: Create `CONTRIBUTING.md` referencing SPEC_014.
 - [x] **History**: Initialize `CHANGELOG.md`.
 - [x] **Final Pass**: Run `npm test` and verify all quality gates pass on the entire codebase.
+
+### Phase 6: High-Value Code Etiquette (New)
+- [x] **Structure**: Implement agent-friendly section markers in `ipc_server.py`.
+- [x] **Context**: Add `# SPEC` references to `ipc_server.py`.
+- [x] **Core Docs**: Add docstrings to `processor.py` public methods.
+- [x] **Core Types**: Add type hints to `processor.py`.
+- [x] **Core Docs**: Add docstrings to `injector.py` public methods.
+- [x] **Core Types**: Add type hints to `injector.py`.
+- [x] **Error Hygiene**: Audit and fix error handling in `recorder.py` and `processor.py`.

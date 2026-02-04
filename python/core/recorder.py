@@ -99,7 +99,9 @@ class Recorder:
                         )
 
                 except Exception as e:
-                    logger.error(f"Error enumerating devices: {e}")
+                    logger.warning(
+                        f"Warning: Error enumerating devices (falling back to default): {e}"
+                    )
 
             self.stream = self.p.open(
                 format=pyaudio.paInt16,

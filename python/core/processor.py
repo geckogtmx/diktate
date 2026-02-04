@@ -62,7 +62,7 @@ class LocalProcessor:
     def __init__(
         self,
         ollama_url: str = "http://localhost:11434",
-        model: str = None,  # SPEC_038: No hardcoded default, must be provided by caller
+        model: str | None = None,  # SPEC_038: No hardcoded default, must be provided by caller
         mode: str = "standard",
     ):
         self.ollama_url = ollama_url
@@ -143,9 +143,7 @@ class LocalProcessor:
         text = text.replace("{text}", "[text]")
         return text
 
-    def process(
-        self, text: str, max_retries: int = 3, prompt_override: str | None = None
-    ) -> str:
+    def process(self, text: str, max_retries: int = 3, prompt_override: str | None = None) -> str:
         """Process text using Ollama with exponential backoff retry logic.
 
         Args:
@@ -219,7 +217,7 @@ class LocalProcessor:
                     f"Connection error to Ollama (attempt {attempt + 1}/{max_retries}): {e}"
                 )
             except Exception as e:
-                logger.error(f"Error processing text: {e}")
+                logger.warning(f"Error processing text (will retry): {e}")
 
             # Exponential backoff: 1s, 2s, 4s (only if not the last attempt)
             if attempt < max_retries - 1:
@@ -469,9 +467,7 @@ class AnthropicProcessor:
         text = text.replace("{text}", "[text]")
         return text
 
-    def process(
-        self, text: str, max_retries: int = 3, prompt_override: str | None = None
-    ) -> str:
+    def process(self, text: str, max_retries: int = 3, prompt_override: str | None = None) -> str:
         """Process text using Anthropic Claude API.
 
         Args:
@@ -579,9 +575,7 @@ class OpenAIProcessor:
         text = text.replace("{text}", "[text]")
         return text
 
-    def process(
-        self, text: str, max_retries: int = 3, prompt_override: str | None = None
-    ) -> str:
+    def process(self, text: str, max_retries: int = 3, prompt_override: str | None = None) -> str:
         """Process text using OpenAI API.
 
         Args:

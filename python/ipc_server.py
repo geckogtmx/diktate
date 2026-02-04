@@ -2,6 +2,10 @@
 IPC Server for dIKtate
 Handles JSON-based communication between Electron and Python backend
 """
+
+# ==================================================================================================
+# SECTION: IMPORTS & CONFIGURATION
+# ==================================================================================================
 from __future__ import annotations
 
 import atexit
@@ -61,6 +65,7 @@ def _add_nvidia_paths():
 
 _add_nvidia_paths()
 # -------------------------------------------------------------------
+
 
 # --- SECURITY: Guaranteed audio file cleanup on exit (M3 fix) ---
 def _cleanup_temp_audio_files():
@@ -125,6 +130,9 @@ logger.warning(f"Session log: {session_log_file} (Initial level: WARNING)")
 # State and stats classes below...
 
 
+# ==================================================================================================
+# SECTION: DATA MODELS & ENUMS
+# ==================================================================================================
 class State(Enum):
     """Pipeline states"""
 
@@ -278,6 +286,9 @@ class PerformanceMetrics:
             logger.warning(f"Failed to log inference time: {e}")
 
 
+# ==================================================================================================
+# SECTION: IPC SERVER DEFINITION
+# ==================================================================================================
 class IpcServer:
     """Server for handling IPC commands from Electron"""
 
@@ -368,6 +379,9 @@ class IpcServer:
         # Start tiered warmup in background
         threading.Thread(target=self._startup_tiered_warmup, daemon=True).start()
 
+    # ==============================================================================================
+    # SECTION: STARTUP & WARMUP
+    # ==============================================================================================
     def _startup_tiered_warmup(self):
         """Standard parallel startup: Load components simultaneously for a reliable 10-12s ready state."""
         try:
@@ -708,6 +722,9 @@ class IpcServer:
             logger.warning(f"[WARMUP] Quick warmup failed (non-fatal): {e}")
             return {"success": False, "error": str(e)}
 
+    # ==============================================================================================
+    # SECTION: BACKGROUND MONITORS
+    # ==============================================================================================
     def _start_mute_monitoring(self):
         """Start background thread to monitor microphone mute state."""
         # Get selected device label from config
@@ -815,6 +832,9 @@ class IpcServer:
             logger.error(f"Failed to initialize Injector: {e}")
             self._send_error(f"Injector initialization failed: {e}")
 
+    # ==============================================================================================
+    # SECTION: STATE MANAGEMENT
+    # ==============================================================================================
     def _set_state(self, new_state: State) -> None:
         """Set pipeline state and emit event"""
         old_state = self.state
@@ -851,6 +871,9 @@ class IpcServer:
             },
         )
 
+    # ==============================================================================================
+    # SECTION: CORE ACTIONS (RECORDING)
+    # ==============================================================================================
     def start_recording(
         self,
         device_id: str | None = None,
@@ -958,6 +981,9 @@ class IpcServer:
             self._set_state(State.ERROR)
             return {"success": False, "error": str(e)}
 
+    # ==============================================================================================
+    # SECTION: PROCESSING PIPELINES
+    # ==============================================================================================
     def _process_recording(self) -> None:  # noqa: C901
         """Process the recorded audio through the pipeline"""
         try:
@@ -1701,6 +1727,7 @@ class IpcServer:
 
             self._set_state(State.ERROR)
 
+    # SPEC_020: Note-taking mode for saving transcripts directly to files
     def _process_note_recording(self) -> None:  # noqa: C901
         """Process recorded audio for note-taking mode (SPEC_020)"""
         try:
