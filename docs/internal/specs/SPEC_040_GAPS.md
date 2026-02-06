@@ -27,6 +27,12 @@
 **Score Impact:** 3/10 → 10/10 ✅ **Target Achieved**
 **Achievement:** All 30+ innerHTML uses eliminated, pre-commit hook prevents future uses
 
+### 🚧 GAP 4: TypeScript `any` Types - IN PROGRESS
+**Status:** Task 4.1 complete in commit `4c40120` (2026-02-06)
+**Score Impact:** 6/10 → 7/10 (51% reduction: 33 → 16 `any` uses in main.ts)
+**Achievement:** 17 Python event interfaces defined, 17 `any` types eliminated
+**Remaining:** 16 `any` uses (API responses, error handlers, config objects)
+
 ### ✅ Phase 1: Test Infrastructure (COMPLETE)
 - ✅ Task 1.1: Created `tests/conftest.py`, fixed test imports
 - ✅ Task 1.9: Created `tests/unit/` and `tests/integration/` directories
@@ -912,19 +918,137 @@ b974d2f - fix: re-attach button handlers after DOM restoration in modes.ts
 
 ## GAP 4: TypeScript `any` Types
 
-**Current:** 59+ explicit `any` types (33 in main.ts)
+**Status:** 🚧 **IN PROGRESS** (2026-02-06)
+**Current:** 16 `any` types in main.ts (down from 33, 51% reduction)
 **Target:** <10 remaining (only where truly unavoidable)
+
+### Progress Summary
+
+**Task 4.1: Define Python event payload interfaces** ✅ **COMPLETE**
+- Created `src/types/pythonEvents.ts` with 17 typed event interfaces
+- Eliminated 17 `any` types from Python event handlers in main.ts
+- Commit: `4c40120` (2026-02-06)
+
+**Remaining `any` uses in main.ts:** 16 total
+- API response parsing (`.filter((m: any)`, `.map((m: any)`) - 9 uses
+- Error handlers (`catch (err: any)`) - 4 uses
+- Dynamic store access (`const config: any`) - 2 uses
+- Profile aggregation (`const localProfiles: any`, `cloudProfiles: any`) - 2 uses
 
 ### `any` Patterns and Fixes
 
-| Pattern | Count | Fix |
-|---------|-------|-----|
-| Event handler data (`data: any`) | ~24 | Define typed interfaces in `src/types/pythonEvents.ts` |
-| Store dynamic keys (`as any`) | ~12 | Template literal index signatures on `UserSettings` |
-| Config/profile objects | ~3 | Define `ModeProfile`, `PythonConfig` interfaces |
-| API response parsing (`m: any`) | ~8 | Define response type interfaces per cloud provider |
-| Error handling (`catch (err: any)`) | ~5 | Use `catch (err: unknown)` + `instanceof Error` |
-| Preload/global definitions | ~5 | Type the API bridge properly in `global.d.ts` |
+| Pattern | Count | Status | Fix |
+|---------|-------|--------|-----|
+| Event handler data (`data: any`) | 17 | ✅ DONE | Define typed interfaces in `src/types/pythonEvents.ts` |
+| API response parsing (`m: any`) | 9 | 🔜 TODO | Define `GeminiModel`, `AnthropicModel`, `OpenAIModel` interfaces |
+| Error handlers (`err: any`) | 4 | 🔜 TODO | Use `unknown` type with type guards |
+| Store dynamic keys (`as any`) | 2 | 🔜 TODO | Template literal index signatures on `UserSettings` |
+| Config/profile objects | 2 | 🔜 TODO | Define `ModeProfile`, `PythonConfig` interfaces |
+
+---
+
+## 🔧 GAP 4 Implementation Details
+
+### Task 4.1: Python Event Payload Interfaces (COMPLETE)
+
+**Created:** `src/types/pythonEvents.ts` (159 lines, 17 interfaces)
+
+**Event Interfaces Defined:**
+
+1. **StartupProgressEvent** - Model loading progress during Python subprocess startup
+   - Fields: `step`, `progress`, `total`
+
+2. **PerformanceMetricsEvent** - Transcription/processing pipeline timing metrics
+   - Fields: `transcription_time`, `processing_time`, `total_time`, `tokens_per_sec`
+
+3. **DictationSuccessEvent** - Successful dictation with metadata
+   - Fields: `transcription`, `processed_text`, `mode`, `duration`, `char_count`
+
+4. **SystemMetricsEvent** - CPU/memory/GPU usage with phase tracking
+   - Fields: `phase`, `activity_count`, `metrics` (nested object with cpu/memory/gpu stats)
+
+5. **StatusCheckEvent** - Python subprocess status polling response
+   - Fields: `status`, `recording`, `ollama_running`, `models`, `transcriber`, `processor`
+
+6. **NoteSavedEvent** - History database save confirmation
+   - Fields: `filepath`, `filePath` (dual support for inconsistent Python naming), `session_id`, `mode`
+
+7. **AskResponseEvent** - Ask Claude mode response with success/error handling
+   - Fields: `success`, `error`, `question`, `answer`, `response`, `mode`
+
+8. **ProcessorFallbackEvent** - Ollama failure triggering raw transcription fallback
+   - Fields: `reason`, `transcription`, `consecutive_failures`, `using_raw`
+
+9. **RecordingAutoStoppedEvent** - Silence detection auto-stop
+   - Fields: `reason` (literal union), `duration_seconds`, `max_duration`
+
+10. **MicMutedEvent** - Microphone mute state change
+    - Fields: `muted`, `device`, `message`
+
+11. **MicStatusEvent** - Microphone availability update
+    - Fields: `available`, `muted`, `device`, `message`
+
+12. **ApiErrorEvent** - Cloud API errors (OAuth, rate limit, general errors)
+    - Fields: `error_type` (literal union), `message`, `provider`
+
+13. **RefineSuccessEvent** - Text refinement success
+    - Fields: `original_text`, `refined_text`, `mode`
+
+14. **RefineErrorEvent** - Text refinement error
+    - Fields: `error`, `original_text`
+
+15. **RefineInstructionSuccessEvent** - Custom instruction refinement success
+    - Fields: `original_text`, `refined_text`, `instruction`, `mode`
+
+16. **RefineInstructionFallbackEvent** - Custom instruction processor fallback
+    - Fields: `reason`, `original_text`, `instruction`
+
+17. **RefineInstructionErrorEvent** - Custom instruction refinement error
+    - Fields: `error`, `original_text`, `instruction`
+
+**Implementation Strategy:**
+
+The interfaces were designed by:
+1. Reading Python `ipc_server.py` to identify all `send_event()` calls
+2. Analyzing JSON payloads sent from Python to TypeScript
+3. Cross-referencing with TypeScript event handler usage in `main.ts`
+4. Making all fields optional unless guaranteed to be present (defensive typing)
+5. Supporting inconsistent naming (e.g., `filepath` vs `filePath` in NoteSavedEvent)
+
+**Type Safety Improvements:**
+
+Before:
+```typescript
+pythonManager.on('dictation-success', (data: any) => {
+  logger.info('MAIN', 'Dictation success event received', {
+    charCount: data.char_count, // No autocomplete, typo-prone
+    mode: data.mode,
+  });
+});
+```
+
+After:
+```typescript
+pythonManager.on('dictation-success', (data: DictationSuccessEvent) => {
+  logger.info('MAIN', 'Dictation success event received', {
+    charCount: data.char_count, // ✅ IDE autocomplete, compile-time checks
+    mode: data.mode,
+  });
+});
+```
+
+**Benefits:**
+- ✅ IDE autocomplete for all 17 event payload structures
+- ✅ TypeScript compiler catches property access errors
+- ✅ Self-documenting code (interfaces serve as inline documentation)
+- ✅ Easier refactoring (renaming fields triggers compiler errors)
+- ✅ Prevents silent runtime failures from property name typos
+
+**Commit:** `4c40120` - feat: define Python event payload interfaces (GAP 4 - Task 4.1)
+
+**Files Modified:**
+- Created: `src/types/pythonEvents.ts` (159 lines)
+- Modified: `src/main.ts` (17 event handler type annotations)
 
 ---
 
