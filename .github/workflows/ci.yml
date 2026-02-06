@@ -10,6 +10,7 @@ jobs:
   lint-typescript:
     name: Lint TypeScript
     runs-on: windows-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -35,6 +36,7 @@ jobs:
   build-typescript:
     name: Build TypeScript
     runs-on: windows-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -57,6 +59,7 @@ jobs:
   lint-python:
     name: Lint Python
     runs-on: windows-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
 
@@ -77,6 +80,7 @@ jobs:
   test-python:
     name: Test Python
     runs-on: windows-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -102,6 +106,7 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: windows-latest
+    timeout-minutes: 5
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
