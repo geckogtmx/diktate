@@ -2584,16 +2584,22 @@ class IpcServer:
             elif cmd_name == "inject_last":
                 # "Oops" feature - re-inject last successfully injected text
                 if self.last_injected_text is not None:
-                    logger.info(f"[INJECT_LAST] Re-injecting {len(self.last_injected_text)} chars")
+                    logger.info(
+                        f"[INJECT_LAST] Re-injecting {len(self.last_injected_text)} chars: "
+                        f"{repr(self.last_injected_text[:50])}..."
+                    )
                     if self.injector:
                         self._set_state(State.INJECTING)
                         self.injector.type_text(self.last_injected_text)
                         self._set_state(State.IDLE)
                         return {"success": True, "char_count": len(self.last_injected_text)}
                     else:
+                        logger.error("[INJECT_LAST] Injector not initialized!")
                         return {"success": False, "error": "Injector not initialized"}
                 else:
-                    logger.info("[INJECT_LAST] No text history available")
+                    logger.warning(
+                        f"[INJECT_LAST] No text history available (last_injected_text={self.last_injected_text})"
+                    )
                     return {"success": False, "error": "No text to re-inject"}
             elif cmd_name == "set_privacy_settings":
                 level = command.get("level")

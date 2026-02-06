@@ -2759,26 +2759,27 @@ function setupGlobalHotkey(): void {
       if (pythonManager) {
         try {
           const response = await pythonManager.sendCommand('inject_last');
+          logger.debug('HOTKEY', 'inject_last response', response);
 
-          if (response.success) {
-            // Play confirmation sound
-            const startSound = store.get('startSound', 'a');
-            if (store.get('soundFeedback', true)) {
-              playSound(startSound);
-            }
-            logger.info('HOTKEY', 'Re-injected last text', { charCount: response.char_count });
-          } else {
-            // Show notification only on failure
-            showNotification(
-              'No Text to Re-inject',
-              'No previous text found. Dictate something first.',
-              false
-            );
-            logger.warn('HOTKEY', 'No text available to re-inject');
+          // Response can be either a number (char_count) or an object
+          // Success case: response is the char_count number
+          // The sendCommand resolves on success, rejects on failure
+          const charCount = typeof response === 'number' ? response : response?.char_count || 0;
+
+          // Play confirmation sound
+          const startSound = store.get('startSound', 'a');
+          if (store.get('soundFeedback', true)) {
+            playSound(startSound);
           }
-        } catch (err) {
-          logger.error('HOTKEY', 'Failed to re-inject last text', err);
-          showNotification('Re-inject Failed', 'Could not re-inject text.', true);
+          logger.info('HOTKEY', 'Re-injected last text', { charCount });
+        } catch (err: any) {
+          // sendCommand rejects on failure (response.success = false)
+          logger.warn('HOTKEY', 'No text available to re-inject', { error: err.message });
+          showNotification(
+            'No Text to Re-inject',
+            'No previous text found. Dictate something first.',
+            false
+          );
         }
       }
     });
