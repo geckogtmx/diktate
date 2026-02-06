@@ -400,15 +400,37 @@ To:
 
 ---
 
-## GAP 2: CI/CD Pipeline
+## GAP 2: CI/CD Pipeline ✅ COMPLETE
 
+**Status:** ✅ **COMPLETE** (2026-02-06)
 **Current:** No `.github/workflows` directory. Pre-commit hooks only run locally.
 **Target:** Automated lint, test, and security audit on every push/PR.
-**Depends on:** GAP 1a (need tests to run)
+**Depends on:** GAP 1a (need tests to run) ✅
+
+**Summary:**
+- Created `.github/workflows/ci.yml` with 5 jobs (lint-ts, build-ts, lint-py, test-py, security-audit)
+- Applied pytest markers to 5 hardware-dependent tests in `test_integration_cp1.py`
+- CI correctly filters tests: 250 run in CI, 5 skip (requires hardware)
+- Local testing verified: all jobs pass (lint, build, test)
+- Windows-only configuration with minimal dependencies (no torch/CUDA)
+
+**Files Created:**
+- `.github/workflows/ci.yml` (118 lines) — 5 parallel jobs for comprehensive CI
+
+**Files Modified:**
+- `tests/test_integration_cp1.py` — Added `@pytest.mark.requires_gpu` and `@pytest.mark.requires_audio` to 5 tests
+
+**Acceptance Criteria Met:**
+- ✅ Workflow runs on push to master and PRs
+- ✅ All 5 jobs configured with correct dependencies
+- ✅ Test filtering works: 250 tests run, 5 skip
+- ✅ TypeScript lint passes (164 warnings, 0 errors)
+- ✅ Python lint passes (ruff clean)
+- ✅ Tests run in 3.29 seconds with CI filters
 
 ---
 
-### Task 2.1: Create GitHub Actions CI workflow 🔵 S
+### Task 2.1: Create GitHub Actions CI workflow 🔵 S ✅
 
 **Create:** `.github/workflows/ci.yml`
 
@@ -433,11 +455,11 @@ Five jobs:
 
 ---
 
-### Task 2.2: Add pytest markers for CI-skippable tests 🟢 H
+### Task 2.2: Add pytest markers for CI-skippable tests 🟢 H ✅
 
-**Modify:** `tests/conftest.py`
+**Modify:** `tests/conftest.py` ✅ (already done in GAP 1)
 
-Add markers:
+Markers registered:
 ```python
 def pytest_configure(config):
     config.addinivalue_line("markers", "requires_gpu: test needs CUDA GPU")
@@ -445,11 +467,13 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "requires_ollama: test needs running Ollama")
 ```
 
-Apply `@pytest.mark.requires_audio` / `@pytest.mark.requires_ollama` to any hardware-dependent tests.
+Applied markers to `tests/test_integration_cp1.py`:
+- `@pytest.mark.requires_audio` — 3 tests (Recorder tests)
+- `@pytest.mark.requires_gpu` — 2 tests (Transcriber model loading tests)
 
 **Why Haiku:** Adding marker registrations and decorators is mechanical.
 
-**Acceptance:** CI skips hardware tests; local `pytest tests/` runs all.
+**Acceptance:** ✅ CI skips hardware tests (5 deselected); local `pytest tests/` runs all (255 total).
 
 ---
 

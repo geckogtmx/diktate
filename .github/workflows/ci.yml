@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  lint-typescript:
+    name: Lint TypeScript
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run ESLint
+        run: pnpm run lint
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+  build-typescript:
+    name: Build TypeScript
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build application
+        run: pnpm run build
+
+  lint-python:
+    name: Lint Python
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff check
+        run: ruff check python/
+
+      - name: Run ruff format check
+        run: ruff format --check python/
+
+  test-python:
+    name: Test Python
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          pip install pytest==7.4.4 pytest-asyncio==0.23.2
+          pip install requests>=2.32.0
+          pip install pyperclip==1.8.2
+          pip install pynput==1.7.6
+          pip install pycaw>=20240210
+          pip install psutil==5.9.8
+          pip install tabulate==0.9.0
+          pip install python-dotenv==1.0.0
+
+      - name: Run tests (skip hardware tests)
+        run: python -m pytest tests/ -v --tb=short -x -m "not requires_gpu and not requires_audio and not requires_ollama"
+
+  security-audit:
+    name: Security Audit
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run security audit
+        run: pnpm audit --audit-level=moderate
