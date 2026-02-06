@@ -9,7 +9,9 @@ import pytest
 # Add python module to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "python"))
 
-from core import Recorder, Transcriber
+# Defer hardware-dependent imports to prevent ModuleNotFoundError during test collection
+# when pyaudio/torch are not installed in CI
+# from core import Recorder, Transcriber  # Moved to inside test methods
 
 
 class TestRecorderTranscriber:
@@ -24,6 +26,8 @@ class TestRecorderTranscriber:
     @pytest.mark.requires_audio
     def test_recorder_initialization(self, temp_audio_dir):
         """Test that Recorder initializes without errors."""
+        from core import Recorder
+
         recorder = Recorder(temp_dir=temp_audio_dir)
         assert recorder is not None
         assert not recorder.is_recording
@@ -33,6 +37,8 @@ class TestRecorderTranscriber:
     @pytest.mark.requires_gpu
     def test_transcriber_initialization(self):
         """Test that Transcriber initializes and loads model."""
+        from core import Transcriber
+
         transcriber = Transcriber(model_size="medium", device="auto")
         assert transcriber is not None
         assert transcriber.model is not None
@@ -41,6 +47,8 @@ class TestRecorderTranscriber:
     @pytest.mark.requires_audio
     def test_recorder_start_stop(self, temp_audio_dir):
         """Test that Recorder can start and stop recording."""
+        from core import Recorder
+
         recorder = Recorder(temp_dir=temp_audio_dir)
         recorder.start()
         assert recorder.is_recording
@@ -52,9 +60,10 @@ class TestRecorderTranscriber:
         """Test transcription with a sample audio file."""
         # This test requires a real audio file
         # Skipped in CI/CD, useful for manual testing
-
         # Create a simple test audio file (silence)
         import wave
+
+        from core import Transcriber
 
         sample_rate = 16000
         duration = 3  # seconds
@@ -80,6 +89,8 @@ class TestRecorderTranscriber:
     @pytest.mark.requires_audio
     def test_recorder_file_save(self, temp_audio_dir):
         """Test that Recorder can save audio to file."""
+        from core import Recorder
+
         recorder = Recorder(temp_dir=temp_audio_dir)
         recorder.start()
 
