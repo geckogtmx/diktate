@@ -4,12 +4,22 @@ Unit tests for core/transcriber.py
 Tests the Transcriber class for Whisper model loading and transcription.
 """
 
+import sys
 import unittest
-from unittest.mock import Mock, patch, MagicMock
+from pathlib import Path
+from unittest.mock import Mock, patch
 
 import pytest
 
-from core.transcriber import Transcriber
+# Direct import to avoid triggering core/__init__.py which imports pyaudio-dependent Recorder
+# Add python directory to path (tests/conftest.py already does this, but being explicit)
+if str(Path(__file__).parent.parent.parent / "python") not in sys.path:
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent / "python"))
+
+# Import directly from module, not via core package (avoids __init__.py execution)
+import core.transcriber
+
+Transcriber = core.transcriber.Transcriber
 
 
 class TestTranscriberInit(unittest.TestCase):
@@ -39,7 +49,7 @@ class TestTranscriberInit(unittest.TestCase):
         mock_cuda_count.return_value = 0
         mock_whisper_model.return_value = Mock()
 
-        transcriber = Transcriber(model_size="base", device="auto")
+        Transcriber(model_size="base", device="auto")
 
         # Verify CPU was used as fallback
         call_kwargs = mock_whisper_model.call_args[1]
@@ -50,7 +60,7 @@ class TestTranscriberInit(unittest.TestCase):
         """__init__ should use explicit device when specified"""
         mock_whisper_model.return_value = Mock()
 
-        transcriber = Transcriber(model_size="base", device="cuda")
+        Transcriber(model_size="base", device="cuda")
 
         # Verify explicit device was passed through
         call_kwargs = mock_whisper_model.call_args[1]
@@ -61,7 +71,7 @@ class TestTranscriberInit(unittest.TestCase):
         """__init__ should use explicit CPU device"""
         mock_whisper_model.return_value = Mock()
 
-        transcriber = Transcriber(model_size="base", device="cpu")
+        Transcriber(model_size="base", device="cpu")
 
         call_kwargs = mock_whisper_model.call_args[1]
         assert call_kwargs["device"] == "cpu"
@@ -92,7 +102,7 @@ class TestModelMapping(unittest.TestCase):
         """MODEL_MAPPING should resolve 'turbo' to HF path"""
         mock_whisper_model.return_value = Mock()
 
-        transcriber = Transcriber(model_size="turbo", device="cpu")
+        Transcriber(model_size="turbo", device="cpu")
 
         # Verify turbo was resolved to the HF path
         call_args = mock_whisper_model.call_args[0]
@@ -103,7 +113,7 @@ class TestModelMapping(unittest.TestCase):
         """Standard models should not be mapped"""
         mock_whisper_model.return_value = Mock()
 
-        transcriber = Transcriber(model_size="base", device="cpu")
+        Transcriber(model_size="base", device="cpu")
 
         # Verify base was not mapped
         call_args = mock_whisper_model.call_args[0]
@@ -118,7 +128,7 @@ class TestLoadModel(unittest.TestCase):
         """_load_model should try local_files_only=True first"""
         mock_whisper_model.return_value = Mock()
 
-        transcriber = Transcriber(model_size="base", device="cpu")
+        Transcriber(model_size="base", device="cpu")
 
         # Verify local_files_only=True was tried first
         first_call_kwargs = mock_whisper_model.call_args_list[0][1]
@@ -133,7 +143,7 @@ class TestLoadModel(unittest.TestCase):
             Mock(),  # Success on online load
         ]
 
-        transcriber = Transcriber(model_size="base", device="cpu")
+        Transcriber(model_size="base", device="cpu")
 
         # Verify both local and online were tried
         assert mock_whisper_model.call_count == 2
@@ -179,7 +189,9 @@ class TestTranscribe(unittest.TestCase):
         result = transcriber.transcribe("test.wav")
 
         assert result == "Hello world. This is a test."
-        mock_model_instance.transcribe.assert_called_once_with("test.wav", language=None, task="transcribe")
+        mock_model_instance.transcribe.assert_called_once_with(
+            "test.wav", language=None, task="transcribe"
+        )
 
     @patch("core.transcriber.WhisperModel")
     def test_transcribe_with_language_parameter(self, mock_whisper_model):
@@ -196,7 +208,9 @@ class TestTranscribe(unittest.TestCase):
         result = transcriber.transcribe("test.wav", language="en")
 
         assert result == "Test text"
-        mock_model_instance.transcribe.assert_called_once_with("test.wav", language="en", task="transcribe")
+        mock_model_instance.transcribe.assert_called_once_with(
+            "test.wav", language="en", task="transcribe"
+        )
 
     @patch("core.transcriber.WhisperModel")
     def test_transcribe_empty_segments(self, mock_whisper_model):
