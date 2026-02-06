@@ -502,8 +502,15 @@ function createSettingsWindow(): void {
 /**
  * Helper to play sound via Main Process (Zero Latency)
  */
+let soundPlaybackLock = false;
 function playSound(soundName: string) {
   if (!soundName || soundName === 'none') return;
+
+  // Prevent overlapping sound playback
+  if (soundPlaybackLock) {
+    logger.debug('MAIN', `[SOUND] Skipping ${soundName} - playback already in progress`);
+    return;
+  }
 
   // SECURITY (SPEC_008): Strict whitelist validation to prevent command injection
   // Only allow alphanumeric characters, hyphens, and underscores
@@ -528,16 +535,23 @@ function playSound(soundName: string) {
   try {
     // Using Hidden window style and .PlaySync() to ensure process stays alive
     const psCommand = `(New-Object System.Media.SoundPlayer '${soundPath}').PlaySync()`;
+    const execTimestamp = Date.now();
+    soundPlaybackLock = true;
+    logger.debug('MAIN', `[SOUND] Spawning PowerShell [${execTimestamp}] for: ${soundName}`);
     child_process.exec(
       `powershell -c "${psCommand}"`,
       { windowsHide: true },
       (error: Error | null) => {
+        soundPlaybackLock = false;
         if (error) {
-          logger.error('MAIN', 'Sound playback failed', error);
+          logger.error('MAIN', `[SOUND] Playback failed [${execTimestamp}]`, error);
+        } else {
+          logger.debug('MAIN', `[SOUND] Playback complete [${execTimestamp}]`);
         }
       }
     );
   } catch (e) {
+    soundPlaybackLock = false;
     logger.error('MAIN', 'Failed to trigger sound', e);
   }
 }
