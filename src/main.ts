@@ -2754,20 +2754,26 @@ function setupGlobalHotkey(): void {
         return;
       }
 
-      logger.debug('HOTKEY', 'Oops hotkey pressed - re-injecting last text');
+      const pressTimestamp = Date.now();
+      logger.debug('HOTKEY', `Oops hotkey pressed [${pressTimestamp}] - re-injecting last text`);
 
       if (pythonManager) {
         try {
           const response = await pythonManager.sendCommand('inject_last');
-          logger.debug('HOTKEY', 'inject_last response', response);
+          logger.debug('HOTKEY', `inject_last response [${pressTimestamp}]`, response);
 
           // Response can be either a number (char_count) or an object
           // Success case: response is the char_count number
           // The sendCommand resolves on success, rejects on failure
           const charCount = typeof response === 'number' ? response : response?.char_count || 0;
 
-          // Note: No sound feedback for Oops - the re-injected text itself is the feedback
-          logger.info('HOTKEY', 'Re-injected last text', { charCount });
+          // Play stop sound as confirmation
+          const stopSound = store.get('stopSound', 'a');
+          if (store.get('soundFeedback', true)) {
+            logger.debug('HOTKEY', `Playing stop sound [${pressTimestamp}]: ${stopSound}`);
+            playSound(stopSound);
+          }
+          logger.info('HOTKEY', `Re-injected last text [${pressTimestamp}]`, { charCount });
         } catch (err: any) {
           // sendCommand rejects on failure (response.success = false)
           logger.warn('HOTKEY', 'No text available to re-inject', { error: err.message });
