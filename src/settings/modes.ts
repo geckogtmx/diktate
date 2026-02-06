@@ -160,6 +160,8 @@ export async function selectMode(mode: string) {
     Array.from(cloned.childNodes).forEach((child) => {
       modeDetailContainer.appendChild(child);
     });
+    // Re-attach button event handlers after DOM restoration (cloneNode doesn't copy event listeners)
+    setupButtonHandlers();
   }
 
   // Load both profiles for this mode
