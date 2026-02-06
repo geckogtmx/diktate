@@ -438,8 +438,10 @@ class IpcServer:
                 "startup-progress", {"message": "Loading transcription model...", "progress": 30}
             )
             if not self.transcriber:
-                self.transcriber = Transcriber(model_size="turbo", device="auto")
-                logger.info("[OK] Transcriber initialized (Turbo V3)")
+                # SPEC_041: Use configured model or default to turbo
+                whisper_model = os.environ.get("WHISPER_MODEL", "turbo")
+                self.transcriber = Transcriber(model_size=whisper_model, device="auto")
+                logger.info(f"[OK] Transcriber initialized ({whisper_model.upper()})")
                 self._emit_event(
                     "startup-progress", {"message": "Transcription ready", "progress": 60}
                 )

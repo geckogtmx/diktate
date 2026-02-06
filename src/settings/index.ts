@@ -292,6 +292,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
+  // SPEC_041: Whisper Model Selection
+  document.getElementById('whisper-model-select')?.addEventListener('change', async (e) => {
+    const newModel = (e.target as HTMLSelectElement).value;
+    await window.settingsAPI.set('whisperModel', newModel);
+    console.log(`[SPEC_041] Whisper model changed to: ${newModel} - will sync to backend`);
+  });
+
   document.getElementById('start-monitoring-btn')?.addEventListener('click', () => {
     // Need to import toggleAudioMonitoring
     import('./audio.js').then((m) => m.toggleAudioMonitoring());

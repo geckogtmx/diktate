@@ -27,6 +27,9 @@ export function loadSettings(settings: any) {
   setVal('processing-mode', settings.processingMode || 'local');
   setCheck('auto-start', settings.autoStart || false);
 
+  // Audio - Whisper model selection (SPEC_041)
+  setVal('whisper-model-select', settings.whisperModel || 'turbo');
+
   // Audio - sound selection
   setVal('start-sound', settings.startSound || 'a');
   setVal('stop-sound', settings.stopSound || 'a');

@@ -672,6 +672,36 @@
           </select>
         </div>
 
+        <!-- SPEC_041: Whisper Model Selection -->
+        <div class="setting-group">
+          <label>Transcription Model (Whisper)</label>
+          <span class="sub-label">
+            Trade off quality for VRAM savings. Larger models are slower but more accurate.
+            <strong>Changing models may trigger a one-time download (500MB - 3GB).</strong>
+          </span>
+          <select id="whisper-model-select">
+            <option value="turbo">Turbo (Best Quality, ~6GB VRAM) - Default</option>
+            <option value="medium">Medium (Great Quality, ~5GB VRAM)</option>
+            <option value="small">Small (Good Quality, ~2GB VRAM) - Recommended for 8GB GPUs</option>
+            <option value="base">Base (OK Quality, ~1GB VRAM)</option>
+            <option value="tiny">Tiny (Fast, &lt;1GB VRAM) - Recovery Mode</option>
+          </select>
+          <div
+            style="
+              margin-top: 8px;
+              padding: 8px 12px;
+              background: #1a3a1a;
+              border: 1px solid #22c55e;
+              border-radius: 4px;
+              font-size: 0.85em;
+              color: #4ade80;
+            "
+          >
+            ℹ️ <strong>Pro Tip:</strong> Use "Small" model to free up 4GB VRAM for local LLMs
+            while maintaining good transcription quality.
+          </div>
+        </div>
+
         <div class="setting-group" id="sound-settings-group">
           <label>Sound Effects</label>
           <span class="sub-label">Choose sounds for different recording states</span>

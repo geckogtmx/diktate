@@ -107,11 +107,13 @@ export class PythonManager extends EventEmitter {
 
   /**
    * Start the Python process
+   * @param whisperModel - Optional Whisper model size (SPEC_041)
    */
-  async start(): Promise<void> {
+  async start(whisperModel?: string): Promise<void> {
     try {
       logger.info('PythonManager', 'Starting Python process', {
         scriptPath: this.pythonScriptPath,
+        whisperModel: whisperModel || 'turbo',
       });
 
       // Generate IPC authentication token
@@ -126,10 +128,11 @@ export class PythonManager extends EventEmitter {
         // Continue even if token file writing fails
       }
 
-      // Prepare environment with IPC token
+      // Prepare environment with IPC token and Whisper model (SPEC_041)
       const env = {
         ...process.env,
         DIKTATE_IPC_TOKEN: this.ipcToken,
+        WHISPER_MODEL: whisperModel || 'turbo',
       };
 
       this.process = spawn(this.pythonExePath, ['-u', this.pythonScriptPath], {

@@ -1321,6 +1321,7 @@ async function syncPythonConfig(): Promise<void> {
 
   // Get audio and feature settings
   const audioDeviceLabel = store.get('audioDeviceLabel', 'Default');
+  const whisperModel = store.get('whisperModel', 'turbo'); // SPEC_041
   const trailingSpaceEnabled = store.get('trailingSpaceEnabled', true);
   const additionalKeyEnabled = store.get('additionalKeyEnabled', false);
   const additionalKey = store.get('additionalKey', 'none');
@@ -1400,6 +1401,8 @@ async function syncPythonConfig(): Promise<void> {
     cloudProfiles: cloudProfiles,
 
     audioDeviceLabel: audioDeviceLabel,
+    // SPEC_041: Whisper model selection
+    model: whisperModel,
     trailingSpaceEnabled: trailingSpaceEnabled,
     additionalKeyEnabled: additionalKeyEnabled,
     additionalKey: additionalKey,
@@ -1472,7 +1475,11 @@ async function syncPythonConfig(): Promise<void> {
         }
       }
 
-      debugWindow.webContents.send('badge-update', { processor: processorDisplay });
+      // SPEC_041: Include Whisper transcriber model in badge update
+      debugWindow.webContents.send('badge-update', {
+        processor: processorDisplay,
+        transcriber: whisperModel.toUpperCase(),
+      });
       debugWindow.webContents.send('mode-update', config.mode);
       debugWindow.webContents.send('provider-update', config.processingMode);
     }
@@ -1623,6 +1630,8 @@ function setupIpcHandlers(): void {
       'notePrompt',
       'privacyLoggingIntensity',
       'privacyPiiScrubber',
+      // SPEC_041: Whisper model selection
+      'whisperModel',
       // SPEC_038: Global local model (used for ALL local modes)
       'localModel',
       // SPEC_034_EXTRAS: Dual-profile local model selections
@@ -2892,7 +2901,10 @@ async function initialize(): Promise<void> {
     // Yield before backend orchestration
     await new Promise((resolve) => setImmediate(resolve));
 
-    await pythonManager.start();
+    // SPEC_041: Get whisperModel setting before starting Python
+    const whisperModel = store.get('whisperModel', 'turbo');
+    logger.info('MAIN', 'Starting Python with Whisper model', { whisperModel });
+    await pythonManager.start(whisperModel);
 
     // Yield after process spawn
     await new Promise((resolve) => setImmediate(resolve));

@@ -35,6 +35,7 @@ export const SettingsKeySchema = z.enum([
   'audioDeviceId',
   'audioDeviceLabel',
   'audioDeviceProfiles', // NEW: SPEC_021 - Audio device noise floor profiles
+  'whisperModel', // NEW: SPEC_041 - Whisper model selection (turbo/medium/small/base/tiny)
   'defaultOllamaModel',
   'localModel', // NEW: SPEC_038 - Global local model for all modes
   'maxRecordingDuration',

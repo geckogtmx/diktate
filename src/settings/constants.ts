@@ -7,6 +7,7 @@ export const STATUS_UPDATE_INTERVAL = 100; // Update text max 10 times/sec
 export const DEFAULT_SETTINGS: Record<string, any> = {
   processingMode: 'local',
   autoStart: false,
+  whisperModel: 'turbo', // SPEC_041: Default to current behavior (best quality)
   startSound: 'a',
   stopSound: 'a',
   askSound: 'c',

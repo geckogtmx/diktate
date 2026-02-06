@@ -7,6 +7,7 @@ export type AudioLevel = 'silent' | 'low' | 'good' | 'high' | 'clipping';
 export interface Settings {
   processingMode: 'local' | 'cloud' | 'google';
   autoStart: boolean;
+  whisperModel: 'turbo' | 'medium' | 'small' | 'base' | 'tiny';
   audioDeviceId?: string;
   audioDeviceLabel?: string;
   startSound: string;
