@@ -7,11 +7,16 @@ Tests the Transcriber class for Whisper model loading and transcription.
 # Direct import to avoid triggering core/__init__.py which imports pyaudio-dependent Recorder
 # Use importlib to load the module file directly without executing __init__.py
 import importlib.util
+import sys
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+
+# Mock hardware-dependent modules before loading transcriber.py
+sys.modules["faster_whisper"] = MagicMock()
+sys.modules["ctranslate2"] = MagicMock()
 
 python_dir = Path(__file__).parent.parent.parent / "python"
 transcriber_path = python_dir / "core" / "transcriber.py"
