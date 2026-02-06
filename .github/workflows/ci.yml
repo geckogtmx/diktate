@@ -54,7 +54,7 @@ jobs:
         run: pnpm install
 
       - name: Build application
-        run: pnpm run build
+        run: tsc && tsc -p tsconfig.settings.json
 
   lint-python:
     name: Lint Python
