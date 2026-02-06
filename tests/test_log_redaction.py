@@ -1,11 +1,6 @@
-import sys
 import os
 import unittest
 from unittest.mock import patch
-from pathlib import Path
-
-# Add python directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "python"))
 
 from utils.security import sanitize_log_message, redact_api_key, redact_text
 

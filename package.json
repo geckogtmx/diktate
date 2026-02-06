@@ -9,7 +9,10 @@
     "build": "tsc && tsc -p tsconfig.settings.json && copy /y src\\*.html dist\\ && copy /y src\\*.css dist\\ && copy /y src\\*.js dist\\ && electron .",
     "dist": "pnpm run package-python && electron-builder",
     "package-python": "cd python && build_backend.bat",
-    "test": "node tests/smoke-test.cjs && python -m pytest python/",
+    "test": "node tests/smoke-test.cjs && python -m pytest tests/ python/ -v --tb=short",
+    "test:unit": "python -m pytest tests/unit/ -v",
+    "test:integration": "python -m pytest tests/integration/ -v",
+    "test:all": "node tests/smoke-test.cjs && python -m pytest tests/ python/ -v",
     "lint": "eslint \"src/**/*.{ts,js}\" --fix",
     "format": "prettier --write \"src/**/*.{ts,js,html,css}\"",
     "prepare": "husky install"

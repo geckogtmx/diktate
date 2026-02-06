@@ -2,36 +2,11 @@
 Unit tests for API key validation (SPEC_013)
 
 Tests the validate_api_key() function in python/core/processor.py
-
-Note: This test file duplicates the validation logic to avoid import dependencies.
-The actual implementation is in python/core/processor.py
 """
 
-import re
 import unittest
 
-
-def validate_api_key(provider: str, api_key: str) -> None:
-    """Validate API key format for a given provider (SPEC_013).
-
-    This is a copy of the function from python/core/processor.py for testing purposes.
-    """
-    patterns = {
-        'gemini': (r'^AIza[0-9A-Za-z-_]{35}$', 'AIza followed by 35 characters'),
-        'anthropic': (r'^sk-ant-[a-zA-Z0-9\-_]{20,}$', 'sk-ant- followed by 20+ characters'),
-        'openai': (r'^sk-[a-zA-Z0-9]{20,}$', 'sk- followed by 20+ alphanumeric characters')
-    }
-
-    if provider not in patterns:
-        return  # Unknown provider, skip validation
-
-    pattern, description = patterns[provider]
-    if not re.match(pattern, api_key):
-        raise ValueError(
-            f"Invalid {provider} API key format. "
-            f"Expected: {description}. "
-            f"Please check your API key and try again."
-        )
+from core.processor import validate_api_key
 
 
 class TestGeminiKeyValidation(unittest.TestCase):
