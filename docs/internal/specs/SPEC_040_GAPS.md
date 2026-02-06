@@ -17,9 +17,10 @@
 **Achievement:** 215 new tests (347% of 62+ target), 100% pass rate
 
 ### 🎉 GAP 2: CI/CD Pipeline - ✅ COMPLETE
-**Status:** Closed in commit `5642d6e` (2026-02-06)
+**Status:** Closed in commit `3496477` (2026-02-06)
 **Score Impact:** 0/10 → 8/10 ✅ **Target Achieved**
-**Achievement:** 5-job GitHub Actions workflow, 250 tests run in CI (3.29s), 5 hardware tests for local validation
+**Achievement:** 5-job GitHub Actions workflow, 250 tests pass in ~90 seconds, 5 hardware tests for local validation
+**Total CI time:** 1 minute 38 seconds (Build: 1m5s, Test: 54s, Lint TS: 1m34s, Lint Py: 22s, Security: 58s)
 
 ### 🎉 GAP 3: innerHTML Security - ✅ COMPLETE
 **Status:** Closed in commit `ab0060e` (2026-02-06)
@@ -160,7 +161,7 @@ Eight quality gaps were identified by the 360-degree code review and independent
 |---|-----|---------|--------|----------|-------------|--------|
 | 1 | Test Coverage | 5/10 (4 test files) | 8/10 (20+ files) | CRITICAL | 3-4 days | ✅ COMPLETE |
 | 2 | CI/CD Pipeline | 0/10 (none) | 8/10 (lint+test+audit) | CRITICAL | 0.5 day | ✅ COMPLETE |
-| 3 | innerHTML Security | 6/10 (30+ uses) | 9/10 (0 unsafe uses) | MEDIUM | 1 day | +0.2 |
+| 3 | innerHTML Security | 6/10 (30+ uses) | 10/10 (0 unsafe uses) | MEDIUM | 1 day | ✅ COMPLETE |
 | 4 | TypeScript `any` Types | 6/10 (59+ uses) | 8/10 (<10 uses) | MEDIUM | 1 day | +0.2 |
 | 5 | main.ts Monolith | 6/10 (2,976 LOC) | 8/10 (<1,500 LOC) | MEDIUM | 1.5 days | +0.3 |
 | 6 | ipc_server.py Size | 7/10 (2,916 LOC) | 8/10 (organized) | LOW-MED | 1 day | +0.1 |
@@ -524,6 +525,91 @@ Run before v1.0 launch: `python -m pytest tests/ -v -m "requires_gpu or requires
 
 ---
 
+## 🔧 GAP 2 Implementation Details
+
+### Critical Bug Fixes During CI Setup
+
+#### Issue 1: Build TypeScript Job Hung Indefinitely (3+ hours)
+**Root Cause:**
+- `package.json` line 12 "build" script ends with `electron .` which launches the Electron GUI app
+- In CI (headless environment with no display), the GUI app starts but has nothing to render to, hanging forever
+- Original workflow used `pnpm run build` which triggered this hang
+
+**Commits to Fix:**
+1. `4b89e3d` - Added `timeout-minutes: 10` to all CI jobs (fail-fast safety net)
+2. `2e11602` - Changed Build TypeScript job from `pnpm run build` to `npx tsc && npx tsc -p tsconfig.settings.json` (compile only, no launch)
+3. `3496477` - Fixed "tsc not recognized" error by using `npx tsc` instead of bare `tsc` (tsc is a local devDependency, not globally installed)
+
+**Outcome:** Build TypeScript now completes in 1m5s instead of hanging forever
+
+**Files Changed:**
+- `.github/workflows/ci.yml` (line 57: build command, lines 18/33/48/63/78: timeout-minutes added to all 5 jobs)
+
+#### Issue 2: Test Python Job Failed - ModuleNotFoundError: No module named 'pyaudio'
+**Root Cause:**
+- `python/core/__init__.py` eagerly imports ALL submodules including `Recorder` (which requires pyaudio, a hardware-dependent module)
+- Even when tests use `from core.transcriber import Transcriber` (not Recorder), Python loads the entire package via `__init__.py`
+- This triggers `import pyaudio` in recorder.py, which fails in CI (no audio hardware/drivers)
+- Similarly failed for: `faster_whisper`, `ctranslate2`, `pycaw`, `comtypes`
+
+**Attempted Fixes (5 iterations):**
+1. `3a00254` - Moved hardware imports inside test methods in `test_integration_cp1.py` → FAILED (pytest still collects imports at module level)
+2. `3fab358` - Tried direct module import `import core.transcriber` → FAILED (still triggers `__init__.py`)
+3. `5883bfe` - Used `importlib.util.spec_from_file_location()` to load transcriber.py without package import → PARTIAL (fixed test_transcriber.py but broke others)
+4. `9868a76` - Mocked `faster_whisper` and `ctranslate2` in test files → PARTIAL (didn't solve pyaudio/pycaw issues)
+5. `5486055` - **FINAL SOLUTION:** Global module mocking in `tests/conftest.py`
+
+**Final Solution:**
+```python
+# tests/conftest.py (lines 9-16)
+# Mock hardware-dependent modules globally for CI
+# These modules require GPU/audio hardware not available in GitHub Actions
+sys.modules["pyaudio"] = MagicMock()
+sys.modules["faster_whisper"] = MagicMock()
+sys.modules["ctranslate2"] = MagicMock()
+sys.modules["pycaw"] = MagicMock()
+sys.modules["pycaw.pycaw"] = MagicMock()
+sys.modules["comtypes"] = MagicMock()
+```
+
+**Why This Works:**
+- `conftest.py` is executed by pytest BEFORE any test collection begins
+- `sys.modules` is Python's import cache - if a module is already in the cache, `import X` returns it immediately without loading the real file
+- By pre-populating the cache with `MagicMock()` instances, all imports succeed but return mocks instead of real hardware modules
+- This allows `python/core/__init__.py` to complete its eager imports without requiring hardware
+
+**Outcome:** 250 tests pass in CI (54 seconds), 5 hardware tests properly skip
+
+**Files Changed:**
+- `tests/conftest.py` (lines 9-16: global mocks added)
+- `tests/test_integration_cp1.py` (lines 12-14: deferred imports, later reverted when global mocking fixed the issue)
+- `tests/unit/test_transcriber.py` (lines 10-20: importlib workaround, kept for documentation of the technique)
+
+### Key Learnings for Future CI Work
+
+1. **Never use `pnpm run build` in CI** - the "build" script launches Electron. Use `npx tsc` directly for compilation-only.
+2. **Python package imports are eager** - any `import core.X` loads `core/__init__.py` which can trigger hardware imports. Use global mocking in `conftest.py`.
+3. **Always add timeout-minutes to CI jobs** - prevents runaway costs and faster failure detection (10 min for build/test, 5 min for lint/security).
+4. **Use npx for local devDependencies in CI** - tools like `tsc`, `ruff`, etc. are not globally installed, must use `npx` or full path.
+
+### Commit Timeline (Chronological)
+```
+5642d6e - Initial CI/CD pipeline implementation (GAP 2 base)
+3a00254 - Defer hardware imports in test_integration_cp1.py (attempt 1)
+3fab358 - Use direct module import in test_transcriber.py (attempt 2)
+5883bfe - Use importlib to load transcriber module (attempt 3)
+9868a76 - Mock faster_whisper and ctranslate2 (attempt 4)
+5486055 - Globally mock hardware dependencies in conftest.py (FINAL FIX)
+4b89e3d - Add timeout-minutes to all CI jobs (fail-fast)
+2e11602 - Fix CI build step launching Electron (compile only)
+3496477 - Use npx tsc in CI build step (devDependency fix)
+```
+
+**Total debugging time:** ~3 hours to resolve both critical CI blockers
+**Final CI run:** [21767673153](https://github.com/user/repo/actions/runs/21767673153) - All 5 jobs passing in 1m38s
+
+---
+
 ## GAP 3: innerHTML Security ✅ COMPLETE
 
 **Status:** ✅ **COMPLETE** (2026-02-06)
@@ -667,6 +753,160 @@ fi
 - **Most complex file:** `modes.ts` required `cloneNode(true)` pattern for saving/restoring Raw mode UI
 - **Most verbose replacement:** `audio.ts` line 606 (test results display) required 100+ lines of DOM construction
 - **Simplest file:** `ui.ts` had only 1 innerHTML use for sound dropdown population
+
+---
+
+## 🔧 GAP 3 Implementation Details
+
+### Critical Bug Discovered During Implementation
+
+#### Issue: Custom Prompts Not Saving in Settings > Modes
+**User Report:** "It looks like the prompts on the Settings>Modes are not saving the custom prompts."
+
+**Root Cause:**
+- `modes.ts` uses `cloneNode(true)` to save the original DOM structure before switching to Raw mode
+- When restoring from Raw mode back to Standard/Concise/Creative, the code calls `cloneNode(true)` and appends the cloned nodes
+- **CRITICAL:** `cloneNode(true)` performs a deep copy of the DOM structure (elements, attributes, children) BUT does NOT copy event listeners
+- After restoration, the Save/Reset buttons existed in the DOM but had NO click handlers attached
+- User could edit prompts but clicking Save did nothing
+
+**The Bug (lines 163-168 in modes.ts):**
+```typescript
+// Restore original DOM structure if it was replaced by Raw mode
+if (!document.getElementById('local-prompt-textarea')) {
+  modeDetailContainer.replaceChildren();
+  const cloned = state.originalModeDetailDOM!.cloneNode(true) as HTMLElement;
+  Array.from(cloned.childNodes).forEach((child) => {
+    modeDetailContainer.appendChild(child);
+  });
+  // BUG: Event handlers NOT attached here - cloneNode doesn't copy them!
+}
+```
+
+**The Fix (commit `b974d2f`):**
+```typescript
+// Restore original DOM structure if it was replaced by Raw mode
+if (!document.getElementById('local-prompt-textarea')) {
+  modeDetailContainer.replaceChildren();
+  const cloned = state.originalModeDetailDOM!.cloneNode(true) as HTMLElement;
+  Array.from(cloned.childNodes).forEach((child) => {
+    modeDetailContainer.appendChild(child);
+  });
+  // Re-attach button event handlers after DOM restoration (cloneNode doesn't copy event listeners)
+  setupButtonHandlers(); // ← FIX ADDED HERE
+}
+```
+
+**Files Changed:**
+- `src/settings/modes.ts` (line 164: added `setupButtonHandlers()` call after DOM restoration)
+
+**User Validation:** User tested and confirmed fix with "pass. please commit"
+
+### innerHTML Elimination Patterns
+
+Three mechanical patterns were applied across all 5 settings files:
+
+#### Pattern A: Clearing Content (`innerHTML = ''`)
+```typescript
+// Before:
+select.innerHTML = '';
+
+// After:
+select.replaceChildren();
+```
+**Why:** `replaceChildren()` with no arguments removes all child nodes (same effect as `innerHTML = ''` but safer)
+
+#### Pattern B: Static HTML (No Dynamic Values)
+```typescript
+// Before:
+div.innerHTML = '<p class="info">Some static text</p>';
+
+// After:
+div.replaceChildren();
+const p = document.createElement('p');
+p.className = 'info';
+p.textContent = 'Some static text';
+div.appendChild(p);
+```
+**Why:** Building DOM nodes with `createElement` prevents HTML injection, even though these are static strings
+
+#### Pattern C: Dynamic Content (Variables in HTML)
+```typescript
+// Before (UNSAFE - XSS risk if `value` contains malicious HTML):
+div.innerHTML = `<span class="label">${label}</span><code>${value}</code>`;
+
+// After (SAFE - textContent escapes HTML):
+div.replaceChildren();
+const span = document.createElement('span');
+span.className = 'label';
+span.textContent = label; // Automatically escapes HTML entities
+const code = document.createElement('code');
+code.textContent = value; // Automatically escapes HTML entities
+div.appendChild(span);
+div.appendChild(code);
+```
+**Why:** `textContent` treats the value as plain text (HTML tags become literal `<` and `>` characters, not parsed as tags)
+
+### Special Case: DocumentFragment for Batch DOM Operations
+
+For large DOM constructions (e.g., audio.ts test results), used `DocumentFragment` to minimize reflows:
+
+```typescript
+// Before (audio.ts line 606):
+resultsDiv.innerHTML = `
+  <div class="result-item">...</div>
+  <div class="result-item">...</div>
+  <div class="result-item">...</div>
+  ... (10+ items)
+`;
+
+// After:
+const fragment = document.createDocumentFragment();
+for (const test of tests) {
+  const div = document.createElement('div');
+  div.className = 'result-item';
+  // ... build div content with createElement + textContent
+  fragment.appendChild(div);
+}
+resultsDiv.replaceChildren(fragment); // Single DOM operation (faster than 10+ appendChild calls)
+```
+
+**Why:** `DocumentFragment` is a lightweight container that holds nodes temporarily. Appending a fragment to the DOM moves all its children in one operation (only 1 reflow instead of N reflows).
+
+### Pre-Commit Hook Implementation
+
+Added grep-based prevention in `.husky/pre-commit`:
+
+```bash
+# Prevent innerHTML usage in src/ (security risk - XSS)
+if grep -rn 'innerHTML' src/ --include='*.ts' | grep -v '// innerHTML-safe'; then
+  echo "❌ ERROR: innerHTML detected in src/. Use textContent or createElement instead."
+  echo "   If innerHTML is truly necessary (rare), add '// innerHTML-safe' comment on the same line."
+  exit 1
+fi
+```
+
+**Escape Hatch:** Adding `// innerHTML-safe` on the same line allows the commit (for future legitimate uses, though none currently exist)
+
+**Testing:** Verified hook blocks commits by temporarily adding `div.innerHTML = 'test'` to modes.ts → pre-commit hook rejected the commit ✅
+
+### Commit Timeline (Chronological)
+```
+ab0060e - feat: remove all unsafe innerHTML uses in settings UI (GAP 3)
+          - All 30+ innerHTML uses replaced across 5 files
+          - Pre-commit hook added to prevent future uses
+b974d2f - fix: re-attach button handlers after DOM restoration in modes.ts
+          - Fixed critical bug where custom prompts weren't saving
+          - Added setupButtonHandlers() call after cloneNode restoration
+```
+
+### Key Learnings for Future DOM Work
+
+1. **cloneNode(true) does NOT copy event listeners** - always re-attach handlers after cloning/restoring DOM
+2. **Use DocumentFragment for batch operations** - reduces reflows (performance)
+3. **textContent auto-escapes HTML** - prevents XSS even with untrusted input (innerHTML does NOT)
+4. **replaceChildren() is cleaner than innerHTML = ''** - same effect, more explicit intent
+5. **Pre-commit hooks are cheap insurance** - prevents regressions during future refactoring
 
 ---
 

@@ -40,6 +40,25 @@ import {
   ApiKeyTestSchema,
   redactSensitive,
 } from './utils/ipcSchemas';
+import type {
+  StartupProgressEvent,
+  PerformanceMetricsEvent,
+  DictationSuccessEvent,
+  SystemMetricsEvent,
+  StatusCheckEvent,
+  NoteSavedEvent,
+  AskResponseEvent,
+  ProcessorFallbackEvent,
+  RecordingAutoStoppedEvent,
+  MicMutedEvent,
+  MicStatusEvent,
+  ApiErrorEvent,
+  RefineSuccessEvent,
+  RefineErrorEvent,
+  RefineInstructionSuccessEvent,
+  RefineInstructionFallbackEvent,
+  RefineInstructionErrorEvent,
+} from './types/pythonEvents';
 
 // ============================================
 // Single Instance Lock - Prevent multiple instances
@@ -835,7 +854,7 @@ function setupPythonEventHandlers(): void {
   });
 
   // SPEC_035: Forward granular progress to loading window (now simplified to single status)
-  pythonManager.on('startup-progress', (data: any) => {
+  pythonManager.on('startup-progress', (data: StartupProgressEvent) => {
     if (loadingWindow && !loadingWindow.isDestroyed()) {
       loadingWindow.webContents.send('startup-progress', data);
     }
@@ -873,7 +892,7 @@ function setupPythonEventHandlers(): void {
     updateTrayState('Reconnecting...');
   });
 
-  pythonManager.on('performance-metrics', (metrics: any) => {
+  pythonManager.on('performance-metrics', (metrics: PerformanceMetricsEvent) => {
     logger.info('MAIN', 'Performance metrics received from Python', metrics);
 
     // Forward to renderer for dashboard display
@@ -889,7 +908,7 @@ function setupPythonEventHandlers(): void {
   });
 
   // Track quota for main dictation (SPEC_016 Phase 4) - REMOVED
-  pythonManager.on('dictation-success', (data: any) => {
+  pythonManager.on('dictation-success', (data: DictationSuccessEvent) => {
     logger.info('MAIN', 'Dictation success event received', {
       charCount: data.char_count,
       mode: data.mode,
@@ -897,7 +916,7 @@ function setupPythonEventHandlers(): void {
   });
 
   // Southbound metrics
-  pythonManager.on('system-metrics', (data: any) => {
+  pythonManager.on('system-metrics', (data: SystemMetricsEvent) => {
     const { phase, activity_count, metrics } = data;
 
     // Special notation for sampled metrics
@@ -925,7 +944,7 @@ function setupPythonEventHandlers(): void {
   });
 
   // Listen for explicit status responses if we implement polling
-  pythonManager.on('status-check', (statusData: any) => {
+  pythonManager.on('status-check', (statusData: StatusCheckEvent) => {
     if (debugWindow && !debugWindow.isDestroyed()) {
       debugWindow.webContents.send('badge-update', {
         transcriber: statusData.transcriber,
@@ -935,7 +954,7 @@ function setupPythonEventHandlers(): void {
   });
 
   // Handle note saved event (SPEC_020)
-  pythonManager.on('note-saved', (data: any) => {
+  pythonManager.on('note-saved', (data: NoteSavedEvent) => {
     logger.info('MAIN', 'Note saved event received', { filePath: data.filePath });
 
     // Play success sound
@@ -958,7 +977,7 @@ function setupPythonEventHandlers(): void {
   });
 
   // Handle Ask Mode responses
-  pythonManager.on('ask-response', async (response: any) => {
+  pythonManager.on('ask-response', async (response: AskResponseEvent) => {
     logger.info('MAIN', 'Ask response received', { success: response.success });
 
     // Reset recording state
@@ -1024,7 +1043,7 @@ function setupPythonEventHandlers(): void {
   });
 
   // Handle processor fallback (error recovery)
-  pythonManager.on('processor-fallback', (data: any) => {
+  pythonManager.on('processor-fallback', (data: ProcessorFallbackEvent) => {
     const { reason, consecutive_failures, using_raw } = data;
 
     logger.warn('MAIN', 'Processor fallback triggered', { reason, consecutive_failures });
@@ -1051,7 +1070,7 @@ function setupPythonEventHandlers(): void {
   });
 
   // Handle recording auto-stop (duration limit reached)
-  pythonManager.on('recording-auto-stopped', (data: any) => {
+  pythonManager.on('recording-auto-stopped', (data: RecordingAutoStoppedEvent) => {
     const { max_duration } = data;
 
     logger.info('MAIN', 'Recording auto-stopped', { max_duration });
@@ -1075,7 +1094,7 @@ function setupPythonEventHandlers(): void {
     );
   });
 
-  pythonManager.on('mic-muted', (data: any) => {
+  pythonManager.on('mic-muted', (data: MicMutedEvent) => {
     const { message } = data;
 
     logger.warn('MAIN', 'Microphone muted detected');
@@ -1093,7 +1112,7 @@ function setupPythonEventHandlers(): void {
     );
   });
 
-  pythonManager.on('mic-status', (data: any) => {
+  pythonManager.on('mic-status', (data: MicStatusEvent) => {
     const { muted } = data;
 
     logger.info('MAIN', `Microphone status: ${muted ? 'MUTED' : 'ACTIVE'}`);
@@ -1110,14 +1129,14 @@ function setupPythonEventHandlers(): void {
   });
 
   // Handle API errors from Python (OAuth, rate limits, network)
-  pythonManager.on('api-error', (data: any) => {
+  pythonManager.on('api-error', (data: ApiErrorEvent) => {
     logger.error('MAIN', 'API error received from Python', data);
     // Simple notification for generic API errors
     showNotification('API Error', `Error: ${data.error_message || 'Unknown error'}`, true);
   });
 
   // Handle refine mode success
-  pythonManager.on('refine-success', (data: any) => {
+  pythonManager.on('refine-success', (data: RefineSuccessEvent) => {
     logger.info('MAIN', 'Refine success event received', data);
 
     // Log metrics (refine uses separate workflow from dictation pipeline)
@@ -1135,13 +1154,13 @@ function setupPythonEventHandlers(): void {
   });
 
   // Handle refine mode errors
-  pythonManager.on('refine-error', (data: any) => {
+  pythonManager.on('refine-error', (data: RefineErrorEvent) => {
     logger.error('MAIN', 'Refine error event received', data);
     handleRefineError(data.error || data.message || data.code || 'Unknown error');
   });
 
   // Handle refine instruction mode success (SPEC_025)
-  pythonManager.on('refine-instruction-success', (data: any) => {
+  pythonManager.on('refine-instruction-success', (data: RefineInstructionSuccessEvent) => {
     logger.info('MAIN', 'Refine instruction success', {
       instruction: data.instruction,
       originalLength: data.original_length,
@@ -1169,7 +1188,7 @@ function setupPythonEventHandlers(): void {
   });
 
   // Handle refine instruction mode fallback (no selection - Ask mode)
-  pythonManager.on('refine-instruction-fallback', async (data: any) => {
+  pythonManager.on('refine-instruction-fallback', async (data: RefineInstructionFallbackEvent) => {
     logger.info('MAIN', 'Refine instruction fallback to Ask mode', {
       instruction: data.instruction,
       answerLength: data.answer?.length,
@@ -1200,7 +1219,7 @@ function setupPythonEventHandlers(): void {
   });
 
   // Handle refine instruction mode errors (SPEC_025)
-  pythonManager.on('refine-instruction-error', (data: any) => {
+  pythonManager.on('refine-instruction-error', (data: RefineInstructionErrorEvent) => {
     logger.error('MAIN', 'Refine instruction error', {
       code: data.code,
       error: data.error,
