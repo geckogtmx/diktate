@@ -2766,11 +2766,7 @@ function setupGlobalHotkey(): void {
           // The sendCommand resolves on success, rejects on failure
           const charCount = typeof response === 'number' ? response : response?.char_count || 0;
 
-          // Play confirmation sound
-          const startSound = store.get('startSound', 'a');
-          if (store.get('soundFeedback', true)) {
-            playSound(startSound);
-          }
+          // Note: No sound feedback for Oops - the re-injected text itself is the feedback
           logger.info('HOTKEY', 'Re-injected last text', { charCount });
         } catch (err: any) {
           // sendCommand rejects on failure (response.success = false)
