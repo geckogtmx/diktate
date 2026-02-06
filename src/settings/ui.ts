@@ -114,7 +114,11 @@ export async function populateSoundDropdowns() {
       const select = document.getElementById(id) as HTMLSelectElement;
       if (!select) return;
       const currentVal = select.value;
-      select.innerHTML = '<option value="none">🔇 None (Silent)</option>';
+      select.replaceChildren();
+      const noneOpt = document.createElement('option');
+      noneOpt.value = 'none';
+      noneOpt.text = '🔇 None (Silent)';
+      select.appendChild(noneOpt);
       soundFiles.forEach((sound) => {
         const option = document.createElement('option');
         option.value = sound;

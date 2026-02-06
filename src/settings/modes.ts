@@ -103,31 +103,63 @@ export async function selectMode(mode: string) {
   const modeDetailContainer = document.getElementById('mode-detail-container');
   if (!modeDetailContainer) return;
 
-  // Save original HTML on first load (if not already saved)
-  if (!state.originalModeDetailHTML) {
-    state.originalModeDetailHTML = modeDetailContainer.innerHTML;
+  // Save original DOM structure on first load (if not already saved)
+  if (!state.originalModeDetailDOM) {
+    state.originalModeDetailDOM = modeDetailContainer.cloneNode(true) as HTMLElement;
   }
 
   if (mode === 'raw') {
     // Show Raw mode info
-    modeDetailContainer.innerHTML = `
-            <h3 id="mode-detail-title" style="margin: 0;">${modeNames[mode] || mode} Mode</h3>
-            <div style="padding: 20px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border-left: 4px solid #3b82f6;">
-                <h4 style="margin-top: 0;">Raw Mode (Whisper Only)</h4>
-                <p style="margin: 8px 0; color: #ccc;">Raw mode returns the literal Whisper transcription with minimal processing (punctuation only).</p>
-                <ul style="margin: 8px 0; color: #ccc; padding-left: 20px;">
-                    <li>Adds punctuation and capitalization</li>
-                    <li>No AI processing or cleanup</li>
-                </ul>
-                <p style="margin: 8px 0; font-size: 0.9em; color: #999;">ℹ️ This mode does not use model or prompt configuration.</p>
-            </div>
-        `;
+    modeDetailContainer.replaceChildren();
+
+    const rawTitle = document.createElement('h3');
+    rawTitle.id = 'mode-detail-title';
+    rawTitle.style.margin = '0';
+    rawTitle.textContent = `${modeNames[mode] || mode} Mode`;
+
+    const infoBox = document.createElement('div');
+    infoBox.style.cssText =
+      'padding: 20px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border-left: 4px solid #3b82f6;';
+
+    const rawHeader = document.createElement('h4');
+    rawHeader.style.marginTop = '0';
+    rawHeader.textContent = 'Raw Mode (Whisper Only)';
+
+    const rawDesc = document.createElement('p');
+    rawDesc.style.cssText = 'margin: 8px 0; color: #ccc;';
+    rawDesc.textContent =
+      'Raw mode returns the literal Whisper transcription with minimal processing (punctuation only).';
+
+    const featureList = document.createElement('ul');
+    featureList.style.cssText = 'margin: 8px 0; color: #ccc; padding-left: 20px;';
+    const feature1 = document.createElement('li');
+    feature1.textContent = 'Adds punctuation and capitalization';
+    const feature2 = document.createElement('li');
+    feature2.textContent = 'No AI processing or cleanup';
+    featureList.appendChild(feature1);
+    featureList.appendChild(feature2);
+
+    const rawNote = document.createElement('p');
+    rawNote.style.cssText = 'margin: 8px 0; font-size: 0.9em; color: #999;';
+    rawNote.textContent = 'ℹ️ This mode does not use model or prompt configuration.';
+
+    infoBox.appendChild(rawHeader);
+    infoBox.appendChild(rawDesc);
+    infoBox.appendChild(featureList);
+    infoBox.appendChild(rawNote);
+
+    modeDetailContainer.appendChild(rawTitle);
+    modeDetailContainer.appendChild(infoBox);
     return;
   }
 
-  // Restore original HTML structure if it was replaced by Raw mode
+  // Restore original DOM structure if it was replaced by Raw mode
   if (!document.getElementById('local-prompt-textarea')) {
-    modeDetailContainer.innerHTML = state.originalModeDetailHTML;
+    modeDetailContainer.replaceChildren();
+    const cloned = state.originalModeDetailDOM!.cloneNode(true) as HTMLElement;
+    Array.from(cloned.childNodes).forEach((child) => {
+      modeDetailContainer.appendChild(child);
+    });
   }
 
   // Load both profiles for this mode
@@ -184,7 +216,7 @@ async function loadDualProfileForMode(mode: string) {
     // Dynamic Provider Population based on API Keys
     try {
       const apiKeys = await window.settingsAPI.getApiKeys();
-      cloudProviderSelect.innerHTML = ''; // Clear "Loading..."
+      cloudProviderSelect.replaceChildren(); // Clear "Loading..."
 
       const providers = [
         { id: 'gemini', name: 'Google Gemini', hasKey: apiKeys.geminiApiKey },
@@ -227,12 +259,21 @@ async function loadDualProfileForMode(mode: string) {
       if (providerToSelect) {
         await loadCloudModels(cloudModelSelect, providerToSelect, mode);
       } else {
-        if (cloudModelSelect)
-          cloudModelSelect.innerHTML = '<option value="">No provider selected</option>';
+        if (cloudModelSelect) {
+          cloudModelSelect.replaceChildren();
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.text = 'No provider selected';
+          cloudModelSelect.appendChild(opt);
+        }
       }
     } catch (err) {
       console.error('Failed to load API keys for provider dropdown:', err);
-      cloudProviderSelect.innerHTML = '<option value="">Error loading providers</option>';
+      cloudProviderSelect.replaceChildren();
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.text = 'Error loading providers';
+      cloudProviderSelect.appendChild(opt);
     }
   }
 
@@ -429,17 +470,25 @@ async function resetCloudProfile() {
  * Load Ollama models into a select element
  */
 async function loadOllamaModels(selectElement: HTMLSelectElement, mode: string) {
-  selectElement.innerHTML = '<option value="">Loading...</option>';
+  selectElement.replaceChildren();
+  const loadingOpt = document.createElement('option');
+  loadingOpt.value = '';
+  loadingOpt.text = 'Loading...';
+  selectElement.appendChild(loadingOpt);
 
   try {
     const result = await window.settingsAPI.getModels('local');
 
     if (!result.success) {
-      selectElement.innerHTML = '<option value="">Ollama not running</option>';
+      selectElement.replaceChildren();
+      const errorOpt = document.createElement('option');
+      errorOpt.value = '';
+      errorOpt.text = 'Ollama not running';
+      selectElement.appendChild(errorOpt);
       return;
     }
 
-    selectElement.innerHTML = '';
+    selectElement.replaceChildren();
 
     // Add default option (empty = use global setting)
     const defaultOpt = document.createElement('option');
@@ -465,7 +514,11 @@ async function loadOllamaModels(selectElement: HTMLSelectElement, mode: string) 
     }
   } catch (error) {
     console.error('Failed to load Ollama models:', error);
-    selectElement.innerHTML = '<option value="">Error loading models</option>';
+    selectElement.replaceChildren();
+    const errorOpt = document.createElement('option');
+    errorOpt.value = '';
+    errorOpt.text = 'Error loading models';
+    selectElement.appendChild(errorOpt);
   }
 }
 
@@ -473,17 +526,25 @@ async function loadOllamaModels(selectElement: HTMLSelectElement, mode: string) 
  * Load cloud provider models into a select element
  */
 async function loadCloudModels(selectElement: HTMLSelectElement, provider: string, mode: string) {
-  selectElement.innerHTML = '<option value="">Loading...</option>';
+  selectElement.replaceChildren();
+  const loadingOpt = document.createElement('option');
+  loadingOpt.value = '';
+  loadingOpt.text = 'Loading...';
+  selectElement.appendChild(loadingOpt);
 
   try {
     const result = await window.settingsAPI.getModels(provider);
 
     if (!result.success) {
-      selectElement.innerHTML = '<option value="">Failed to load models</option>';
+      selectElement.replaceChildren();
+      const errorOpt = document.createElement('option');
+      errorOpt.value = '';
+      errorOpt.text = 'Failed to load models';
+      selectElement.appendChild(errorOpt);
       return;
     }
 
-    selectElement.innerHTML = '';
+    selectElement.replaceChildren();
 
     // Add default option
     const defaultOpt = document.createElement('option');
@@ -540,6 +601,10 @@ async function loadCloudModels(selectElement: HTMLSelectElement, provider: strin
     }
   } catch (error) {
     console.error(`Failed to load ${provider} models:`, error);
-    selectElement.innerHTML = '<option value="">Error loading models</option>';
+    selectElement.replaceChildren();
+    const errorOpt = document.createElement('option');
+    errorOpt.value = '';
+    errorOpt.text = 'Error loading models';
+    selectElement.appendChild(errorOpt);
   }
 }

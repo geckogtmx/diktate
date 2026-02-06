@@ -5,12 +5,33 @@
 
 import { setVal, setCheck, saveSetting } from './utils.js';
 
-const descriptions = [
-  '<strong>Ghost Mode</strong>: Absolute zero storage. No metrics, no history, no traces of what you say or do.',
-  '<strong>Stats-Only</strong>: Saves counts and timings only. Transcription text is completely discarded to protect your content.',
-  '<strong>Balanced</strong>: Saves processed text and performance metrics. Redacts sensitive info if scrubber is on. (Recommended)',
-  '<strong>Full (Experimental)</strong>: Saves everything including raw transcriptions and system prompts. Useful for debugging prompt logic.',
+const descriptionsData = [
+  {
+    title: 'Ghost Mode',
+    text: 'Absolute zero storage. No metrics, no history, no traces of what you say or do.',
+  },
+  {
+    title: 'Stats-Only',
+    text: 'Saves counts and timings only. Transcription text is completely discarded to protect your content.',
+  },
+  {
+    title: 'Balanced',
+    text: 'Saves processed text and performance metrics. Redacts sensitive info if scrubber is on. (Recommended)',
+  },
+  {
+    title: 'Full (Experimental)',
+    text: 'Saves everything including raw transcriptions and system prompts. Useful for debugging prompt logic.',
+  },
 ];
+
+function buildDescription(index: number): DocumentFragment {
+  const frag = document.createDocumentFragment();
+  const strong = document.createElement('strong');
+  strong.textContent = descriptionsData[index].title;
+  frag.appendChild(strong);
+  frag.appendChild(document.createTextNode(': ' + descriptionsData[index].text));
+  return frag;
+}
 
 /**
  * Initialize Privacy components
@@ -27,7 +48,7 @@ export async function initializePrivacySettings() {
   // Handle Intensity Change
   intensitySlider.addEventListener('input', (e) => {
     const val = parseInt((e.target as HTMLInputElement).value);
-    intensityDesc.innerHTML = descriptions[val];
+    intensityDesc.replaceChildren(buildDescription(val));
   });
 
   intensitySlider.addEventListener('change', (e) => {
@@ -86,7 +107,7 @@ export function loadPrivacySettings(settings: any) {
 
   const intensityDesc = document.getElementById('intensity-desc');
   if (intensityDesc) {
-    intensityDesc.innerHTML = descriptions[intensity];
+    intensityDesc.replaceChildren(buildDescription(intensity));
   }
 
   setCheck('privacy-pii-scrubber', settings.privacyPiiScrubber !== false);

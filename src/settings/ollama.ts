@@ -67,7 +67,7 @@ export async function loadOllamaModels() {
     const models = data.models || [];
     state.availableModels = models;
 
-    select.innerHTML = '';
+    select.replaceChildren();
     // Update model count in UI
     const countEl = document.getElementById('ollama-loaded-models');
     if (countEl) countEl.textContent = models.length.toString();
@@ -75,10 +75,12 @@ export async function loadOllamaModels() {
     // Populate Installed Models List
     const listContainer = document.getElementById('ollama-models-list');
     if (listContainer) {
-      listContainer.innerHTML = '';
+      listContainer.replaceChildren();
       if (models.length === 0) {
-        listContainer.innerHTML =
-          '<div style="color: #888; text-align: center; padding: 10px;">No models installed</div>';
+        const emptyMsg = document.createElement('div');
+        emptyMsg.style.cssText = 'color: #888; text-align: center; padding: 10px;';
+        emptyMsg.textContent = 'No models installed';
+        listContainer.appendChild(emptyMsg);
       } else {
         models.forEach((model: any) => {
           const row = document.createElement('div');
@@ -86,11 +88,19 @@ export async function loadOllamaModels() {
             'display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; border-bottom: 1px solid #333;';
 
           const info = document.createElement('div');
-          info.innerHTML = `<span style="color: #e0e0e0;">${model.name}</span> <span style="color: #888; font-size: 0.85em; margin-left: 8px;">${formatBytes(model.size)}</span>`;
+          const modelName = document.createElement('span');
+          modelName.style.color = '#e0e0e0';
+          modelName.textContent = model.name;
+          const modelSize = document.createElement('span');
+          modelSize.style.cssText = 'color: #888; font-size: 0.85em; margin-left: 8px;';
+          modelSize.textContent = formatBytes(model.size);
+          info.appendChild(modelName);
+          info.appendChild(document.createTextNode(' '));
+          info.appendChild(modelSize);
 
           const btn = document.createElement('button');
           btn.className = 'btn btn-danger'; // Uses existing class
-          btn.innerHTML = '🗑️';
+          btn.textContent = '🗑️';
           btn.title = 'Delete Model';
           btn.style.padding = '2px 8px';
           btn.style.fontSize = '0.9em';
@@ -135,7 +145,11 @@ export async function loadOllamaModels() {
     }
   } catch (e) {
     console.error('Failed to load Ollama models:', e);
-    select.innerHTML = '<option value="">Ollama not available</option>';
+    select.replaceChildren();
+    const errorOpt = document.createElement('option');
+    errorOpt.value = '';
+    errorOpt.text = 'Ollama not available';
+    select.appendChild(errorOpt);
   }
 }
 
@@ -176,7 +190,11 @@ export async function initSafeModelLibrary() {
     const info = document.getElementById('verified-model-info');
 
     if (select) {
-      select.innerHTML = '<option value="">Select a model...</option>';
+      select.replaceChildren();
+      const defaultOpt = document.createElement('option');
+      defaultOpt.value = '';
+      defaultOpt.text = 'Select a model...';
+      select.appendChild(defaultOpt);
       compatible.forEach((m) => {
         const opt = document.createElement('option');
         opt.value = m.id;

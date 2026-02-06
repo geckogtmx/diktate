@@ -4,3 +4,10 @@
 npx lint-staged
 python -m ruff check python/
 detect-secrets-hook --baseline .secrets.baseline
+
+# Prevent unsafe innerHTML usage in TypeScript
+if grep -rn 'innerHTML' src/ --include='*.ts' | grep -v '// innerHTML-safe'; then
+  echo "❌ ERROR: Unsafe innerHTML detected in src/. Use textContent or createElement instead."
+  echo "If you must use innerHTML for a specific reason, add a comment: // innerHTML-safe"
+  exit 1
+fi

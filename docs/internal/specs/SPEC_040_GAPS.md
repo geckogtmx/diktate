@@ -12,9 +12,14 @@
 ## 📊 Implementation Progress (2026-02-06)
 
 ### 🎉 GAP 1: Test Coverage - ✅ COMPLETE
-**Status:** Closed in commit `cdfb9da`
+**Status:** Closed in commit `cdfb9da` (2026-02-06)
 **Score Impact:** 5/10 → 8/10 ✅ **Target Achieved**
 **Achievement:** 215 new tests (347% of 62+ target), 100% pass rate
+
+### 🎉 GAP 2: CI/CD Pipeline - ✅ COMPLETE
+**Status:** Closed in commit `5642d6e` (2026-02-06)
+**Score Impact:** 0/10 → 8/10 ✅ **Target Achieved**
+**Achievement:** 5-job GitHub Actions workflow, 250 tests run in CI (3.29s), 5 hardware tests for local validation
 
 ### ✅ Phase 1: Test Infrastructure (COMPLETE)
 - ✅ Task 1.1: Created `tests/conftest.py`, fixed test imports
@@ -85,8 +90,15 @@
   - Retry backoff: 3 tests (exponential delays, max retries, final success)
   - State consistency: 3 tests (no stuck state, cleanup, no partial injection)
 
-**Current Test Count:** 250 tests total (35 existing + 155 unit + 60 integration)
+**Current Test Count:** 255 tests total (35 existing + 155 unit + 60 integration + 5 hardware validation)
+**CI Test Count:** 250 tests (hardware tests marked with pytest markers, run locally before release)
 **Target:** 50+ unit tests ✅ **EXCEEDED (310%!)**, 7+ error boundary tests ✅ **EXCEEDED (400%!)**
+
+**Hardware Test Strategy:**
+- 5 tests marked with `@pytest.mark.requires_gpu` (2) and `@pytest.mark.requires_audio` (3)
+- Skipped in CI (GitHub runners lack GPU/audio hardware)
+- Run locally before release: `pnpm run test:hardware` or `python -m pytest tests/ -v -m "requires_gpu or requires_audio"`
+- All core logic covered by 250 mocked tests; hardware tests validate real-world integration
 
 #### 📦 Files Created/Modified in GAP 1
 **Infrastructure:**
@@ -139,10 +151,10 @@ Each task is marked with the minimum model tier that can safely execute it:
 
 Eight quality gaps were identified by the 360-degree code review and independently verified against the codebase. Verification found the review underestimated innerHTML usage (30+ actual vs 5 reported) and missed 59+ untyped `any` declarations.
 
-| # | Gap | Current | Target | Priority | Est. Effort | Score Impact |
-|---|-----|---------|--------|----------|-------------|--------------|
-| 1 | Test Coverage | 5/10 (4 test files) | 8/10 (20+ files) | CRITICAL | 3-4 days | +1.5 |
-| 2 | CI/CD Pipeline | 0/10 (none) | 8/10 (lint+test+audit) | CRITICAL | 0.5 day | +0.5 |
+| # | Gap | Current | Target | Priority | Est. Effort | Status |
+|---|-----|---------|--------|----------|-------------|--------|
+| 1 | Test Coverage | 5/10 (4 test files) | 8/10 (20+ files) | CRITICAL | 3-4 days | ✅ COMPLETE |
+| 2 | CI/CD Pipeline | 0/10 (none) | 8/10 (lint+test+audit) | CRITICAL | 0.5 day | ✅ COMPLETE |
 | 3 | innerHTML Security | 6/10 (30+ uses) | 9/10 (0 unsafe uses) | MEDIUM | 1 day | +0.2 |
 | 4 | TypeScript `any` Types | 6/10 (59+ uses) | 8/10 (<10 uses) | MEDIUM | 1 day | +0.2 |
 | 5 | main.ts Monolith | 6/10 (2,976 LOC) | 8/10 (<1,500 LOC) | MEDIUM | 1.5 days | +0.3 |
@@ -468,12 +480,42 @@ def pytest_configure(config):
 ```
 
 Applied markers to `tests/test_integration_cp1.py`:
-- `@pytest.mark.requires_audio` — 3 tests (Recorder tests)
-- `@pytest.mark.requires_gpu` — 2 tests (Transcriber model loading tests)
+- `@pytest.mark.requires_audio` — 3 tests (Recorder initialization, start/stop, file save)
+- `@pytest.mark.requires_gpu` — 2 tests (Transcriber initialization with real model, sample transcription)
 
 **Why Haiku:** Adding marker registrations and decorators is mechanical.
 
 **Acceptance:** ✅ CI skips hardware tests (5 deselected); local `pytest tests/` runs all (255 total).
+
+---
+
+## 📦 Files Created/Modified in GAP 2
+
+**CI/CD Infrastructure:**
+- ✅ `.github/workflows/ci.yml` (123 lines) — 5 parallel jobs for comprehensive CI
+
+**Test Markers:**
+- ✅ `tests/test_integration_cp1.py` — Added hardware markers to 5 existing integration tests
+
+**Verification Results:**
+- ✅ TypeScript lint: 0 errors, 164 warnings (acceptable)
+- ✅ Python lint: clean (ruff check + format)
+- ✅ CI test run: 250 tests pass in 3.29s, 5 deselected
+- ✅ Local test run: 255 tests pass (all hardware tests functional)
+
+## 🎯 GAP 2 Acceptance Criteria
+- ✅ **GitHub Actions workflow** → 5 jobs (lint-ts, build-ts, lint-py, test-py, security)
+- ✅ **Windows-only runner** → Matches diktate's Windows-specific dependencies
+- ✅ **Minimal dependencies** → Excludes torch/CUDA (saves ~4GB, 10+ min)
+- ✅ **Pytest marker filtering** → 250 tests run, 5 skip (hardware)
+- ✅ **Triggers on push/PR** → Automated on every master commit
+- ✅ **Security audit** → pnpm audit at moderate level (continue-on-error)
+
+**Hardware Test Strategy for Pre-Release:**
+Run before v1.0 launch: `python -m pytest tests/ -v -m "requires_gpu or requires_audio"`
+- Validates real Whisper model loading (GPU)
+- Validates real Recorder initialization (audio device)
+- Validates real audio recording and file saving
 
 ---
 

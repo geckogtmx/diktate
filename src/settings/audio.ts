@@ -326,7 +326,7 @@ export async function refreshAudioDevices(selectedId?: string, selectedLabel?: s
     const devices = await navigator.mediaDevices.enumerateDevices();
     const audioInputs = devices.filter((d) => d.kind === 'audioinput');
 
-    select.innerHTML = '';
+    select.replaceChildren();
     const def = document.createElement('option');
     def.value = 'default';
     def.text = 'Default Microphone';
@@ -397,14 +397,30 @@ export async function runCompleteMicrophoneTest() {
     const deviceLabel = deviceSelect.options[deviceSelect.selectedIndex].text;
 
     // STEP 1: SPEECH TEST
-    instructionsDiv.innerHTML = `
-            <h4 style="color: #38bdf8; margin-bottom: 12px;">🎙️ Step 1: Read This Aloud</h4>
-            <p style="margin-bottom: 15px;">Please read at your normal volume for 15 seconds:</p>
-            <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid #0ea5e9; padding: 15px; border-radius: 6px; margin-bottom: 15px; font-style: italic; line-height: 1.5;">
-                "Imagine there's no heaven, it's easy if you try. No hell below us, above us only sky. Imagine all the people living for today. Imagine there's no countries, it isn't hard to do. Nothing to kill or die for, and no religion too. Imagine all the people living life in peace. You may say I'm a dreamer, but I'm not the only one. I hope someday you'll join us, and the world will be as one."
-            </div>
-            <p style="color: #94a3b8; font-size: 0.9em;">⏱️ Recording for 15 seconds...</p>
-        `;
+    instructionsDiv.replaceChildren();
+
+    const step1Header = document.createElement('h4');
+    step1Header.style.cssText = 'color: #38bdf8; margin-bottom: 12px;';
+    step1Header.textContent = '🎙️ Step 1: Read This Aloud';
+
+    const step1Intro = document.createElement('p');
+    step1Intro.style.marginBottom = '15px';
+    step1Intro.textContent = 'Please read at your normal volume for 15 seconds:';
+
+    const speechBox = document.createElement('div');
+    speechBox.style.cssText =
+      'background: rgba(14, 165, 233, 0.1); border: 1px solid #0ea5e9; padding: 15px; border-radius: 6px; margin-bottom: 15px; font-style: italic; line-height: 1.5;';
+    speechBox.textContent =
+      "Imagine there's no heaven, it's easy if you try. No hell below us, above us only sky. Imagine all the people living for today. Imagine there's no countries, it isn't hard to do. Nothing to kill or die for, and no religion too. Imagine all the people living life in peace. You may say I'm a dreamer, but I'm not the only one. I hope someday you'll join us, and the world will be as one.";
+
+    const step1Timer = document.createElement('p');
+    step1Timer.style.cssText = 'color: #94a3b8; font-size: 0.9em;';
+    step1Timer.textContent = '⏱️ Recording for 15 seconds...';
+
+    instructionsDiv.appendChild(step1Header);
+    instructionsDiv.appendChild(step1Intro);
+    instructionsDiv.appendChild(speechBox);
+    instructionsDiv.appendChild(step1Timer);
 
     const speechSamples: { rms: number; peak: number }[] = [];
     const speechDuration = 15000;
@@ -426,22 +442,52 @@ export async function runCompleteMicrophoneTest() {
     }
 
     // STEP 2: NOISE TEST
-    instructionsDiv.innerHTML = `
-            <h4 style="color: #38bdf8; margin-bottom: 12px;">🤫 Step 2: Background Noise Test</h4>
-            <p style="margin-bottom: 15px;">Click the button, then remain <strong>completely silent</strong> for 10 seconds.</p>
-            <button id="start-silence-btn" class="btn btn-primary">Ready - Start Silence Test</button>
-        `;
+    instructionsDiv.replaceChildren();
+
+    const step2Header = document.createElement('h4');
+    step2Header.style.cssText = 'color: #38bdf8; margin-bottom: 12px;';
+    step2Header.textContent = '🤫 Step 2: Background Noise Test';
+
+    const step2Intro = document.createElement('p');
+    step2Intro.style.marginBottom = '15px';
+    step2Intro.textContent = 'Click the button, then remain ';
+    const strong = document.createElement('strong');
+    strong.textContent = 'completely silent';
+    step2Intro.appendChild(strong);
+    step2Intro.appendChild(document.createTextNode(' for 10 seconds.'));
+
+    const silenceBtn = document.createElement('button');
+    silenceBtn.id = 'start-silence-btn';
+    silenceBtn.className = 'btn btn-primary';
+    silenceBtn.textContent = 'Ready - Start Silence Test';
+
+    instructionsDiv.appendChild(step2Header);
+    instructionsDiv.appendChild(step2Intro);
+    instructionsDiv.appendChild(silenceBtn);
 
     await new Promise<void>((resolve) => {
       const silenceBtn = document.getElementById('start-silence-btn');
       silenceBtn?.addEventListener('click', () => resolve(), { once: true });
     });
 
-    instructionsDiv.innerHTML = `
-            <h4 style="color: #38bdf8; margin-bottom: 12px;">🤫 Step 2: Background Noise Test</h4>
-            <p><strong>Remain silent...</strong></p>
-            <p style="color: #94a3b8; font-size: 0.9em;">⏱️ Measuring silence for 10 seconds...</p>
-        `;
+    instructionsDiv.replaceChildren();
+
+    const step2HeaderActive = document.createElement('h4');
+    step2HeaderActive.style.cssText = 'color: #38bdf8; margin-bottom: 12px;';
+    step2HeaderActive.textContent = '🤫 Step 2: Background Noise Test';
+
+    const silentMsg = document.createElement('p');
+    const silentStrong = document.createElement('strong');
+    silentStrong.textContent = 'Remain silent...';
+    silentMsg.appendChild(silentStrong);
+
+    const step2Timer = document.createElement('p');
+    step2Timer.style.cssText = 'color: #94a3b8; font-size: 0.9em;';
+    step2Timer.textContent = '⏱️ Measuring silence for 10 seconds...';
+
+    instructionsDiv.appendChild(step2HeaderActive);
+    instructionsDiv.appendChild(silentMsg);
+    instructionsDiv.appendChild(step2Timer);
 
     const noiseSamples: number[] = [];
     const noiseDuration = 10000;
@@ -476,10 +522,20 @@ export async function runCompleteMicrophoneTest() {
     console.error('Microphone test failed:', error);
     instructionsDiv.style.display = 'none';
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = `
-            <h4 style="color: #f87171;">❌ Test Failed</h4>
-            <p>${error instanceof Error ? error.message : 'Please check your microphone permissions and try again.'}</p>
-        `;
+    resultDiv.replaceChildren();
+
+    const errorHeader = document.createElement('h4');
+    errorHeader.style.color = '#f87171';
+    errorHeader.textContent = '❌ Test Failed';
+
+    const errorMsg = document.createElement('p');
+    errorMsg.textContent =
+      error instanceof Error
+        ? error.message
+        : 'Please check your microphone permissions and try again.';
+
+    resultDiv.appendChild(errorHeader);
+    resultDiv.appendChild(errorMsg);
   } finally {
     btn.disabled = false;
     btn.textContent = '🧪 Run Advanced Diagnostic';
@@ -565,43 +621,103 @@ function displayTestResults(
     statusLabel = 'Poor Quality';
   }
 
-  let html = `
-        <h4 style="color: ${statusColor}; margin-bottom: 12px;">Diagnostic Results: ${statusLabel}</h4>
-        <div style="background: #1a2f3a; border: 1px solid #334155; padding: 12px; border-radius: 6px; font-size: 0.9em;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span>Peak Volume:</span>
-                <span style="font-weight: 600;">${results.peakDb.toFixed(1)} dB</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span>Average Speech:</span>
-                <span style="font-weight: 600;">${results.avgSpeechDb.toFixed(1)} dB</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span>Noise Floor:</span>
-                <span style="font-weight: 600;">${results.noiseFloorDb?.toFixed(1)} dB</span>
-            </div>
-        </div>
-    `;
+  resultDiv.replaceChildren();
 
+  // Header
+  const header = document.createElement('h4');
+  header.style.cssText = `color: ${statusColor}; margin-bottom: 12px;`;
+  header.textContent = `Diagnostic Results: ${statusLabel}`;
+  resultDiv.appendChild(header);
+
+  // Metrics container
+  const metricsBox = document.createElement('div');
+  metricsBox.style.cssText =
+    'background: #1a2f3a; border: 1px solid #334155; padding: 12px; border-radius: 6px; font-size: 0.9em;';
+
+  // Peak Volume
+  const peakRow = document.createElement('div');
+  peakRow.style.cssText = 'display: flex; justify-content: space-between; margin-bottom: 5px;';
+  const peakLabel = document.createElement('span');
+  peakLabel.textContent = 'Peak Volume:';
+  const peakValue = document.createElement('span');
+  peakValue.style.fontWeight = '600';
+  peakValue.textContent = `${results.peakDb.toFixed(1)} dB`;
+  peakRow.appendChild(peakLabel);
+  peakRow.appendChild(peakValue);
+
+  // Average Speech
+  const avgRow = document.createElement('div');
+  avgRow.style.cssText = 'display: flex; justify-content: space-between; margin-bottom: 5px;';
+  const avgLabel = document.createElement('span');
+  avgLabel.textContent = 'Average Speech:';
+  const avgValue = document.createElement('span');
+  avgValue.style.fontWeight = '600';
+  avgValue.textContent = `${results.avgSpeechDb.toFixed(1)} dB`;
+  avgRow.appendChild(avgLabel);
+  avgRow.appendChild(avgValue);
+
+  // Noise Floor
+  const noiseRow = document.createElement('div');
+  noiseRow.style.cssText = 'display: flex; justify-content: space-between;';
+  const noiseLabel = document.createElement('span');
+  noiseLabel.textContent = 'Noise Floor:';
+  const noiseValue = document.createElement('span');
+  noiseValue.style.fontWeight = '600';
+  noiseValue.textContent = `${results.noiseFloorDb?.toFixed(1)} dB`;
+  noiseRow.appendChild(noiseLabel);
+  noiseRow.appendChild(noiseValue);
+
+  metricsBox.appendChild(peakRow);
+  metricsBox.appendChild(avgRow);
+  metricsBox.appendChild(noiseRow);
+  resultDiv.appendChild(metricsBox);
+
+  // Issues section
   if (results.issues.length > 0) {
-    html += `<div style="margin-top: 15px;">
-            <p style="color: #f87171; font-weight: 600; margin-bottom: 5px;">⚠️ Issues Found:</p>
-            <ul style="padding-left: 20px; color: #cbd5e1;">
-                ${results.issues.map((i: string) => `<li>${i}</li>`).join('')}
-            </ul>
-        </div>`;
+    const issuesDiv = document.createElement('div');
+    issuesDiv.style.marginTop = '15px';
+
+    const issuesHeader = document.createElement('p');
+    issuesHeader.style.cssText = 'color: #f87171; font-weight: 600; margin-bottom: 5px;';
+    issuesHeader.textContent = '⚠️ Issues Found:';
+
+    const issuesList = document.createElement('ul');
+    issuesList.style.cssText = 'padding-left: 20px; color: #cbd5e1;';
+    results.issues.forEach((issue) => {
+      const li = document.createElement('li');
+      li.textContent = issue;
+      issuesList.appendChild(li);
+    });
+
+    issuesDiv.appendChild(issuesHeader);
+    issuesDiv.appendChild(issuesList);
+    resultDiv.appendChild(issuesDiv);
   }
 
+  // Recommendations section
   if (results.recommendations.length > 0) {
-    html += `<div style="margin-top: 15px;">
-            <p style="color: #38bdf8; font-weight: 600; margin-bottom: 5px;">💡 Recommendations:</p>
-            <ul style="padding-left: 20px; color: #cbd5e1;">
-                ${results.recommendations.map((r: string) => `<li>${r}</li>`).join('')}
-            </ul>
-        </div>`;
-  } else {
-    html += `<p style="margin-top: 15px; color: #4ade80;">✅ Your microphone is perfectly calibrated for dictation.</p>`;
-  }
+    const recsDiv = document.createElement('div');
+    recsDiv.style.marginTop = '15px';
 
-  resultDiv.innerHTML = html;
+    const recsHeader = document.createElement('p');
+    recsHeader.style.cssText = 'color: #38bdf8; font-weight: 600; margin-bottom: 5px;';
+    recsHeader.textContent = '💡 Recommendations:';
+
+    const recsList = document.createElement('ul');
+    recsList.style.cssText = 'padding-left: 20px; color: #cbd5e1;';
+    results.recommendations.forEach((rec) => {
+      const li = document.createElement('li');
+      li.textContent = rec;
+      recsList.appendChild(li);
+    });
+
+    recsDiv.appendChild(recsHeader);
+    recsDiv.appendChild(recsList);
+    resultDiv.appendChild(recsDiv);
+  } else {
+    const successMsg = document.createElement('p');
+    successMsg.style.cssText = 'margin-top: 15px; color: #4ade80;';
+    successMsg.textContent = '✅ Your microphone is perfectly calibrated for dictation.';
+    resultDiv.appendChild(successMsg);
+  }
 }
