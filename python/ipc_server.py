@@ -2583,7 +2583,7 @@ class IpcServer:
                     return {"success": False, "error": str(e)}
             elif cmd_name == "inject_last":
                 # "Oops" feature - re-inject last successfully injected text
-                if self.last_injected_text:
+                if self.last_injected_text is not None:
                     logger.info(f"[INJECT_LAST] Re-injecting {len(self.last_injected_text)} chars")
                     if self.injector:
                         self._set_state(State.INJECTING)
