@@ -4,28 +4,29 @@ Unit tests for core/transcriber.py
 Tests the Transcriber class for Whisper model loading and transcription.
 """
 
-import sys
+# Direct import to avoid triggering core/__init__.py which imports pyaudio-dependent Recorder
+# Use importlib to load the module file directly without executing __init__.py
+import importlib.util
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
-# Direct import to avoid triggering core/__init__.py which imports pyaudio-dependent Recorder
-# Add python directory to path (tests/conftest.py already does this, but being explicit)
-if str(Path(__file__).parent.parent.parent / "python") not in sys.path:
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / "python"))
+python_dir = Path(__file__).parent.parent.parent / "python"
+transcriber_path = python_dir / "core" / "transcriber.py"
 
-# Import directly from module, not via core package (avoids __init__.py execution)
-import core.transcriber
+spec = importlib.util.spec_from_file_location("transcriber_module", transcriber_path)
+transcriber_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(transcriber_module)
 
-Transcriber = core.transcriber.Transcriber
+Transcriber = transcriber_module.Transcriber
 
 
 class TestTranscriberInit(unittest.TestCase):
     """Test Transcriber initialization."""
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     @patch("ctranslate2.get_cuda_device_count")
     def test_init_with_cuda_available(self, mock_cuda_count, mock_whisper_model):
         """__init__ should detect and use CUDA when available"""
@@ -42,7 +43,7 @@ class TestTranscriberInit(unittest.TestCase):
         call_kwargs = mock_whisper_model.call_args[1]
         assert call_kwargs["device"] == "cuda"
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     @patch("ctranslate2.get_cuda_device_count")
     def test_init_fallback_to_cpu_no_cuda(self, mock_cuda_count, mock_whisper_model):
         """__init__ should fallback to CPU when CUDA not available"""
@@ -55,7 +56,7 @@ class TestTranscriberInit(unittest.TestCase):
         call_kwargs = mock_whisper_model.call_args[1]
         assert call_kwargs["device"] == "cpu"
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_init_explicit_cuda_device(self, mock_whisper_model):
         """__init__ should use explicit device when specified"""
         mock_whisper_model.return_value = Mock()
@@ -66,7 +67,7 @@ class TestTranscriberInit(unittest.TestCase):
         call_kwargs = mock_whisper_model.call_args[1]
         assert call_kwargs["device"] == "cuda"
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_init_explicit_cpu_device(self, mock_whisper_model):
         """__init__ should use explicit CPU device"""
         mock_whisper_model.return_value = Mock()
@@ -84,7 +85,7 @@ class TestTranscriberInit(unittest.TestCase):
 
         assert "Model size must be one of" in str(exc_info.value)
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_init_loads_standard_model(self, mock_whisper_model):
         """__init__ should load standard model sizes"""
         mock_whisper_model.return_value = Mock()
@@ -97,7 +98,7 @@ class TestTranscriberInit(unittest.TestCase):
 class TestModelMapping(unittest.TestCase):
     """Test MODEL_MAPPING constant."""
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_model_mapping_turbo_resolves_to_hf_path(self, mock_whisper_model):
         """MODEL_MAPPING should resolve 'turbo' to HF path"""
         mock_whisper_model.return_value = Mock()
@@ -108,7 +109,7 @@ class TestModelMapping(unittest.TestCase):
         call_args = mock_whisper_model.call_args[0]
         assert call_args[0] == "deepdml/faster-whisper-large-v3-turbo-ct2"
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_model_mapping_standard_model_unchanged(self, mock_whisper_model):
         """Standard models should not be mapped"""
         mock_whisper_model.return_value = Mock()
@@ -123,7 +124,7 @@ class TestModelMapping(unittest.TestCase):
 class TestLoadModel(unittest.TestCase):
     """Test _load_model method."""
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_load_model_tries_local_first(self, mock_whisper_model):
         """_load_model should try local_files_only=True first"""
         mock_whisper_model.return_value = Mock()
@@ -134,7 +135,7 @@ class TestLoadModel(unittest.TestCase):
         first_call_kwargs = mock_whisper_model.call_args_list[0][1]
         assert first_call_kwargs["local_files_only"] is True
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_load_model_falls_back_to_online(self, mock_whisper_model):
         """_load_model should fallback to online if local fails"""
         # First call fails (local not found), second succeeds (online)
@@ -152,7 +153,7 @@ class TestLoadModel(unittest.TestCase):
         # Second call: local_files_only=False
         assert mock_whisper_model.call_args_list[1][1]["local_files_only"] is False
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_load_model_raises_on_complete_failure(self, mock_whisper_model):
         """_load_model should raise if both local and online fail"""
         mock_whisper_model.side_effect = Exception("Model load failed")
@@ -166,7 +167,7 @@ class TestLoadModel(unittest.TestCase):
 class TestTranscribe(unittest.TestCase):
     """Test transcribe method."""
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_transcribe_success_returns_combined_text(self, mock_whisper_model):
         """transcribe() should combine all segments into single string"""
         # Mock model instance
@@ -193,7 +194,7 @@ class TestTranscribe(unittest.TestCase):
             "test.wav", language=None, task="transcribe"
         )
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_transcribe_with_language_parameter(self, mock_whisper_model):
         """transcribe() should pass language parameter to model"""
         mock_model_instance = Mock()
@@ -212,7 +213,7 @@ class TestTranscribe(unittest.TestCase):
             "test.wav", language="en", task="transcribe"
         )
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_transcribe_empty_segments(self, mock_whisper_model):
         """transcribe() should handle empty segments (no speech detected)"""
         mock_model_instance = Mock()
@@ -227,7 +228,7 @@ class TestTranscribe(unittest.TestCase):
 
         assert result == ""
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_transcribe_single_segment(self, mock_whisper_model):
         """transcribe() should handle single segment"""
         mock_model_instance = Mock()
@@ -243,7 +244,7 @@ class TestTranscribe(unittest.TestCase):
 
         assert result == "Single utterance"
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_transcribe_raises_if_model_not_loaded(self, mock_whisper_model):
         """transcribe() should raise if model is None"""
         mock_whisper_model.return_value = Mock()
@@ -256,7 +257,7 @@ class TestTranscribe(unittest.TestCase):
 
         assert "Model not loaded" in str(exc_info.value)
 
-    @patch("core.transcriber.WhisperModel")
+    @patch.object(transcriber_module, "WhisperModel")
     def test_transcribe_raises_on_error(self, mock_whisper_model):
         """transcribe() should raise exception on transcription failure"""
         mock_model_instance = Mock()
