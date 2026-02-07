@@ -6,11 +6,13 @@
 
 interface Window {
   electronAPI: {
-    onLog: (callback: (level: string, message: string, data?: any) => void) => void;
+    onLog: (
+      callback: (level: string, message: string, data?: Record<string, unknown>) => void
+    ) => void;
     onStatusChange: (callback: (status: string) => void) => void;
     onPerformanceMetrics: (callback: (metrics: PerformanceMetrics) => void) => void;
-    getInitialState: () => Promise<any>;
-    setSetting: (key: string, value: any) => Promise<void>;
+    getInitialState: () => Promise<unknown>;
+    setSetting: (key: string, value: unknown) => Promise<void>;
     onPlaySound: (callback: (soundName: string) => void) => void;
     onBadgeUpdate: (callback: (badges: { processor?: string; authType?: string }) => void) => void;
     onModeChange: (callback: (mode: string) => void) => void;
@@ -171,7 +173,7 @@ function updateBadges(models?: { transcriber?: string; processor?: string }, aut
   }
 }
 
-function addLogEntry(level: string, message: string, _data?: any) {
+function addLogEntry(level: string, message: string, _data?: Record<string, unknown>) {
   // Log UI Removed - internal logging only
 }
 
@@ -220,6 +222,7 @@ function updateModeUI(mode: string) {
 }
 
 // Make switchExecutionMode available globally for onclick handler
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).switchExecutionMode = function (
   mode: 'standard' | 'prompt' | 'professional' | 'raw'
 ) {
@@ -241,7 +244,9 @@ if (window.electronAPI) {
   }
 
   // Badge update handler (for provider switches)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((window.electronAPI as any).onBadgeUpdate) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window.electronAPI as any).onBadgeUpdate(
       (badges: { processor?: string; authType?: string }) => {
         updateBadges(badges, badges.authType);
@@ -250,8 +255,10 @@ if (window.electronAPI) {
   }
 
   // Setting change handler (SPEC_032 UI Sync)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((window.electronAPI as any).onSettingChange) {
-    (window.electronAPI as any).onSettingChange((key: string, value: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window.electronAPI as any).onSettingChange((key: string, value: unknown) => {
       if (key === 'soundFeedback' && toggleSound) {
         toggleSound.checked = value;
       } else if (key === 'processingMode' && toggleCloud) {
@@ -267,7 +274,9 @@ if (window.electronAPI) {
   }
 
   // Mode change handler (triggers status updates, not button changes)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((window.electronAPI as any).onModeChange) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window.electronAPI as any).onModeChange((mode: string) => {
       addLogEntry('INFO', `Active operation: ${mode.toUpperCase()}`);
     });
@@ -322,15 +331,23 @@ window.electronAPI.onPlaySound((soundName: string) => {
 });
 
 // Event listeners for UI controls (CSP-compliant)
-document
-  .getElementById('mode-standard')
-  ?.addEventListener('click', () => (window as any).switchExecutionMode('standard'));
-document
-  .getElementById('mode-prompt')
-  ?.addEventListener('click', () => (window as any).switchExecutionMode('prompt'));
-document
-  .getElementById('mode-professional')
-  ?.addEventListener('click', () => (window as any).switchExecutionMode('professional'));
-document
-  .getElementById('mode-raw')
-  ?.addEventListener('click', () => (window as any).switchExecutionMode('raw'));
+
+document.getElementById('mode-standard')?.addEventListener('click', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).switchExecutionMode('standard');
+});
+
+document.getElementById('mode-prompt')?.addEventListener('click', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).switchExecutionMode('prompt');
+});
+
+document.getElementById('mode-professional')?.addEventListener('click', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).switchExecutionMode('professional');
+});
+
+document.getElementById('mode-raw')?.addEventListener('click', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).switchExecutionMode('raw');
+});

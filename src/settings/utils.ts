@@ -2,6 +2,8 @@
  * Settings Page Utilities
  */
 
+import type { Settings } from './types.js';
+
 export function setVal(id: string, val: string) {
   const el = document.getElementById(id) as HTMLSelectElement | null;
   if (el) el.value = val;
@@ -12,15 +14,16 @@ export function setCheck(id: string, val: boolean) {
   if (el) el.checked = val;
 }
 
-export function saveSetting(key: string, value: any) {
+export function saveSetting(key: string, value: unknown) {
   console.log(`Saving ${key}:`, value);
-  window.settingsAPI.set(key, value);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  window.settingsAPI.set(key as any, value as any);
 }
 
 /**
  * Loads settings into the DOM
  */
-export function loadSettings(settings: any) {
+export function loadSettings(settings: Settings | undefined) {
   if (!settings) return;
 
   // General

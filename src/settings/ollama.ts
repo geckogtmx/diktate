@@ -2,9 +2,9 @@
  * Ollama Model Management (SPEC_031)
  */
 
-import { state } from './store.js';
+import { state, type ModelInfo } from './store.js';
 import { formatBytes, saveSetting } from './utils.js';
-import { VERIFIED_MODELS } from './constants.js';
+import { VERIFIED_MODELS, type VerifiedModel } from './constants.js';
 import {
   getRecommendedMaxModelSize,
   getModelSizeClass,
@@ -82,7 +82,7 @@ export async function loadOllamaModels() {
         emptyMsg.textContent = 'No models installed';
         listContainer.appendChild(emptyMsg);
       } else {
-        models.forEach((model: any) => {
+        models.forEach((model: ModelInfo) => {
           const row = document.createElement('div');
           row.style.cssText =
             'display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; border-bottom: 1px solid #333;';
@@ -123,7 +123,7 @@ export async function loadOllamaModels() {
 
     const maxRecommendedB = getRecommendedMaxModelSize();
 
-    models.forEach((model: any) => {
+    models.forEach((model: ModelInfo) => {
       const sizeGB = model.size / (1024 * 1024 * 1024);
       const modelSizeClass = getModelSizeClass(model.name, sizeGB, maxRecommendedB);
 
@@ -207,7 +207,7 @@ export async function initSafeModelLibrary() {
         }
 
         // Check if already installed
-        const isInstalled = state.availableModels?.some((am: any) => am.name === m.id);
+        const isInstalled = state.availableModels?.some((am: ModelInfo) => am.name === m.id);
         if (isInstalled) {
           opt.text += ' ✅ Installed';
           opt.disabled = true;
@@ -233,14 +233,15 @@ export function installVerifiedModel() {
   }
 }
 
-export function getCompatibleModels(vramGB: number): any[] {
+export function getCompatibleModels(vramGB: number): VerifiedModel[] {
   return VERIFIED_MODELS.filter((m) => {
     return m.sizeGb <= vramGB;
   });
 }
 
-export function saveOllamaSetting(key: string, value: any) {
-  window.settingsAPI.set(key, value);
+export function saveOllamaSetting(key: string, value: unknown) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  window.settingsAPI.set(key as any, value as any);
 }
 
 export async function restartOllama() {

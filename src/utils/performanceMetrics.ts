@@ -9,7 +9,7 @@ interface MetricData {
   startTime: number;
   endTime?: number;
   duration?: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 interface PipelineMetrics {
@@ -20,6 +20,30 @@ interface PipelineMetrics {
   total?: MetricData;
 }
 
+interface SessionSummary {
+  recording?: number;
+  transcription?: number;
+  processing?: number;
+  injection?: number;
+  total?: number;
+}
+
+interface AverageMetrics {
+  recording: number;
+  transcription: number;
+  processing: number;
+  injection: number;
+  total: number;
+  sessionCount: number;
+}
+
+interface Statistics {
+  current: SessionSummary;
+  averages: AverageMetrics | null;
+  historySize: number;
+  timestamp: string;
+}
+
 class PerformanceMetrics {
   private currentSession: PipelineMetrics = {};
   private sessionHistory: PipelineMetrics[] = [];
@@ -28,7 +52,7 @@ class PerformanceMetrics {
   /**
    * Start timing a metric
    */
-  startMetric(metricName: keyof PipelineMetrics, metadata?: any): void {
+  startMetric(metricName: keyof PipelineMetrics, metadata?: Record<string, unknown>): void {
     this.currentSession[metricName] = {
       startTime: Date.now(),
       metadata,
@@ -39,7 +63,10 @@ class PerformanceMetrics {
   /**
    * End timing a metric
    */
-  endMetric(metricName: keyof PipelineMetrics, metadata?: any): number | undefined {
+  endMetric(
+    metricName: keyof PipelineMetrics,
+    metadata?: Record<string, unknown>
+  ): number | undefined {
     const metric = this.currentSession[metricName];
     if (!metric || metric.endTime) {
       logger.warn(
@@ -105,7 +132,7 @@ class PerformanceMetrics {
   /**
    * Get summary of current session
    */
-  getSessionSummary(): any {
+  getSessionSummary(): SessionSummary {
     return {
       recording: this.currentSession.recording?.duration,
       transcription: this.currentSession.transcription?.duration,
@@ -118,7 +145,7 @@ class PerformanceMetrics {
   /**
    * Get average metrics from history
    */
-  getAverageMetrics(): any {
+  getAverageMetrics(): AverageMetrics | null {
     if (this.sessionHistory.length === 0) {
       return null;
     }
@@ -153,7 +180,7 @@ class PerformanceMetrics {
   /**
    * Get performance statistics
    */
-  getStatistics(): any {
+  getStatistics(): Statistics {
     const averages = this.getAverageMetrics();
     const current = this.getSessionSummary();
 

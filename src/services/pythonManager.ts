@@ -15,13 +15,13 @@ import * as os from 'os';
 interface Command {
   id: string;
   command: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface Response {
   id: string;
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
 }
 
@@ -239,7 +239,7 @@ export class PythonManager extends EventEmitter {
   /**
    * Set configuration for the Python pipeline
    */
-  async setConfig(config: object): Promise<any> {
+  async setConfig(config: object): Promise<unknown> {
     this.isSyncing = true;
     try {
       // Yield to let UI process any pending clicks before heavy sync
@@ -257,7 +257,7 @@ export class PythonManager extends EventEmitter {
   /**
    * Send a command to Python
    */
-  async sendCommand(command: string, data?: any): Promise<any> {
+  async sendCommand(command: string, data?: unknown): Promise<unknown> {
     return new Promise((resolve, reject) => {
       if (!this.isRunning) {
         reject(new Error('Python process not running'));
@@ -380,7 +380,7 @@ export class PythonManager extends EventEmitter {
   /**
    * Handle events from Python process
    */
-  private handlePythonEvent(event: any): void {
+  private handlePythonEvent(event: Record<string, unknown>): void {
     logger.debug('PythonManager', 'Event from Python', { eventType: event.event });
 
     if (event.event === 'state-change') {

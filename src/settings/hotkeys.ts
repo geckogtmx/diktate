@@ -90,6 +90,7 @@ export function resetHotkey(mode: HotkeyMode = 'dictate') {
   };
 
   const { displayId, settingKey } = configMap[mode];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const defaultHotkey = (HOTKEY_DEFAULTS as any)[mode];
 
   const display = document.getElementById(displayId);

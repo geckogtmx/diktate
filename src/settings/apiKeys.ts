@@ -19,7 +19,7 @@ export async function saveApiKey(provider: string) {
     input.value = '';
     updateApiKeyStatus(provider, true);
     alert(`✅ ${provider} API key saved securely!`);
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(`Failed to save ${provider} API key:`, e);
     let errorMsg = e instanceof Error ? e.message : String(e);
     const ipcPrefix = /^Error invoking remote method '[^']+': Error: /;
@@ -47,7 +47,7 @@ export async function testCurrentApiKey(provider: string) {
     } else {
       alert(`❌ ${provider} API key test failed: ${result.error}`);
     }
-  } catch (e) {
+  } catch (e: unknown) {
     alert(`❌ Test failed: ${e}`);
   }
 }
@@ -63,7 +63,7 @@ export async function testSavedApiKey(provider: string) {
     } else {
       alert(`❌ ${provider} API key test failed: ${result.error}`);
     }
-  } catch (e) {
+  } catch (e: unknown) {
     alert(`❌ Test failed: ${e}`);
   }
 }
@@ -80,7 +80,7 @@ export async function deleteApiKey(provider: string) {
     await window.settingsAPI.setApiKey(provider, '');
     updateApiKeyStatus(provider, false);
     alert(`🗑️ ${provider} API key deleted`);
-  } catch (e) {
+  } catch (e: unknown) {
     console.error(`Failed to delete ${provider} API key:`, e);
     alert(`❌ Failed to delete ${provider} API key`);
   }
@@ -114,7 +114,7 @@ export async function loadApiKeyStatuses() {
       const hasKey = statuses[`${provider}ApiKey`];
       updateApiKeyStatus(provider, hasKey);
     });
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('Failed to load API key statuses:', e);
   }
 }

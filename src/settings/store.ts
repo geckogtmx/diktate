@@ -5,11 +5,22 @@
 
 import type { AudioAnalyzer } from './audio.js';
 
+/**
+ * Model object from API response (Gemini, Anthropic, OpenAI, or Ollama)
+ */
+export interface ModelInfo {
+  id: string;
+  name: string;
+  description?: string;
+  size?: string;
+  [key: string]: unknown;
+}
+
 export interface SettingsState {
   isRecordingHotkey: boolean;
   initialModels: Record<string, string>;
   hasModelChanges: boolean;
-  availableModels: any[];
+  availableModels: ModelInfo[];
   defaultPrompts: Record<string, string>;
 
   // Audio Monitoring State (SPEC_021)

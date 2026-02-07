@@ -52,18 +52,27 @@ class Logger {
   /**
    * Format log message
    */
-  private formatMessage(level: LogLevel, source: string, message: string, data?: any): string {
+  private formatMessage(
+    level: LogLevel,
+    source: string,
+    message: string,
+    data?: Record<string, unknown>
+  ): string {
     const timestamp = new Date().toISOString();
     const dataStr = data ? ` | ${JSON.stringify(data)}` : '';
     return `${timestamp} [${level}] [${source}] ${message}${dataStr}`;
   }
 
-  private onLogCallback: ((level: LogLevel, message: string, data?: any) => void) | null = null;
+  private onLogCallback:
+    | ((level: LogLevel, message: string, data?: Record<string, unknown>) => void)
+    | null = null;
 
   /**
    * Set callback for log streaming
    */
-  setLogCallback(callback: (level: LogLevel, message: string, data?: any) => void): void {
+  setLogCallback(
+    callback: (level: LogLevel, message: string, data?: Record<string, unknown>) => void
+  ): void {
     this.onLogCallback = callback;
   }
 
@@ -79,7 +88,12 @@ class Logger {
   /**
    * Write log to file and console
    */
-  private log(level: LogLevel, source: string, message: string, data?: any): void {
+  private log(
+    level: LogLevel,
+    source: string,
+    message: string,
+    data?: Record<string, unknown>
+  ): void {
     const formattedMessage = this.formatMessage(level, source, message, data);
 
     // Map log levels to numeric values for comparison
@@ -106,11 +120,13 @@ class Logger {
             console.log(formattedMessage);
             break;
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Ignore EPIPE errors (broken pipe to stdout)
-        if (error.code !== 'EPIPE') {
+        const errorCode = (error as NodeJS.ErrnoException).code;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorCode !== 'EPIPE') {
           try {
-            process.stderr.write(`Logger error: ${error.message}\n`);
+            process.stderr.write(`Logger error: ${errorMessage}\n`);
           } catch (e) {
             /* ignore */
           }
@@ -132,30 +148,32 @@ class Logger {
   /**
    * Log debug message
    */
-  debug(source: string, message: string, data?: any): void {
+  debug(source: string, message: string, data?: Record<string, unknown>): void {
     this.log(LogLevel.DEBUG, source, message, data);
   }
 
   /**
    * Log info message
    */
-  info(source: string, message: string, data?: any): void {
+  info(source: string, message: string, data?: Record<string, unknown>): void {
     this.log(LogLevel.INFO, source, message, data);
   }
 
   /**
    * Log warning message
    */
-  warn(source: string, message: string, data?: any): void {
+  warn(source: string, message: string, data?: Record<string, unknown>): void {
     this.log(LogLevel.WARN, source, message, data);
   }
 
   /**
    * Log error message
    */
-  error(source: string, message: string, error?: any): void {
+  error(source: string, message: string, error?: unknown): void {
     const errorData =
-      error instanceof Error ? { message: error.message, stack: error.stack } : error;
+      error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : (error as Record<string, unknown> | undefined);
     this.log(LogLevel.ERROR, source, message, errorData);
   }
 

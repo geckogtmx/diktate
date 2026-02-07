@@ -74,7 +74,7 @@ if (!gotTheLock) {
 const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
 
 // Types for Settings
-interface UserSettings {
+export interface UserSettings {
   processingMode: string;
   autoStart: boolean;
   soundFeedback: boolean;
@@ -171,6 +171,72 @@ interface UserSettings {
 
   privacyLoggingIntensity: number; // NEW: SPEC_030
   privacyPiiScrubber: boolean; // NEW: SPEC_030
+
+  // Whisper model selection (SPEC_041)
+  whisperModel?: string;
+
+  // Audio device noise floor profiles
+  audioDeviceProfiles?: Record<
+    string,
+    {
+      deviceId: string;
+      deviceLabel: string;
+      noiseFloor: number;
+      lastCalibrated: string;
+    }
+  >;
+
+  // Encrypted API keys (stored using safeStorage)
+  encryptedGeminiApiKey?: string;
+  encryptedAnthropicApiKey?: string;
+  encryptedOpenaiApiKey?: string;
+}
+
+/**
+ * Local processing profile for a mode (Ollama)
+ */
+interface LocalProfile {
+  prompt: string;
+}
+
+/**
+ * Cloud processing profile for a mode (Gemini, Anthropic, OpenAI)
+ */
+interface CloudProfile {
+  provider: string;
+  model: string;
+  prompt: string;
+}
+
+/**
+ * Configuration object synced to Python subprocess
+ */
+interface PythonConfig {
+  processingMode: string;
+  provider: string;
+  mode: string;
+  transMode: string;
+  defaultModel: string;
+  localModel: string;
+  defaultOllamaModel: string;
+  localProfiles: Record<string, LocalProfile>;
+  cloudProfiles: Record<string, CloudProfile>;
+  audioDeviceLabel: string;
+  model: string; // Whisper model
+  trailingSpaceEnabled: boolean;
+  additionalKeyEnabled: boolean;
+  additionalKey: string;
+  noteFilePath?: string;
+  noteFormat?: string;
+  noteUseProcessor?: boolean;
+  noteTimestampFormat?: string;
+  notePrompt?: string;
+  privacyLoggingIntensity: number;
+  privacyPiiScrubber: boolean;
+  // API keys added dynamically
+  geminiApiKey?: string;
+  anthropicApiKey?: string;
+  openaiApiKey?: string;
 }
 
 // Initialize Store with defaults
@@ -300,8 +366,10 @@ if (currentPrompt && !currentPrompt.includes('{text}')) {
  * Converts old modeProvider/modeModel to new localModel/cloudProvider/cloudModel structure
  */
 function migrateToDualProfileSystem(): void {
+  // Type assertions safe: mode-specific and legacy keys are explicitly defined in UserSettings interface
+
   // Check if migration already ran
-  if (store.get('profileSystemMigrated' as any)) {
+  if (store.get('profileSystemMigrated' as keyof UserSettings)) {
     logger.info('MAIN', 'Dual-profile migration already completed');
     return;
   }
@@ -321,9 +389,13 @@ function migrateToDualProfileSystem(): void {
   let migratedCount = 0;
 
   for (const mode of modes) {
-    const oldProvider = store.get(`modeProvider_${mode}` as any) as string | undefined;
-    const oldModel = store.get(`modeModel_${mode}` as any) as string | undefined;
-    const oldPrompt = store.get('customPrompts' as any)?.[mode] as string | undefined;
+    const oldProvider = store.get(`modeProvider_${mode}` as keyof UserSettings) as
+      | string
+      | undefined;
+    const oldModel = store.get(`modeModel_${mode}` as keyof UserSettings) as string | undefined;
+    const oldPrompt = store.get('customPrompts' as keyof UserSettings)?.[mode] as
+      | string
+      | undefined;
 
     if (!oldProvider && !oldModel && !oldPrompt) {
       // No settings for this mode, skip
@@ -333,20 +405,20 @@ function migrateToDualProfileSystem(): void {
     if (oldProvider === 'local' || !oldProvider) {
       // Migrate to Local Profile
       if (oldModel) {
-        store.set(`localModel_${mode}` as any, oldModel);
+        store.set(`localModel_${mode}` as keyof UserSettings, oldModel);
         logger.info('MAIN', `[MIGRATION] ${mode}: Local model -> ${oldModel}`);
       }
       if (oldPrompt) {
-        store.set(`localPrompt_${mode}` as any, oldPrompt);
+        store.set(`localPrompt_${mode}` as keyof UserSettings, oldPrompt);
       }
     } else {
       // Migrate to Cloud Profile (gemini/anthropic/openai)
-      store.set(`cloudProvider_${mode}` as any, oldProvider);
+      store.set(`cloudProvider_${mode}` as keyof UserSettings, oldProvider);
       if (oldModel) {
-        store.set(`cloudModel_${mode}` as any, oldModel);
+        store.set(`cloudModel_${mode}` as keyof UserSettings, oldModel);
       }
       if (oldPrompt) {
-        store.set(`cloudPrompt_${mode}` as any, oldPrompt);
+        store.set(`cloudPrompt_${mode}` as keyof UserSettings, oldPrompt);
       }
       logger.info(
         'MAIN',
@@ -355,14 +427,14 @@ function migrateToDualProfileSystem(): void {
     }
 
     // Delete old keys
-    store.delete(`modeProvider_${mode}` as any);
-    store.delete(`modeModel_${mode}` as any);
+    store.delete(`modeProvider_${mode}` as keyof UserSettings);
+    store.delete(`modeModel_${mode}` as keyof UserSettings);
 
     migratedCount++;
   }
 
   // Mark migration as complete
-  store.set('profileSystemMigrated' as any, true);
+  store.set('profileSystemMigrated' as keyof UserSettings, true);
   logger.info('MAIN', `Dual-profile migration complete: ${migratedCount} modes migrated`);
 }
 
@@ -1395,8 +1467,8 @@ async function syncPythonConfig(): Promise<void> {
     'note',
   ];
 
-  const localProfiles: any = {};
-  const cloudProfiles: any = {};
+  const localProfiles: Record<string, LocalProfile> = {};
+  const cloudProfiles: Record<string, CloudProfile> = {};
 
   // SPEC_038: Get global local model (used for ALL local modes)
   const globalLocalModel = store.get('localModel', '');
@@ -1404,8 +1476,9 @@ async function syncPythonConfig(): Promise<void> {
 
   for (const mode of modes) {
     // SPEC_038: Local Profile - now contains only per-mode prompts (NO model selection)
+    // Type assertion safe: mode-specific keys are explicitly defined in UserSettings
     localProfiles[mode] = {
-      prompt: store.get(`localPrompt_${mode}` as any) || '',
+      prompt: store.get(`localPrompt_${mode}` as keyof UserSettings) || '',
     };
 
     // Cloud Profile - per-mode model selection still supported
@@ -1414,9 +1487,9 @@ async function syncPythonConfig(): Promise<void> {
       DEFAULT_PROMPTS[mode as keyof typeof DEFAULT_PROMPTS] || DEFAULT_PROMPTS.standard;
 
     cloudProfiles[mode] = {
-      provider: store.get(`cloudProvider_${mode}` as any) || '',
-      model: store.get(`cloudModel_${mode}` as any) || '',
-      prompt: store.get(`cloudPrompt_${mode}` as any) || defaultPrompt,
+      provider: store.get(`cloudProvider_${mode}` as keyof UserSettings) || '',
+      model: store.get(`cloudModel_${mode}` as keyof UserSettings) || '',
+      prompt: store.get(`cloudPrompt_${mode}` as keyof UserSettings) || defaultPrompt,
     };
   }
 
@@ -1440,7 +1513,7 @@ async function syncPythonConfig(): Promise<void> {
     displayModel = globalLocalModel;
   }
 
-  const config: any = {
+  const config: PythonConfig = {
     processingMode: processingMode, // SPEC_034_EXTRAS: Global toggle
     provider: processingMode, // Keep for backward compatibility
     mode: defaultMode,
@@ -1480,7 +1553,7 @@ async function syncPythonConfig(): Promise<void> {
     ];
 
     for (const p of providers) {
-      const encrypted = store.get(p.storeKey as any) as string | undefined;
+      const encrypted = store.get(p.storeKey as keyof UserSettings) as string | undefined;
       if (encrypted && safeStorage.isEncryptionAvailable()) {
         try {
           const decrypted = safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
@@ -1538,8 +1611,9 @@ async function syncPythonConfig(): Promise<void> {
       debugWindow.webContents.send('mode-update', config.mode);
       debugWindow.webContents.send('provider-update', config.processingMode);
     }
-  } catch (err: any) {
-    logger.error('MAIN', `Failed to sync config to Python: ${err.message || err}`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error('MAIN', `Failed to sync config to Python: ${message}`);
   }
 }
 
@@ -1651,130 +1725,133 @@ function setupIpcHandlers(): void {
     return store.store;
   });
 
-  ipcMain.handle('settings:set', async (event, key: keyof UserSettings, value: any) => {
-    // Validate payload
-    const validation = validateIpcMessage(SettingsSetSchema, { key, value });
-    if (!validation.success) {
-      logger.error('IPC', `Invalid settings payload: ${redactSensitive(validation.error, 100)}`);
-      throw new Error(`Invalid payload: ${validation.error}`);
-    }
-
-    // Log update (redact long values like prompts)
-    const logValue =
-      typeof value === 'string' && value.length > 50 ? redactSensitive(value, 50) : value;
-    logger.info('IPC', `Setting update: ${key} = ${logValue}`);
-    store.set(key, value);
-
-    // If hotkey changed, re-register
-    if (['hotkey', 'askHotkey', 'translateHotkey', 'refineHotkey', 'oopsHotkey'].includes(key)) {
-      setupGlobalHotkey(); // Re-register with new key
-    }
-
-    // Trigger sync for core processing modes and model changes
-    const syncKeys = [
-      'defaultMode',
-      'processingMode',
-      'transMode',
-      'trailingSpaceEnabled', // NEW: Sync trailing space setting to Python
-      'additionalKeyEnabled', // NEW: Sync additional key settings to Python
-      'additionalKey', // NEW: Sync additional key settings to Python
-      'noteFilePath',
-      'noteFormat',
-      'noteUseProcessor',
-      'noteTimestampFormat',
-      'notePrompt',
-      'privacyLoggingIntensity',
-      'privacyPiiScrubber',
-      // SPEC_041: Whisper model selection
-      'whisperModel',
-      // SPEC_038: Global local model (used for ALL local modes)
-      'localModel',
-      // SPEC_034_EXTRAS: Dual-profile local model selections
-      'localModel_standard',
-      'localModel_prompt',
-      'localModel_professional',
-      'localModel_ask',
-      'localModel_refine',
-      'localModel_refine_instruction',
-      'localModel_raw',
-      'localModel_note',
-      // SPEC_034_EXTRAS: Dual-profile local prompts
-      'localPrompt_standard',
-      'localPrompt_prompt',
-      'localPrompt_professional',
-      'localPrompt_ask',
-      'localPrompt_refine',
-      'localPrompt_refine_instruction',
-      'localPrompt_raw',
-      'localPrompt_note',
-      // SPEC_034_EXTRAS: Dual-profile cloud provider selections
-      'cloudProvider_standard',
-      'cloudProvider_prompt',
-      'cloudProvider_professional',
-      'cloudProvider_ask',
-      'cloudProvider_refine',
-      'cloudProvider_refine_instruction',
-      'cloudProvider_raw',
-      'cloudProvider_note',
-      // SPEC_034_EXTRAS: Dual-profile cloud model selections
-      'cloudModel_standard',
-      'cloudModel_prompt',
-      'cloudModel_professional',
-      'cloudModel_ask',
-      'cloudModel_refine',
-      'cloudModel_refine_instruction',
-      'cloudModel_raw',
-      'cloudModel_note',
-      // SPEC_034_EXTRAS: Dual-profile cloud prompts
-      'cloudPrompt_standard',
-      'cloudPrompt_prompt',
-      'cloudPrompt_professional',
-      'cloudPrompt_ask',
-      'cloudPrompt_refine',
-      'cloudPrompt_refine_instruction',
-      'cloudPrompt_raw',
-      'cloudPrompt_note',
-    ];
-
-    if (syncKeys.includes(key as string)) {
-      await syncPythonConfig().catch((err) => {
-        logger.error('IPC', 'Post-setting sync failed', err);
-      });
-    }
-
-    // Update auth type badge if processingMode changed
-    if (key === 'processingMode') {
-      const actualProcessingMode = store.get('processingMode', 'local');
-      let authType = 'LOC';
-      if (actualProcessingMode === 'cloud' || actualProcessingMode === 'gemini') {
-        const apiKeys = store.get('encryptedGeminiApiKey');
-        if (apiKeys) authType = 'API';
+  ipcMain.handle(
+    'settings:set',
+    async (event, key: keyof UserSettings, value: UserSettings[keyof UserSettings]) => {
+      // Validate payload
+      const validation = validateIpcMessage(SettingsSetSchema, { key, value });
+      if (!validation.success) {
+        logger.error('IPC', `Invalid settings payload: ${redactSensitive(validation.error, 100)}`);
+        throw new Error(`Invalid payload: ${validation.error}`);
       }
-      if (debugWindow && !debugWindow.isDestroyed()) {
-        debugWindow.webContents.send('badge-update', { authType });
-      }
-    }
 
-    // If auto-start setting changed
-    if (key === 'autoStart') {
-      try {
-        app.setLoginItemSettings({
-          openAtLogin: value,
-          openAsHidden: false,
+      // Log update (redact long values like prompts)
+      const logValue =
+        typeof value === 'string' && value.length > 50 ? redactSensitive(value, 50) : value;
+      logger.info('IPC', `Setting update: ${key} = ${logValue}`);
+      store.set(key, value);
+
+      // If hotkey changed, re-register
+      if (['hotkey', 'askHotkey', 'translateHotkey', 'refineHotkey', 'oopsHotkey'].includes(key)) {
+        setupGlobalHotkey(); // Re-register with new key
+      }
+
+      // Trigger sync for core processing modes and model changes
+      const syncKeys = [
+        'defaultMode',
+        'processingMode',
+        'transMode',
+        'trailingSpaceEnabled', // NEW: Sync trailing space setting to Python
+        'additionalKeyEnabled', // NEW: Sync additional key settings to Python
+        'additionalKey', // NEW: Sync additional key settings to Python
+        'noteFilePath',
+        'noteFormat',
+        'noteUseProcessor',
+        'noteTimestampFormat',
+        'notePrompt',
+        'privacyLoggingIntensity',
+        'privacyPiiScrubber',
+        // SPEC_041: Whisper model selection
+        'whisperModel',
+        // SPEC_038: Global local model (used for ALL local modes)
+        'localModel',
+        // SPEC_034_EXTRAS: Dual-profile local model selections
+        'localModel_standard',
+        'localModel_prompt',
+        'localModel_professional',
+        'localModel_ask',
+        'localModel_refine',
+        'localModel_refine_instruction',
+        'localModel_raw',
+        'localModel_note',
+        // SPEC_034_EXTRAS: Dual-profile local prompts
+        'localPrompt_standard',
+        'localPrompt_prompt',
+        'localPrompt_professional',
+        'localPrompt_ask',
+        'localPrompt_refine',
+        'localPrompt_refine_instruction',
+        'localPrompt_raw',
+        'localPrompt_note',
+        // SPEC_034_EXTRAS: Dual-profile cloud provider selections
+        'cloudProvider_standard',
+        'cloudProvider_prompt',
+        'cloudProvider_professional',
+        'cloudProvider_ask',
+        'cloudProvider_refine',
+        'cloudProvider_refine_instruction',
+        'cloudProvider_raw',
+        'cloudProvider_note',
+        // SPEC_034_EXTRAS: Dual-profile cloud model selections
+        'cloudModel_standard',
+        'cloudModel_prompt',
+        'cloudModel_professional',
+        'cloudModel_ask',
+        'cloudModel_refine',
+        'cloudModel_refine_instruction',
+        'cloudModel_raw',
+        'cloudModel_note',
+        // SPEC_034_EXTRAS: Dual-profile cloud prompts
+        'cloudPrompt_standard',
+        'cloudPrompt_prompt',
+        'cloudPrompt_professional',
+        'cloudPrompt_ask',
+        'cloudPrompt_refine',
+        'cloudPrompt_refine_instruction',
+        'cloudPrompt_raw',
+        'cloudPrompt_note',
+      ];
+
+      if (syncKeys.includes(key as string)) {
+        await syncPythonConfig().catch((err) => {
+          logger.error('IPC', 'Post-setting sync failed', err);
         });
-        logger.info('IPC', `Auto-start ${value ? 'enabled' : 'disabled'}`);
-      } catch (err) {
-        logger.error('IPC', 'Failed to set auto-start', err);
       }
-    }
 
-    // Broadcast generic setting change to dashboard (SPEC_032 UI Sync)
-    if (debugWindow && !debugWindow.isDestroyed()) {
-      debugWindow.webContents.send('setting-changed', { key, value });
-    }
+      // Update auth type badge if processingMode changed
+      if (key === 'processingMode') {
+        const actualProcessingMode = store.get('processingMode', 'local');
+        let authType = 'LOC';
+        if (actualProcessingMode === 'cloud' || actualProcessingMode === 'gemini') {
+          const apiKeys = store.get('encryptedGeminiApiKey');
+          if (apiKeys) authType = 'API';
+        }
+        if (debugWindow && !debugWindow.isDestroyed()) {
+          debugWindow.webContents.send('badge-update', { authType });
+        }
+      }
 
-    return { success: true };
-  });
+      // If auto-start setting changed
+      if (key === 'autoStart') {
+        try {
+          app.setLoginItemSettings({
+            openAtLogin: value,
+            openAsHidden: false,
+          });
+          logger.info('IPC', `Auto-start ${value ? 'enabled' : 'disabled'}`);
+        } catch (err) {
+          logger.error('IPC', 'Failed to set auto-start', err);
+        }
+      }
+
+      // Broadcast generic setting change to dashboard (SPEC_032 UI Sync)
+      if (debugWindow && !debugWindow.isDestroyed()) {
+        debugWindow.webContents.send('setting-changed', { key, value });
+      }
+
+      return { success: true };
+    }
+  );
 
   // App Relaunch handler
   ipcMain.handle('app:relaunch', () => {
@@ -1784,7 +1861,7 @@ function setupIpcHandlers(): void {
   });
 
   // Backend Command Invocation (SPEC_030)
-  ipcMain.handle('settings:invoke-backend', async (_event, command: string, args: any) => {
+  ipcMain.handle('settings:invoke-backend', async (_event, command: string, args: unknown) => {
     if (!pythonManager) {
       logger.error('MAIN', `Cannot invoke ${command}: Python backend not ready`);
       return { success: false, error: 'Backend not ready' };
@@ -2072,8 +2149,8 @@ ipcMain.handle('apikey:set', async (_event, provider: string, key: string) => {
 
   if (!key) {
     // If key is empty, delete it from the store
-    // We need to cast to any because the key is dynamic
-    store.delete(storeKey as any);
+    // Type assertion safe: encrypted API key fields are explicitly defined in UserSettings
+    store.delete(storeKey as keyof UserSettings);
     logger.info('IPC', `API key for ${provider} deleted`);
   } else {
     // If key is present, encrypt and save
@@ -2181,6 +2258,52 @@ ipcMain.handle('apikey:test', async (_event, provider: string, key: string) => {
   }
 });
 
+/**
+ * API response type definitions for cloud provider model listings
+ */
+
+// Gemini
+interface GeminiModelInfo {
+  name: string;
+  displayName?: string;
+  description?: string;
+  supportedGenerationMethods?: string[];
+}
+
+interface GeminiModelsResponse {
+  models?: GeminiModelInfo[];
+}
+
+// Anthropic
+interface AnthropicModelInfo {
+  id: string;
+  display_name?: string;
+}
+
+interface AnthropicModelsResponse {
+  data?: AnthropicModelInfo[];
+}
+
+// OpenAI
+interface OpenAIModelInfo {
+  id: string;
+  deprecated?: boolean;
+}
+
+interface OpenAIModelsResponse {
+  data?: OpenAIModelInfo[];
+}
+
+// Ollama
+interface OllamaModelInfo {
+  name: string;
+  size?: number;
+}
+
+interface OllamaModelsResponse {
+  models?: OllamaModelInfo[];
+}
+
 // SPEC_034: Granular Model Control - Get available models for each provider
 ipcMain.handle('apikey:get-models', async (_event, provider: string) => {
   try {
@@ -2220,20 +2343,22 @@ ipcMain.handle('apikey:get-models', async (_event, provider: string) => {
           return { success: false, error: `Gemini API error: ${response.status}` };
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as GeminiModelsResponse;
         const models =
           data.models
-            ?.filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
-            .map((m: any) => ({
+            ?.filter((m: GeminiModelInfo) =>
+              m.supportedGenerationMethods?.includes('generateContent')
+            )
+            .map((m: GeminiModelInfo) => ({
               id: m.name,
               name: m.displayName || m.name,
               description: m.description || '',
             })) || [];
 
         return { success: true, models };
-      } catch (error: any) {
+      } catch (error: unknown) {
         clearTimeout(timeoutId);
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
           return { success: false, error: 'Request timed out after 10 seconds' };
         }
         throw error;
@@ -2256,18 +2381,18 @@ ipcMain.handle('apikey:get-models', async (_event, provider: string) => {
           clearTimeout(timeoutId);
 
           if (response.ok) {
-            const data = await response.json();
+            const data = (await response.json()) as AnthropicModelsResponse;
             const models =
-              data.data?.map((m: any) => ({
+              data.data?.map((m: AnthropicModelInfo) => ({
                 id: m.id,
                 name: m.id,
                 description: '',
               })) || [];
             return { success: true, models };
           }
-        } catch (e: any) {
+        } catch (e: unknown) {
           clearTimeout(timeoutId);
-          if ((e as any).name === 'AbortError') {
+          if (e instanceof Error && e.name === 'AbortError') {
             logger.debug('IPC', 'Anthropic API request timed out, using hardcoded list');
           } else {
             logger.debug('IPC', 'Anthropic live API not available, using hardcoded list');
@@ -2301,23 +2426,24 @@ ipcMain.handle('apikey:get-models', async (_event, provider: string) => {
           return { success: false, error: `OpenAI API error: ${response.status}` };
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as OpenAIModelsResponse;
         // Filter for chat-capable models, exclude deprecated and instruct variants
         const models =
           data.data
             ?.filter(
-              (m: any) => m.id.includes('gpt') && !m.id.includes('instruct') && !m.deprecated
+              (m: OpenAIModelInfo) =>
+                m.id.includes('gpt') && !m.id.includes('instruct') && !m.deprecated
             )
-            .map((m: any) => ({
+            .map((m: OpenAIModelInfo) => ({
               id: m.id,
               name: m.id,
               description: '',
             })) || [];
 
         return { success: true, models };
-      } catch (error: any) {
+      } catch (error: unknown) {
         clearTimeout(timeoutId);
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
           return { success: false, error: 'Request timed out after 10 seconds' };
         }
         throw error;
@@ -2337,18 +2463,18 @@ ipcMain.handle('apikey:get-models', async (_event, provider: string) => {
           return { success: false, error: 'Ollama not running or not responding' };
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as OllamaModelsResponse;
         const models =
-          data.models?.map((m: any) => ({
+          data.models?.map((m: OllamaModelInfo) => ({
             id: m.name,
             name: m.name,
             size: m.size ? `${(m.size / 1e9).toFixed(1)} GB` : 'Unknown',
           })) || [];
 
         return { success: true, models };
-      } catch (e: any) {
+      } catch (e: unknown) {
         clearTimeout(timeoutId);
-        if (e.name === 'AbortError') {
+        if (e instanceof Error && e.name === 'AbortError') {
           return { success: false, error: 'Ollama request timed out' };
         }
         return { success: false, error: 'Ollama not running or not responding' };
@@ -2564,7 +2690,7 @@ async function toggleRecording(
         mode: mode, // Pass the mode to Python
         maxDuration: maxDuration, // Pass max duration setting
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       logger.error('MAIN', 'Failed to start recording', error);
       isRecording = false;
       updateTrayIcon('idle');
@@ -2829,9 +2955,10 @@ function setupGlobalHotkey(): void {
             playSound(stopSound);
           }
           logger.info('HOTKEY', `Re-injected last text [${pressTimestamp}]`, { charCount });
-        } catch (err: any) {
+        } catch (err: unknown) {
           // sendCommand rejects on failure (response.success = false)
-          logger.warn('HOTKEY', 'No text available to re-inject', { error: err.message });
+          const message = err instanceof Error ? err.message : String(err);
+          logger.warn('HOTKEY', 'No text available to re-inject', { error: message });
           showNotification(
             'No Text to Re-inject',
             'No previous text found. Dictate something first.',

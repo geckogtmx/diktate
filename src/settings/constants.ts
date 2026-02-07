@@ -2,9 +2,17 @@
  * Settings Page Constants
  */
 
+export interface VerifiedModel {
+  id: string;
+  name: string;
+  description: string;
+  sizeGb: number;
+  vramParams: string;
+}
+
 export const STATUS_UPDATE_INTERVAL = 100; // Update text max 10 times/sec
 
-export const DEFAULT_SETTINGS: Record<string, any> = {
+export const DEFAULT_SETTINGS: Record<string, unknown> = {
   processingMode: 'local',
   autoStart: false,
   whisperModel: 'turbo', // SPEC_041: Default to current behavior (best quality)
@@ -20,7 +28,7 @@ export const DEFAULT_SETTINGS: Record<string, any> = {
   additionalKey: 'none',
 };
 
-export const HOTKEY_DEFAULTS = {
+export const HOTKEY_DEFAULTS: Record<string, string> = {
   dictate: 'Ctrl+Alt+D',
   ask: 'Ctrl+Alt+A',
   translate: 'Ctrl+Alt+T',
@@ -28,7 +36,7 @@ export const HOTKEY_DEFAULTS = {
   oops: 'Ctrl+Alt+V',
 };
 
-export const VERIFIED_MODELS = [
+export const VERIFIED_MODELS: VerifiedModel[] = [
   {
     id: 'gemma2:2b',
     name: 'Google Gemma 2 (2B)',

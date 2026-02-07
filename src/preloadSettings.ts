@@ -9,7 +9,7 @@ const settingsAPI = {
   // Settings CRUD
   getAll: () => ipcRenderer.invoke('settings:get-all'),
   get: (key: string) => ipcRenderer.invoke('settings:get', key),
-  set: (key: string, value: any) => ipcRenderer.invoke('settings:set', key, value),
+  set: (key: string, value: unknown) => ipcRenderer.invoke('settings:set', key, value),
 
   // Audio devices (uses Web API, no IPC needed, but we expose the save)
   saveAudioDevice: async (deviceId: string, deviceLabel: string) => {
@@ -86,7 +86,7 @@ const settingsAPI = {
   selectNoteFile: () => ipcRenderer.invoke('settings:select-note-file'),
 
   // Backend Interaction (SPEC_030)
-  invokeBackend: (command: string, args: any) =>
+  invokeBackend: (command: string, args: unknown) =>
     ipcRenderer.invoke('settings:invoke-backend', command, args),
 };
 

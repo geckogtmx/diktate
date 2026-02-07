@@ -4,6 +4,7 @@
  */
 
 import { setVal, setCheck, saveSetting } from './utils.js';
+import type { Settings } from './types.js';
 
 const descriptionsData = [
   {
@@ -98,7 +99,7 @@ export async function initializePrivacySettings() {
 /**
  * Update UI with loaded privacy settings
  */
-export function loadPrivacySettings(settings: any) {
+export function loadPrivacySettings(settings: Settings | undefined) {
   if (!settings) return;
 
   const intensity =

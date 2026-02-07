@@ -32,5 +32,5 @@ export interface Settings {
   noteDefaultFolder?: string;
   noteFileNameTemplate?: string;
   notePrompt?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }

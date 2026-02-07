@@ -4,6 +4,7 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
+import type { SystemMetricsEvent } from './types/pythonEvents';
 
 // Define the API that will be exposed to the renderer
 const api = {
@@ -25,13 +26,13 @@ const api = {
 };
 
 const electronAPI = {
-  onLog: (callback: (level: string, message: string, data?: any) => void) => {
+  onLog: (callback: (level: string, message: string, data?: Record<string, unknown>) => void) => {
     ipcRenderer.on('log-message', (_, { level, message, data }) => callback(level, message, data));
   },
   onStatusChange: (callback: (status: string) => void) => {
     ipcRenderer.on('status-update', (_, status) => callback(status));
   },
-  onPerformanceMetrics: (callback: (metrics: any) => void) => {
+  onPerformanceMetrics: (callback: (metrics: SystemMetricsEvent) => void) => {
     ipcRenderer.on('performance-metrics', (_, metrics) => callback(metrics));
   },
   onModeChange: (callback: (mode: string) => void) => {
@@ -42,11 +43,11 @@ const electronAPI = {
   },
   toggleRecording: () => ipcRenderer.invoke('python:toggle-recording'),
   getInitialState: () => ipcRenderer.invoke('get-initial-state'),
-  setSetting: (key: string, value: any) => ipcRenderer.invoke('settings:set', key, value),
+  setSetting: (key: string, value: unknown) => ipcRenderer.invoke('settings:set', key, value),
   onPlaySound: (callback: (soundName: string) => void) => {
     ipcRenderer.on('play-sound', (_, soundName) => callback(soundName));
   },
-  onSettingChange: (callback: (key: string, value: any) => void) => {
+  onSettingChange: (callback: (key: string, value: unknown) => void) => {
     ipcRenderer.on('setting-changed', (_, { key, value }) => callback(key, value));
   },
 };

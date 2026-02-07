@@ -4,6 +4,7 @@
  */
 
 import { state } from './store.js';
+import type { Settings } from './types.js';
 import {
   loadSettings,
   setVal,
@@ -45,14 +46,21 @@ import {
 import { initializeNotesSettings } from './notes.js';
 import { initializePrivacySettings } from './privacy.js';
 
-// 1. Flat exposure for legacy static HTML
+// Dynamic window property assignment for HTML onclick handlers (SPEC_032)
+// These are necessary for HTML-based UI fragments to access functions at runtime
+// Inline onclick handlers cannot be typed at compile-time, so `as any` is justified
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).switchTab = switchTab;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).openExternalLink = openExternalLink;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).saveSetting = saveSetting;
 
-// 2. Namespaced exposure for modular dynamic fragments (SPEC_032)
+// Namespaced exposure for modular dynamic fragments (SPEC_032)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).oauth = {}; // OAuth Module Removed
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).apiKeys = {
   saveApiKey,
   testSavedApiKey,
@@ -60,11 +68,13 @@ import { initializePrivacySettings } from './privacy.js';
   loadApiKeyStatuses,
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).hotkeys = {
   recordHotkey,
   resetHotkey,
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).ollama = {
   checkOllamaStatus,
   loadOllamaModels,
@@ -80,11 +90,13 @@ import { initializePrivacySettings } from './privacy.js';
   },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).modes = {
   initializeModeConfiguration,
   selectMode,
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).ui = {
   runHardwareTest,
   populateSoundDropdowns,
@@ -94,6 +106,7 @@ import { initializePrivacySettings } from './privacy.js';
   relaunchApp,
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).notes = {
   initializeNotesSettings,
 };
@@ -102,17 +115,29 @@ import { initializePrivacySettings } from './privacy.js';
 // (window as any).initializeOAuthFlow = initializeOAuthFlow; // Removed
 // (window as any).switchOAuthAccount = switchAccount; // Removed
 // (window as any).disconnectOAuthAccount = disconnectAccount; // Removed
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).saveApiKey = saveApiKey;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).testSavedApiKey = testSavedApiKey;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).deleteApiKey = deleteApiKey;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).recordHotkey = recordHotkey;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).resetHotkey = resetHotkey;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).refreshOllamaStatus = checkOllamaStatus;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).restartOllama = restartOllama;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).warmupModel = warmupModel;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).selectMode = selectMode;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).runHardwareTest = runHardwareTest;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).relaunchApp = relaunchApp;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).previewSpecificSound = previewSpecificSound;
 
 /**
@@ -150,7 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // 2. ASYNC INITIALIZATION (Data-dependent)
-  let settings: any;
+  let settings: Settings | undefined;
   try {
     // Step 1: Initialize stores and static UI
     console.log('[Init] Starting settings initialization...');
@@ -267,7 +292,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Hotkeys
-  const hotkeyConfigs: { id: string; mode: any }[] = [
+  const hotkeyConfigs: {
+    id: string;
+    mode: 'dictate' | 'ask' | 'translate' | 'refine' | 'oops' | 'note';
+  }[] = [
     { id: 'hotkey-display', mode: 'dictate' },
     { id: 'ask-hotkey-display', mode: 'ask' },
     { id: 'translate-hotkey-display', mode: 'translate' },

@@ -27,7 +27,7 @@ export async function initializeModeConfiguration() {
 
     // Load initial mode (Standard)
     await selectMode('standard');
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Failed to initialize mode configuration:', error);
   }
 }
@@ -378,7 +378,7 @@ async function saveLocalProfile() {
 
     // Reload profile to confirm save
     await loadDualProfileForMode(mode);
-  } catch (error) {
+  } catch (error: unknown) {
     alert(`❌ Error: ${error}`);
   }
 }
@@ -430,7 +430,7 @@ async function saveCloudProfile() {
 
     // Reload profile to confirm save
     await loadDualProfileForMode(mode);
-  } catch (error) {
+  } catch (error: unknown) {
     alert(`❌ Error: ${error}`);
   }
 }
@@ -446,7 +446,7 @@ async function resetLocalProfile() {
     // SPEC_038: Only reset per-mode prompt (model is now global)
     await window.settingsAPI.set(`localPrompt_${mode}`, '');
     await selectMode(mode); // Reload
-  } catch (error) {
+  } catch (error: unknown) {
     alert(`❌ Error: ${error}`);
   }
 }
@@ -463,7 +463,7 @@ async function resetCloudProfile() {
     await window.settingsAPI.set(`cloudModel_${mode}`, '');
     await window.settingsAPI.set(`cloudPrompt_${mode}`, '');
     await selectMode(mode); // Reload
-  } catch (error) {
+  } catch (error: unknown) {
     alert(`❌ Error: ${error}`);
   }
 }
@@ -500,12 +500,14 @@ async function loadOllamaModels(selectElement: HTMLSelectElement, mode: string) 
 
     // Add installed models
     if (result.models && result.models.length > 0) {
-      result.models.forEach((model: any) => {
-        const opt = document.createElement('option');
-        opt.value = model.id;
-        opt.text = `${model.name}${model.size ? ` (${model.size})` : ''}`;
-        selectElement.appendChild(opt);
-      });
+      result.models.forEach(
+        (model: { id: string; name: string; size?: string; description?: string }) => {
+          const opt = document.createElement('option');
+          opt.value = model.id;
+          opt.text = `${model.name}${model.size ? ` (${model.size})` : ''}`;
+          selectElement.appendChild(opt);
+        }
+      );
     }
 
     // Load saved value
@@ -556,12 +558,14 @@ async function loadCloudModels(selectElement: HTMLSelectElement, provider: strin
 
     // Add fetched models
     if (result.models && result.models.length > 0) {
-      result.models.forEach((model: any) => {
-        const opt = document.createElement('option');
-        opt.value = model.id;
-        opt.text = model.name + (model.tier ? ` (${model.tier})` : '');
-        selectElement.appendChild(opt);
-      });
+      result.models.forEach(
+        (model: { id: string; name: string; size?: string; description?: string }) => {
+          const opt = document.createElement('option');
+          opt.value = model.id;
+          opt.text = model.name + (model.tier ? ` (${model.tier})` : '');
+          selectElement.appendChild(opt);
+        }
+      );
     }
 
     // Load saved value with fuzzy matching
