@@ -69,6 +69,7 @@ import {
 } from './types/settings';
 import { migrateToDualProfileSystem } from './services/settingsMigration';
 import { showNotification, playSound } from './services/notificationService';
+import { TrayManager } from './services/trayManager';
 
 // ============================================
 // Single Instance Lock - Prevent multiple instances
@@ -111,7 +112,7 @@ if (currentPrompt && !currentPrompt.includes('{text}')) {
 // Run the dual-profile migration (SPEC_034_EXTRAS)
 migrateToDualProfileSystem(store);
 
-let tray: Tray | null = null;
+let trayManager: TrayManager;
 let pythonManager: PythonManager | null = null;
 let isRecording: boolean = false;
 let isWarmupLock: boolean = true; // NEW: Lock interaction until fully initialized
@@ -124,65 +125,7 @@ let isGlobalMute: boolean = false; // REQ: Track mute state for proactive blocki
 /**
  * Create a simple colored icon programmatically
  */
-function createSimpleIcon(color: string): NativeImage {
-  // Create a simple 16x16 colored square as a PNG buffer
-  const size = 16;
-  const channels = 4; // RGBA
-  const buffer = Buffer.alloc(size * size * channels);
-
-  const colors: { [key: string]: [number, number, number] } = {
-    gray: [128, 128, 128],
-    red: [255, 0, 0],
-    blue: [0, 0, 255],
-  };
-
-  const rgb = colors[color] || [128, 128, 128];
-
-  for (let i = 0; i < size * size; i++) {
-    const offset = i * channels;
-    buffer[offset] = rgb[0]; // R
-    buffer[offset + 1] = rgb[1]; // G
-    buffer[offset + 2] = rgb[2]; // B
-    buffer[offset + 3] = 255; // A (fully opaque)
-  }
-
-  return nativeImage.createFromBuffer(buffer, { width: size, height: size });
-}
-
-/**
- * Create or get tray icon
- */
-function getIcon(state: string): NativeImage {
-  const assetsDir = path.join(__dirname, '..', 'assets');
-  let iconName = 'icon.png'; // Default to the main app icon
-
-  // In future we can have state-specific variants of the main icon
-  if (state === 'recording') iconName = 'icon-recording.png';
-  else if (state === 'processing') iconName = 'icon-processing.png';
-
-  const iconPath = path.join(assetsDir, iconName);
-
-  // Try to load PNG from file
-  if (fs.existsSync(iconPath)) {
-    try {
-      return nativeImage.createFromPath(iconPath);
-    } catch (err) {
-      logger.warn('MAIN', `Failed to load icon from ${iconPath}`, { error: String(err) });
-    }
-  }
-
-  // Stick with main icon if state icon missing
-  const mainIconPath = path.join(assetsDir, 'icon.png');
-  if (state !== 'idle' && fs.existsSync(mainIconPath)) {
-    return nativeImage.createFromPath(mainIconPath);
-  }
-
-  // Fallback to programmatically created icon
-  const color = state === 'recording' ? 'red' : state === 'processing' ? 'blue' : 'gray';
-
-  logger.info('MAIN', `Using programmatic icon for state: ${state}`);
-  return createSimpleIcon(color);
-}
+// Tray management functions moved to src/services/trayManager.ts
 
 // debugWindow is now declared globally at the top of the file
 
@@ -202,7 +145,7 @@ function createDebugWindow(): void {
     alwaysOnTop: true,
     frame: true, // Keep frame for dragging for now, but maybe remove later
     title: 'dIKtate Status',
-    icon: getIcon('idle'),
+    icon: trayManager.getIcon('idle'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -242,7 +185,7 @@ function createSettingsWindow(): void {
     height: 600,
     show: true,
     title: 'dIKtate Settings',
-    icon: getIcon('idle'),
+    icon: trayManager.getIcon('idle'),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preloadSettings.js'),
@@ -265,140 +208,7 @@ function createSettingsWindow(): void {
  */
 // Sound playback and notification functions moved to src/services/notificationService.ts
 
-/**
- * Build tray menu template
- */
-function buildTrayMenu(state: string = 'Idle'): Electron.MenuItemConstructorOptions[] {
-  // SPEC_038: Use global localModel setting
-  const currentModel =
-    store.get('localModel') || store.get('defaultOllamaModel') || 'No model selected';
-
-  return [
-    {
-      label: `Status: ${state}`,
-      enabled: false,
-    },
-    {
-      label: `Model: ${currentModel}`,
-      enabled: false,
-    },
-    { type: 'separator' },
-    {
-      label: 'Settings',
-      click: () => createSettingsWindow(),
-    },
-    {
-      label: 'Control Panel',
-      click: () => {
-        if (!debugWindow) createDebugWindow();
-        debugWindow?.show();
-      },
-    },
-    {
-      label: 'Show Logs',
-      click: () => {
-        const logDir = path.join(app.getPath('home'), '.diktate', 'logs');
-        shell.openPath(logDir).catch((err) => {
-          logger.error('MAIN', 'Failed to open logs folder', err);
-          showNotification('Error', 'Could not open logs folder', true, getIcon);
-        });
-      },
-    },
-    { type: 'separator' },
-    {
-      label: 'Force Restart',
-      click: () => {
-        logger.info('MAIN', 'Force restart initiated from tray menu');
-        showNotification(
-          'Restarting dIKtate',
-          'The app will restart for a clean startup. This may take a few seconds...', false, getIcon);
-        // Give notification time to show, then restart
-        setTimeout(() => {
-          app.relaunch();
-          app.exit(0);
-        }, 500);
-      },
-    },
-    { type: 'separator' },
-    {
-      label: 'Check for Updates',
-      click: () => {
-        shell.openExternal('https://github.com/diktate/diktate/releases').catch((err) => {
-          logger.error('MAIN', 'Failed to open releases page', err);
-        });
-      },
-    },
-    { type: 'separator' },
-    {
-      label: 'Quit dIKtate',
-      accelerator: 'CommandOrControl+Q',
-      click: () => {
-        debugWindow?.destroy();
-        app.quit();
-      },
-    },
-  ];
-}
-
-/**
- * Initialize system tray icon
- */
-function initializeTray(): void {
-  // tray is now declared globally at top
-  tray = new Tray(getIcon('Idle'));
-
-  // SPEC_035: Double-click tray to open Control Panel
-  tray.on('double-click', () => {
-    logger.info('MAIN', 'Tray double-click: Opening Control Panel');
-    createDebugWindow();
-  });
-
-  const contextMenu = Menu.buildFromTemplate(buildTrayMenu('Idle'));
-  tray.setContextMenu(contextMenu);
-
-  updateTrayTooltip();
-}
-
-/**
- * Update tray tooltip to show current model and mode
- */
-function updateTrayTooltip(): void {
-  if (!tray) return;
-
-  const mode = store.get('processingMode', 'local').toUpperCase();
-  // SPEC_038: Use global localModel setting
-  const model = store.get('localModel') || store.get('defaultOllamaModel') || 'No model';
-  tray.setToolTip(`dIKtate [${mode}] - ${model}\nCtrl+Alt+D: Dictate | Ctrl+Alt+A: Ask`);
-}
-
-/**
- * Update tray menu with current state
- */
-function updateTrayState(state: string): void {
-  if (!tray) return;
-
-  const contextMenu = Menu.buildFromTemplate(buildTrayMenu(state));
-  tray.setContextMenu(contextMenu);
-
-  // Also send status to renderer
-  if (debugWindow) {
-    debugWindow.webContents.send('status-update', state);
-  }
-}
-
-/**
- * Update tray icon based on state
- */
-function updateTrayIcon(state: string): void {
-  if (!tray) return;
-
-  const icon = getIcon(state);
-  try {
-    tray.setImage(icon);
-  } catch (error) {
-    logger.error('MAIN', 'Failed to set tray icon', error);
-  }
-}
+// Tray menu and state management functions moved to src/services/trayManager.ts
 
 /**
  * Show notification to user
@@ -417,7 +227,7 @@ function createLoadingWindow(): void {
     resizable: false,
     alwaysOnTop: true,
     backgroundColor: '#002029',
-    icon: getIcon('idle'),
+    icon: trayManager.getIcon('idle'),
     show: false, // Don't show until ready-to-show to prevent "not responding"
     webPreferences: {
       preload: path.join(__dirname, 'preloadLoading.js'),
@@ -495,7 +305,7 @@ function setupPythonEventHandlers(): void {
       // Defer notification and status sync to avoid event loop starvation
       // This is the FINAL truth-in-UI signal: Only show when everything is IDLE
       setTimeout(() => {
-        showNotification('dIKtate Ready', 'AI Engine loaded. Press Ctrl+Alt+D to start.', false, getIcon);
+        showNotification('dIKtate Ready', 'AI Engine loaded. Press Ctrl+Alt+D to start.', false, trayManager.getIcon.bind(trayManager));
 
         // SPEC_035: Signal loading window to show ready state ONLY when we are truly responsive
         if (loadingWindow && !loadingWindow.isDestroyed()) {
@@ -523,8 +333,8 @@ function setupPythonEventHandlers(): void {
       }, 200);
     }
 
-    updateTrayState(state);
-    updateTrayIcon(state);
+    trayManager.updateTrayState(state);
+    trayManager.updateTrayIcon(state);
   });
 
   // SPEC_035: Forward granular progress to loading window (now simplified to single status)
@@ -542,16 +352,16 @@ function setupPythonEventHandlers(): void {
 
   pythonManager.on('error', (error: Error) => {
     logger.error('MAIN', 'Python error occurred', error);
-    showNotification('dIKtate Error', `An error occurred: ${error.message}`, true, getIcon);
-    updateTrayState('Error');
+    showNotification('dIKtate Error', `An error occurred: ${error.message}`, true, trayManager.getIcon.bind(trayManager));
+    trayManager.updateTrayState('Error');
   });
 
   pythonManager.on('fatal-error', (error: Error) => {
     logger.error('MAIN', 'Fatal Python error - connection lost', error);
     showNotification(
       'dIKtate - Connection Lost',
-      'Python backend connection lost. Please restart the application.', true, getIcon);
-    updateTrayState('Disconnected');
+      'Python backend connection lost. Please restart the application.', true, trayManager.getIcon.bind(trayManager));
+    trayManager.updateTrayState('Disconnected');
   });
 
   pythonManager.on('ready', () => {
@@ -561,7 +371,7 @@ function setupPythonEventHandlers(): void {
 
   pythonManager.on('disconnected', () => {
     logger.warn('MAIN', 'Python process disconnected, attempting reconnection');
-    updateTrayState('Reconnecting...');
+    trayManager.updateTrayState('Reconnecting...');
   });
 
   pythonManager.on('performance-metrics', (metrics: PerformanceMetricsEvent) => {
@@ -643,7 +453,7 @@ function setupPythonEventHandlers(): void {
     const notification = new Notification({
       title: 'Note Saved',
       body: `Appended to ${path.basename(filePath)}. Click to open.`,
-      icon: getIcon('processing').toDataURL(),
+      icon: trayManager.getIcon('processing').toDataURL(),
     });
 
     notification.on('click', () => {
@@ -659,11 +469,11 @@ function setupPythonEventHandlers(): void {
 
     // Reset recording state
     isRecording = false;
-    updateTrayIcon('idle');
-    updateTrayState('Idle');
+    trayManager.updateTrayIcon('idle');
+    trayManager.updateTrayState('Idle');
 
     if (!response.success) {
-      showNotification('Ask Failed', response.error || 'Unknown error', true, getIcon);
+      showNotification('Ask Failed', response.error || 'Unknown error', true, trayManager.getIcon.bind(trayManager));
       return;
     }
 
@@ -671,7 +481,7 @@ function setupPythonEventHandlers(): void {
     const outputMode = store.get('askOutputMode') || 'clipboard';
 
     if (!answer) {
-      showNotification('Ask Failed', 'No answer received', true, getIcon);
+      showNotification('Ask Failed', 'No answer received', true, trayManager.getIcon.bind(trayManager));
       return;
     }
 
@@ -686,7 +496,7 @@ function setupPythonEventHandlers(): void {
           'Answer Ready',
           `${answer.substring(0, 100)}${answer.length > 100 ? '...' : ''}\n\n📋 Copied to clipboard!`,
           false,
-          getIcon
+          trayManager.getIcon.bind(trayManager)
         );
         break;
 
@@ -697,14 +507,14 @@ function setupPythonEventHandlers(): void {
             await pythonManager.sendCommand('inject_text', { text: answer });
           } catch (err) {
             logger.error('MAIN', 'Failed to inject text for Ask response', err);
-            showNotification('Injection Failed', 'Could not type the answer automatically.', true, getIcon);
+            showNotification('Injection Failed', 'Could not type the answer automatically.', true, trayManager.getIcon.bind(trayManager));
           }
         }
         break;
 
       case 'notification':
         // Just show notification
-        showNotification('Answer', answer, false, getIcon);
+        showNotification('Answer', answer, false, trayManager.getIcon.bind(trayManager));
         break;
 
       case 'clipboard+notify':
@@ -715,7 +525,7 @@ function setupPythonEventHandlers(): void {
           'Answer Ready',
           `${answer.substring(0, 150)}${answer.length > 150 ? '...' : ''}\n\n📋 Copied to clipboard!`,
           false,
-          getIcon
+          trayManager.getIcon.bind(trayManager)
         );
         break;
     }
@@ -741,13 +551,13 @@ function setupPythonEventHandlers(): void {
       ? `Using raw transcription instead.\n\nReason: ${reason.split(':')[0]}`
       : `LLM unavailable.\n\nReason: ${reason.split(':')[0]}`;
 
-    showNotification(title, message, false, getIcon);
+    showNotification(title, message, false, trayManager.getIcon.bind(trayManager));
 
     // If 3+ consecutive failures, suggest checking Ollama
     if (consecutive_failures && consecutive_failures >= 3) {
       showNotification(
         'Repeated Failures Detected',
-        'Consider checking if Ollama is running or switching to Cloud mode in Settings.', true, getIcon);
+        'Consider checking if Ollama is running or switching to Cloud mode in Settings.', true, trayManager.getIcon.bind(trayManager));
     }
   });
 
@@ -759,8 +569,8 @@ function setupPythonEventHandlers(): void {
 
     // Force stop recording state
     isRecording = false;
-    updateTrayIcon('processing');
-    updateTrayState('Processing');
+    trayManager.updateTrayIcon('processing');
+    trayManager.updateTrayState('Processing');
 
     // Show notification
     const durationText =
@@ -773,7 +583,7 @@ function setupPythonEventHandlers(): void {
       'Recording Auto-Stopped',
       `Maximum recording duration (${durationText}) reached.\n\nProcessing your dictation now...`,
       false,
-      getIcon
+      trayManager.getIcon.bind(trayManager)
     );
   });
 
@@ -784,13 +594,13 @@ function setupPythonEventHandlers(): void {
 
     // Force stop recording state
     isRecording = false;
-    updateTrayIcon('idle');
-    updateTrayState('Ready');
+    trayManager.updateTrayIcon('idle');
+    trayManager.updateTrayState('Ready');
 
     // Show notification
     showNotification(
       '🔇 Microphone Muted',
-      message || 'Your microphone is muted. Please unmute and try again.', true, getIcon);
+      message || 'Your microphone is muted. Please unmute and try again.', true, trayManager.getIcon.bind(trayManager));
   });
 
   pythonManager.on('mic-status', (data: MicStatusEvent) => {
@@ -800,9 +610,9 @@ function setupPythonEventHandlers(): void {
 
     // Update tray tooltip
     if (muted) {
-      tray?.setToolTip('dIKtate - ⚠️ Microphone Muted');
+      trayManager.setTooltip('dIKtate - ⚠️ Microphone Muted');
     } else {
-      updateTrayTooltip();
+      trayManager.updateTrayTooltip();
     }
 
     // REQ: Update global state
@@ -815,7 +625,7 @@ function setupPythonEventHandlers(): void {
     // Simple notification for generic API errors
     showNotification(
       'API Error',
-      `Error: ${data.error_message || data.message || 'Unknown error'}`, true, getIcon);
+      `Error: ${data.error_message || data.message || 'Unknown error'}`, true, trayManager.getIcon.bind(trayManager));
   });
 
   // Handle refine mode success
@@ -853,8 +663,8 @@ function setupPythonEventHandlers(): void {
 
     // Reset state
     isRecording = false;
-    updateTrayIcon('idle');
-    updateTrayState('Idle');
+    trayManager.updateTrayIcon('idle');
+    trayManager.updateTrayState('Idle');
 
     // Show success notification
     const instructionPreview = data.instruction.substring(0, 50);
@@ -862,7 +672,7 @@ function setupPythonEventHandlers(): void {
     const refinedLen = data.refined_length || data.refined_text.length;
     showNotification(
       'Text Refined',
-      `✨ "${instructionPreview}${data.instruction.length > 50 ? '...' : ''}"\n\n${origLen} → ${refinedLen} chars`, false, getIcon);
+      `✨ "${instructionPreview}${data.instruction.length > 50 ? '...' : ''}"\n\n${origLen} → ${refinedLen} chars`, false, trayManager.getIcon.bind(trayManager));
 
     // Log performance metrics
     if (data.metrics) {
@@ -879,13 +689,13 @@ function setupPythonEventHandlers(): void {
 
     // Reset state
     isRecording = false;
-    updateTrayIcon('idle');
-    updateTrayState('Idle');
+    trayManager.updateTrayIcon('idle');
+    trayManager.updateTrayState('Idle');
 
     const { instruction, answer } = data;
 
     if (!answer) {
-      showNotification('Refine Failed', 'No answer received', true, getIcon);
+      showNotification('Refine Failed', 'No answer received', true, trayManager.getIcon.bind(trayManager));
       return;
     }
 
@@ -897,7 +707,7 @@ function setupPythonEventHandlers(): void {
       'No Selection - Answer Ready',
       `💡 "${instruction.substring(0, 60)}${instruction.length > 60 ? '...' : ''}"\n\n${answer.substring(0, 100)}${answer.length > 100 ? '...' : ''}\n\n📋 Copied to clipboard!`,
       false,
-      getIcon
+      trayManager.getIcon.bind(trayManager)
     );
 
     // Forward to debug window if open
@@ -915,8 +725,8 @@ function setupPythonEventHandlers(): void {
 
     // Reset state
     isRecording = false;
-    updateTrayIcon('idle');
-    updateTrayState('Idle');
+    trayManager.updateTrayIcon('idle');
+    trayManager.updateTrayState('Idle');
 
     // Determine error message based on code
     let errorMessage = 'Failed to refine text with instruction';
@@ -933,7 +743,7 @@ function setupPythonEventHandlers(): void {
     }
 
     // Show error notification
-    showNotification('Refine Instruction Failed', errorMessage, true, getIcon);
+    showNotification('Refine Instruction Failed', errorMessage, true, trayManager.getIcon.bind(trayManager));
   });
 }
 
@@ -1491,7 +1301,7 @@ ipcMain.handle('settings:save-custom-prompt', async (_event, mode: string, promp
         'Invalid Prompt',
         errorMessage,
         true, // isError
-        getIcon
+        trayManager.getIcon.bind(trayManager)
       );
       if (store.get('soundFeedback')) {
         playSound('c'); // Assuming 'c' is an error sound
@@ -2118,7 +1928,7 @@ async function toggleRecording(
 ): Promise<void> {
   if (isWarmupLock) {
     logger.warn('MAIN', 'Recording blocked: App is still warming up');
-    showNotification('Warming Up', 'AI services are still loading... please wait.', false, getIcon);
+    showNotification('Warming Up', 'AI services are still loading... please wait.', false, trayManager.getIcon.bind(trayManager));
     return;
   }
 
@@ -2132,7 +1942,7 @@ async function toggleRecording(
     logger.warn('MAIN', 'Recording blocked: Microphone is muted (Frontend Check)');
     showNotification(
       '🔇 Microphone Muted',
-      'Your microphone is muted. Please unmute to dictate.', true, getIcon);
+      'Your microphone is muted. Please unmute to dictate.', true, trayManager.getIcon.bind(trayManager));
     // Beep to indicate failure
     if (store.get('soundFeedback')) {
       // Use a distinct error sound or just the stop sound
@@ -2157,8 +1967,8 @@ async function toggleRecording(
     // Stop recording
     logger.info('MAIN', 'Stopping recording', { mode: recordingMode });
     isRecording = false;
-    updateTrayIcon('processing');
-    updateTrayState(
+    trayManager.updateTrayIcon('processing');
+    trayManager.updateTrayState(
       recordingMode === 'ask'
         ? 'Thinking...'
         : recordingMode === 'translate'
@@ -2174,16 +1984,16 @@ async function toggleRecording(
       await pythonManager.sendCommand('stop_recording');
     } catch (error) {
       logger.error('MAIN', 'Failed to stop recording', error);
-      updateTrayIcon('idle');
-      updateTrayState('Idle');
+      trayManager.updateTrayIcon('idle');
+      trayManager.updateTrayState('Idle');
     }
   } else {
     // Start recording
     recordingMode = mode;
     logger.info('MAIN', 'Starting recording', { mode });
     isRecording = true;
-    updateTrayIcon('recording');
-    updateTrayState(
+    trayManager.updateTrayIcon('recording');
+    trayManager.updateTrayState(
       mode === 'ask'
         ? 'Listening (Ask)'
         : mode === 'translate'
@@ -2224,14 +2034,14 @@ async function toggleRecording(
     } catch (error: unknown) {
       logger.error('MAIN', 'Failed to start recording', { error: String(error) });
       isRecording = false;
-      updateTrayIcon('idle');
-      updateTrayState('Idle');
+      trayManager.updateTrayIcon('idle');
+      trayManager.updateTrayState('Idle');
 
       // SPEC_014: Don't show generic error if it's just a muted mic (handle race condition)
       if (error instanceof Error && error.message.includes('Microphone is muted')) {
         showNotification(
           '🔇 Microphone Muted',
-          'Your microphone is muted. Please unmute to dictate.', true, getIcon);
+          'Your microphone is muted. Please unmute to dictate.', true, trayManager.getIcon.bind(trayManager));
         // Play error sound to cancel out the start sound
         if (store.get('soundFeedback')) {
           playSound('c');
@@ -2239,7 +2049,7 @@ async function toggleRecording(
         return;
       }
 
-      showNotification('Recording Error', 'Failed to start recording. Please try again.', true, getIcon);
+      showNotification('Recording Error', 'Failed to start recording. Please try again.', true, trayManager.getIcon.bind(trayManager));
     }
   }
 }
@@ -2257,8 +2067,8 @@ function handleRefineSelection(): void {
   logger.info('MAIN', 'Refine selection triggered');
 
   // Update tray to processing state
-  updateTrayIcon('processing');
-  updateTrayState('Refining...');
+  trayManager.updateTrayIcon('processing');
+  trayManager.updateTrayState('Refining...');
 
   // Play start sound if enabled
   if (store.get('soundFeedback')) {
@@ -2294,15 +2104,15 @@ function handleRefineError(error: string): void {
   }
 
   // Show notification
-  showNotification('Refine Mode', errorMessage, true, getIcon);
+  showNotification('Refine Mode', errorMessage, true, trayManager.getIcon.bind(trayManager));
 
   // Flash tray red, then return to idle
-  updateTrayIcon('error');
-  updateTrayState('Error');
+  trayManager.updateTrayIcon('error');
+  trayManager.updateTrayState('Error');
 
   setTimeout(() => {
-    updateTrayIcon('idle');
-    updateTrayState('Idle');
+    trayManager.updateTrayIcon('idle');
+    trayManager.updateTrayState('Idle');
   }, 2000);
 }
 
@@ -2330,7 +2140,7 @@ function setupGlobalHotkey(): void {
           logger.error('HOTKEY', 'Blocked: No local model configured');
           showNotification(
             'No Model Selected',
-            'Please select an Ollama model in Settings > General > Default AI Model before using dictation.', true, getIcon);
+            'Please select an Ollama model in Settings > General > Default AI Model before using dictation.', true, trayManager.getIcon.bind(trayManager));
           return false;
         }
       }
@@ -2357,7 +2167,7 @@ function setupGlobalHotkey(): void {
       logger.warn('HOTKEY', 'Failed to register dictate hotkey', { hotkey: dictateHotkey });
       showNotification(
         'Hotkey Registration Failed',
-        `Could not register ${dictateHotkey}. Another application may be using it.`, true, getIcon);
+        `Could not register ${dictateHotkey}. Another application may be using it.`, true, trayManager.getIcon.bind(trayManager));
     } else {
       logger.info('HOTKEY', 'Dictate hotkey registered', { hotkey: dictateHotkey });
     }
@@ -2496,7 +2306,7 @@ function setupGlobalHotkey(): void {
           logger.warn('HOTKEY', 'No text available to re-inject', { error: message });
           showNotification(
             'No Text to Re-inject',
-            'No previous text found. Dictate something first.', false, getIcon);
+            'No previous text found. Dictate something first.', false, trayManager.getIcon.bind(trayManager));
         }
       }
     });
@@ -2538,7 +2348,7 @@ function setupGlobalHotkey(): void {
     logger.error('HOTKEY', 'Error registering global hotkeys', error);
     showNotification(
       'Hotkey Error',
-      'Failed to register global hotkeys. Please restart the application.', true, getIcon);
+      'Failed to register global hotkeys. Please restart the application.', true, trayManager.getIcon.bind(trayManager));
   }
 }
 
@@ -2569,8 +2379,14 @@ async function initialize(): Promise<void> {
       logger.setConsoleThreshold(LogLevel.INFO);
     }
 
-    // Initialize tray
-    initializeTray();
+    // Initialize tray manager
+    trayManager = new TrayManager({
+      store,
+      getWindows: () => ({ debugWindow, settingsWindow }),
+      createDebugWindow,
+      createSettingsWindow,
+    });
+    trayManager.initializeTray();
     logger.info('MAIN', 'System tray initialized');
 
     // Hook up logger to window - will be active once window is created later
@@ -2636,7 +2452,7 @@ async function initialize(): Promise<void> {
     logger.error('MAIN', 'Failed to initialize application', error);
     showNotification(
       'dIKtate Startup Failed',
-      'Application failed to start. Check logs for details.', true, getIcon);
+      'Application failed to start. Check logs for details.', true, trayManager.getIcon.bind(trayManager));
     setTimeout(() => app.quit(), 3000); // Give time to show notification
   }
 }
