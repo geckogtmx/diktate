@@ -78,7 +78,7 @@ export function playSound(soundName: string): void {
     return;
   }
 
-  const soundPath = path.join(__dirname, '..', 'assets', 'sounds', `${soundName}.wav`);
+  const soundPath = path.join(__dirname, '..', '..', 'assets', 'sounds', `${soundName}.wav`);
 
   if (!fs.existsSync(soundPath)) {
     logger.warn('MAIN', `Sound file not found: ${soundPath}`);
