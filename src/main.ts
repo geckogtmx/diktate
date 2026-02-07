@@ -68,6 +68,7 @@ import {
   USER_SETTINGS_DEFAULTS,
 } from './types/settings';
 import { migrateToDualProfileSystem } from './services/settingsMigration';
+import { showNotification, playSound } from './services/notificationService';
 
 // ============================================
 // Single Instance Lock - Prevent multiple instances
@@ -262,59 +263,7 @@ function createSettingsWindow(): void {
 /**
  * Helper to play sound via Main Process (Zero Latency)
  */
-let soundPlaybackLock = false;
-function playSound(soundName: string) {
-  if (!soundName || soundName === 'none') return;
-
-  // Prevent overlapping sound playback
-  if (soundPlaybackLock) {
-    logger.debug('MAIN', `[SOUND] Skipping ${soundName} - playback already in progress`);
-    return;
-  }
-
-  // SECURITY (SPEC_008): Strict whitelist validation to prevent command injection
-  // Only allow alphanumeric characters, hyphens, and underscores
-  if (!/^[a-zA-Z0-9_-]+$/.test(soundName)) {
-    logger.warn('MAIN', `[SECURITY] Blocked unsafe sound name: ${soundName}`);
-    return;
-  }
-
-  // SECURITY: Additional defense - ensure no path traversal
-  if (path.basename(soundName) !== soundName) {
-    logger.warn('MAIN', `[SECURITY] Blocked path traversal attempt in sound name: ${soundName}`);
-    return;
-  }
-
-  const soundPath = path.join(__dirname, '..', 'assets', 'sounds', `${soundName}.wav`);
-
-  if (!fs.existsSync(soundPath)) {
-    logger.warn('MAIN', `Sound file not found: ${soundPath}`);
-    return;
-  }
-
-  try {
-    // Using Hidden window style and .PlaySync() to ensure process stays alive
-    const psCommand = `(New-Object System.Media.SoundPlayer '${soundPath}').PlaySync()`;
-    const execTimestamp = Date.now();
-    soundPlaybackLock = true;
-    logger.debug('MAIN', `[SOUND] Spawning PowerShell [${execTimestamp}] for: ${soundName}`);
-    child_process.exec(
-      `powershell -c "${psCommand}"`,
-      { windowsHide: true },
-      (error: Error | null) => {
-        soundPlaybackLock = false;
-        if (error) {
-          logger.error('MAIN', `[SOUND] Playback failed [${execTimestamp}]`, error);
-        } else {
-          logger.debug('MAIN', `[SOUND] Playback complete [${execTimestamp}]`);
-        }
-      }
-    );
-  } catch (e) {
-    soundPlaybackLock = false;
-    logger.error('MAIN', 'Failed to trigger sound', e);
-  }
-}
+// Sound playback and notification functions moved to src/services/notificationService.ts
 
 /**
  * Build tray menu template
@@ -351,7 +300,7 @@ function buildTrayMenu(state: string = 'Idle'): Electron.MenuItemConstructorOpti
         const logDir = path.join(app.getPath('home'), '.diktate', 'logs');
         shell.openPath(logDir).catch((err) => {
           logger.error('MAIN', 'Failed to open logs folder', err);
-          showNotification('Error', 'Could not open logs folder', true);
+          showNotification('Error', 'Could not open logs folder', true, getIcon);
         });
       },
     },
@@ -362,9 +311,7 @@ function buildTrayMenu(state: string = 'Idle'): Electron.MenuItemConstructorOpti
         logger.info('MAIN', 'Force restart initiated from tray menu');
         showNotification(
           'Restarting dIKtate',
-          'The app will restart for a clean startup. This may take a few seconds...',
-          false
-        );
+          'The app will restart for a clean startup. This may take a few seconds...', false, getIcon);
         // Give notification time to show, then restart
         setTimeout(() => {
           app.relaunch();
@@ -456,28 +403,6 @@ function updateTrayIcon(state: string): void {
 /**
  * Show notification to user
  */
-function showNotification(title: string, body: string, isError: boolean = false): void {
-  if (!Notification.isSupported()) {
-    logger.warn('MAIN', 'Notifications not supported on this system');
-    return;
-  }
-
-  try {
-    const icon = getIcon(isError ? 'idle' : 'processing');
-    const notification = new Notification({
-      title,
-      body,
-      icon: icon, // NativeImage accepted directly, no toDataURL() conversion needed
-      silent: false,
-      urgency: isError ? 'critical' : 'normal',
-    });
-
-    notification.show();
-    logger.info('MAIN', 'Notification shown', { title, body: redactSensitive(body, 50) });
-  } catch (error) {
-    logger.error('MAIN', 'Failed to show notification', error);
-  }
-}
 
 /**
  * Create the Loading Window (SPEC_035)
@@ -570,7 +495,7 @@ function setupPythonEventHandlers(): void {
       // Defer notification and status sync to avoid event loop starvation
       // This is the FINAL truth-in-UI signal: Only show when everything is IDLE
       setTimeout(() => {
-        showNotification('dIKtate Ready', 'AI Engine loaded. Press Ctrl+Alt+D to start.', false);
+        showNotification('dIKtate Ready', 'AI Engine loaded. Press Ctrl+Alt+D to start.', false, getIcon);
 
         // SPEC_035: Signal loading window to show ready state ONLY when we are truly responsive
         if (loadingWindow && !loadingWindow.isDestroyed()) {
@@ -617,7 +542,7 @@ function setupPythonEventHandlers(): void {
 
   pythonManager.on('error', (error: Error) => {
     logger.error('MAIN', 'Python error occurred', error);
-    showNotification('dIKtate Error', `An error occurred: ${error.message}`, true);
+    showNotification('dIKtate Error', `An error occurred: ${error.message}`, true, getIcon);
     updateTrayState('Error');
   });
 
@@ -625,9 +550,7 @@ function setupPythonEventHandlers(): void {
     logger.error('MAIN', 'Fatal Python error - connection lost', error);
     showNotification(
       'dIKtate - Connection Lost',
-      'Python backend connection lost. Please restart the application.',
-      true
-    );
+      'Python backend connection lost. Please restart the application.', true, getIcon);
     updateTrayState('Disconnected');
   });
 
@@ -740,7 +663,7 @@ function setupPythonEventHandlers(): void {
     updateTrayState('Idle');
 
     if (!response.success) {
-      showNotification('Ask Failed', response.error || 'Unknown error', true);
+      showNotification('Ask Failed', response.error || 'Unknown error', true, getIcon);
       return;
     }
 
@@ -748,7 +671,7 @@ function setupPythonEventHandlers(): void {
     const outputMode = store.get('askOutputMode') || 'clipboard';
 
     if (!answer) {
-      showNotification('Ask Failed', 'No answer received', true);
+      showNotification('Ask Failed', 'No answer received', true, getIcon);
       return;
     }
 
@@ -762,7 +685,8 @@ function setupPythonEventHandlers(): void {
         showNotification(
           'Answer Ready',
           `${answer.substring(0, 100)}${answer.length > 100 ? '...' : ''}\n\n📋 Copied to clipboard!`,
-          false
+          false,
+          getIcon
         );
         break;
 
@@ -773,14 +697,14 @@ function setupPythonEventHandlers(): void {
             await pythonManager.sendCommand('inject_text', { text: answer });
           } catch (err) {
             logger.error('MAIN', 'Failed to inject text for Ask response', err);
-            showNotification('Injection Failed', 'Could not type the answer automatically.', true);
+            showNotification('Injection Failed', 'Could not type the answer automatically.', true, getIcon);
           }
         }
         break;
 
       case 'notification':
         // Just show notification
-        showNotification('Answer', answer, false);
+        showNotification('Answer', answer, false, getIcon);
         break;
 
       case 'clipboard+notify':
@@ -790,7 +714,8 @@ function setupPythonEventHandlers(): void {
         showNotification(
           'Answer Ready',
           `${answer.substring(0, 150)}${answer.length > 150 ? '...' : ''}\n\n📋 Copied to clipboard!`,
-          false
+          false,
+          getIcon
         );
         break;
     }
@@ -816,15 +741,13 @@ function setupPythonEventHandlers(): void {
       ? `Using raw transcription instead.\n\nReason: ${reason.split(':')[0]}`
       : `LLM unavailable.\n\nReason: ${reason.split(':')[0]}`;
 
-    showNotification(title, message, false);
+    showNotification(title, message, false, getIcon);
 
     // If 3+ consecutive failures, suggest checking Ollama
     if (consecutive_failures && consecutive_failures >= 3) {
       showNotification(
         'Repeated Failures Detected',
-        'Consider checking if Ollama is running or switching to Cloud mode in Settings.',
-        true
-      );
+        'Consider checking if Ollama is running or switching to Cloud mode in Settings.', true, getIcon);
     }
   });
 
@@ -849,7 +772,8 @@ function setupPythonEventHandlers(): void {
     showNotification(
       'Recording Auto-Stopped',
       `Maximum recording duration (${durationText}) reached.\n\nProcessing your dictation now...`,
-      false
+      false,
+      getIcon
     );
   });
 
@@ -866,9 +790,7 @@ function setupPythonEventHandlers(): void {
     // Show notification
     showNotification(
       '🔇 Microphone Muted',
-      message || 'Your microphone is muted. Please unmute and try again.',
-      true
-    );
+      message || 'Your microphone is muted. Please unmute and try again.', true, getIcon);
   });
 
   pythonManager.on('mic-status', (data: MicStatusEvent) => {
@@ -893,9 +815,7 @@ function setupPythonEventHandlers(): void {
     // Simple notification for generic API errors
     showNotification(
       'API Error',
-      `Error: ${data.error_message || data.message || 'Unknown error'}`,
-      true
-    );
+      `Error: ${data.error_message || data.message || 'Unknown error'}`, true, getIcon);
   });
 
   // Handle refine mode success
@@ -942,9 +862,7 @@ function setupPythonEventHandlers(): void {
     const refinedLen = data.refined_length || data.refined_text.length;
     showNotification(
       'Text Refined',
-      `✨ "${instructionPreview}${data.instruction.length > 50 ? '...' : ''}"\n\n${origLen} → ${refinedLen} chars`,
-      false
-    );
+      `✨ "${instructionPreview}${data.instruction.length > 50 ? '...' : ''}"\n\n${origLen} → ${refinedLen} chars`, false, getIcon);
 
     // Log performance metrics
     if (data.metrics) {
@@ -967,7 +885,7 @@ function setupPythonEventHandlers(): void {
     const { instruction, answer } = data;
 
     if (!answer) {
-      showNotification('Refine Failed', 'No answer received', true);
+      showNotification('Refine Failed', 'No answer received', true, getIcon);
       return;
     }
 
@@ -978,7 +896,8 @@ function setupPythonEventHandlers(): void {
     showNotification(
       'No Selection - Answer Ready',
       `💡 "${instruction.substring(0, 60)}${instruction.length > 60 ? '...' : ''}"\n\n${answer.substring(0, 100)}${answer.length > 100 ? '...' : ''}\n\n📋 Copied to clipboard!`,
-      false
+      false,
+      getIcon
     );
 
     // Forward to debug window if open
@@ -1014,7 +933,7 @@ function setupPythonEventHandlers(): void {
     }
 
     // Show error notification
-    showNotification('Refine Instruction Failed', errorMessage, true);
+    showNotification('Refine Instruction Failed', errorMessage, true, getIcon);
   });
 }
 
@@ -1571,7 +1490,8 @@ ipcMain.handle('settings:save-custom-prompt', async (_event, mode: string, promp
       showNotification(
         'Invalid Prompt',
         errorMessage,
-        true // isError
+        true, // isError
+        getIcon
       );
       if (store.get('soundFeedback')) {
         playSound('c'); // Assuming 'c' is an error sound
@@ -2198,7 +2118,7 @@ async function toggleRecording(
 ): Promise<void> {
   if (isWarmupLock) {
     logger.warn('MAIN', 'Recording blocked: App is still warming up');
-    showNotification('Warming Up', 'AI services are still loading... please wait.', false);
+    showNotification('Warming Up', 'AI services are still loading... please wait.', false, getIcon);
     return;
   }
 
@@ -2212,9 +2132,7 @@ async function toggleRecording(
     logger.warn('MAIN', 'Recording blocked: Microphone is muted (Frontend Check)');
     showNotification(
       '🔇 Microphone Muted',
-      'Your microphone is muted. Please unmute to dictate.',
-      true
-    );
+      'Your microphone is muted. Please unmute to dictate.', true, getIcon);
     // Beep to indicate failure
     if (store.get('soundFeedback')) {
       // Use a distinct error sound or just the stop sound
@@ -2313,9 +2231,7 @@ async function toggleRecording(
       if (error instanceof Error && error.message.includes('Microphone is muted')) {
         showNotification(
           '🔇 Microphone Muted',
-          'Your microphone is muted. Please unmute to dictate.',
-          true
-        );
+          'Your microphone is muted. Please unmute to dictate.', true, getIcon);
         // Play error sound to cancel out the start sound
         if (store.get('soundFeedback')) {
           playSound('c');
@@ -2323,7 +2239,7 @@ async function toggleRecording(
         return;
       }
 
-      showNotification('Recording Error', 'Failed to start recording. Please try again.', true);
+      showNotification('Recording Error', 'Failed to start recording. Please try again.', true, getIcon);
     }
   }
 }
@@ -2378,7 +2294,7 @@ function handleRefineError(error: string): void {
   }
 
   // Show notification
-  showNotification('Refine Mode', errorMessage, true);
+  showNotification('Refine Mode', errorMessage, true, getIcon);
 
   // Flash tray red, then return to idle
   updateTrayIcon('error');
@@ -2414,9 +2330,7 @@ function setupGlobalHotkey(): void {
           logger.error('HOTKEY', 'Blocked: No local model configured');
           showNotification(
             'No Model Selected',
-            'Please select an Ollama model in Settings > General > Default AI Model before using dictation.',
-            true
-          );
+            'Please select an Ollama model in Settings > General > Default AI Model before using dictation.', true, getIcon);
           return false;
         }
       }
@@ -2443,9 +2357,7 @@ function setupGlobalHotkey(): void {
       logger.warn('HOTKEY', 'Failed to register dictate hotkey', { hotkey: dictateHotkey });
       showNotification(
         'Hotkey Registration Failed',
-        `Could not register ${dictateHotkey}. Another application may be using it.`,
-        true
-      );
+        `Could not register ${dictateHotkey}. Another application may be using it.`, true, getIcon);
     } else {
       logger.info('HOTKEY', 'Dictate hotkey registered', { hotkey: dictateHotkey });
     }
@@ -2584,9 +2496,7 @@ function setupGlobalHotkey(): void {
           logger.warn('HOTKEY', 'No text available to re-inject', { error: message });
           showNotification(
             'No Text to Re-inject',
-            'No previous text found. Dictate something first.',
-            false
-          );
+            'No previous text found. Dictate something first.', false, getIcon);
         }
       }
     });
@@ -2628,9 +2538,7 @@ function setupGlobalHotkey(): void {
     logger.error('HOTKEY', 'Error registering global hotkeys', error);
     showNotification(
       'Hotkey Error',
-      'Failed to register global hotkeys. Please restart the application.',
-      true
-    );
+      'Failed to register global hotkeys. Please restart the application.', true, getIcon);
   }
 }
 
@@ -2728,9 +2636,7 @@ async function initialize(): Promise<void> {
     logger.error('MAIN', 'Failed to initialize application', error);
     showNotification(
       'dIKtate Startup Failed',
-      'Application failed to start. Check logs for details.',
-      true
-    );
+      'Application failed to start. Check logs for details.', true, getIcon);
     setTimeout(() => app.quit(), 3000); // Give time to show notification
   }
 }
