@@ -20,7 +20,9 @@ interface InitialState {
 
 // Type for electronAPI - main process bridge
 interface ElectronAPI {
-  onLog: (callback: (level: string, message: string, data?: Record<string, unknown>) => void) => void;
+  onLog: (
+    callback: (level: string, message: string, data?: Record<string, unknown>) => void
+  ) => void;
   onStatusChange: (callback: (status: string) => void) => void;
   onPerformanceMetrics: (callback: (metrics: unknown) => void) => void;
   onModeChange: (callback: (mode: string) => void) => void;

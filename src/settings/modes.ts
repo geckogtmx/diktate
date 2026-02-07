@@ -572,7 +572,13 @@ async function loadCloudModels(selectElement: HTMLSelectElement, provider: strin
     // Add fetched models
     if (result.models && result.models.length > 0) {
       result.models.forEach(
-        (model: { id: string; name: string; size?: string; description?: string; tier?: string }) => {
+        (model: {
+          id: string;
+          name: string;
+          size?: string;
+          description?: string;
+          tier?: string;
+        }) => {
           const opt = document.createElement('option');
           opt.value = model.id;
           opt.text = model.name + (model.tier ? ` (${model.tier})` : '');

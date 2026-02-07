@@ -3,7 +3,7 @@
  */
 
 import type { Settings } from './types.js';
-import type { UserSettings } from '../main.js';
+import type { UserSettings } from '../types/settings.js';
 
 export function setVal(id: string, val: string) {
   const el = document.getElementById(id) as HTMLSelectElement | null;

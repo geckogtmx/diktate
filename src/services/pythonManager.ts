@@ -74,11 +74,9 @@ export class PythonManager extends EventEmitter {
           fs.chmodSync(this.tokenFilePath, 0o600); // Make writable first
           fs.unlinkSync(this.tokenFilePath);
         } catch (unlinkError) {
-          logger.warn(
-            'PythonManager',
-            'Failed to remove old token file, will attempt overwrite',
-            { error: String(unlinkError) }
-          );
+          logger.warn('PythonManager', 'Failed to remove old token file, will attempt overwrite', {
+            error: String(unlinkError),
+          });
         }
       }
 

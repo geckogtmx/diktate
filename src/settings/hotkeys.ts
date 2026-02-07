@@ -6,7 +6,14 @@ import { state } from './store.js';
 import { saveSetting } from './utils.js';
 import { HOTKEY_DEFAULTS } from './constants.js';
 
-type HotkeyMode = 'dictate' | 'ask' | 'translate' | 'refine' | 'refine_instruction' | 'oops' | 'note';
+type HotkeyMode =
+  | 'dictate'
+  | 'ask'
+  | 'translate'
+  | 'refine'
+  | 'refine_instruction'
+  | 'oops'
+  | 'note';
 
 /**
  * Records a new hotkey by listening to user input
@@ -21,7 +28,11 @@ export function recordHotkey(mode: HotkeyMode = 'dictate') {
       label: 'Translate',
     },
     refine: { displayId: 'refine-hotkey-display', settingKey: 'refineHotkey', label: 'Refine' },
-    refine_instruction: { displayId: 'refine-instruction-hotkey-display', settingKey: 'refineInstructionHotkey', label: 'Refine Instruction' },
+    refine_instruction: {
+      displayId: 'refine-instruction-hotkey-display',
+      settingKey: 'refineInstructionHotkey',
+      label: 'Refine Instruction',
+    },
     note: { displayId: 'note-hotkey-display', settingKey: 'noteHotkey', label: 'Note' },
     oops: { displayId: 'oops-hotkey-display', settingKey: 'oopsHotkey', label: 'Oops' },
   };
@@ -88,7 +99,10 @@ export function resetHotkey(mode: HotkeyMode = 'dictate') {
     ask: { displayId: 'ask-hotkey-display', settingKey: 'askHotkey' },
     translate: { displayId: 'translate-hotkey-display', settingKey: 'translateHotkey' },
     refine: { displayId: 'refine-hotkey-display', settingKey: 'refineHotkey' },
-    refine_instruction: { displayId: 'refine-instruction-hotkey-display', settingKey: 'refineInstructionHotkey' },
+    refine_instruction: {
+      displayId: 'refine-instruction-hotkey-display',
+      settingKey: 'refineInstructionHotkey',
+    },
     note: { displayId: 'note-hotkey-display', settingKey: 'noteHotkey' },
     oops: { displayId: 'oops-hotkey-display', settingKey: 'oopsHotkey' },
   };

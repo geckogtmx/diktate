@@ -279,10 +279,19 @@ if (window.electronAPI) {
         toggleSound.checked = value;
       } else if (key === 'processingMode' && toggleCloud && typeof value === 'string') {
         toggleCloud.checked = value === 'cloud';
-      } else if (key === 'additionalKeyEnabled' && toggleAdditionalKey && typeof value === 'boolean') {
+      } else if (
+        key === 'additionalKeyEnabled' &&
+        toggleAdditionalKey &&
+        typeof value === 'boolean'
+      ) {
         toggleAdditionalKey.checked = value;
         addLogEntry('INFO', `Additional key sync: ${value ? 'ENABLED' : 'DISABLED'}`);
-      } else if (key === 'refineMode' && toggleRefineMode && refineModeLabel && typeof value === 'string') {
+      } else if (
+        key === 'refineMode' &&
+        toggleRefineMode &&
+        refineModeLabel &&
+        typeof value === 'string'
+      ) {
         toggleRefineMode.checked = value === 'instruction';
         refineModeLabel.textContent = value === 'instruction' ? 'Refine: Instruct' : 'Refine: Auto';
       }

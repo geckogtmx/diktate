@@ -5,7 +5,7 @@
 
 import { setVal, setCheck, saveSetting } from './utils.js';
 import type { Settings } from './types.js';
-import type { UserSettings } from '../main.js';
+import type { UserSettings } from '../types/settings.js';
 
 const descriptionsData = [
   {

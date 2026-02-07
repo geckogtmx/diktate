@@ -5,7 +5,7 @@
 
 import { state } from './store.js';
 import type { Settings } from './types.js';
-import type { UserSettings } from '../main.js';
+import type { UserSettings } from '../types/settings.js';
 import {
   loadSettings,
   setVal,
