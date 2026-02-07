@@ -919,6 +919,8 @@ function setupPythonEventHandlers(): void {
   pythonManager.on('system-metrics', (data: SystemMetricsEvent) => {
     const { phase, activity_count, metrics } = data;
 
+    if (!metrics) return;
+
     // Special notation for sampled metrics
     const logPrefix =
       phase === 'post-activity'
@@ -955,7 +957,10 @@ function setupPythonEventHandlers(): void {
 
   // Handle note saved event (SPEC_020)
   pythonManager.on('note-saved', (data: NoteSavedEvent) => {
-    logger.info('MAIN', 'Note saved event received', { filePath: data.filePath });
+    const filePath = data.filePath || data.filepath;
+    logger.info('MAIN', 'Note saved event received', { filePath });
+
+    if (!filePath) return;
 
     // Play success sound
     if (store.get('soundFeedback', true)) {
@@ -965,12 +970,12 @@ function setupPythonEventHandlers(): void {
     // Show actionable notification
     const notification = new Notification({
       title: 'Note Saved',
-      body: `Appended to ${path.basename(data.filePath)}. Click to open.`,
+      body: `Appended to ${path.basename(filePath)}. Click to open.`,
       icon: getIcon('processing').toDataURL(),
     });
 
     notification.on('click', () => {
-      shell.openExternal(`file://${data.filePath}`);
+      shell.openExternal(`file://${filePath}`);
     });
 
     notification.show();
@@ -993,7 +998,12 @@ function setupPythonEventHandlers(): void {
     const { question, answer } = response;
     const outputMode = store.get('askOutputMode') || 'clipboard';
 
-    logger.info('MAIN', 'Delivering ask response', { outputMode, answerLength: answer?.length });
+    if (!answer) {
+      showNotification('Ask Failed', 'No answer received', true);
+      return;
+    }
+
+    logger.info('MAIN', 'Delivering ask response', { outputMode, answerLength: answer.length });
 
     // Deliver based on output mode
     switch (outputMode) {
@@ -1060,7 +1070,7 @@ function setupPythonEventHandlers(): void {
     showNotification(title, message, false);
 
     // If 3+ consecutive failures, suggest checking Ollama
-    if (consecutive_failures >= 3) {
+    if (consecutive_failures && consecutive_failures >= 3) {
       showNotification(
         'Repeated Failures Detected',
         'Consider checking if Ollama is running or switching to Cloud mode in Settings.',
@@ -1132,7 +1142,11 @@ function setupPythonEventHandlers(): void {
   pythonManager.on('api-error', (data: ApiErrorEvent) => {
     logger.error('MAIN', 'API error received from Python', data);
     // Simple notification for generic API errors
-    showNotification('API Error', `Error: ${data.error_message || 'Unknown error'}`, true);
+    showNotification(
+      'API Error',
+      `Error: ${data.error_message || data.message || 'Unknown error'}`,
+      true
+    );
   });
 
   // Handle refine mode success
@@ -1175,9 +1189,11 @@ function setupPythonEventHandlers(): void {
 
     // Show success notification
     const instructionPreview = data.instruction.substring(0, 50);
+    const origLen = data.original_length || data.original_text.length;
+    const refinedLen = data.refined_length || data.refined_text.length;
     showNotification(
       'Text Refined',
-      `✨ "${instructionPreview}${data.instruction.length > 50 ? '...' : ''}"\n\n${data.original_length} → ${data.refined_length} chars`,
+      `✨ "${instructionPreview}${data.instruction.length > 50 ? '...' : ''}"\n\n${origLen} → ${refinedLen} chars`,
       false
     );
 
@@ -1201,8 +1217,12 @@ function setupPythonEventHandlers(): void {
 
     const { instruction, answer } = data;
 
-    // Copy answer to clipboard (already done in Python, but ensure it's done)
+    if (!answer) {
+      showNotification('Refine Failed', 'No answer received', true);
+      return;
+    }
 
+    // Copy answer to clipboard (already done in Python, but ensure it's done)
     clipboard.writeText(answer);
 
     // Show notification
@@ -1232,12 +1252,14 @@ function setupPythonEventHandlers(): void {
 
     // Determine error message based on code
     let errorMessage = 'Failed to refine text with instruction';
-    if (data.code === 'EMPTY_INSTRUCTION') {
-      errorMessage = 'No instruction detected. Please speak clearly and try again.';
-    } else if (data.code === 'NO_PROCESSOR') {
-      errorMessage = 'Text processing unavailable. Check that Ollama is running.';
-    } else if (data.code === 'PROCESSING_FAILED') {
-      errorMessage = 'LLM processing failed. Please try again.';
+    if (data.code) {
+      if (data.code === 'EMPTY_INSTRUCTION') {
+        errorMessage = 'No instruction detected. Please speak clearly and try again.';
+      } else if (data.code === 'NO_PROCESSOR') {
+        errorMessage = 'Text processing unavailable. Check that Ollama is running.';
+      } else if (data.code === 'PROCESSING_FAILED') {
+        errorMessage = 'LLM processing failed. Please try again.';
+      }
     } else if (data.error) {
       errorMessage = data.error;
     }

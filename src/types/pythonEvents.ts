@@ -126,6 +126,7 @@ export interface MicStatusEvent {
 export interface ApiErrorEvent {
   error_type: 'oauth_token_invalid' | 'rate_limit' | 'api_error';
   message: string;
+  error_message?: string;
   provider?: 'gemini' | 'anthropic' | 'openai';
 }
 
@@ -136,6 +137,11 @@ export interface RefineSuccessEvent {
   original_text: string;
   refined_text: string;
   mode: string;
+  charCount?: number;
+  total?: number;
+  capture?: number;
+  processing?: number;
+  injection?: number;
 }
 
 /**
@@ -143,6 +149,8 @@ export interface RefineSuccessEvent {
  */
 export interface RefineErrorEvent {
   error: string;
+  message?: string;
+  code?: string;
   original_text?: string;
 }
 
@@ -154,6 +162,9 @@ export interface RefineInstructionSuccessEvent {
   refined_text: string;
   instruction: string;
   mode: string;
+  original_length?: number;
+  refined_length?: number;
+  metrics?: unknown;
 }
 
 /**
@@ -163,6 +174,7 @@ export interface RefineInstructionFallbackEvent {
   reason: string;
   original_text: string;
   instruction: string;
+  answer?: string;
 }
 
 /**
@@ -170,6 +182,7 @@ export interface RefineInstructionFallbackEvent {
  */
 export interface RefineInstructionErrorEvent {
   error: string;
+  code?: string;
   original_text?: string;
   instruction?: string;
 }
