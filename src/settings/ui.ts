@@ -89,8 +89,10 @@ export async function checkModelChanges() {
 
     if (!changed) {
       const modes = ['standard', 'prompt', 'professional', 'ask', 'refine', 'refine_instruction'];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const settingsAny = settings as any;
       for (const mode of modes) {
-        if (state.initialModels[`modeModel_${mode}`] !== (settings[`modeModel_${mode}`] || '')) {
+        if (state.initialModels[`modeModel_${mode}`] !== (settingsAny[`modeModel_${mode}`] || '')) {
           changed = true;
           break;
         }

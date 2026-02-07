@@ -93,7 +93,8 @@ export async function loadOllamaModels() {
           modelName.textContent = model.name;
           const modelSize = document.createElement('span');
           modelSize.style.cssText = 'color: #888; font-size: 0.85em; margin-left: 8px;';
-          modelSize.textContent = formatBytes(model.size);
+          const size = typeof model.size === 'number' ? model.size : 0;
+          modelSize.textContent = formatBytes(size);
           info.appendChild(modelName);
           info.appendChild(document.createTextNode(' '));
           info.appendChild(modelSize);
@@ -124,13 +125,14 @@ export async function loadOllamaModels() {
     const maxRecommendedB = getRecommendedMaxModelSize();
 
     models.forEach((model: ModelInfo) => {
-      const sizeGB = model.size / (1024 * 1024 * 1024);
+      const modelSize = typeof model.size === 'number' ? model.size : 0;
+      const sizeGB = modelSize / (1024 * 1024 * 1024);
       const modelSizeClass = getModelSizeClass(model.name, sizeGB, maxRecommendedB);
 
       const option = document.createElement('option');
       option.value = model.name;
       const warningPrefix = modelSizeClass === 'too-large' ? '⚠️ ' : '';
-      option.text = `${warningPrefix}${model.name} (${formatBytes(model.size)})`;
+      option.text = `${warningPrefix}${model.name} (${formatBytes(modelSize)})`;
       if (modelSizeClass === 'too-large') {
         option.style.color = '#f87171';
       }

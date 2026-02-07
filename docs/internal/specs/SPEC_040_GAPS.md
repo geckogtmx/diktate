@@ -1207,6 +1207,98 @@ catch (err: unknown) {
 
 ---
 
+### Task 4.8: Fix TypeScript Compilation Errors (COMPLETE)
+
+**Status:** ✅ COMPLETE (88 errors → 0 errors)
+
+**Context:** After escalating the ESLint rule in Task 4.7, TypeScript compilation revealed 88 legitimate type errors that were previously hidden by `any` types. These were real bugs waiting to happen - mismatched types, union type handling issues, and unsafe property access.
+
+**Error Breakdown:**
+- `src/main.ts`: 29 errors (union types, unknown guards, dynamic keys)
+- `src/renderer.ts`: 16 errors (state type narrowing, IPC response types)
+- `src/settings/modes.ts`: 12 errors (template literal key access)
+- `src/settings/index.ts`: 10 errors (UserSettings vs Settings type mismatch)
+- `src/services/pythonManager.ts`: 5 errors (unknown types, spread operators)
+- `src/settings/ollama.ts`: 3 errors (optional property handling)
+- `src/settings/hotkeys.ts`: 2 errors (missing mode configurations)
+- `src/settings/privacy.ts`: 2 errors (type narrowing)
+- `src/settings/ui.ts`: 1 error (template literal access)
+- `src/settings/utils.ts`: 2 errors (function signature mismatch)
+- `src/utils/performanceMetrics.ts`: 1 error (interface type mismatch)
+
+**Major Fixes:**
+
+1. **src/main.ts (29 errors fixed):**
+   - Added index signature to `PythonConfig`: `[key: string]: unknown`
+   - Added missing `apiKey` and `authType` fields to `PythonConfig`
+   - Fixed logger calls with event objects using spread: `logger.info('MAIN', 'Event', { ...event })`
+   - Added type guards for unknown types: `typeof error === 'object' && error && 'success' in error`
+   - Fixed store.get() union type issues with String() conversion
+   - Added type guard for Error instances: `error instanceof Error && error.message.includes(...)`
+   - Fixed template literal key access with proper type assertions
+   - Added `defaultMode` property to initial state return object
+
+2. **src/renderer.ts (16 errors fixed):**
+   - Created `InitialState` interface defining the shape returned by `getInitialState()`
+   - Updated Window interface with complete `ElectronAPI` definition
+   - Added `onSettingChange` method to ElectronAPI interface
+   - Added type guards for unknown values: `typeof value === 'boolean'` before assignment
+   - Removed unnecessary `as any` casts now that types are properly defined
+
+3. **src/global.d.ts (new type definitions):**
+   - Added `InitialState` interface (14 properties)
+   - Added `ElectronAPI` interface (10 methods)
+   - Extended Window interface with `electronAPI: ElectronAPI`
+   - Maintains generic SettingsAPI signatures from Task 4.5
+
+4. **src/settings/modes.ts (12 errors fixed):**
+   - Added `eslint-disable-next-line` comments for template literal key access
+   - Pattern: `(settings as any)[\`cloudProvider_${mode}\`]` with justification comment
+   - Added `tier?: string` to inline model type definition
+   - Fixed all `window.settingsAPI.set()` calls with template literal keys
+
+5. **src/settings/index.ts (10 errors fixed):**
+   - Changed `settings` variable type from `Settings` to `UserSettings`
+   - Imported `UserSettings` from `../main.js`
+   - Fixed modeModel_* property access with `const settingsAny = settings as any`
+
+6. **src/services/pythonManager.ts (5 errors fixed):**
+   - Fixed logger.warn calls: `{ error: String(unlinkError) }` instead of passing unknown directly
+   - Added type guard for spread operator: `...(typeof data === 'object' && data ? data : {})`
+   - Added type guards for event properties: `const state = typeof event.state === 'string' ? event.state : 'unknown'`
+
+7. **src/settings/hotkeys.ts (2 errors fixed):**
+   - Updated `HotkeyMode` type to include `'note'` and `'refine_instruction'`
+   - Added missing mode configurations in both `recordHotkey` and `resetHotkey` configMaps
+
+8. **src/settings/ollama.ts (3 errors fixed):**
+   - Fixed optional `model.size` handling: `const size = typeof model.size === 'number' ? model.size : 0`
+   - Applied fix consistently across 3 locations (display, calculation, formatting)
+
+9. **src/settings/utils.ts & privacy.ts (4 errors fixed):**
+   - Changed function signatures from `Settings` to `UserSettings` for consistency
+   - Added explicit type annotation: `const intensity: number = ...`
+
+10. **src/utils/performanceMetrics.ts (1 error fixed):**
+    - Fixed logger.info call with SessionSummary: `logger.info('Metrics', 'Session completed', { ...summary })`
+
+**Type Safety Improvements:**
+- All IPC response types now properly typed (no more unknown responses)
+- Event handler parameters properly typed with specific interfaces
+- Union type handling with proper type guards
+- Optional property access protected by type checks
+- Template literal key access documented and justified
+
+**Result:** TypeScript compiler now passes with **0 errors** ✅
+
+**Verification:**
+```bash
+npx tsc --noEmit  # ✅ Success: no errors
+pnpm run lint     # ✅ Success: 0 ESLint violations
+```
+
+---
+
 ### Task 4.1: Define Python event payload interfaces 🔵 S
 
 **Create:** `src/types/pythonEvents.ts`

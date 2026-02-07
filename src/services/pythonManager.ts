@@ -77,7 +77,7 @@ export class PythonManager extends EventEmitter {
           logger.warn(
             'PythonManager',
             'Failed to remove old token file, will attempt overwrite',
-            unlinkError
+            { error: String(unlinkError) }
           );
         }
       }
@@ -101,7 +101,7 @@ export class PythonManager extends EventEmitter {
         logger.info('PythonManager', 'Token file cleaned up');
       }
     } catch (error) {
-      logger.warn('PythonManager', 'Failed to cleanup token file', error);
+      logger.warn('PythonManager', 'Failed to cleanup token file', { error: String(error) });
     }
   }
 
@@ -268,7 +268,7 @@ export class PythonManager extends EventEmitter {
       const fullCommand: Command = {
         id: commandId,
         command,
-        ...data,
+        ...(typeof data === 'object' && data ? data : {}),
       };
 
       // Register response handler
@@ -384,10 +384,12 @@ export class PythonManager extends EventEmitter {
     logger.debug('PythonManager', 'Event from Python', { eventType: event.event });
 
     if (event.event === 'state-change') {
-      this.currentState = event.state;
-      this.emit('state-change', event.state);
+      const state = typeof event.state === 'string' ? event.state : 'unknown';
+      this.currentState = state;
+      this.emit('state-change', state);
     } else if (event.event === 'error') {
-      this.emit('error', new Error(event.message));
+      const message = typeof event.message === 'string' ? event.message : 'Unknown error';
+      this.emit('error', new Error(message));
     } else if (event.event === 'performance-metrics') {
       this.emit('performance-metrics', event);
     } else if (event.event === 'ask-response') {

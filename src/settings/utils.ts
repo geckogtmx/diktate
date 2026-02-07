@@ -3,6 +3,7 @@
  */
 
 import type { Settings } from './types.js';
+import type { UserSettings } from '../main.js';
 
 export function setVal(id: string, val: string) {
   const el = document.getElementById(id) as HTMLSelectElement | null;
@@ -23,7 +24,7 @@ export function saveSetting(key: string, value: unknown) {
 /**
  * Loads settings into the DOM
  */
-export function loadSettings(settings: Settings | undefined) {
+export function loadSettings(settings: UserSettings | undefined) {
   if (!settings) return;
 
   // General

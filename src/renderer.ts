@@ -4,6 +4,22 @@
  */
 // No export needed, loaded as a script in index.html
 
+interface InitialState {
+  status: string;
+  isRecording: boolean;
+  mode: string;
+  defaultMode: string;
+  models: { transcriber: string; processor: string };
+  soundFeedback: boolean;
+  processingMode: string;
+  recordingMode: string;
+  refineMode: string;
+  authType: string;
+  additionalKeyEnabled: boolean;
+  additionalKey: string;
+  trailingSpaceEnabled: boolean;
+}
+
 interface Window {
   electronAPI: {
     onLog: (
@@ -11,11 +27,12 @@ interface Window {
     ) => void;
     onStatusChange: (callback: (status: string) => void) => void;
     onPerformanceMetrics: (callback: (metrics: PerformanceMetrics) => void) => void;
-    getInitialState: () => Promise<unknown>;
+    getInitialState: () => Promise<InitialState>;
     setSetting: (key: string, value: unknown) => Promise<void>;
     onPlaySound: (callback: (soundName: string) => void) => void;
     onBadgeUpdate: (callback: (badges: { processor?: string; authType?: string }) => void) => void;
     onModeChange: (callback: (mode: string) => void) => void;
+    onSettingChange: (callback: (key: string, value: unknown) => void) => void;
   };
 }
 
@@ -257,16 +274,15 @@ if (window.electronAPI) {
   // Setting change handler (SPEC_032 UI Sync)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if ((window.electronAPI as any).onSettingChange) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window.electronAPI as any).onSettingChange((key: string, value: unknown) => {
-      if (key === 'soundFeedback' && toggleSound) {
+    window.electronAPI.onSettingChange((key: string, value: unknown) => {
+      if (key === 'soundFeedback' && toggleSound && typeof value === 'boolean') {
         toggleSound.checked = value;
-      } else if (key === 'processingMode' && toggleCloud) {
+      } else if (key === 'processingMode' && toggleCloud && typeof value === 'string') {
         toggleCloud.checked = value === 'cloud';
-      } else if (key === 'additionalKeyEnabled' && toggleAdditionalKey) {
+      } else if (key === 'additionalKeyEnabled' && toggleAdditionalKey && typeof value === 'boolean') {
         toggleAdditionalKey.checked = value;
         addLogEntry('INFO', `Additional key sync: ${value ? 'ENABLED' : 'DISABLED'}`);
-      } else if (key === 'refineMode' && toggleRefineMode && refineModeLabel) {
+      } else if (key === 'refineMode' && toggleRefineMode && refineModeLabel && typeof value === 'string') {
         toggleRefineMode.checked = value === 'instruction';
         refineModeLabel.textContent = value === 'instruction' ? 'Refine: Instruct' : 'Refine: Auto';
       }
@@ -274,10 +290,8 @@ if (window.electronAPI) {
   }
 
   // Mode change handler (triggers status updates, not button changes)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((window.electronAPI as any).onModeChange) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window.electronAPI as any).onModeChange((mode: string) => {
+  if (window.electronAPI.onModeChange) {
+    window.electronAPI.onModeChange((mode: string) => {
       addLogEntry('INFO', `Active operation: ${mode.toUpperCase()}`);
     });
   }

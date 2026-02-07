@@ -176,7 +176,8 @@ async function loadDualProfileForMode(mode: string) {
 
   // SPEC_038: Local profiles now only contain per-mode prompts (no model selection)
   // Global local model is set in General Settings via the "Default Model" dropdown
-  const localPrompt = settings[`localPrompt_${mode}`] || '';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const localPrompt = (settings as any)[`localPrompt_${mode}`] || '';
 
   const localPromptTextarea = document.getElementById(
     'local-prompt-textarea'
@@ -193,9 +194,12 @@ async function loadDualProfileForMode(mode: string) {
   }
 
   // Load Cloud Profile
-  const cloudProvider = settings[`cloudProvider_${mode}`] || 'gemini';
-  const cloudModel = settings[`cloudModel_${mode}`] || '';
-  const cloudPrompt = settings[`cloudPrompt_${mode}`] || '';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cloudProvider = (settings as any)[`cloudProvider_${mode}`] || 'gemini';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cloudModel = (settings as any)[`cloudModel_${mode}`] || '';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cloudPrompt = (settings as any)[`cloudPrompt_${mode}`] || '';
 
   let displayPrompt = cloudPrompt;
   if (!displayPrompt) {
@@ -355,7 +359,8 @@ async function saveLocalProfile() {
 
   try {
     // SPEC_038: Only save per-mode prompt (model is now global)
-    await window.settingsAPI.set(`localPrompt_${mode}`, prompt);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await window.settingsAPI.set(`localPrompt_${mode}` as any, prompt);
 
     // Show success feedback
     const saveBtn = document.getElementById('save-local-profile');
@@ -405,9 +410,12 @@ async function saveCloudProfile() {
   }
 
   try {
-    await window.settingsAPI.set(`cloudProvider_${mode}`, provider);
-    await window.settingsAPI.set(`cloudModel_${mode}`, model);
-    await window.settingsAPI.set(`cloudPrompt_${mode}`, prompt);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await window.settingsAPI.set(`cloudProvider_${mode}` as any, provider);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await window.settingsAPI.set(`cloudModel_${mode}` as any, model);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await window.settingsAPI.set(`cloudPrompt_${mode}` as any, prompt);
 
     // Show success feedback
     const saveBtn = document.getElementById('save-cloud-profile');
@@ -444,7 +452,8 @@ async function resetLocalProfile() {
 
   try {
     // SPEC_038: Only reset per-mode prompt (model is now global)
-    await window.settingsAPI.set(`localPrompt_${mode}`, '');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await window.settingsAPI.set(`localPrompt_${mode}` as any, '');
     await selectMode(mode); // Reload
   } catch (error: unknown) {
     alert(`❌ Error: ${error}`);
@@ -459,9 +468,12 @@ async function resetCloudProfile() {
   if (!confirm(`Reset Cloud profile for ${mode} mode to default?`)) return;
 
   try {
-    await window.settingsAPI.set(`cloudProvider_${mode}`, '');
-    await window.settingsAPI.set(`cloudModel_${mode}`, '');
-    await window.settingsAPI.set(`cloudPrompt_${mode}`, '');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await window.settingsAPI.set(`cloudProvider_${mode}` as any, '');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await window.settingsAPI.set(`cloudModel_${mode}` as any, '');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await window.settingsAPI.set(`cloudPrompt_${mode}` as any, '');
     await selectMode(mode); // Reload
   } catch (error: unknown) {
     alert(`❌ Error: ${error}`);
@@ -512,7 +524,8 @@ async function loadOllamaModels(selectElement: HTMLSelectElement, mode: string) 
 
     // Load saved value
     const settings = await window.settingsAPI.getAll();
-    const savedModel = settings[`localModel_${mode}`];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const savedModel = (settings as any)[`localModel_${mode}`];
     if (savedModel) {
       selectElement.value = savedModel;
     }
@@ -559,7 +572,7 @@ async function loadCloudModels(selectElement: HTMLSelectElement, provider: strin
     // Add fetched models
     if (result.models && result.models.length > 0) {
       result.models.forEach(
-        (model: { id: string; name: string; size?: string; description?: string }) => {
+        (model: { id: string; name: string; size?: string; description?: string; tier?: string }) => {
           const opt = document.createElement('option');
           opt.value = model.id;
           opt.text = model.name + (model.tier ? ` (${model.tier})` : '');
@@ -570,7 +583,8 @@ async function loadCloudModels(selectElement: HTMLSelectElement, provider: strin
 
     // Load saved value with fuzzy matching
     const settings = await window.settingsAPI.getAll();
-    const savedModel = settings[`cloudModel_${mode}`];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const savedModel = (settings as any)[`cloudModel_${mode}`];
 
     if (savedModel) {
       // 1. Try exact match
@@ -597,7 +611,8 @@ async function loadCloudModels(selectElement: HTMLSelectElement, provider: strin
           console.log(
             `[Modes] Auto-healing model setting from '${savedModel}' to '${optionToSelect.value}'`
           );
-          window.settingsAPI.set(`cloudModel_${mode}`, optionToSelect.value);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          window.settingsAPI.set(`cloudModel_${mode}` as any, optionToSelect.value);
         }
       } else {
         // Fallback: If saved model is totally invalid for this provider, stay on default or pick first

@@ -115,7 +115,7 @@ class PerformanceMetrics {
 
     // Log complete session metrics
     const summary = this.getSessionSummary();
-    logger.info('Metrics', 'Session completed', summary);
+    logger.info('Metrics', 'Session completed', { ...summary });
 
     // Save to history
     this.sessionHistory.push({ ...this.currentSession });

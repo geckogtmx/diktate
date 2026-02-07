@@ -1,6 +1,37 @@
 // Import UserSettings type from main.ts
 import type { UserSettings } from './main';
 
+// Type for initial application state
+interface InitialState {
+  status: string;
+  isRecording: boolean;
+  mode: string;
+  defaultMode: string; // For UI compatibility
+  models: { transcriber: string; processor: string };
+  soundFeedback: boolean;
+  processingMode: string;
+  recordingMode: string;
+  refineMode: string;
+  authType: string;
+  additionalKeyEnabled: boolean;
+  additionalKey: string;
+  trailingSpaceEnabled: boolean;
+}
+
+// Type for electronAPI - main process bridge
+interface ElectronAPI {
+  onLog: (callback: (level: string, message: string, data?: Record<string, unknown>) => void) => void;
+  onStatusChange: (callback: (status: string) => void) => void;
+  onPerformanceMetrics: (callback: (metrics: unknown) => void) => void;
+  onModeChange: (callback: (mode: string) => void) => void;
+  onBadgeUpdate: (callback: (badges: { processor?: string; authType?: string }) => void) => void;
+  toggleRecording: () => Promise<unknown>;
+  getInitialState: () => Promise<InitialState>;
+  setSetting: (key: string, value: unknown) => Promise<void>;
+  onPlaySound: (callback: (soundName: string) => void) => void;
+  onSettingChange: (callback: (key: string, value: unknown) => void) => void;
+}
+
 // Declare the SettingsAPI interface in global scope
 declare global {
   interface SettingsAPI {
@@ -65,6 +96,7 @@ declare global {
   // Extend the Window interface
   interface Window {
     settingsAPI: SettingsAPI;
+    electronAPI: ElectronAPI;
   }
 }
 

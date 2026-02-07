@@ -5,6 +5,7 @@
 
 import { setVal, setCheck, saveSetting } from './utils.js';
 import type { Settings } from './types.js';
+import type { UserSettings } from '../main.js';
 
 const descriptionsData = [
   {
@@ -99,10 +100,10 @@ export async function initializePrivacySettings() {
 /**
  * Update UI with loaded privacy settings
  */
-export function loadPrivacySettings(settings: Settings | undefined) {
+export function loadPrivacySettings(settings: UserSettings | undefined) {
   if (!settings) return;
 
-  const intensity =
+  const intensity: number =
     settings.privacyLoggingIntensity !== undefined ? settings.privacyLoggingIntensity : 2;
   setVal('logging-intensity', intensity.toString());
 

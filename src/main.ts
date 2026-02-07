@@ -236,6 +236,11 @@ interface PythonConfig {
   // API keys added dynamically
   geminiApiKey?: string;
   anthropicApiKey?: string;
+  // Legacy fields
+  apiKey?: string;
+  authType?: string;
+  // Dynamic provider-specific keys
+  [key: string]: unknown;
   openaiApiKey?: string;
 }
 
@@ -393,7 +398,8 @@ function migrateToDualProfileSystem(): void {
       | string
       | undefined;
     const oldModel = store.get(`modeModel_${mode}` as keyof UserSettings) as string | undefined;
-    const oldPrompt = store.get('customPrompts' as keyof UserSettings)?.[mode] as
+    const customPrompts = store.get('customPrompts' as keyof UserSettings);
+    const oldPrompt = (typeof customPrompts === 'object' && customPrompts && mode in customPrompts ? (customPrompts as Record<string, string>)[mode] : undefined) as
       | string
       | undefined;
 
@@ -497,7 +503,7 @@ function getIcon(state: string): NativeImage {
     try {
       return nativeImage.createFromPath(iconPath);
     } catch (err) {
-      logger.warn('MAIN', `Failed to load icon from ${iconPath}`, err);
+      logger.warn('MAIN', `Failed to load icon from ${iconPath}`, { error: String(err) });
     }
   }
 
@@ -912,8 +918,10 @@ function setupPythonEventHandlers(): void {
           pythonManager
             .sendCommand('status')
             .then((result) => {
-              if (result.success && result.data) {
-                logger.info('MAIN', 'Status synced on ready', result.data);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              if (typeof result === 'object' && result && 'success' in result && 'data' in result && (result as any).success && (result as any).data) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                logger.info('MAIN', 'Status synced on ready', (result as any).data);
               }
             })
             .catch((err) => logger.error('MAIN', 'Failed to fetch status on ready', err));
@@ -965,7 +973,7 @@ function setupPythonEventHandlers(): void {
   });
 
   pythonManager.on('performance-metrics', (metrics: PerformanceMetricsEvent) => {
-    logger.info('MAIN', 'Performance metrics received from Python', metrics);
+    logger.info('MAIN', 'Performance metrics received from Python', { ...metrics });
 
     // Forward to renderer for dashboard display
     if (debugWindow && !debugWindow.isDestroyed()) {
@@ -975,7 +983,7 @@ function setupPythonEventHandlers(): void {
     // Log average performance statistics
     const stats = performanceMetrics.getStatistics();
     if (stats.averages) {
-      logger.info('MAIN', 'Average performance', stats.averages);
+      logger.info('MAIN', 'Average performance', { ...stats.averages });
     }
   });
 
@@ -1212,7 +1220,7 @@ function setupPythonEventHandlers(): void {
 
   // Handle API errors from Python (OAuth, rate limits, network)
   pythonManager.on('api-error', (data: ApiErrorEvent) => {
-    logger.error('MAIN', 'API error received from Python', data);
+    logger.error('MAIN', 'API error received from Python', { ...data });
     // Simple notification for generic API errors
     showNotification(
       'API Error',
@@ -1223,7 +1231,7 @@ function setupPythonEventHandlers(): void {
 
   // Handle refine mode success
   pythonManager.on('refine-success', (data: RefineSuccessEvent) => {
-    logger.info('MAIN', 'Refine success event received', data);
+    logger.info('MAIN', 'Refine success event received', { ...data });
 
     // Log metrics (refine uses separate workflow from dictation pipeline)
     if (data.charCount) {
@@ -1271,7 +1279,7 @@ function setupPythonEventHandlers(): void {
 
     // Log performance metrics
     if (data.metrics) {
-      logger.info('MAIN', 'Refine instruction metrics', data.metrics);
+      logger.info('MAIN', 'Refine instruction metrics', { ...data.metrics });
     }
   });
 
@@ -1478,7 +1486,7 @@ async function syncPythonConfig(): Promise<void> {
     // SPEC_038: Local Profile - now contains only per-mode prompts (NO model selection)
     // Type assertion safe: mode-specific keys are explicitly defined in UserSettings
     localProfiles[mode] = {
-      prompt: store.get(`localPrompt_${mode}` as keyof UserSettings) || '',
+      prompt: String(store.get(`localPrompt_${mode}` as keyof UserSettings) || ''),
     };
 
     // Cloud Profile - per-mode model selection still supported
@@ -1487,9 +1495,9 @@ async function syncPythonConfig(): Promise<void> {
       DEFAULT_PROMPTS[mode as keyof typeof DEFAULT_PROMPTS] || DEFAULT_PROMPTS.standard;
 
     cloudProfiles[mode] = {
-      provider: store.get(`cloudProvider_${mode}` as keyof UserSettings) || '',
-      model: store.get(`cloudModel_${mode}` as keyof UserSettings) || '',
-      prompt: store.get(`cloudPrompt_${mode}` as keyof UserSettings) || defaultPrompt,
+      provider: String(store.get(`cloudProvider_${mode}` as keyof UserSettings) || ''),
+      model: String(store.get(`cloudModel_${mode}` as keyof UserSettings) || ''),
+      prompt: String(store.get(`cloudPrompt_${mode}` as keyof UserSettings) || defaultPrompt),
     };
   }
 
@@ -1648,12 +1656,22 @@ function setupIpcHandlers(): void {
     if (pythonManager && pythonManager.isProcessRunning()) {
       try {
         const result = await pythonManager.sendCommand('status');
-        if (result && result.success && result.data) {
-          if (result.data.transcriber) models.transcriber = result.data.transcriber;
-          if (result.data.processor) models.processor = result.data.processor;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (
+          result &&
+          typeof result === 'object' &&
+          'success' in result &&
+          'data' in result &&
+          (result as any).success &&
+          (result as any).data
+        ) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((result as any).data.transcriber) models.transcriber = (result as any).data.transcriber;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((result as any).data.processor) models.processor = (result as any).data.processor;
         }
       } catch (e) {
-        logger.warn('MAIN', 'Failed to fetch python status for initial state', e);
+        logger.warn('MAIN', 'Failed to fetch python status for initial state', { error: String(e) });
       }
     }
 
@@ -1670,6 +1688,7 @@ function setupIpcHandlers(): void {
       status: pythonManager?.getStatus() || 'disconnected',
       isRecording,
       mode: currentMode,
+      defaultMode: currentMode,
       models,
       soundFeedback: store.get('soundFeedback', true),
       processingMode: actualProcessingMode,
@@ -1814,7 +1833,7 @@ function setupIpcHandlers(): void {
 
       if (syncKeys.includes(key as string)) {
         await syncPythonConfig().catch((err) => {
-          logger.error('IPC', 'Post-setting sync failed', err);
+          logger.error('IPC', 'Post-setting sync failed', { error: String(err) });
         });
       }
 
@@ -1832,7 +1851,7 @@ function setupIpcHandlers(): void {
       }
 
       // If auto-start setting changed
-      if (key === 'autoStart') {
+      if (key === 'autoStart' && typeof value === 'boolean') {
         try {
           app.setLoginItemSettings({
             openAtLogin: value,
@@ -1840,7 +1859,7 @@ function setupIpcHandlers(): void {
           });
           logger.info('IPC', `Auto-start ${value ? 'enabled' : 'disabled'}`);
         } catch (err) {
-          logger.error('IPC', 'Failed to set auto-start', err);
+          logger.error('IPC', 'Failed to set auto-start', { error: String(err) });
         }
       }
 
@@ -1868,11 +1887,11 @@ function setupIpcHandlers(): void {
     }
 
     try {
-      logger.info('MAIN', `Invoking backend command: ${command}`, args);
+      logger.info('MAIN', `Invoking backend command: ${command}`, typeof args === 'object' && args ? { ...args } : { args });
       const result = await pythonManager.sendCommand(command, args);
       return result;
     } catch (err) {
-      logger.error('MAIN', `Backend command ${command} failed`, err);
+      logger.error('MAIN', `Backend command ${command} failed`, { error: String(err) });
       return { success: false, error: String(err) };
     }
   });
@@ -2691,13 +2710,13 @@ async function toggleRecording(
         maxDuration: maxDuration, // Pass max duration setting
       });
     } catch (error: unknown) {
-      logger.error('MAIN', 'Failed to start recording', error);
+      logger.error('MAIN', 'Failed to start recording', { error: String(error) });
       isRecording = false;
       updateTrayIcon('idle');
       updateTrayState('Idle');
 
       // SPEC_014: Don't show generic error if it's just a muted mic (handle race condition)
-      if (error.message && error.message.includes('Microphone is muted')) {
+      if (error instanceof Error && error.message.includes('Microphone is muted')) {
         showNotification(
           '🔇 Microphone Muted',
           'Your microphone is muted. Please unmute to dictate.',
@@ -2941,12 +2960,13 @@ function setupGlobalHotkey(): void {
       if (pythonManager) {
         try {
           const response = await pythonManager.sendCommand('inject_last');
-          logger.debug('HOTKEY', `inject_last response [${pressTimestamp}]`, response);
+          logger.debug('HOTKEY', `inject_last response [${pressTimestamp}]`, typeof response === 'object' && response ? { ...response } : { response });
 
           // Response can be either a number (char_count) or an object
           // Success case: response is the char_count number
           // The sendCommand resolves on success, rejects on failure
-          const charCount = typeof response === 'number' ? response : response?.char_count || 0;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const charCount = typeof response === 'number' ? response : (typeof response === 'object' && response && 'char_count' in response ? (response as any).char_count : 0) || 0;
 
           // Play stop sound as confirmation
           const stopSound = store.get('stopSound', 'a');

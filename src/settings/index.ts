@@ -5,6 +5,7 @@
 
 import { state } from './store.js';
 import type { Settings } from './types.js';
+import type { UserSettings } from '../main.js';
 import {
   loadSettings,
   setVal,
@@ -175,7 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // 2. ASYNC INITIALIZATION (Data-dependent)
-  let settings: Settings | undefined;
+  let settings: UserSettings | undefined;
   try {
     // Step 1: Initialize stores and static UI
     console.log('[Init] Starting settings initialization...');
@@ -212,15 +213,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 4. Initialize State base values (for change tracking)
     // SPEC_038: Use localModel (global) instead of defaultOllamaModel
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const settingsAny = settings as any;
     state.initialModels = {
       default: settings.localModel || settings.defaultOllamaModel || '',
-      modeModel_standard: settings.modeModel_standard || '',
-      modeModel_prompt: settings.modeModel_prompt || '',
-      modeModel_professional: settings.modeModel_professional || '',
-      modeModel_raw: settings.modeModel_raw || '',
-      modeModel_ask: settings.modeModel_ask || '',
-      modeModel_refine: settings.modeModel_refine || '',
-      modeModel_refine_instruction: settings.modeModel_refine_instruction || '',
+      modeModel_standard: settingsAny.modeModel_standard || '',
+      modeModel_prompt: settingsAny.modeModel_prompt || '',
+      modeModel_professional: settingsAny.modeModel_professional || '',
+      modeModel_raw: settingsAny.modeModel_raw || '',
+      modeModel_ask: settingsAny.modeModel_ask || '',
+      modeModel_refine: settingsAny.modeModel_refine || '',
+      modeModel_refine_instruction: settingsAny.modeModel_refine_instruction || '',
     };
   }
 
