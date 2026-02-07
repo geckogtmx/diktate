@@ -205,9 +205,7 @@ export class TrayManager {
     const mode = this.deps.store.get('processingMode', 'local').toUpperCase();
     // SPEC_038: Use global localModel setting
     const model =
-      this.deps.store.get('localModel') ||
-      this.deps.store.get('defaultOllamaModel') ||
-      'No model';
+      this.deps.store.get('localModel') || this.deps.store.get('defaultOllamaModel') || 'No model';
     this.tray.setToolTip(`dIKtate [${mode}] - ${model}\nCtrl+Alt+D: Dictate | Ctrl+Alt+A: Ask`);
   }
 

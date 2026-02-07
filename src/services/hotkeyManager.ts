@@ -14,7 +14,12 @@ import { playSound } from './notificationService';
 
 export interface HotkeyDependencies {
   store: Store<UserSettings>;
-  showNotification: (title: string, body: string, isError: boolean, getIcon: (state: string) => NativeImage) => void;
+  showNotification: (
+    title: string,
+    body: string,
+    isError: boolean,
+    getIcon: (state: string) => NativeImage
+  ) => void;
   toggleRecording: (mode: 'dictate' | 'ask' | 'translate' | 'refine' | 'note') => Promise<void>;
   handleRefineSelection: () => void;
   getPythonManager: () => PythonManager | null;
@@ -42,7 +47,8 @@ export function setupGlobalHotkeys(deps: HotkeyDependencies): void {
     const validateLocalModel = (): boolean => {
       const processingMode = deps.store.get('processingMode', 'local');
       if (processingMode === 'local') {
-        const localModel = deps.store.get('localModel', '') || deps.store.get('defaultOllamaModel', '');
+        const localModel =
+          deps.store.get('localModel', '') || deps.store.get('defaultOllamaModel', '');
         if (!localModel) {
           logger.error('HOTKEY', 'Blocked: No local model configured');
           deps.showNotification(
@@ -70,7 +76,10 @@ export function setupGlobalHotkeys(deps: HotkeyDependencies): void {
       if (!validateLocalModel()) return;
 
       const state = deps.getState();
-      logger.debug('HOTKEY', 'Dictate hotkey pressed', { isRecording: state.isRecording, mode: 'dictate' });
+      logger.debug('HOTKEY', 'Dictate hotkey pressed', {
+        isRecording: state.isRecording,
+        mode: 'dictate',
+      });
       await deps.toggleRecording('dictate');
     });
 
@@ -124,7 +133,10 @@ export function setupGlobalHotkeys(deps: HotkeyDependencies): void {
       if (!validateLocalModel()) return;
 
       const state = deps.getState();
-      logger.debug('HOTKEY', 'Translate hotkey pressed', { isRecording: state.isRecording, mode: 'translate' });
+      logger.debug('HOTKEY', 'Translate hotkey pressed', {
+        isRecording: state.isRecording,
+        mode: 'translate',
+      });
       await deps.toggleRecording('translate');
     });
 
@@ -258,7 +270,10 @@ export function setupGlobalHotkeys(deps: HotkeyDependencies): void {
       }
       lastHotkeyPress = now;
 
-      logger.debug('HOTKEY', 'Note hotkey pressed', { isRecording: state.isRecording, mode: 'note' });
+      logger.debug('HOTKEY', 'Note hotkey pressed', {
+        isRecording: state.isRecording,
+        mode: 'note',
+      });
       await deps.toggleRecording('note');
     });
 

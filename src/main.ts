@@ -3,21 +3,7 @@
  * Handles system tray, Python subprocess, and global hotkey
  */
 
-import {
-  app,
-  Tray,
-  Menu,
-  ipcMain,
-  globalShortcut,
-  BrowserWindow,
-  Notification,
-  nativeImage,
-  NativeImage,
-  shell,
-  safeStorage,
-  clipboard,
-  dialog,
-} from 'electron';
+import { app, ipcMain, BrowserWindow, shell, safeStorage, clipboard, dialog } from 'electron';
 import child_process from 'child_process';
 import * as dotenv from 'dotenv';
 // Fix for Windows Notifications (missing AUMID causes silent failure)
@@ -306,7 +292,12 @@ function setupPythonEventHandlers(): void {
       // Defer notification and status sync to avoid event loop starvation
       // This is the FINAL truth-in-UI signal: Only show when everything is IDLE
       setTimeout(() => {
-        showNotification('dIKtate Ready', 'AI Engine loaded. Press Ctrl+Alt+D to start.', false, trayManager.getIcon.bind(trayManager));
+        showNotification(
+          'dIKtate Ready',
+          'AI Engine loaded. Press Ctrl+Alt+D to start.',
+          false,
+          trayManager.getIcon.bind(trayManager)
+        );
 
         // SPEC_035: Signal loading window to show ready state ONLY when we are truly responsive
         if (loadingWindow && !loadingWindow.isDestroyed()) {
@@ -353,7 +344,12 @@ function setupPythonEventHandlers(): void {
 
   pythonManager.on('error', (error: Error) => {
     logger.error('MAIN', 'Python error occurred', error);
-    showNotification('dIKtate Error', `An error occurred: ${error.message}`, true, trayManager.getIcon.bind(trayManager));
+    showNotification(
+      'dIKtate Error',
+      `An error occurred: ${error.message}`,
+      true,
+      trayManager.getIcon.bind(trayManager)
+    );
     trayManager.updateTrayState('Error');
   });
 
@@ -361,7 +357,10 @@ function setupPythonEventHandlers(): void {
     logger.error('MAIN', 'Fatal Python error - connection lost', error);
     showNotification(
       'dIKtate - Connection Lost',
-      'Python backend connection lost. Please restart the application.', true, trayManager.getIcon.bind(trayManager));
+      'Python backend connection lost. Please restart the application.',
+      true,
+      trayManager.getIcon.bind(trayManager)
+    );
     trayManager.updateTrayState('Disconnected');
   });
 
@@ -474,7 +473,12 @@ function setupPythonEventHandlers(): void {
     trayManager.updateTrayState('Idle');
 
     if (!response.success) {
-      showNotification('Ask Failed', response.error || 'Unknown error', true, trayManager.getIcon.bind(trayManager));
+      showNotification(
+        'Ask Failed',
+        response.error || 'Unknown error',
+        true,
+        trayManager.getIcon.bind(trayManager)
+      );
       return;
     }
 
@@ -482,7 +486,12 @@ function setupPythonEventHandlers(): void {
     const outputMode = store.get('askOutputMode') || 'clipboard';
 
     if (!answer) {
-      showNotification('Ask Failed', 'No answer received', true, trayManager.getIcon.bind(trayManager));
+      showNotification(
+        'Ask Failed',
+        'No answer received',
+        true,
+        trayManager.getIcon.bind(trayManager)
+      );
       return;
     }
 
@@ -508,7 +517,12 @@ function setupPythonEventHandlers(): void {
             await pythonManager.sendCommand('inject_text', { text: answer });
           } catch (err) {
             logger.error('MAIN', 'Failed to inject text for Ask response', err);
-            showNotification('Injection Failed', 'Could not type the answer automatically.', true, trayManager.getIcon.bind(trayManager));
+            showNotification(
+              'Injection Failed',
+              'Could not type the answer automatically.',
+              true,
+              trayManager.getIcon.bind(trayManager)
+            );
           }
         }
         break;
@@ -558,7 +572,10 @@ function setupPythonEventHandlers(): void {
     if (consecutive_failures && consecutive_failures >= 3) {
       showNotification(
         'Repeated Failures Detected',
-        'Consider checking if Ollama is running or switching to Cloud mode in Settings.', true, trayManager.getIcon.bind(trayManager));
+        'Consider checking if Ollama is running or switching to Cloud mode in Settings.',
+        true,
+        trayManager.getIcon.bind(trayManager)
+      );
     }
   });
 
@@ -601,7 +618,10 @@ function setupPythonEventHandlers(): void {
     // Show notification
     showNotification(
       '🔇 Microphone Muted',
-      message || 'Your microphone is muted. Please unmute and try again.', true, trayManager.getIcon.bind(trayManager));
+      message || 'Your microphone is muted. Please unmute and try again.',
+      true,
+      trayManager.getIcon.bind(trayManager)
+    );
   });
 
   pythonManager.on('mic-status', (data: MicStatusEvent) => {
@@ -626,7 +646,10 @@ function setupPythonEventHandlers(): void {
     // Simple notification for generic API errors
     showNotification(
       'API Error',
-      `Error: ${data.error_message || data.message || 'Unknown error'}`, true, trayManager.getIcon.bind(trayManager));
+      `Error: ${data.error_message || data.message || 'Unknown error'}`,
+      true,
+      trayManager.getIcon.bind(trayManager)
+    );
   });
 
   // Handle refine mode success
@@ -673,7 +696,10 @@ function setupPythonEventHandlers(): void {
     const refinedLen = data.refined_length || data.refined_text.length;
     showNotification(
       'Text Refined',
-      `✨ "${instructionPreview}${data.instruction.length > 50 ? '...' : ''}"\n\n${origLen} → ${refinedLen} chars`, false, trayManager.getIcon.bind(trayManager));
+      `✨ "${instructionPreview}${data.instruction.length > 50 ? '...' : ''}"\n\n${origLen} → ${refinedLen} chars`,
+      false,
+      trayManager.getIcon.bind(trayManager)
+    );
 
     // Log performance metrics
     if (data.metrics) {
@@ -696,7 +722,12 @@ function setupPythonEventHandlers(): void {
     const { instruction, answer } = data;
 
     if (!answer) {
-      showNotification('Refine Failed', 'No answer received', true, trayManager.getIcon.bind(trayManager));
+      showNotification(
+        'Refine Failed',
+        'No answer received',
+        true,
+        trayManager.getIcon.bind(trayManager)
+      );
       return;
     }
 
@@ -744,7 +775,12 @@ function setupPythonEventHandlers(): void {
     }
 
     // Show error notification
-    showNotification('Refine Instruction Failed', errorMessage, true, trayManager.getIcon.bind(trayManager));
+    showNotification(
+      'Refine Instruction Failed',
+      errorMessage,
+      true,
+      trayManager.getIcon.bind(trayManager)
+    );
   });
 }
 
@@ -1937,7 +1973,12 @@ async function toggleRecording(
 ): Promise<void> {
   if (isWarmupLock) {
     logger.warn('MAIN', 'Recording blocked: App is still warming up');
-    showNotification('Warming Up', 'AI services are still loading... please wait.', false, trayManager.getIcon.bind(trayManager));
+    showNotification(
+      'Warming Up',
+      'AI services are still loading... please wait.',
+      false,
+      trayManager.getIcon.bind(trayManager)
+    );
     return;
   }
 
@@ -1951,7 +1992,10 @@ async function toggleRecording(
     logger.warn('MAIN', 'Recording blocked: Microphone is muted (Frontend Check)');
     showNotification(
       '🔇 Microphone Muted',
-      'Your microphone is muted. Please unmute to dictate.', true, trayManager.getIcon.bind(trayManager));
+      'Your microphone is muted. Please unmute to dictate.',
+      true,
+      trayManager.getIcon.bind(trayManager)
+    );
     // Beep to indicate failure
     if (store.get('soundFeedback')) {
       // Use a distinct error sound or just the stop sound
@@ -2050,7 +2094,10 @@ async function toggleRecording(
       if (error instanceof Error && error.message.includes('Microphone is muted')) {
         showNotification(
           '🔇 Microphone Muted',
-          'Your microphone is muted. Please unmute to dictate.', true, trayManager.getIcon.bind(trayManager));
+          'Your microphone is muted. Please unmute to dictate.',
+          true,
+          trayManager.getIcon.bind(trayManager)
+        );
         // Play error sound to cancel out the start sound
         if (store.get('soundFeedback')) {
           playSound('c');
@@ -2058,7 +2105,12 @@ async function toggleRecording(
         return;
       }
 
-      showNotification('Recording Error', 'Failed to start recording. Please try again.', true, trayManager.getIcon.bind(trayManager));
+      showNotification(
+        'Recording Error',
+        'Failed to start recording. Please try again.',
+        true,
+        trayManager.getIcon.bind(trayManager)
+      );
     }
   }
 }
@@ -2237,7 +2289,10 @@ async function initialize(): Promise<void> {
     logger.error('MAIN', 'Failed to initialize application', error);
     showNotification(
       'dIKtate Startup Failed',
-      'Application failed to start. Check logs for details.', true, trayManager.getIcon.bind(trayManager));
+      'Application failed to start. Check logs for details.',
+      true,
+      trayManager.getIcon.bind(trayManager)
+    );
     setTimeout(() => app.quit(), 3000); // Give time to show notification
   }
 }
