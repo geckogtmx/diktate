@@ -449,18 +449,13 @@ function setupPythonEventHandlers(): void {
       playSound(store.get('stopSound', 'a'));
     }
 
-    // Show actionable notification
-    const notification = new Notification({
-      title: 'Note Saved',
-      body: `Appended to ${path.basename(filePath)}. Click to open.`,
-      icon: trayManager.getIcon('processing').toDataURL(),
-    });
-
-    notification.on('click', () => {
-      shell.openExternal(`file://${filePath}`);
-    });
-
-    notification.show();
+    // Show notification (note: click-to-open not supported with showNotification helper)
+    showNotification(
+      'Note Saved',
+      `Appended to ${path.basename(filePath)}`,
+      false,
+      trayManager.getIcon.bind(trayManager)
+    );
   });
 
   // Handle Ask Mode responses
@@ -2304,12 +2299,12 @@ app.on('ready', () => {
   // Handle when user tries to open a second instance
   app.on('second-instance', () => {
     // Show a notification that app is already running
-    if (Notification.isSupported()) {
-      new Notification({
-        title: 'dIKtate Already Running',
-        body: 'One instance is already running. Check your system tray.',
-      }).show();
-    }
+    showNotification(
+      'dIKtate Already Running',
+      'One instance is already running. Check your system tray.',
+      false,
+      trayManager.getIcon.bind(trayManager)
+    );
 
     // Focus the settings window if it exists
     if (settingsWindow && !settingsWindow.isDestroyed()) {
