@@ -41,6 +41,7 @@
 **Total Eliminated:** 50+ explicit `any` types + 33 `as any` casts
 **Remaining:** 1 justified `as any` use (dynamic Electron IPC)
 **ESLint Status:** Rule escalated to 'error' — 0 violations ✅
+**Follow-up:** Task 4.8 (PLANNED) - Resolve ~25 TypeScript compilation errors revealed by stricter typing
 
 ### ✅ Phase 1: Test Infrastructure (COMPLETE)
 - ✅ Task 1.1: Created `tests/conftest.py`, fixed test imports
@@ -1408,6 +1409,91 @@ All catch blocks in `src/main.ts` and `src/settings/*.ts` (5+ locations):
 **Why Haiku:** Single string replacement.
 
 **Acceptance:** `pnpm run lint` passes with zero `any` errors.
+
+---
+
+### Task 4.8: Resolve TypeScript Compilation Errors 🔵 S (PLANNED FOLLOW-UP)
+
+**Status:** 🚧 PLANNED (not in scope of Task 4.7)
+
+**Problem Statement:**
+
+The escalation of the ESLint `@typescript-eslint/no-explicit-any` rule to error (Task 4.7) successfully eliminated all explicit `any` type annotations. However, the stricter typing has revealed approximately **25 real TypeScript compilation errors** that were previously hidden by `any` types.
+
+These errors represent legitimate bugs in the codebase—cases where:
+- Code accesses properties on `unknown` types without type guards
+- Union types are being assigned to incompatible types
+- Dynamic type access doesn't properly narrow values
+- Optional properties are accessed without null checks
+
+**Examples of Errors Revealed:**
+
+```typescript
+// Error: Cannot index PythonConfig with dynamic string
+const apiKey = config[configKey]; // configKey is string, not keyof PythonConfig
+
+// Error: Unknown type property access
+const result = await someCall(); // result is unknown
+if (result.success) { ... } // Property 'success' does not exist on unknown
+
+// Error: Union type mismatch
+const value = store.get(key); // Returns string | number | boolean | object | undefined
+const myBool: boolean = value; // Cannot assign union to specific type
+```
+
+**Impact:**
+
+- ✅ **Good**: ESLint prevents future `any` regressions
+- ⚠️ **Challenge**: TypeScript compiler now enforces strict correctness
+- 📋 **Scope**: ~25 errors to resolve systematically
+
+**Recommended Approach:**
+
+1. **Audit Phase**: Run `npx tsc --noEmit` and categorize errors by type
+   - Property access on unknown types (add type guards)
+   - Union type mismatches (add discriminators or type narrowing)
+   - Dynamic key access (use template literal index types)
+   - Optional property access (add null checks)
+
+2. **Resolution Phases**:
+   - Phase 1: Fix high-impact errors in `src/main.ts` (~12 errors)
+   - Phase 2: Fix renderer errors in `src/renderer.ts` (~6 errors)
+   - Phase 3: Fix utility/service errors (~7 errors)
+
+3. **Validation**:
+   - `npx tsc --noEmit` passes with zero errors
+   - `pnpm run lint` continues to pass
+   - `pnpm test` continues to pass
+   - No behavior changes (only type safety improvements)
+
+**Files Affected:**
+- `src/main.ts` - Config/settings type access, API response handling
+- `src/renderer.ts` - Settings initialization, event handler types
+- `src/services/pythonManager.ts` - IPC response typing
+- `src/settings/` - Settings module utilities
+
+**Why This Matters:**
+
+These aren't compiler false positives—they're real bugs that the improved type system caught:
+- Accessing undefined properties could cause runtime errors
+- Union type confusion could lead to type coercion bugs
+- Missing type guards could cause silent failures
+
+**Why After Task 4.7:**
+
+Task 4.7 is specifically about removing explicit `any` types and escalating the ESLint rule. The TypeScript compilation errors are a **consequence** of the improved type safety, not part of the task itself. Treating them as a separate follow-up task allows us to:
+- Validate that Task 4.7 is complete (ESLint ✅)
+- Address real type correctness issues systematically (separate effort)
+- Avoid conflating "eliminate `any` types" with "fix all type errors"
+
+**Success Criteria:**
+
+After Task 4.8 completion:
+- ✅ `npx tsc --noEmit` passes with zero errors
+- ✅ `pnpm run lint` passes (ESLint + type checking)
+- ✅ `pnpm test` passes (all tests pass)
+- ✅ Code behavior unchanged (only type correctness improved)
+- ✅ No regression in test coverage
 
 ---
 
