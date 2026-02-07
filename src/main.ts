@@ -132,7 +132,7 @@ function createDebugWindow(): void {
     alwaysOnTop: true,
     frame: true, // Keep frame for dragging for now, but maybe remove later
     title: 'dIKtate Status',
-    icon: trayManager.getIcon('idle'),
+    icon: trayManager?.getIcon('idle'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -172,7 +172,7 @@ function createSettingsWindow(): void {
     height: 600,
     show: true,
     title: 'dIKtate Settings',
-    icon: trayManager.getIcon('idle'),
+    icon: trayManager?.getIcon('idle'),
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preloadSettings.js'),
@@ -214,7 +214,7 @@ function createLoadingWindow(): void {
     resizable: false,
     alwaysOnTop: true,
     backgroundColor: '#002029',
-    icon: trayManager.getIcon('idle'),
+    icon: trayManager?.getIcon('idle'),
     show: false, // Don't show until ready-to-show to prevent "not responding"
     webPreferences: {
       preload: path.join(__dirname, 'preloadLoading.js'),
