@@ -110,6 +110,22 @@ jobs:
           name: coverage-report
           path: coverage_html/
 
+  perf-check:
+    name: Performance Regression Guard
+    runs-on: windows-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run performance check
+        run: python python/tools/perf_check.py
+
   security-audit:
     name: Security Audit
     runs-on: windows-latest
