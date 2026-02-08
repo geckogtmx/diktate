@@ -71,6 +71,9 @@ settings.json
 Thumbs.db
 .DS_Store
 
+# Generated API documentation
+docs/api/
+
 # Internal Governance & Development (Local-Only)
 AI_CODEX.md
 DEV_HANDOFF.md

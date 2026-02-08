@@ -17,6 +17,9 @@
     "test:hardware": "python -m pytest tests/ -v -m \"requires_gpu or requires_audio or requires_ollama\"",
     "lint": "eslint \"src/**/*.{ts,js}\" --fix",
     "format": "prettier --write \"src/**/*.{ts,js,html,css}\"",
+    "docs:python": "python python/tools/generate_docs.py",
+    "docs:ts": "typedoc --entryPointStrategy expand src/ --out docs/api/typescript",
+    "docs": "pnpm run docs:python && pnpm run docs:ts",
     "prepare": "husky install"
   },
   "keywords": [
@@ -40,6 +43,7 @@
     "husky": "^8.0.0",
     "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
+    "typedoc": "^0.28.16",
     "typescript": "^5.3.0",
     "typescript-eslint": "^8.54.0"
   },
