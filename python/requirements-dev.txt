@@ -1,4 +1,5 @@
 ruff
 detect-secrets
 pytest
+pytest-cov
 pdoc

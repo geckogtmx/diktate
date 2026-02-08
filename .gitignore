@@ -30,6 +30,7 @@ wheels/
 .pytest_cache/
 .coverage
 htmlcov/
+coverage_html/
 .tox/
 
 # IDE

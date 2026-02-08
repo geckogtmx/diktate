@@ -91,7 +91,7 @@ jobs:
 
       - name: Install test dependencies
         run: |
-          pip install pytest==7.4.4 pytest-asyncio==0.23.2
+          pip install pytest==7.4.4 pytest-asyncio==0.23.2 pytest-cov
           pip install requests>=2.32.0
           pip install pyperclip==1.8.2
           pip install pynput==1.7.6
@@ -100,8 +100,15 @@ jobs:
           pip install tabulate==0.9.0
           pip install python-dotenv==1.0.0
 
-      - name: Run tests (skip hardware tests)
-        run: python -m pytest tests/ -v --tb=short -x -m "not requires_gpu and not requires_audio and not requires_ollama"
+      - name: Run tests with coverage
+        run: python -m pytest tests/ -v --tb=short -x -m "not requires_gpu and not requires_audio and not requires_ollama" --cov=python --cov-report=term --cov-report=html --cov-fail-under=20
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage_html/
 
   security-audit:
     name: Security Audit
