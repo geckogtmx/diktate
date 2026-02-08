@@ -31,6 +31,7 @@ wheels/
 .coverage
 htmlcov/
 coverage_html/
+coverage_typescript/
 .tox/
 
 # IDE
