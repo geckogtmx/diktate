@@ -65,7 +65,7 @@ export class TrayManager {
    * Public method used by notification service
    */
   public getIcon(state: string): NativeImage {
-    const assetsDir = path.join(__dirname, '..', 'assets');
+    const assetsDir = path.join(__dirname, '..', '..', 'assets');
     let iconName = 'icon.png'; // Default to the main app icon
 
     // In future we can have state-specific variants of the main icon
