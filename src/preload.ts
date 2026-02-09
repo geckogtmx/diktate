@@ -57,5 +57,14 @@ contextBridge.exposeInMainWorld('electronAPI', electronAPI);
 // Expose the API to the renderer process
 contextBridge.exposeInMainWorld('api', api);
 
+// Expose i18n API to the renderer
+contextBridge.exposeInMainWorld('i18n', {
+  t: (key: string, options?: unknown) => ipcRenderer.invoke('i18n:translate', key, options),
+  changeLanguage: (lang: string) => ipcRenderer.invoke('i18n:changeLanguage', lang),
+  getLanguage: () => ipcRenderer.invoke('i18n:getLanguage'),
+  onLanguageChange: (callback: (lang: string) => void) =>
+    ipcRenderer.on('i18n:languageChanged', (_event, lang: string) => callback(lang)),
+});
+
 // Log that preload script is loaded
 console.log('[PRELOAD] dIKtate preload script loaded');

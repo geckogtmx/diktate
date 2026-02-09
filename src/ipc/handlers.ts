@@ -17,6 +17,8 @@ import { validateIpcMessage, SettingsSetSchema, redactSensitive } from '../utils
 import { showNotification, playSound } from '../services/notificationService';
 import { RecordingManager } from '../services/recordingManager';
 
+import type { I18nService } from '../services/i18n';
+
 export interface CoreIpcHandlerDependencies {
   store: Store<UserSettings>;
   getPythonManager: () => PythonManager | null;
@@ -25,6 +27,7 @@ export interface CoreIpcHandlerDependencies {
   recordingManager: RecordingManager;
   syncPythonConfig: () => Promise<void>;
   reregisterHotkeys: () => void;
+  getI18n: () => I18nService;
 }
 
 export function registerCoreIpcHandlers(deps: CoreIpcHandlerDependencies): void {
@@ -550,4 +553,53 @@ export function registerCoreIpcHandlers(deps: CoreIpcHandlerDependencies): void 
       };
     }
   });
+
+  logger.info('IPC', 'Core IPC handlers registered');
+}
+
+/**
+ * Register i18n IPC Handlers
+ * Handles translation requests and language changes
+ */
+export function registerI18nHandlers(deps: CoreIpcHandlerDependencies): void {
+  const { getI18n } = deps;
+
+  // Translate a key
+  ipcMain.handle('i18n:translate', async (_event, key: string, options?: unknown) => {
+    try {
+      return getI18n().t(key, options as Record<string, unknown>);
+    } catch (error) {
+      logger.error('I18N_IPC', `Translation failed for key: ${key}`, error);
+      return key; // Fallback to key name
+    }
+  });
+
+  // Change language
+  ipcMain.handle('i18n:changeLanguage', async (_event, lang: string) => {
+    try {
+      await getI18n().changeLanguage(lang);
+
+      // Emit language change event to all windows
+      BrowserWindow.getAllWindows().forEach((window) => {
+        window.webContents.send('i18n:languageChanged', lang);
+      });
+
+      logger.info('I18N_IPC', `Language changed to: ${lang}`);
+    } catch (error) {
+      logger.error('I18N_IPC', `Failed to change language to: ${lang}`, error);
+      throw error;
+    }
+  });
+
+  // Get current language
+  ipcMain.handle('i18n:getLanguage', async () => {
+    try {
+      return getI18n().getCurrentLanguage();
+    } catch (error) {
+      logger.error('I18N_IPC', 'Failed to get current language', error);
+      return 'en'; // Fallback to English
+    }
+  });
+
+  logger.info('IPC', 'i18n IPC handlers registered');
 }

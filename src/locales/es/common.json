@@ -1,0 +1,45 @@
+{
+  "_meta": {
+    "type": "human",
+    "verified": false,
+    "version": "1.0"
+  },
+  "tray": {
+    "status": "Estado: {{status}}",
+    "model": "Modelo: {{model}}",
+    "no_model": "No hay Modelo Seleccionado",
+    "settings": "Configuración",
+    "control_panel": "Panel de Control",
+    "show_logs": "Ver Logs",
+    "force_restart": "Forzar Reinicio",
+    "check_updates": "Revisar Actualizaciones",
+    "quit": "Cerrar dIKtate",
+    "tooltip": "dIKtate [{{mode}}] - {{model}}\nCtrl+Alt+D: Dictar | Ctrl+Alt+A: Preguntar"
+  },
+  "notifications": {
+    "error_title": "Error",
+    "logs_error": "No se ha podido abrir la carpeta de Logs",
+    "restart_title": "Reiniciando dIKtate",
+    "restart_body": "La Aplicacion se reiniciara. Esto puede tomar unos segundos...",
+    "language_changed_title": "Idioma Cambiado",
+    "language_changed_body": "Idioma cambiado a {{lang}}. Algunos elementos se actualizaran despues de reiniciar",
+    "restart_recommended": "Se recomienda reiniciar para aplicar completamente el cambio de idioma",
+    "restart_now": "Reiniciar Ahora"
+  },
+  "buttons": {
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "ok": "OK",
+    "save": "Guardar"
+  },
+  "_translation_guide": {
+    "note": "Reemplaza el texto en ingles de arriba con las traducciones al español. Mantén {{variables}} sin cambios.",
+    "examples": {
+      "status": "Estado: {{status}}",
+      "model": "Modelo: {{model}}",
+      "settings": "Configuración",
+      "error": "Error",
+      "close": "Cerrar"
+    }
+  }
+}

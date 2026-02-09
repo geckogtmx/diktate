@@ -1,0 +1,35 @@
+{
+  "_meta": {
+    "type": "human",
+    "verified": true,
+    "version": "1.0"
+  },
+  "tray": {
+    "status": "Status: {{status}}",
+    "model": "Model: {{model}}",
+    "no_model": "No model selected",
+    "settings": "Settings",
+    "control_panel": "Control Panel",
+    "show_logs": "Show Logs",
+    "force_restart": "Force Restart",
+    "check_updates": "Check for Updates",
+    "quit": "Quit dIKtate",
+    "tooltip": "dIKtate [{{mode}}] - {{model}}\nCtrl+Alt+D: Dictate | Ctrl+Alt+A: Ask"
+  },
+  "notifications": {
+    "error_title": "Error",
+    "logs_error": "Could not open logs folder",
+    "restart_title": "Restarting dIKtate",
+    "restart_body": "The app will restart for a clean startup. This may take a few seconds...",
+    "language_changed_title": "Language Changed",
+    "language_changed_body": "Language changed to {{lang}}. Some UI elements will update after restart.",
+    "restart_recommended": "Restart recommended for full language change",
+    "restart_now": "Restart Now"
+  },
+  "buttons": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "save": "Save"
+  }
+}

@@ -44,11 +44,12 @@ import { TrayManager } from './services/trayManager';
 import { setupGlobalHotkeys, unregisterAllHotkeys } from './services/hotkeyManager';
 import { RecordingManager } from './services/recordingManager';
 import { WindowManager } from './services/windowManager';
+import { I18nService } from './services/i18n';
 import {
   syncPythonConfig as syncPythonConfigImpl,
   ConfigSyncDependencies,
 } from './services/configSync';
-import { registerCoreIpcHandlers } from './ipc/handlers';
+import { registerCoreIpcHandlers, registerI18nHandlers } from './ipc/handlers';
 import { registerApiKeyHandlers } from './ipc/apiKeyHandlers';
 import { registerOllamaHandlers } from './ipc/ollamaHandlers';
 
@@ -97,6 +98,7 @@ let trayManager: TrayManager;
 let pythonManager: PythonManager | null = null;
 let recordingManager: RecordingManager;
 let windowManager: WindowManager;
+let i18nService: I18nService;
 
 // Window creation functions moved to src/services/windowManager.ts
 
@@ -660,9 +662,15 @@ async function initialize(): Promise<void> {
       logger.setConsoleThreshold(LogLevel.INFO);
     }
 
+    // Initialize i18n service BEFORE other services
+    i18nService = new I18nService({ store, app });
+    await i18nService.initialize();
+    logger.info('MAIN', 'i18n service initialized');
+
     // Initialize tray manager
     trayManager = new TrayManager({
       store,
+      i18n: i18nService,
       getWindows: () => windowManager.getWindows(),
       createDebugWindow: () => windowManager.createDebugWindow(),
       createSettingsWindow: () => windowManager.createSettingsWindow(),
@@ -705,12 +713,32 @@ async function initialize(): Promise<void> {
           getState: () => recordingManager.getState(),
           getIcon: trayManager.getIcon.bind(trayManager),
         }),
+      getI18n: () => i18nService,
     });
     registerApiKeyHandlers({
       store,
       getPythonManager: () => pythonManager,
     });
     registerOllamaHandlers({ store });
+    registerI18nHandlers({
+      store,
+      getPythonManager: () => pythonManager,
+      getDebugWindow: () => windowManager.getDebugWindow(),
+      getIcon: trayManager.getIcon.bind(trayManager),
+      recordingManager,
+      syncPythonConfig,
+      reregisterHotkeys: () =>
+        setupGlobalHotkeys({
+          store,
+          showNotification,
+          toggleRecording: recordingManager.toggleRecording.bind(recordingManager),
+          handleRefineSelection: recordingManager.handleRefineSelection.bind(recordingManager),
+          getPythonManager: () => pythonManager,
+          getState: () => recordingManager.getState(),
+          getIcon: trayManager.getIcon.bind(trayManager),
+        }),
+      getI18n: () => i18nService,
+    });
     logger.info('MAIN', 'IPC handlers registered');
 
     // Setup global hotkeys

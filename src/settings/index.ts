@@ -4,16 +4,8 @@
  */
 
 import { state } from './store.js';
-import type { Settings } from './types.js';
 import type { UserSettings } from '../types/settings.js';
-import {
-  loadSettings,
-  setVal,
-  setCheck,
-  switchTab,
-  openExternalLink,
-  saveSetting,
-} from './utils.js';
+import { loadSettings, switchTab, openExternalLink, saveSetting } from './utils.js';
 import {
   checkOllamaStatus,
   loadOllamaModels,
@@ -24,7 +16,6 @@ import {
   pullOllamaModel,
   quickPullModel,
   initSafeModelLibrary,
-  installVerifiedModel,
 } from './ollama.js';
 import { refreshAudioDevices } from './audio.js';
 import { recordHotkey, resetHotkey } from './hotkeys.js';
@@ -46,6 +37,7 @@ import {
 } from './ui.js';
 import { initializeNotesSettings } from './notes.js';
 import { initializePrivacySettings } from './privacy.js';
+import { initializeI18n } from './i18n.js';
 
 // Dynamic window property assignment for HTML onclick handlers (SPEC_032)
 // These are necessary for HTML-based UI fragments to access functions at runtime
@@ -146,6 +138,14 @@ import { initializePrivacySettings } from './privacy.js';
  */
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('🚀 dIKtate Modular Settings Initializing...');
+
+  // 0. INITIALIZE I18N (SPEC_028) - Load translations FIRST before UI elements
+  try {
+    await initializeI18n();
+    console.log('[Init] i18n initialized');
+  } catch (e) {
+    console.error('i18n initialization failed:', e);
+  }
 
   // 1. IMMEDIATE BINDING (Non-blocking, zero-dependency)
 
@@ -263,7 +263,50 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 6. Bind Remaining Interactive Components
 
-  // General
+  // General - Language Save Button
+  document.getElementById('save-language-btn')?.addEventListener('click', async () => {
+    const select = document.getElementById('language-select') as HTMLSelectElement;
+    if (select && select.value) {
+      const newLang = select.value;
+      const statusDiv = document.getElementById('language-change-status');
+
+      try {
+        // Show loading message
+        if (statusDiv) {
+          statusDiv.textContent = '⏳ Changing language...';
+          statusDiv.style.display = 'block';
+          statusDiv.style.background = '#1a3a1a';
+          statusDiv.style.borderColor = '#22c55e';
+          statusDiv.style.color = '#4ade80';
+        }
+
+        // Change language
+        await window.i18n.changeLanguage(newLang);
+        console.log(`✓ Language changed to: ${newLang}`);
+
+        // Show success message
+        if (statusDiv) {
+          statusDiv.textContent = '✓ Language saved! Restarting app...';
+        }
+
+        // Wait 1 second to show the message, then restart
+        setTimeout(() => {
+          relaunchApp();
+        }, 1000);
+      } catch (error) {
+        console.error('Failed to change language:', error);
+        if (statusDiv) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          statusDiv.textContent = `✗ Failed: ${errorMsg}`;
+          statusDiv.style.display = 'block';
+          statusDiv.style.background = '#3a1a1a';
+          statusDiv.style.borderColor = '#c55e22';
+          statusDiv.style.color = '#de8080';
+        }
+      }
+    }
+  });
+
   document.getElementById('processing-mode')?.addEventListener('change', (e) => {
     saveSetting('processingMode', (e.target as HTMLSelectElement).value);
   });

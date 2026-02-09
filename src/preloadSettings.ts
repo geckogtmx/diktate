@@ -92,4 +92,13 @@ const settingsAPI = {
 
 contextBridge.exposeInMainWorld('settingsAPI', settingsAPI);
 
+// Expose i18n API to the renderer (SPEC_028)
+contextBridge.exposeInMainWorld('i18n', {
+  t: (key: string, options?: unknown) => ipcRenderer.invoke('i18n:translate', key, options),
+  changeLanguage: (lang: string) => ipcRenderer.invoke('i18n:changeLanguage', lang),
+  getLanguage: () => ipcRenderer.invoke('i18n:getLanguage'),
+  onLanguageChange: (callback: (lang: string) => void) =>
+    ipcRenderer.on('i18n:languageChanged', (_event, lang: string) => callback(lang)),
+});
+
 console.log('[PRELOAD:Settings] Secure settings bridge loaded');

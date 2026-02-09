@@ -60,6 +60,32 @@ A high-performance, **local-first** AI voice dictation tool for Windows. Speak n
 
 ---
 
+## 🌍 Supported Languages
+
+dIKtate supports multiple languages for the user interface and transcription:
+
+| Language | Code | Transcription | UI | Tray Menu | Status |
+|:---|:---|:---:|:---:|:---:|:---|
+| **English** | `en` | ✅ | ✅ | ✅ | Fully supported |
+| **Spanish** | `es` | ✅ | ✅ | ✅ | Fully supported |
+
+### Language Selection
+
+- **Auto-Detection**: On first launch, dIKtate automatically detects your Windows system locale and switches to Spanish if your system language is Spanish (locale code starts with `es-`).
+- **Manual Selection**: Change language anytime in Settings > General > Language.
+- **Persistence**: Your language preference is saved and persists across app restarts.
+- **Immediate Effect**: UI changes apply immediately. Some system elements (tray menu) may require app restart.
+
+### Adding New Languages
+
+To add a new language:
+1. Create a new translation file: `src/locales/{lang_code}/settings.json` (following English as reference)
+2. Add language option to the language selector in `src/settings/i18n.ts`
+3. Run validation: `pnpm i18n:validate` to ensure translation completeness
+4. Test in Settings > General > Language dropdown
+
+---
+
 ## ⚙️ Prerequisites & Installation
 
 ### System Requirements

@@ -4,6 +4,7 @@
  */
 
 export interface UserSettings {
+  language: string; // NEW: UI language (SPEC_028)
   processingMode: string;
   autoStart: boolean;
   soundFeedback: boolean;
@@ -265,6 +266,7 @@ Note:`,
  */
 
 export const USER_SETTINGS_DEFAULTS = {
+  language: 'en', // Default to English (SPEC_028)
   processingMode: 'local',
   autoStart: false,
   soundFeedback: true,

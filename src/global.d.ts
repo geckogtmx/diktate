@@ -95,10 +95,19 @@ declare global {
     invokeBackend: (command: string, args: unknown) => Promise<unknown>;
   }
 
+  // i18n API exposed from preload
+  interface I18nAPI {
+    t: (key: string, options?: unknown) => Promise<string>;
+    changeLanguage: (lang: string) => Promise<void>;
+    getLanguage: () => Promise<string>;
+    onLanguageChange: (callback: (lang: string) => void) => void;
+  }
+
   // Extend the Window interface
   interface Window {
     settingsAPI: SettingsAPI;
     electronAPI: ElectronAPI;
+    i18n: I18nAPI;
   }
 }
 

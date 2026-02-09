@@ -2,7 +2,6 @@
  * Settings Page Utilities
  */
 
-import type { Settings } from './types.js';
 import type { UserSettings } from '../types/settings.js';
 
 export function setVal(id: string, val: string) {
@@ -28,6 +27,7 @@ export function loadSettings(settings: UserSettings | undefined) {
   if (!settings) return;
 
   // General
+  setVal('language-select', settings.language || 'en');
   setVal('processing-mode', settings.processingMode || 'local');
   setCheck('auto-start', settings.autoStart || false);
 

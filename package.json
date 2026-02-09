@@ -4,9 +4,9 @@
   "description": "Privacy-first voice dictation for Windows",
   "main": "dist/main.js",
   "scripts": {
-    "dev": "tsc && tsc -p tsconfig.settings.json && copy /y src\\*.html dist\\ && copy /y src\\*.css dist\\ && copy /y src\\*.js dist\\ && electron . --dev",
+    "dev": "tsc && tsc -p tsconfig.settings.json && copy /y src\\*.html dist\\ && copy /y src\\*.css dist\\ && copy /y src\\*.js dist\\ && xcopy /E /I /Y src\\locales dist\\locales && electron . --dev",
     "start": "electron .",
-    "build": "tsc && tsc -p tsconfig.settings.json && copy /y src\\*.html dist\\ && copy /y src\\*.css dist\\ && copy /y src\\*.js dist\\ && electron .",
+    "build": "tsc && tsc -p tsconfig.settings.json && copy /y src\\*.html dist\\ && copy /y src\\*.css dist\\ && copy /y src\\*.js dist\\ && xcopy /E /I /Y src\\locales dist\\locales && electron .",
     "dist": "pnpm run package-python && electron-builder",
     "package-python": "cd python && build_backend.bat",
     "test": "node tests/smoke-test.cjs && python -m pytest tests/ python/ -v --tb=short",
@@ -19,6 +19,7 @@
     "test:ts:watch": "vitest",
     "test:ts:ui": "vitest --ui",
     "test:ts:coverage": "vitest run --coverage",
+    "i18n:validate": "node scripts/validateTranslations.js",
     "lint": "eslint \"src/**/*.{ts,js}\" --fix",
     "format": "prettier --write \"src/**/*.{ts,js,html,css}\"",
     "docs:python": "python python/tools/generate_docs.py",
@@ -68,6 +69,9 @@
   "dependencies": {
     "dotenv": "^17.2.3",
     "electron-store": "^8.2.0",
+    "i18next": "^25.8.4",
+    "i18next-fs-backend": "^2.6.1",
+    "i18next-icu": "^2.4.3",
     "zod": "^4.3.6"
   },
   "build": {
@@ -94,6 +98,10 @@
       {
         "from": "python/dist/diktate-engine.exe",
         "to": "bin/diktate-engine.exe"
+      },
+      {
+        "from": "src/locales",
+        "to": "locales"
       }
     ]
   },

@@ -12,9 +12,11 @@ import Store from 'electron-store';
 import { UserSettings } from '../types/settings';
 import { logger } from '../utils/logger';
 import { showNotification } from './notificationService';
+import type { I18nService } from './i18n';
 
 export interface TrayManagerDependencies {
   store: Store<UserSettings>;
+  i18n: I18nService;
   getWindows: () => {
     debugWindow: BrowserWindow | null;
     settingsWindow: BrowserWindow | null;
@@ -104,24 +106,24 @@ export class TrayManager {
     const currentModel =
       this.deps.store.get('localModel') ||
       this.deps.store.get('defaultOllamaModel') ||
-      'No model selected';
+      this.deps.i18n.t('tray.no_model');
 
     return [
       {
-        label: `Status: ${state}`,
+        label: this.deps.i18n.t('tray.status', { status: state }),
         enabled: false,
       },
       {
-        label: `Model: ${currentModel}`,
+        label: this.deps.i18n.t('tray.model', { model: currentModel }),
         enabled: false,
       },
       { type: 'separator' },
       {
-        label: 'Settings',
+        label: this.deps.i18n.t('tray.settings'),
         click: () => this.deps.createSettingsWindow(),
       },
       {
-        label: 'Control Panel',
+        label: this.deps.i18n.t('tray.control_panel'),
         click: () => {
           this.deps.createDebugWindow();
           const windows = this.deps.getWindows();
@@ -129,23 +131,28 @@ export class TrayManager {
         },
       },
       {
-        label: 'Show Logs',
+        label: this.deps.i18n.t('tray.show_logs'),
         click: () => {
           const logDir = path.join(app.getPath('home'), '.diktate', 'logs');
           shell.openPath(logDir).catch((err) => {
             logger.error('MAIN', 'Failed to open logs folder', err);
-            showNotification('Error', 'Could not open logs folder', true, this.getIcon.bind(this));
+            showNotification(
+              this.deps.i18n.t('notifications.error_title'),
+              this.deps.i18n.t('notifications.logs_error'),
+              true,
+              this.getIcon.bind(this)
+            );
           });
         },
       },
       { type: 'separator' },
       {
-        label: 'Force Restart',
+        label: this.deps.i18n.t('tray.force_restart'),
         click: () => {
           logger.info('MAIN', 'Force restart initiated from tray menu');
           showNotification(
-            'Restarting dIKtate',
-            'The app will restart for a clean startup. This may take a few seconds...',
+            this.deps.i18n.t('notifications.restart_title'),
+            this.deps.i18n.t('notifications.restart_body'),
             false,
             this.getIcon.bind(this)
           );
@@ -158,7 +165,7 @@ export class TrayManager {
       },
       { type: 'separator' },
       {
-        label: 'Check for Updates',
+        label: this.deps.i18n.t('tray.check_updates'),
         click: () => {
           shell.openExternal('https://github.com/diktate/diktate/releases').catch((err) => {
             logger.error('MAIN', 'Failed to open releases page', err);
@@ -167,7 +174,7 @@ export class TrayManager {
       },
       { type: 'separator' },
       {
-        label: 'Quit dIKtate',
+        label: this.deps.i18n.t('tray.quit'),
         accelerator: 'CommandOrControl+Q',
         click: () => {
           const windows = this.deps.getWindows();
@@ -205,8 +212,11 @@ export class TrayManager {
     const mode = this.deps.store.get('processingMode', 'local').toUpperCase();
     // SPEC_038: Use global localModel setting
     const model =
-      this.deps.store.get('localModel') || this.deps.store.get('defaultOllamaModel') || 'No model';
-    this.tray.setToolTip(`dIKtate [${mode}] - ${model}\nCtrl+Alt+D: Dictate | Ctrl+Alt+A: Ask`);
+      this.deps.store.get('localModel') ||
+      this.deps.store.get('defaultOllamaModel') ||
+      this.deps.i18n.t('tray.no_model');
+    const tooltip = this.deps.i18n.t('tray.tooltip', { mode, model });
+    this.tray.setToolTip(tooltip);
   }
 
   /**
