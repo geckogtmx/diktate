@@ -1,95 +1,87 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Container } from './Container';
-import { Button } from './Button';
-
-const words = ['TALKING', 'THINKING', 'WORKING', 'WINNING'];
+import { useHeroScroll } from '@/lib/animations/useHeroScroll';
 
 export function HeroSection() {
-  const [currentWord, setCurrentWord] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentWord((prev) => (prev + 1) % words.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  const { translateY } = useHeroScroll();
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/20 via-transparent to-transparent" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl opacity-40" />
-      </div>
+    <div id="hero-track" className="relative h-[200vh]">
+      <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden pt-16">
+        {/* Background */}
+        <div className="absolute inset-0 bg-[#020617] z-0"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#2563eb]/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-      <Container className="relative">
-        <div className="text-center">
+        <div className="section-container relative z-10 text-center">
           {/* Badge */}
-          <div className="inline-block mb-8 px-4 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 backdrop-blur">
-            <p className="text-sm font-semibold text-blue-300">
-              ✨ LOCAL. PRIVATE. NO SUBSCRIPTIONS.
-            </p>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 animate-fade-in-up">
+            <span className="w-2 h-2 rounded-full bg-[#f97316] animate-pulse"></span>
+            <span className="text-sm font-medium text-white font-mono tracking-widest">
+              LOCAL. PRIVATE. NO SUBSCRIPTIONS.
+            </span>
           </div>
 
-          {/* Main Heading with Word Carousel */}
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight">
-            <span className="text-white">Your AI is</span>
-            <br />
-            <span className="min-h-[1.2em] inline-block">
-              <span className="text-blue-400 transition-all duration-500 inline-block">
-                {words[currentWord]}
-              </span>
-            </span>
+          {/* Title with Word Carousel */}
+          <h1 className="text-5xl md:text-8xl font-bold tracking-tight mb-6 leading-[0.9] text-white">
+            STOP TYPING. <br />
+            START{' '}
+            <div className="inline-grid h-[0.9em] overflow-hidden align-bottom translate-y-[0.05em] text-left">
+              <div
+                id="hero-words"
+                className="text-[#2563eb] will-change-transform flex flex-col"
+                style={{ transform: `translateY(${translateY}em)` }}
+              >
+                <div className="h-[0.9em] mb-[1em] flex items-center">TALKING.</div>
+                <div className="h-[0.9em] mb-[1em] flex items-center">THINKING.</div>
+                <div className="h-[0.9em] mb-[1em] flex items-center">WORKING.</div>
+                <div className="h-[0.9em] mb-[1em] flex items-center">WINNING.</div>
+              </div>
+            </div>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-            The fastest voice dictation for Windows. Local AI means no cloud, no lag, and complete privacy.
+          <p className="text-xl text-[#94a3b8] max-w-2xl mx-auto mb-10 leading-relaxed italic">
+            The only open-source, local-first voice engine for Windows. <br />
+            Your ideas never leave your sight! <br />
+            <span className="text-[#2563eb] not-italic font-mono text-sm tracking-tight mt-4 block">
+              -- &quot;Work at the speed of your thoughts, not the speed of your fingers&quot; --
+            </span>
           </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Button href="#" variant="secondary" size="lg">
+          {/* CTAs */}
+          <div className="flex flex-col items-center gap-8">
+            {/* Primary Action: Windows */}
+            <button className="btn-primary justify-center w-full sm:w-auto text-lg px-12 py-5 shadow-glow hover:scale-105 transition-all">
               Download for Windows
-            </Button>
-            <Button href="/login" variant="outline" size="lg">
-              Try Online Dashboard
-            </Button>
-          </div>
+              <span className="text-xs font-normal opacity-80 block ml-2 border-l border-white/20 pl-2">
+                v0.1 • Free
+              </span>
+            </button>
 
-          {/* Platform Badges */}
-          <div className="flex flex-wrap justify-center gap-3 text-sm">
-            <div className="px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700/50 text-gray-300">
-              💻 macOS Coming Soon
+            {/* Platform Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-8 text-xs font-medium text-[#94a3b8]/60 uppercase tracking-widest">
+              <div className="flex items-center gap-2 group hover:text-white transition-colors cursor-default">
+                <span className="opacity-50">macOS</span>
+                <span className="px-1.5 py-0.5 rounded border border-white/10 text-[8px] group-hover:border-white/20">
+                  Soon™
+                </span>
+              </div>
+              <div className="flex items-center gap-2 group hover:text-white transition-colors cursor-default">
+                <span className="opacity-50">iOS</span>
+                <span className="px-1.5 py-0.5 rounded border border-white/10 text-[8px] group-hover:border-white/20">
+                  Soon™
+                </span>
+              </div>
+              <div className="flex items-center gap-2 group hover:text-white transition-colors cursor-default">
+                <span className="opacity-50">Android</span>
+                <span className="px-1.5 py-0.5 rounded border border-white/10 text-[8px] group-hover:border-white/20">
+                  Soon™
+                </span>
+              </div>
             </div>
-            <div className="px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700/50 text-gray-300">
-              📱 iOS Coming Soon
-            </div>
-            <div className="px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700/50 text-gray-300">
-              🤖 Android Coming Soon
-            </div>
-          </div>
-
-          {/* Scroll Indicator */}
-          <div className="mt-20 animate-bounce">
-            <svg
-              className="w-6 h-6 mx-auto text-blue-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 14l-7 7m0 0l-7-7m7 7V3"
-              />
-            </svg>
           </div>
         </div>
-      </Container>
-    </section>
+      </div>
+    </div>
   );
 }

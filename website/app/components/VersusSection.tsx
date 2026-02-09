@@ -1,123 +1,104 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Container } from './Container';
-import { useScrollReveal } from '@/lib/animations/useScrollReveal';
-import { SectionHeading } from './SectionHeading';
-
-const comparisonData = [
-  {
-    metric: 'Privacy',
-    diktate: '100% Local',
-    others: 'Sent to servers',
-  },
-  {
-    metric: 'Speed',
-    diktate: '~3 seconds',
-    others: '6-12 seconds',
-  },
-  {
-    metric: 'Consistency',
-    diktate: 'Hardware-Bound',
-    others: 'Varies by day',
-  },
-  {
-    metric: 'Censorship',
-    diktate: 'Zero Restrictions',
-    others: 'Aggressive Filtering',
-  },
-  {
-    metric: 'Cost',
-    diktate: '$25 once',
-    others: '$240/year',
-  },
-  {
-    metric: 'Word Limits',
-    diktate: 'Unlimited',
-    others: 'Capped at 60k',
-  },
-  {
-    metric: 'Offline Use',
-    diktate: 'Works in a Bunker',
-    others: 'Requires WiFi',
-  },
-];
+import { useVersusScroll } from '@/lib/animations/useVersusScroll';
 
 export function VersusSection() {
-  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
-  const [visibleRows, setVisibleRows] = useState<boolean[]>([]);
-
-  useEffect(() => {
-    if (!isVisible) {
-      return;
-    }
-
-    const timeouts: NodeJS.Timeout[] = [];
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setVisibleRows(Array(comparisonData.length).fill(false));
-
-    comparisonData.forEach((_, index) => {
-      const timeout = setTimeout(() => {
-        setVisibleRows((prev) => {
-          const newRows = [...prev];
-          newRows[index] = true;
-          return newRows;
-        });
-      }, index * 100);
-      timeouts.push(timeout);
-    });
-
-    return () => {
-      timeouts.forEach(timeout => clearTimeout(timeout));
-    };
-  }, [isVisible]);
+  const { visibleRows } = useVersusScroll();
 
   return (
-    <section
-      id="comparison"
-      ref={ref}
-      className="py-20 sm:py-32 relative overflow-hidden"
-    >
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-900/10 to-transparent" />
-      </div>
+    <div id="versus-track" className="relative h-[250vh]">
+      <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
+        <div className="section-container relative z-10 w-full max-w-5xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">dIKtate Versus The Cloud.</h2>
+            <p className="text-muted">Why settle for rental when you can own the factory?</p>
+          </div>
 
-      <Container>
-        <SectionHeading
-          title="vs The Others"
-          description="See how dIKtate compares to Dragon, Talon, and other dictation tools"
-          centered
-          className="mb-16 sm:mb-24"
-        />
-
-        <div className="max-w-4xl mx-auto overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-4 px-4 text-gray-400 font-semibold">Metric</th>
-                <th className="text-left py-4 px-4 text-blue-300 font-semibold">dIKtate</th>
-                <th className="text-left py-4 px-4 text-gray-400 font-semibold">The Others</th>
-              </tr>
-            </thead>
-            <tbody>
-              {comparisonData.map((row, index) => (
+          <div className="card overflow-hidden bg-black/40 backdrop-blur-xl border-white/5 p-0">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/10 bg-white/5">
+                  <th className="py-4 px-6 text-sm font-mono uppercase tracking-widest text-muted">Feature</th>
+                  <th className="py-4 px-6 text-sm font-mono uppercase tracking-widest text-muted">The Others</th>
+                  <th className="py-4 px-6 text-sm font-mono uppercase tracking-widest text-primary">dIKtate</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm md:text-base">
                 <tr
-                  key={row.metric}
+                  id="vs-row-1"
                   className={`border-b border-white/5 transition-all duration-500 ${
-                    visibleRows[index]
-                      ? 'opacity-100'
-                      : 'opacity-0'
+                    visibleRows >= 1 ? 'opacity-100 bg-white/5' : 'opacity-20'
                   }`}
                 >
-                  <td className="py-4 px-4 text-white font-medium">{row.metric}</td>
-                  <td className="py-4 px-4 text-green-400">✓ {row.diktate}</td>
-                  <td className="py-4 px-4 text-red-400">✗ {row.others}</td>
+                  <td className="py-4 px-6 text-white font-medium">Privacy</td>
+                  <td className="py-4 px-6 text-muted">Sent to servers</td>
+                  <td className="py-4 px-6 text-primary font-bold">100% Local (Air-Gapped)</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+                <tr
+                  id="vs-row-2"
+                  className={`border-b border-white/5 transition-all duration-500 ${
+                    visibleRows >= 2 ? 'opacity-100 bg-white/5' : 'opacity-20'
+                  }`}
+                >
+                  <td className="py-4 px-6 text-white font-medium">Speed</td>
+                  <td className="py-4 px-6 text-[#94a3b8]">800-1200ms Latency/Inference</td>
+                  <td className="py-4 px-6 text-[#2563eb] font-bold">~400ms (Local GPU Inference - gemma3:1b *)</td>
+                </tr>
+                <tr
+                  id="vs-row-3"
+                  className={`border-b border-white/5 transition-all duration-500 ${
+                    visibleRows >= 3 ? 'opacity-100 bg-white/5' : 'opacity-20'
+                  }`}
+                >
+                  <td className="py-4 px-6 text-white font-medium">Consistency</td>
+                  <td className="py-4 px-6 text-muted">Varies by Web Traffic</td>
+                  <td className="py-4 px-6 text-primary font-bold">Hardware-Bound (Stable)</td>
+                </tr>
+                <tr
+                  id="vs-row-4"
+                  className={`border-b border-white/5 transition-all duration-500 ${
+                    visibleRows >= 4 ? 'opacity-100 bg-white/5' : 'opacity-20'
+                  }`}
+                >
+                  <td className="py-4 px-6 text-white font-medium">Censorship</td>
+                  <td className="py-4 px-6 text-muted">Aggressive Filtering</td>
+                  <td className="py-4 px-6 text-primary font-bold">Zero Restrictions</td>
+                </tr>
+                <tr
+                  id="vs-row-5"
+                  className={`border-b border-white/5 transition-all duration-500 ${
+                    visibleRows >= 5 ? 'opacity-100 bg-white/5' : 'opacity-20'
+                  }`}
+                >
+                  <td className="py-4 px-6 text-white font-medium">Cost</td>
+                  <td className="py-4 px-6 text-muted">$240 / year</td>
+                  <td className="py-4 px-6 text-primary font-bold">$10 - $25 (Once)</td>
+                </tr>
+                <tr
+                  id="vs-row-6"
+                  className={`border-b border-white/5 transition-all duration-500 ${
+                    visibleRows >= 6 ? 'opacity-100 bg-white/5' : 'opacity-20'
+                  }`}
+                >
+                  <td className="py-4 px-6 text-white font-medium">Word Limits</td>
+                  <td className="py-4 px-6 text-[#94a3b8]">Capped</td>
+                  <td className="py-4 px-6 text-[#2563eb] font-bold">Unlimited while on Local</td>
+                </tr>
+                <tr
+                  id="vs-row-7"
+                  className={`transition-all duration-500 ${
+                    visibleRows >= 7 ? 'opacity-100 bg-white/5' : 'opacity-20'
+                  }`}
+                >
+                  <td className="py-4 px-6 text-white font-medium">Offline Use</td>
+                  <td className="py-4 px-6 text-muted">Requires WiFi</td>
+                  <td className="py-4 px-6 text-primary font-bold">Works in a Bunker</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-      </Container>
-    </section>
+      </div>
+    </div>
   );
 }

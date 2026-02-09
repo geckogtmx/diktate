@@ -1,57 +1,47 @@
-import React from 'react';
-import { Container } from './Container';
+'use client';
 
-const logos = [
-  { name: 'Terminal', icon: '💻' },
-  { name: 'Cursor', icon: '✏️' },
-  { name: 'VS Code', icon: '📝' },
-  { name: 'Google Docs', icon: '📄' },
-  { name: 'Discord', icon: '💬' },
-  { name: 'Slack', icon: '🗨️' },
-  { name: 'Email', icon: '✉️' },
-  { name: 'Excel', icon: '📊' },
+const apps = [
+  'TERMINAL',
+  'CURSOR',
+  'ANTIGRAVITY',
+  'GOOGLE DOCS',
+  'WHATSAPP',
+  'NOTEPAD',
+  'VS CODE',
+  'SLACK',
+  'EXCEL',
+  'DISCORD',
+  'OUTLOOK',
+  'CHROME',
+  'ARC',
 ];
 
 export function LogoScroll() {
   return (
-    <section className="py-16 sm:py-24 relative overflow-hidden bg-black/40">
-      <Container>
-        <p className="text-center text-gray-400 mb-12 text-sm uppercase tracking-wider">
-          Works everywhere you type
-        </p>
+    <>
+      {/* Header Text */}
+      <div className="text-center mt-32 mb-8 text-white/40 font-mono text-xs uppercase tracking-[0.3em] reveal">
+        Use it with...
+      </div>
 
-        {/* Scroll Container */}
-        <div className="relative h-20">
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black z-10 pointer-events-none" />
-
-          <div className="flex items-center h-full gap-12 animate-scroll">
-            {[...logos, ...logos].map((logo, index) => (
-              <div
-                key={index}
-                className="flex flex-col items-center gap-2 flex-shrink-0"
-              >
-                <div className="text-4xl">{logo.icon}</div>
-                <div className="text-xs text-gray-400">{logo.name}</div>
-              </div>
+      {/* Infinite Scroll Section */}
+      <section className="py-12 border-y border-white/5 bg-black/20 overflow-hidden">
+        <div className="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
+          <ul className="flex items-center justify-center md:justify-start [&_li]:mx-8 [&_img]:max-w-none animate-infinite-scroll text-2xl font-bold text-white/20 whitespace-nowrap">
+            {apps.map((app, index) => (
+              <li key={index}>{app}</li>
             ))}
-          </div>
+          </ul>
+          <ul
+            className="flex items-center justify-center md:justify-start [&_li]:mx-8 [&_img]:max-w-none animate-infinite-scroll text-2xl font-bold text-white/20 whitespace-nowrap"
+            aria-hidden="true"
+          >
+            {apps.map((app, index) => (
+              <li key={index}>{app}</li>
+            ))}
+          </ul>
         </div>
-      </Container>
-
-      <style jsx>{`
-        @keyframes scroll {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-
-        .animate-scroll {
-          animation: scroll 20s linear infinite;
-        }
-      `}</style>
-    </section>
+      </section>
+    </>
   );
 }

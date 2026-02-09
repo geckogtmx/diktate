@@ -1,85 +1,71 @@
 'use client';
 
-import React from 'react';
-import { Container } from './Container';
-import { GlassCard } from './GlassCard';
-import { useScrollReveal } from '@/lib/animations/useScrollReveal';
-
 export function TokensSection() {
-  const { ref, isVisible } = useScrollReveal({ threshold: 0.2 });
-
   return (
-    <section ref={ref} className="py-20 sm:py-32 relative overflow-hidden">
-      <Container>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Left: Text */}
-          <div className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
-            <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
-              Your Tokens, Your Choice
+    <div id="tokens-track" className="relative h-[200vh]">
+      <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-30"></div>
+        <div className="section-container grid md:grid-cols-2 gap-12 items-center relative z-10">
+          {/* Text (Left) */}
+          <div>
+            <div className="inline-block mb-4 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-white text-[10px] font-mono tracking-widest">
+              SOVEREIGNTY
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white text-balance">
+              Your Tokens.
+              <br />
+              Your Choice.
             </h2>
-            <p className="text-lg text-gray-400 mb-6">
-              Complete control over your AI provider. Use local models, or bring your own API keys.
+            <p className="text-xl text-muted mb-8">
+              Use local, use API Keys, its your choice, not theirs. Anthropic, Google, Deepseek, or local Ollama —
+              dIKtate unifies them all.
             </p>
-            <ul className="space-y-3">
-              <li className="flex gap-3 items-start">
-                <span className="text-green-400 mt-1">✓</span>
-                <span className="text-gray-300">Switch between Ollama, Anthropic, Google, OpenAI</span>
+            <ul className="space-y-4 text-muted">
+              <li className="flex items-center gap-3">
+                <span className="text-orange-400">✓</span> <strong>BYO Keys</strong> - No markup, ever.
               </li>
-              <li className="flex gap-3 items-start">
-                <span className="text-green-400 mt-1">✓</span>
-                <span className="text-gray-300">Encryption enabled - keys never leave your machine</span>
+              <li className="flex items-center gap-3">
+                <span className="text-orange-400">✓</span> <strong>Local First</strong> - Ollama & Llama.cpp
               </li>
-              <li className="flex gap-3 items-start">
-                <span className="text-green-400 mt-1">✓</span>
-                <span className="text-gray-300">Pay only for what you use, no subscriptions</span>
+              <li className="flex items-center gap-3">
+                <span className="text-orange-400">✓</span> <strong>Infinite Flexibility</strong> - Switch in seconds
               </li>
             </ul>
           </div>
 
-          {/* Right: Demo Card */}
-          <div className={`transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}>
-            <GlassCard glow>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">LLM Provider</span>
-                  <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
+          {/* Card (Right) */}
+          <div className="card border-primary/20 bg-black/50 p-6 font-mono text-xs shadow-2xl relative overflow-hidden flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-white/10 pb-2">
+              <span className="text-muted uppercase tracking-widest">Provider Settings</span>
+              <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span>
+            </div>
 
-                <div className="space-y-2">
-                  <div className="p-3 rounded-lg bg-blue-500/20 border border-blue-500/30">
-                    <div className="text-sm font-mono text-blue-300">Ollama (Local)</div>
-                    <div className="text-xs text-gray-400 mt-1">Running on port 11434</div>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-gray-700/20 border border-gray-600/30 opacity-60">
-                    <div className="text-sm font-mono text-gray-400">Anthropic Claude</div>
-                    <div className="text-xs text-gray-500 mt-1">API key required</div>
-                  </div>
-
-                  <div className="p-3 rounded-lg bg-gray-700/20 border border-gray-600/30 opacity-60">
-                    <div className="text-sm font-mono text-gray-400">Google Gemini</div>
-                    <div className="text-xs text-gray-500 mt-1">API key required</div>
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-white/10">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414L8.586 5 5.293 1.707a1 1 0 011.414-1.414L10 3.586l3.293-3.293a1 1 0 111.414 1.414L11.414 5l3.293 3.293a1 1 0 01-1.414 1.414L10 6.414l-3.293 3.293a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-xs text-green-400">Encryption enabled</span>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    Keys never leave this machine
-                  </div>
+            <div className="space-y-4 px-2 py-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] text-muted uppercase">Active Model</label>
+                <div className="bg-white/5 border border-white/10 p-2 rounded flex justify-between" id="token-model-display">
+                  <span className="text-primary">gemma3:4b (Local)</span>
+                  <span className="text-muted">▼</span>
                 </div>
               </div>
-            </GlassCard>
+
+              <div className="flex flex-col gap-2 opacity-40 transition-opacity" id="token-anthropic">
+                <label className="text-[10px] text-muted uppercase">Anthropic Key</label>
+                <div className="bg-white/5 border border-white/10 p-2 rounded text-muted">sk-ant-••••••••••••••••</div>
+              </div>
+
+              <div className="flex flex-col gap-2 opacity-40 transition-opacity" id="token-google">
+                <label className="text-[10px] text-muted uppercase">Google AI Key</label>
+                <div className="bg-white/5 border border-white/10 p-2 rounded text-muted">AIzaSy••••••••••••••••</div>
+              </div>
+            </div>
+
+            <div className="mt-auto pt-4 border-t border-white/10 text-center text-[10px] text-muted italic">
+              &quot;Encryption enabled. Keys never leave this machine.&quot;
+            </div>
           </div>
         </div>
-      </Container>
-    </section>
+      </div>
+    </div>
   );
 }
