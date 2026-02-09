@@ -5,11 +5,12 @@ import { createClient } from '@/lib/supabase/client'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function LoginPage() {
     const supabase = createClient()
     const router = useRouter()
+    const [isMounted, setIsMounted] = useState(false)
 
     useEffect(() => {
         // Check if user is already logged in
@@ -28,8 +29,17 @@ export default function LoginPage() {
             }
         })
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsMounted(true)
+
         return () => subscription.unsubscribe()
     }, [supabase, router])
+
+    if (!isMounted) {
+        return null
+    }
+
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : 'https://dikta.me/auth/callback'
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center p-4">
@@ -66,7 +76,7 @@ export default function LoginPage() {
                             },
                         }}
                         providers={['google', 'github']}
-                        redirectTo={`${window.location.origin}/auth/callback`}
+                        redirectTo={redirectUrl}
                         magicLink={true}
                         view="sign_in"
                         showLinks={true}
