@@ -102,6 +102,7 @@ site/dist/
 site/node_modules/
 sitex/dist/
 sitex/node_modules/
+sitex-backup/
 mobile_site/dist/
 mobile_site/node_modules/
 .shared/
