@@ -67,7 +67,7 @@
     ]
   },
   "dependencies": {
-    "dotenv": "^17.2.3",
+    "dotenv": "^17.2.4",
     "electron-store": "^8.2.0",
     "i18next": "^25.8.4",
     "i18next-fs-backend": "^2.6.1",
