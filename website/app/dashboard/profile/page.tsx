@@ -30,7 +30,6 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
     fetchProfile();
@@ -102,7 +101,7 @@ export default function ProfilePage() {
       }
 
       // Sign out and redirect to home
-      await supabase.auth.signOut();
+      await createClient().auth.signOut();
       router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete account');
