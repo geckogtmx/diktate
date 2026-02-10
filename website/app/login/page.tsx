@@ -8,11 +8,12 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export default function LoginPage() {
-    const supabase = createClient()
     const router = useRouter()
     const [isMounted, setIsMounted] = useState(false)
 
     useEffect(() => {
+        const supabase = createClient()
+
         // Check if user is already logged in
         const checkUser = async () => {
             const { data: { user } } = await supabase.auth.getUser()
@@ -29,15 +30,16 @@ export default function LoginPage() {
             }
         })
 
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsMounted(true)
 
         return () => subscription.unsubscribe()
-    }, [supabase, router])
+    }, [router])
 
     if (!isMounted) {
         return null
     }
+
+    const supabase = createClient()
 
     const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : 'https://dikta.me/auth/callback'
 
