@@ -257,15 +257,25 @@ class CloudProcessor:
             logger.warning(f"Invalid model ID format: {self.model}, using default")
             self.model = "gemini-2.5-flash"
 
-        # Ensure model has 'models/' prefix if not already present
-        if not self.model.startswith("models/"):
-            self.model = f"models/{self.model}"
+        # Custom Model ID Handling (SPEC_042)
+        # We do NOT force 'models/' prefix anymore to keep UI clean
+        # The API endpoint construction below will handle it if needed, or we assume
+        # the user/config provides the correct ID.
+        # if not self.model.startswith("models/"):
+        #    self.model = f"models/{self.model}"
 
         self.prompt = prompt or get_prompt(DEFAULT_CLEANUP_PROMPT, self.model)
 
         # Use stable v1beta model endpoint
+        # Gemini API expects 'models/' prefix in the URL path for some endpoints,
+        # but the client library or direct REST calls might vary.
+        # For the raw REST URL, we'll ensure it's correct here:
+        model_path = self.model
+        if not model_path.startswith("models/") and not model_path.startswith("tunedModels/"):
+            model_path = f"models/{model_path}"
+
         self.api_url = (
-            f"https://generativelanguage.googleapis.com/v1beta/{self.model}:generateContent"
+            f"https://generativelanguage.googleapis.com/v1beta/{model_path}:generateContent"
         )
         self.mode = "standard"
 

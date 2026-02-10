@@ -254,9 +254,9 @@ class PipelineExecutor:
             # End total timing and log all metrics
             h.perf.end("total")
             metrics = h.perf.get_metrics()
-            metrics["charCount"] = len(processed_text)  # Add char count for token stats
+            metrics["wordCount"] = len(processed_text.split()) if processed_text else 0
             logger.info(
-                f"[PERF] Session complete - Total: {metrics.get('total', 0):.0f}ms, Chars: {metrics['charCount']}"
+                f"[PERF] Session complete - Total: {metrics.get('total', 0):.0f}ms, Words: {metrics['wordCount']}"
             )
             h._emit_event("performance-metrics", metrics)
 
@@ -265,7 +265,7 @@ class PipelineExecutor:
                 "dictation-success",
                 {
                     "processed_text": processed_text,
-                    "char_count": len(processed_text),
+                    "word_count": len(processed_text.split()) if processed_text else 0,
                     "mode": h.current_mode,
                 },
             )
@@ -274,7 +274,9 @@ class PipelineExecutor:
             h.perf.save_to_json(self.session_timestamp, self.log_dir)
 
             # Record session stats (A.2)
-            h.session_stats.record_success(len(processed_text), metrics.get("total", 0))
+            h.session_stats.record_success(
+                len(processed_text.split()) if processed_text else 0, metrics.get("total", 0)
+            )
 
             # Log to history database (SPEC_029 + HOTFIX_002)
             if h.history_manager:

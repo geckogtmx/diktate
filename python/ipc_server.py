@@ -1270,7 +1270,9 @@ class IpcServer:
 
                 if self.processor:
                     if hasattr(self.processor, "model") and self.processor.model:
-                        data["processor"] = self.processor.model.upper()
+                        # SPEC_042: Remove 'models/' prefix for cleaner UI display (e.g. Gemini)
+                        model_name = self.processor.model.replace("models/", "")
+                        data["processor"] = model_name.upper()
                     elif hasattr(self.processor, "model") and not self.processor.model:
                         data["processor"] = "NO MODEL SELECTED"
                     elif hasattr(self.processor, "api_url") and "google" in self.processor.api_url:
@@ -1285,7 +1287,9 @@ class IpcServer:
                         data["processor"] = "LOCAL LLM"
                 elif self.local_global_model:
                     # Processor not loaded yet, but show configured default model
-                    data["processor"] = self.local_global_model.upper()
+                    # SPEC_042: Remove 'models/' prefix here too, model names should be clean in UI
+                    model_name = self.local_global_model.replace("models/", "")
+                    data["processor"] = model_name.upper()
                 else:
                     data["processor"] = "NO MODEL SELECTED"
 

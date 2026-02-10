@@ -94,6 +94,32 @@ if (currentPrompt && !currentPrompt.includes('{text}')) {
 // Run the dual-profile migration (SPEC_034_EXTRAS)
 migrateToDualProfileSystem(store);
 
+// Migration: Strip 'models/' prefix from cloud model settings (SPEC_042 UI fix)
+const cloudModelKeys = [
+  'cloudModel_standard',
+  'cloudModel_prompt',
+  'cloudModel_professional',
+  'cloudModel_ask',
+  'cloudModel_refine',
+  'cloudModel_refine_instruction',
+  'cloudModel_raw',
+  'cloudModel_note',
+] as const;
+
+let migratedModels = false;
+for (const key of cloudModelKeys) {
+  const currentValue = store.get(key);
+  if (currentValue && typeof currentValue === 'string' && currentValue.startsWith('models/')) {
+    const cleanValue = currentValue.replace('models/', '');
+    store.set(key, cleanValue);
+    migratedModels = true;
+    logger.info('MAIN', `Migrated ${key}: ${currentValue} → ${cleanValue}`);
+  }
+}
+if (migratedModels) {
+  logger.info('MAIN', 'Cloud model settings migrated to remove models/ prefix');
+}
+
 let trayManager: TrayManager;
 let pythonManager: PythonManager | null = null;
 let recordingManager: RecordingManager;

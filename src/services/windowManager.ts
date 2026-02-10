@@ -60,10 +60,13 @@ export class WindowManager {
 
     this.debugWindow = new BrowserWindow({
       width: 400,
-      height: 600,
+      height: 265,
       show: true,
       alwaysOnTop: true,
-      frame: true,
+      frame: false,
+      resizable: false,
+      maximizable: false,
+      fullscreenable: false,
       title: 'dIKtate Status',
       icon: this.deps.getIcon('idle'),
       webPreferences: {

@@ -104,12 +104,12 @@ export async function syncPythonConfig(deps: ConfigSyncDependencies): Promise<vo
     displayModel =
       cloudModel ||
       (cloudProvider === 'gemini'
-        ? 'Gemini 2.0 Flash'
+        ? ''
         : cloudProvider === 'anthropic'
-          ? 'Claude 3.5 Haiku'
+          ? ''
           : cloudProvider === 'openai'
-            ? 'GPT-4o Mini'
-            : 'Cloud Default');
+            ? ''
+            : '');
   } else {
     // SPEC_038: Display the global local model (all modes use the same one)
     displayModel = globalLocalModel;
@@ -198,11 +198,11 @@ export async function syncPythonConfig(deps: ConfigSyncDependencies): Promise<vo
         const cloudModel = cloudProfiles[defaultMode]?.model || '';
 
         if (cloudProvider === 'gemini') {
-          processorDisplay = cloudModel || 'Gemini 2.0 Flash';
+          processorDisplay = cloudModel || '';
         } else if (cloudProvider === 'anthropic') {
-          processorDisplay = cloudModel || 'Claude 3.5 Haiku';
+          processorDisplay = cloudModel || '';
         } else if (cloudProvider === 'openai') {
-          processorDisplay = cloudModel || 'GPT-4o Mini';
+          processorDisplay = cloudModel || '';
         }
       }
 

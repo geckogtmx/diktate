@@ -20,6 +20,15 @@ export interface PerformanceMetricsEvent {
   processing_time?: number;
   total_time?: number;
   tokens_per_sec?: number;
+  start_time?: number;
+  end_time?: number;
+  recording?: number;
+  transcription?: number;
+  processing?: number;
+  injection?: number;
+  total?: number;
+  wordCount?: number;
+  charCount?: number;
 }
 
 /**
@@ -31,6 +40,7 @@ export interface DictationSuccessEvent {
   mode: string;
   duration?: number;
   char_count?: number;
+  word_count?: number;
 }
 
 /**

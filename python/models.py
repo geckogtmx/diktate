@@ -33,15 +33,15 @@ class SessionStats:
         self.dictation_count: int = 0
         self.success_count: int = 0
         self.error_count: int = 0
-        self.total_chars: int = 0
+        self.total_words: int = 0
         self.total_time_ms: float = 0.0
         self.session_start: float = time.time()
 
-    def record_success(self, chars: int, time_ms: float) -> None:
+    def record_success(self, words: int, time_ms: float) -> None:
         """Record a successful dictation"""
         self.dictation_count += 1
         self.success_count += 1
-        self.total_chars += chars
+        self.total_words += words
         self.total_time_ms += time_ms
 
     def record_error(self) -> None:
@@ -57,7 +57,7 @@ class SessionStats:
             "dictations": self.dictation_count,
             "successes": self.success_count,
             "errors": self.error_count,
-            "total_chars": self.total_chars,
+            "total_words": self.total_words,
             "avg_time_ms": round(avg_time, 0),
             "session_duration_s": round(session_duration, 1),
         }

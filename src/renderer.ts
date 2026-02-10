@@ -43,6 +43,7 @@ interface PerformanceMetrics {
   injection?: number;
   total?: number;
   charCount?: number;
+  wordCount?: number;
 }
 
 // DOM Elements
@@ -52,9 +53,10 @@ const liveMessage = document.getElementById('live-message');
 
 // Stats elements
 const statSessions = document.getElementById('stat-sessions');
-const statChars = document.getElementById('stat-chars');
+const statWords = document.getElementById('stat-words');
 const statSpeed = document.getElementById('stat-speed');
 const statLast = document.getElementById('stat-last');
+const statTokens = document.getElementById('stat-tokens');
 
 // Badge elements
 const badgeTranscriber = document.getElementById('badge-transcriber');
@@ -81,6 +83,11 @@ const toggleAdditionalKey = document.getElementById(
 const toggleRefineMode = document.getElementById('toggle-refine-mode') as HTMLInputElement | null;
 const refineModeLabel = document.getElementById('refine-mode-label') as HTMLElement | null;
 
+// Dynamic labels
+const labelSound = document.getElementById('label-sound');
+const labelCloud = document.getElementById('label-cloud');
+const labelKey = document.getElementById('label-key');
+
 // Mode selection elements
 const modeBtns: Record<string, HTMLElement | null> = {
   standard: document.getElementById('mode-standard'),
@@ -91,18 +98,18 @@ const modeBtns: Record<string, HTMLElement | null> = {
 
 // Session statistics
 let sessionCount = 0;
-let totalChars = 0;
+let totalWords = 0;
 let totalTime = 0;
 
 // Live status messages for each state
 const STATUS_MESSAGES: Record<string, { text: string; message: string; typing?: boolean }> = {
-  idle: { text: 'READY', message: 'Waiting for input...' },
-  recording: { text: 'LISTENING', message: 'Speak clearly', typing: true },
-  transcribing: { text: 'TRANSCRIBING', message: 'Converting speech to text', typing: true },
-  processing: { text: 'THINKING', message: 'Polishing your text', typing: true },
-  injecting: { text: 'TYPING', message: 'Inserting text', typing: true },
-  warmup: { text: 'WARMING UP', message: 'Loading model into memory...', typing: true },
-  error: { text: 'ERROR', message: 'Something went wrong' },
+  idle: { text: 'READY', message: '' },
+  recording: { text: 'LISTENING', message: '', typing: true },
+  transcribing: { text: 'TRANSCRIBING', message: '', typing: true },
+  processing: { text: 'THINKING', message: '', typing: true },
+  injecting: { text: 'TYPING', message: '', typing: true },
+  warmup: { text: 'WARMING UP', message: '', typing: true },
+  error: { text: 'ERROR', message: '' },
 };
 
 function setStatus(state: string) {
@@ -164,17 +171,24 @@ function updatePerformanceMetrics(metrics: PerformanceMetrics) {
     if (statSessions) statSessions.textContent = String(sessionCount);
     if (statLast) statLast.textContent = `${(metrics.total / 1000).toFixed(1)}s`;
 
-    // Calculate speed (chars per second) - need charCount from this session
-    if (metrics.charCount && metrics.total > 0) {
-      const charsPerSec = metrics.charCount / (metrics.total / 1000);
-      if (statSpeed) statSpeed.textContent = `${charsPerSec.toFixed(0)}/s`;
+    // Calculate speed (WPM)
+    if (metrics.wordCount !== undefined && metrics.total && metrics.total > 0) {
+      const durationMin = metrics.total / 1000 / 60;
+      const wpm = metrics.wordCount / durationMin;
+      if (statSpeed) statSpeed.textContent = `${wpm.toFixed(0)}`;
     }
   }
 
-  // Update char count
-  if (metrics.charCount !== undefined) {
-    totalChars += metrics.charCount;
-    if (statChars) statChars.textContent = totalChars.toLocaleString();
+  // Update word count
+  if (metrics.wordCount !== undefined) {
+    totalWords += metrics.wordCount;
+    if (statWords) statWords.textContent = totalWords.toLocaleString();
+
+    // Estimate tokens (approx 1.3 tokens per word)
+    if (statTokens) {
+      const estimatedTokens = Math.round(totalWords * 1.3);
+      statTokens.textContent = estimatedTokens.toLocaleString();
+    }
   }
 }
 
@@ -194,11 +208,24 @@ function addLogEntry(level: string, message: string, _data?: Record<string, unkn
   // Log UI Removed - internal logging only
 }
 
+// Helper to update labels
+function updateLabel(
+  element: HTMLElement | null,
+  condition: boolean,
+  textTrue: string,
+  textFalse: string
+) {
+  if (element) {
+    element.textContent = condition ? textTrue : textFalse;
+  }
+}
+
 // Setup toggle handlers
 function setupToggles() {
   if (toggleSound) {
     toggleSound.addEventListener('change', () => {
       window.electronAPI?.setSetting?.('soundFeedback', toggleSound.checked);
+      updateLabel(labelSound, toggleSound.checked, 'Sound: On', 'Sound: Off');
       addLogEntry('INFO', `Sound feedback: ${toggleSound.checked ? 'ON' : 'OFF'}`);
     });
   }
@@ -206,12 +233,14 @@ function setupToggles() {
     toggleCloud.addEventListener('change', () => {
       const mode = toggleCloud.checked ? 'cloud' : 'local';
       window.electronAPI?.setSetting?.('processingMode', mode);
+      updateLabel(labelCloud, toggleCloud.checked, 'Cloud', 'Local');
       addLogEntry('INFO', `Processing mode: ${mode.toUpperCase()}`);
     });
   }
   if (toggleAdditionalKey) {
     toggleAdditionalKey.addEventListener('change', () => {
       window.electronAPI?.setSetting?.('additionalKeyEnabled', toggleAdditionalKey.checked);
+      updateLabel(labelKey, toggleAdditionalKey.checked, '+Key: On', '+Key: Off');
       addLogEntry(
         'INFO',
         `Additional key: ${toggleAdditionalKey.checked ? 'ENABLED' : 'DISABLED'}`
@@ -222,7 +251,7 @@ function setupToggles() {
     toggleRefineMode.addEventListener('change', () => {
       const mode = toggleRefineMode.checked ? 'instruction' : 'autopilot';
       window.electronAPI?.setSetting?.('refineMode', mode);
-      refineModeLabel.textContent = mode === 'instruction' ? 'Refine: Instruct' : 'Refine: Auto';
+      refineModeLabel.textContent = mode === 'instruction' ? 'Refine: Voice' : 'Refine: Auto';
       addLogEntry('INFO', `Refine mode: ${mode.toUpperCase()}`);
     });
   }
@@ -277,14 +306,17 @@ if (window.electronAPI) {
     window.electronAPI.onSettingChange((key: string, value: unknown) => {
       if (key === 'soundFeedback' && toggleSound && typeof value === 'boolean') {
         toggleSound.checked = value;
+        updateLabel(labelSound, value, 'Sound: On', 'Sound: Off');
       } else if (key === 'processingMode' && toggleCloud && typeof value === 'string') {
         toggleCloud.checked = value === 'cloud';
+        updateLabel(labelCloud, value === 'cloud', 'Cloud', 'Local');
       } else if (
         key === 'additionalKeyEnabled' &&
         toggleAdditionalKey &&
         typeof value === 'boolean'
       ) {
         toggleAdditionalKey.checked = value;
+        updateLabel(labelKey, value, '+Key: On', '+Key: Off');
         addLogEntry('INFO', `Additional key sync: ${value ? 'ENABLED' : 'DISABLED'}`);
       } else if (
         key === 'refineMode' &&
@@ -293,7 +325,7 @@ if (window.electronAPI) {
         typeof value === 'string'
       ) {
         toggleRefineMode.checked = value === 'instruction';
-        refineModeLabel.textContent = value === 'instruction' ? 'Refine: Instruct' : 'Refine: Auto';
+        refineModeLabel.textContent = value === 'instruction' ? 'Refine: Voice' : 'Refine: Auto';
       }
     });
   }
@@ -316,17 +348,20 @@ if (window.electronAPI) {
         // Restore toggle states
         if (toggleSound && state.soundFeedback !== undefined) {
           toggleSound.checked = state.soundFeedback;
+          updateLabel(labelSound, state.soundFeedback, 'Sound: On', 'Sound: Off');
         }
         if (toggleCloud && state.processingMode) {
           toggleCloud.checked = state.processingMode === 'cloud';
+          updateLabel(labelCloud, state.processingMode === 'cloud', 'Cloud', 'Local');
         }
         if (toggleAdditionalKey && state.additionalKeyEnabled !== undefined) {
           toggleAdditionalKey.checked = state.additionalKeyEnabled;
+          updateLabel(labelKey, state.additionalKeyEnabled, '+Key: On', '+Key: Off');
         }
         if (toggleRefineMode && refineModeLabel && state.refineMode) {
           toggleRefineMode.checked = state.refineMode === 'instruction';
           refineModeLabel.textContent =
-            state.refineMode === 'instruction' ? 'Refine: Instruct' : 'Refine: Auto';
+            state.refineMode === 'instruction' ? 'Refine: Voice' : 'Refine: Auto';
         }
 
         // Restore mode selection
@@ -373,4 +408,9 @@ document.getElementById('mode-professional')?.addEventListener('click', () => {
 document.getElementById('mode-raw')?.addEventListener('click', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).switchExecutionMode('raw');
+});
+
+// Close button handler
+document.getElementById('close-btn')?.addEventListener('click', () => {
+  window.close();
 });
