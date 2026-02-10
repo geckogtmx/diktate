@@ -130,6 +130,12 @@ export interface UserSettings {
   trialExpiresAt?: string; // ISO date string
   trialActive?: boolean;
   trialLastSynced?: string; // ISO date string
+
+  // SPEC_043: Control Panel UI Visibility
+  uiShowModes?: boolean;
+  uiShowActions?: boolean;
+  uiShowSessionStats?: boolean;
+  uiShowPerfStats?: boolean;
 }
 
 /**
@@ -385,4 +391,10 @@ export const USER_SETTINGS_DEFAULTS = {
   trialExpiresAt: '',
   trialActive: false,
   trialLastSynced: '',
+
+  // SPEC_043: Control Panel UI Visibility Defaults
+  uiShowModes: true,
+  uiShowActions: true,
+  uiShowSessionStats: true,
+  uiShowPerfStats: true,
 };

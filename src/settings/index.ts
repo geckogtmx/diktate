@@ -39,6 +39,7 @@ import { initializeNotesSettings } from './notes.js';
 import { initializePrivacySettings } from './privacy.js';
 import { initializeI18n } from './i18n.js';
 import { initTrialAccountPanel } from './trialAccount.js';
+import { initControlPanel } from './controlPanel.js';
 
 // Dynamic window property assignment for HTML onclick handlers (SPEC_032)
 // These are necessary for HTML-based UI fragments to access functions at runtime
@@ -267,6 +268,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     initTrialAccountPanel();
   } catch (e) {
     console.error('Trial panel init failed:', e);
+  }
+
+  // SPEC_043: Control Panel
+  try {
+    await initControlPanel();
+  } catch (e) {
+    console.error('Control Panel init failed:', e);
   }
 
   // 6. Bind Remaining Interactive Components

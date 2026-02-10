@@ -109,6 +109,11 @@ export const SettingsKeySchema = z.enum([
   'cloudPrompt_refine_instruction',
   'cloudPrompt_raw',
   'cloudPrompt_note',
+  // SPEC_043: Control Panel UI Visibility
+  'uiShowModes',
+  'uiShowActions',
+  'uiShowSessionStats',
+  'uiShowPerfStats',
 ]);
 
 // API key provider schema

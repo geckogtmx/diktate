@@ -18,6 +18,10 @@ interface InitialState {
   additionalKeyEnabled: boolean;
   additionalKey: string;
   trailingSpaceEnabled: boolean;
+  uiShowModes?: boolean;
+  uiShowActions?: boolean;
+  uiShowSessionStats?: boolean;
+  uiShowPerfStats?: boolean;
 }
 
 interface Window {
@@ -33,6 +37,7 @@ interface Window {
     onBadgeUpdate: (callback: (badges: { processor?: string; authType?: string }) => void) => void;
     onModeChange: (callback: (mode: string) => void) => void;
     onSettingChange: (callback: (key: string, value: unknown) => void) => void;
+    resizeWindow: (height: number) => void;
   };
 }
 
@@ -95,6 +100,12 @@ const modeBtns: Record<string, HTMLElement | null> = {
   professional: document.getElementById('mode-professional'),
   raw: document.getElementById('mode-raw'),
 };
+
+// Control Panel Elements (SPEC_043)
+const uiModesRow = document.getElementById('mode-toggle-bar');
+const uiActionsRow = document.getElementById('toggles-bar');
+const uiSessionStatsRow = document.getElementById('metrics-row-1');
+const uiPerfStatsRow = document.getElementById('metrics-row-2');
 
 // Session statistics
 let sessionCount = 0;
@@ -267,6 +278,36 @@ function updateModeUI(mode: string) {
   });
 }
 
+// SPEC_043: Auto-Adjust Window Height
+// SPEC_043: Auto-Adjust Window Height
+function recalculateHeight() {
+  // Base height (Header ~34px + Footer ~26px)
+  let height = 65;
+
+  // Check visibility of rows and add their actual height
+  if (uiModesRow && uiModesRow.style.display !== 'none') height += 60;
+  if (uiActionsRow && uiActionsRow.style.display !== 'none') height += 52;
+  if (uiSessionStatsRow && uiSessionStatsRow.style.display !== 'none') height += 40;
+  if (uiPerfStatsRow && uiPerfStatsRow.style.display !== 'none') height += 40;
+
+  // Send new height to main process
+  window.electronAPI.resizeWindow(height);
+}
+
+// SPEC_043: Control Panel Visibility Logic
+function updateVisibility(key: string, visible: boolean) {
+  let element: HTMLElement | null = null;
+  if (key === 'uiShowModes') element = uiModesRow;
+  else if (key === 'uiShowActions') element = uiActionsRow;
+  else if (key === 'uiShowSessionStats') element = uiSessionStatsRow;
+  else if (key === 'uiShowPerfStats') element = uiPerfStatsRow;
+
+  if (element) {
+    element.style.display = visible ? '' : 'none';
+    recalculateHeight();
+  }
+}
+
 // Make switchExecutionMode available globally for onclick handler
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).switchExecutionMode = function (
@@ -326,6 +367,11 @@ if (window.electronAPI) {
       ) {
         toggleRefineMode.checked = value === 'instruction';
         refineModeLabel.textContent = value === 'instruction' ? 'Refine: Voice' : 'Refine: Auto';
+      } else if (
+        ['uiShowModes', 'uiShowActions', 'uiShowSessionStats', 'uiShowPerfStats'].includes(key) &&
+        typeof value === 'boolean'
+      ) {
+        updateVisibility(key, value);
       }
     });
   }
@@ -368,6 +414,18 @@ if (window.electronAPI) {
         if (state.defaultMode) {
           updateModeUI(state.defaultMode);
         }
+
+        // SPEC_043: Restore Visibility
+        if (state.uiShowModes !== undefined) updateVisibility('uiShowModes', state.uiShowModes);
+        if (state.uiShowActions !== undefined)
+          updateVisibility('uiShowActions', state.uiShowActions);
+        if (state.uiShowSessionStats !== undefined)
+          updateVisibility('uiShowSessionStats', state.uiShowSessionStats);
+        if (state.uiShowPerfStats !== undefined)
+          updateVisibility('uiShowPerfStats', state.uiShowPerfStats);
+
+        // Initial height calculation
+        setTimeout(recalculateHeight, 100);
       }
     })
     .catch((err) => addLogEntry('ERROR', 'Init failed'));

@@ -1,624 +1,660 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Settings</title>
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' http://localhost:11434;"
-    />
-    <style>
-      :root {
-        --ink-black: #002029ff;
-        --jet-black: #00303dff;
-        --dark-teal: #004052ff;
-        --dark-teal-2: #005066ff;
-        --dark-teal-3: #00607aff;
 
-        --bg-color: var(--ink-black);
-        --sidebar-color: var(--jet-black);
-        --text-color: #e0e0e0;
-        --accent-color: var(--dark-teal-3);
-        --border-color: var(--dark-teal);
-        --input-bg: var(--jet-black);
-        --hover-color: var(--dark-teal);
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings</title>
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' http://localhost:11434;" />
+  <style>
+    :root {
+      --ink-black: #002029ff;
+      --jet-black: #00303dff;
+      --dark-teal: #004052ff;
+      --dark-teal-2: #005066ff;
+      --dark-teal-3: #00607aff;
 
-      body {
-        font-family: 'Segoe UI', sans-serif;
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        margin: 0;
-        height: 100vh;
-        display: flex;
-        user-select: none;
-        overflow: hidden;
-      }
+      --bg-color: var(--ink-black);
+      --sidebar-color: var(--jet-black);
+      --text-color: #e0e0e0;
+      --accent-color: var(--dark-teal-3);
+      --border-color: var(--dark-teal);
+      --input-bg: var(--jet-black);
+      --hover-color: var(--dark-teal);
+    }
 
-      /* SIDEBAR */
-      #sidebar {
-        width: 150px;
-        background-color: var(--sidebar-color);
-        border-right: 1px solid var(--border-color);
-        display: flex;
-        flex-direction: column;
-        padding-top: 20px;
-      }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      user-select: none;
+      overflow: hidden;
+    }
 
-      .tab-btn {
-        padding: 10px 20px;
-        cursor: pointer;
-        color: #888;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
+    /* SIDEBAR */
+    #sidebar {
+      width: 150px;
+      background-color: var(--sidebar-color);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      padding-top: 20px;
+    }
 
-      .tab-btn:hover {
-        color: white;
-        background-color: var(--hover-color);
-      }
+    .tab-btn {
+      padding: 10px 20px;
+      cursor: pointer;
+      color: #888;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-      .tab-btn.active {
-        color: white;
-        background-color: var(--ink-black);
-        border-left: 3px solid var(--accent-color);
-        padding-left: 17px;
-      }
+    .tab-btn:hover {
+      color: white;
+      background-color: var(--hover-color);
+    }
 
-      /* CONTENT */
-      #content {
-        flex: 1;
-        padding: 0;
-        /* Remove padding here, move to tabs */
-        overflow: hidden;
-        /* Prevent container scroll */
-        display: flex;
-        flex-direction: column;
-      }
+    .tab-btn.active {
+      color: white;
+      background-color: var(--ink-black);
+      border-left: 3px solid var(--accent-color);
+      padding-left: 17px;
+    }
 
-      .tab-content {
-        display: none;
-        flex: 1;
-        overflow-y: auto;
-        padding: 30px;
-        height: 100%;
-        box-sizing: border-box;
-        animation: fadeIn 0.3s ease;
-      }
+    /* CONTENT */
+    #content {
+      flex: 1;
+      padding: 0;
+      /* Remove padding here, move to tabs */
+      overflow: hidden;
+      /* Prevent container scroll */
+      display: flex;
+      flex-direction: column;
+    }
 
-      .tab-content.active {
-        display: block;
-        flex: 1;
-      }
+    .tab-content {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      padding: 30px;
+      height: 100%;
+      box-sizing: border-box;
+      animation: fadeIn 0.3s ease;
+    }
 
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(5px);
-        }
+    .tab-content.active {
+      display: block;
+      flex: 1;
+    }
 
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      h2 {
-        margin-top: 0;
-        border-bottom: 1px solid var(--border-color);
-        padding-bottom: 10px;
-        margin-bottom: 20px;
-      }
-
-      .setting-group {
-        margin-bottom: 25px;
-      }
-
-      label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 500;
-      }
-
-      .sub-label {
-        font-size: 0.8em;
-        color: #888;
-        margin-bottom: 8px;
-        display: block;
-      }
-
-      /* CONTROLS */
-      input[type='text'],
-      select {
-        background-color: var(--input-bg);
-        border: 1px solid var(--border-color);
-        color: white;
-        padding: 8px;
-        border-radius: 4px;
-        width: 100%;
-        box-sizing: border-box;
-      }
-
-      input[type='text']:focus,
-      select:focus {
-        outline: 2px solid var(--accent-color);
-        border-color: transparent;
-      }
-
-      /* TOGGLE SWITCH */
-      .switch {
-        position: relative;
-        display: inline-block;
-        width: 50px;
-        height: 24px;
-      }
-
-      .switch input {
+    @keyframes fadeIn {
+      from {
         opacity: 0;
-        width: 0;
-        height: 0;
+        transform: translateY(5px);
       }
 
-      .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #ccc;
-        transition: 0.4s;
-        border-radius: 24px;
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h2 {
+      margin-top: 0;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .setting-group {
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .sub-label {
+      font-size: 0.8em;
+      color: #888;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    /* CONTROLS */
+    input[type='text'],
+    select {
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      color: white;
+      padding: 8px;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    input[type='text']:focus,
+    select:focus {
+      outline: 2px solid var(--accent-color);
+      border-color: transparent;
+    }
+
+    /* TOGGLE SWITCH */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: '';
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+
+    input:checked+.slider {
+      background-color: var(--accent-color);
+    }
+
+    input:focus+.slider {
+      box-shadow: 0 0 1px var(--accent-color);
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(26px);
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* BUTTONS */
+    .btn {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+
+    .btn:hover {
+      filter: brightness(1.1);
+    }
+
+    .btn-secondary {
+      background-color: var(--dark-teal);
+    }
+
+    .btn-danger {
+      background-color: #dc2626;
+    }
+
+    .btn-danger:hover {
+      background-color: #b91c1c;
+    }
+
+    /* HOTKEY INPUT */
+    .hotkey-display-box {
+      background: #111;
+      padding: 10px;
+      text-align: center;
+      border: 1px dashed #555;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 1.2em;
+    }
+
+    .hotkey-display-box.recording {
+      border-color: var(--accent-color);
+      color: var(--accent-color);
+      background: var(--dark-teal);
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: var(--jet-black);
+      border: 1px solid var(--accent-color);
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    .modal h3 {
+      margin-top: 0;
+      color: #fca311;
+    }
+
+    .modal p {
+      color: #ccc;
+      line-height: 1.5;
+      margin-bottom: 25px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    /* WARNING BANNER */
+    #restart-banner {
+      display: none;
+      background: #4a3400;
+      border-left: 4px solid #fca311;
+      padding: 12px 20px;
+      margin: -30px -30px 20px -30px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    #restart-banner .msg {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      color: #ffcc00;
+    }
+
+    /* AUDIO OPTIMIZATION TOOLS (SPEC_021) */
+    .signal-monitor {
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+
+    .meter-container {
+      position: relative;
+      height: 40px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .meter-background {
+      display: flex;
+      height: 100%;
+      width: 100%;
+    }
+
+    .zone {
+      flex: 1;
+      opacity: 0.3;
+    }
+
+    .zone-silent {
+      background: #666666;
+    }
+
+    .zone-low {
+      background: #ffaa00;
+    }
+
+    .zone-good {
+      background: #44ff44;
+    }
+
+    .zone-high {
+      background: #ffaa00;
+    }
+
+    .zone-clip {
+      background: #ff4444;
+    }
+
+    .meter-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      transition:
+        width 0.05s ease-out,
+        background-color 0.2s ease;
+      border-radius: 4px;
+    }
+
+    .meter-fill.level-clip {
+      background: #ff4444;
+    }
+
+    .meter-fill.level-high {
+      background: #ffaa00;
+    }
+
+    .meter-fill.level-good {
+      background: #44ff44;
+    }
+
+    .meter-fill.level-low {
+      background: #ffaa00;
+    }
+
+    .meter-fill.level-silent {
+      background: #666666;
+    }
+
+    .peak-indicator {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      background: white;
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+      transition:
+        left 0.1s ease-out,
+        opacity 0.3s ease;
+      display: none;
+    }
+
+    .peak-indicator.visible {
+      display: block;
+    }
+
+    .status-text {
+      font-size: 14px;
+      color: #ccc;
+      text-align: center;
+      padding: 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .technical-readout {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    [title] {
+      cursor: help;
+      border-bottom: 1px dotted #666;
+    }
+
+    .diagnostic-tools {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .diagnostic-card {
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 16px;
+      border: 1px solid #333;
+      transition: border-color 0.2s ease;
+    }
+
+    .diagnostic-card:hover {
+      border-color: #555;
+    }
+
+    .diagnostic-card h4 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .diagnostic-card p {
+      margin: 0 0 12px 0;
+      font-size: 12px;
+      color: #888;
+      line-height: 1.4;
+    }
+
+    .result-text {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .noise-history {
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 4px;
+      font-size: 11px;
+      color: #666;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
       }
 
-      .slider:before {
-        position: absolute;
-        content: '';
-        height: 16px;
-        width: 16px;
-        left: 4px;
-        bottom: 4px;
-        background-color: white;
-        transition: 0.4s;
-        border-radius: 50%;
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
+    }
 
-      input:checked + .slider {
-        background-color: var(--accent-color);
-      }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
 
-      input:focus + .slider {
-        box-shadow: 0 0 1px var(--accent-color);
-      }
+<body>
+  <div id="sidebar">
+    <div class="tab-btn active" data-tab="general" data-i18n="tabs.general">General</div>
+    <div class="tab-btn" data-tab="audio" data-i18n="tabs.audio">Audio</div>
+    <div class="tab-btn" data-tab="modes" data-i18n="tabs.modes">Modes</div>
+    <div class="tab-btn" data-tab="notes" data-i18n="tabs.notes">Notes</div>
+    <div class="tab-btn" data-tab="controlpanel">Control Panel</div>
+    <div class="tab-btn" data-tab="ollama" data-i18n="tabs.ollama">Ollama</div>
+    <div class="tab-btn" data-tab="apikeys" data-i18n="tabs.apikeys">API Keys</div>
+    <div class="tab-btn" data-tab="privacy" data-i18n="tabs.privacy">Privacy</div>
+    <div class="tab-btn" data-tab="about" data-i18n="tabs.about">About</div>
 
-      input:checked + .slider:before {
-        transform: translateX(26px);
-      }
-
-      .setting-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      /* BUTTONS */
-      .btn {
-        background-color: var(--accent-color);
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.9em;
-      }
-
-      .btn:hover {
-        filter: brightness(1.1);
-      }
-
-      .btn-secondary {
-        background-color: var(--dark-teal);
-      }
-
-      .btn-danger {
-        background-color: #dc2626;
-      }
-
-      .btn-danger:hover {
-        background-color: #b91c1c;
-      }
-
-      /* HOTKEY INPUT */
-      .hotkey-display-box {
-        background: #111;
-        padding: 10px;
-        text-align: center;
-        border: 1px dashed #555;
-        border-radius: 5px;
-        cursor: pointer;
-        font-family: monospace;
-        font-size: 1.2em;
-      }
-
-      .hotkey-display-box.recording {
-        border-color: var(--accent-color);
-        color: var(--accent-color);
-        background: var(--dark-teal);
-      }
-
-      /* MODAL */
-      .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(8px);
-        display: none;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-      }
-
-      .modal {
-        background: var(--jet-black);
-        border: 1px solid var(--accent-color);
-        padding: 30px;
-        border-radius: 12px;
-        max-width: 400px;
-        width: 90%;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-        text-align: center;
-      }
-
-      .modal h3 {
-        margin-top: 0;
-        color: #fca311;
-      }
-
-      .modal p {
-        color: #ccc;
-        line-height: 1.5;
-        margin-bottom: 25px;
-      }
-
-      .modal-buttons {
-        display: flex;
-        gap: 12px;
-        justify-content: center;
-      }
-
-      /* WARNING BANNER */
-      #restart-banner {
-        display: none;
-        background: #4a3400;
-        border-left: 4px solid #fca311;
-        padding: 12px 20px;
-        margin: -30px -30px 20px -30px;
-        align-items: center;
-        justify-content: space-between;
-      }
-
-      #restart-banner .msg {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 600;
-        color: #ffcc00;
-      }
-
-      /* AUDIO OPTIMIZATION TOOLS (SPEC_021) */
-      .signal-monitor {
-        background: #1a1a1a;
-        border-radius: 8px;
-        padding: 16px;
-        margin-top: 12px;
-      }
-
-      .meter-container {
-        position: relative;
-        height: 40px;
-        border-radius: 4px;
-        overflow: hidden;
-        margin-bottom: 12px;
-      }
-
-      .meter-background {
-        display: flex;
-        height: 100%;
-        width: 100%;
-      }
-
-      .zone {
-        flex: 1;
-        opacity: 0.3;
-      }
-
-      .zone-silent {
-        background: #666666;
-      }
-
-      .zone-low {
-        background: #ffaa00;
-      }
-
-      .zone-good {
-        background: #44ff44;
-      }
-
-      .zone-high {
-        background: #ffaa00;
-      }
-
-      .zone-clip {
-        background: #ff4444;
-      }
-
-      .meter-fill {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        width: 0%;
-        transition:
-          width 0.05s ease-out,
-          background-color 0.2s ease;
-        border-radius: 4px;
-      }
-
-      .meter-fill.level-clip {
-        background: #ff4444;
-      }
-
-      .meter-fill.level-high {
-        background: #ffaa00;
-      }
-
-      .meter-fill.level-good {
-        background: #44ff44;
-      }
-
-      .meter-fill.level-low {
-        background: #ffaa00;
-      }
-
-      .meter-fill.level-silent {
-        background: #666666;
-      }
-
-      .peak-indicator {
-        position: absolute;
-        top: 0;
-        width: 2px;
-        height: 100%;
-        background: white;
-        box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
-        transition:
-          left 0.1s ease-out,
-          opacity 0.3s ease;
-        display: none;
-      }
-
-      .peak-indicator.visible {
-        display: block;
-      }
-
-      .status-text {
-        font-size: 14px;
-        color: #ccc;
-        text-align: center;
-        padding: 8px;
-        border-radius: 4px;
-        background: rgba(255, 255, 255, 0.05);
-      }
-
-      .technical-readout {
-        display: flex;
-        justify-content: space-around;
-        margin-top: 8px;
-        font-size: 12px;
-        color: #888;
-      }
-
-      [title] {
-        cursor: help;
-        border-bottom: 1px dotted #666;
-      }
-
-      .diagnostic-tools {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-
-      .diagnostic-card {
-        background: #1a1a1a;
-        border-radius: 8px;
-        padding: 16px;
-        border: 1px solid #333;
-        transition: border-color 0.2s ease;
-      }
-
-      .diagnostic-card:hover {
-        border-color: #555;
-      }
-
-      .diagnostic-card h4 {
-        margin: 0 0 8px 0;
-        font-size: 14px;
-        color: #fff;
-      }
-
-      .diagnostic-card p {
-        margin: 0 0 12px 0;
-        font-size: 12px;
-        color: #888;
-        line-height: 1.4;
-      }
-
-      .result-text {
-        margin-top: 12px;
-        padding: 12px;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 4px;
-        font-size: 13px;
-        line-height: 1.5;
-        white-space: pre-wrap;
-        animation: fadeIn 0.3s ease;
-      }
-
-      .noise-history {
-        margin-top: 8px;
-        padding: 8px;
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 4px;
-        font-size: 11px;
-        color: #666;
-      }
-
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-    </style>
-  </head>
-
-  <body>
-    <div id="sidebar">
-      <div class="tab-btn active" data-tab="general" data-i18n="tabs.general">General</div>
-      <div class="tab-btn" data-tab="audio" data-i18n="tabs.audio">Audio</div>
-      <div class="tab-btn" data-tab="modes" data-i18n="tabs.modes">Modes</div>
-      <div class="tab-btn" data-tab="notes" data-i18n="tabs.notes">Notes</div>
-      <div class="tab-btn" data-tab="ollama" data-i18n="tabs.ollama">Ollama</div>
-      <div class="tab-btn" data-tab="apikeys" data-i18n="tabs.apikeys">API Keys</div>
-      <div class="tab-btn" data-tab="privacy" data-i18n="tabs.privacy">Privacy</div>
-      <div class="tab-btn" data-tab="about" data-i18n="tabs.about">About</div>
-
-      <!-- SPEC_042: Trial account panel (pinned to bottom of sidebar) -->
-      <div style="flex-grow: 1"></div>
-      <div
-        id="trial-account-panel"
-        style="
+    <!-- SPEC_042: Trial account panel (pinned to bottom of sidebar) -->
+    <div style="flex-grow: 1"></div>
+    <div id="trial-account-panel" style="
           border-top: 1px solid var(--border-color);
           padding: 10px 12px;
           font-size: 0.75em;
           color: #888;
-        "
-      >
-        <!-- Logged-out state -->
-        <div id="trial-logged-out">
-          <div style="margin-bottom: 6px; font-weight: 500; color: #aaa">dikta.me Trial</div>
-          <button
-            id="trial-login-btn"
-            class="btn btn-primary"
-            style="width: 100%; padding: 5px 8px; font-size: 0.85em"
-          >
-            Sign in for free trial
-          </button>
-        </div>
+        ">
+      <!-- Logged-out state -->
+      <div id="trial-logged-out">
+        <div style="margin-bottom: 6px; font-weight: 500; color: #aaa">dikta.me Trial</div>
+        <button id="trial-login-btn" class="btn btn-primary" style="width: 100%; padding: 5px 8px; font-size: 0.85em">
+          Sign in for free trial
+        </button>
+      </div>
 
-        <!-- Logged-in state (hidden by default) -->
-        <div id="trial-logged-in" style="display: none">
-          <div
-            id="trial-email"
-            style="
+      <!-- Logged-in state (hidden by default) -->
+      <div id="trial-logged-in" style="display: none">
+        <div id="trial-email" style="
               margin-bottom: 6px;
               color: #4ade80;
               font-size: 0.8em;
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
-            "
-          >
-          </div>
-          <!-- Usage progress bar -->
-          <div
-            style="
+            ">
+        </div>
+        <!-- Usage progress bar -->
+        <div style="
               background: #333;
               border-radius: 3px;
               height: 4px;
               margin-bottom: 4px;
               overflow: hidden;
-            "
-          >
-            <div
-              id="trial-progress-bar"
-              style="background: #4ade80; height: 100%; width: 0%; transition: width 0.3s"
-            ></div>
+            ">
+          <div id="trial-progress-bar" style="background: #4ade80; height: 100%; width: 0%; transition: width 0.3s">
           </div>
-          <div id="trial-words" style="margin-bottom: 2px; color: #aaa"></div>
-          <div id="trial-days" style="margin-bottom: 8px; color: #aaa"></div>
-          <div style="display: flex; gap: 4px">
-            <button
-              id="trial-dashboard-btn"
-              class="btn"
-              style="flex: 1; padding: 4px 6px; font-size: 0.75em; background: #1e3a5f; color: #93c5fd"
-            >
-              Dashboard ↗
-            </button>
-            <button
-              id="trial-logout-btn"
-              class="btn"
-              style="padding: 4px 6px; font-size: 0.75em; background: #3f1a1a; color: #f87171"
-            >
-              Sign out
-            </button>
+        </div>
+        <div id="trial-words" style="margin-bottom: 2px; color: #aaa"></div>
+        <div id="trial-days" style="margin-bottom: 8px; color: #aaa"></div>
+        <div style="display: flex; gap: 4px">
+          <button id="trial-dashboard-btn" class="btn"
+            style="flex: 1; padding: 4px 6px; font-size: 0.75em; background: #1e3a5f; color: #93c5fd">
+            Dashboard ↗
+          </button>
+          <button id="trial-logout-btn" class="btn"
+            style="padding: 4px 6px; font-size: 0.75em; background: #3f1a1a; color: #f87171">
+            Sign out
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="content">
+    <!-- Restart Warning Banner (Fixed at top of content area) -->
+    <div id="restart-banner" style="position: sticky; top: 0; z-index: 100; margin: 0">
+      <div class="msg">
+        <span>⚠️ Restart Required to Apply Model Changes</span>
+      </div>
+      <button id="restart-now-banner-btn" class="btn" style="background: #fca311; color: black; font-weight: bold">
+        Restart Now
+      </button>
+    </div>
+
+    <!-- CONTROL PANEL TAB -->
+    <div id="controlpanel" class="tab-content">
+      <h2>Control Panel</h2>
+      <div class="setting-group" style="background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 8px;">
+        <p style="color: #aaa; margin-top: 0; font-size: 0.9em;">
+          Configure the visibility of elements on the main application window (HUD).
+        </p>
+
+        <!-- Row 1: Modes -->
+        <div class="setting-row"
+          style="margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+          <div>
+            <label>Show Modes Row</label>
+            <span class="sub-label">Show mode selection buttons (Standard, Prompt, Professional, RAW)</span>
           </div>
+          <label class="switch">
+            <input type="checkbox" id="cp-show-modes" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Row 2: Action Toggles -->
+        <div class="setting-row"
+          style="margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+          <div>
+            <label>Show Actions Row</label>
+            <span class="sub-label">Show quick action toggles (Sound, Local, +Key, Refine)</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="cp-show-actions" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Row 3: Session Stats -->
+        <div class="setting-row"
+          style="margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+          <div>
+            <label>Show Session Stats</label>
+            <span class="sub-label">Row 1: SESS, WORDS, WPM, TOK</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="cp-show-session-stats" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Row 4: Performance Stats -->
+        <div class="setting-row">
+          <div>
+            <label>Show Performance Stats</label>
+            <span class="sub-label">Row 2: TOT, REC, TRNS, PROC, INJ</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="cp-show-perf-stats" checked />
+            <span class="slider"></span>
+          </label>
         </div>
       </div>
     </div>
 
-    <div id="content">
-      <!-- Restart Warning Banner (Fixed at top of content area) -->
-      <div id="restart-banner" style="position: sticky; top: 0; z-index: 100; margin: 0">
-        <div class="msg">
-          <span>⚠️ Restart Required to Apply Model Changes</span>
+    <!-- GENERAL TAB -->
+    <div id="general" class="tab-content active">
+      <h2 data-i18n="general.title">General Settings</h2>
+
+      <!-- Language Selector -->
+      <div class="setting-group">
+        <label data-i18n="general.language_label">Language / Idioma</label>
+        <span class="sub-label" data-i18n="general.language_sublabel">Choose your preferred language</span>
+        <div style="display: flex; gap: 10px">
+          <select id="language-select" style="flex: 1">
+            <option value="en">English</option>
+            <option value="es">Español</option>
+          </select>
+          <button id="save-language-btn" class="btn" style="background: var(--accent-color)"
+            data-i18n="general.save_language">
+            Save Language
+          </button>
         </div>
-        <button
-          id="restart-now-banner-btn"
-          class="btn"
-          style="background: #fca311; color: black; font-weight: bold"
-        >
-          Restart Now
-        </button>
-      </div>
-
-      <!-- GENERAL TAB -->
-      <div id="general" class="tab-content active">
-        <h2 data-i18n="general.title">General Settings</h2>
-
-        <!-- Language Selector -->
-        <div class="setting-group">
-          <label data-i18n="general.language_label">Language / Idioma</label>
-          <span class="sub-label" data-i18n="general.language_sublabel">Choose your preferred language</span>
-          <div style="display: flex; gap: 10px">
-            <select id="language-select" style="flex: 1">
-              <option value="en">English</option>
-              <option value="es">Español</option>
-            </select>
-            <button id="save-language-btn" class="btn" style="background: var(--accent-color)" data-i18n="general.save_language">
-              Save Language
-            </button>
-          </div>
-          <div
-            id="language-change-status"
-            style="
+        <div id="language-change-status" style="
               display: none;
               margin-top: 8px;
               padding: 8px 12px;
@@ -626,43 +662,40 @@
               border: 1px solid #22c55e;
               border-radius: 4px;
               color: #4ade80;
-            "
-          >
-            ✓ Language saved! Restarting app...
-          </div>
+            ">
+          ✓ Language saved! Restarting app...
         </div>
+      </div>
 
-        <!-- 1. Processing Mode -->
-        <div class="setting-group">
-          <div class="setting-row">
-            <div>
-              <label data-i18n="general.processing_mode">Startup Processing Mode</label>
-              <span class="sub-label" data-i18n="general.processing_mode_sublabel"
-                >Choose between local (offline) or cloud (faster) AI processing</span
-              >
-            </div>
-            <select id="processing-mode">
-              <option value="local" data-i18n="general.processing_mode_local">🏠 Local (Offline, Confidential)</option>
-              <option value="cloud" data-i18n="general.processing_mode_cloud">☁️ Cloud (Faster, Paid)</option>
-            </select>
+      <!-- 1. Processing Mode -->
+      <div class="setting-group">
+        <div class="setting-row">
+          <div>
+            <label data-i18n="general.processing_mode">Startup Processing Mode</label>
+            <span class="sub-label" data-i18n="general.processing_mode_sublabel">Choose between local (offline) or cloud
+              (faster) AI processing</span>
           </div>
+          <select id="processing-mode">
+            <option value="local" data-i18n="general.processing_mode_local">🏠 Local (Offline, Confidential)</option>
+            <option value="cloud" data-i18n="general.processing_mode_cloud">☁️ Cloud (Faster, Paid)</option>
+          </select>
         </div>
+      </div>
 
-        <!-- 2. Default AI Model -->
-        <div class="setting-group">
-          <label data-i18n="general.default_model">Default AI Model</label>
-          <span class="sub-label" data-i18n="general.default_model_sublabel">Model used for local text processing</span>
-          <div style="display: flex; gap: 10px">
-            <select id="default-model" style="flex: 1">
-              <option value="" data-i18n="general.loading_models">Loading models...</option>
-            </select>
-            <button id="save-model-btn" class="btn" style="background: var(--accent-color)" data-i18n="general.save_model">
-              Save Model
-            </button>
-          </div>
-          <div
-            id="model-change-status"
-            style="
+      <!-- 2. Default AI Model -->
+      <div class="setting-group">
+        <label data-i18n="general.default_model">Default AI Model</label>
+        <span class="sub-label" data-i18n="general.default_model_sublabel">Model used for local text processing</span>
+        <div style="display: flex; gap: 10px">
+          <select id="default-model" style="flex: 1">
+            <option value="" data-i18n="general.loading_models">Loading models...</option>
+          </select>
+          <button id="save-model-btn" class="btn" style="background: var(--accent-color)"
+            data-i18n="general.save_model">
+            Save Model
+          </button>
+        </div>
+        <div id="model-change-status" style="
               display: none;
               margin-top: 8px;
               padding: 8px 12px;
@@ -670,124 +703,129 @@
               border: 1px solid #22c55e;
               border-radius: 4px;
               color: #4ade80;
-            "
-          >
-            ✓ Model updated!
-          </div>
+            ">
+          ✓ Model updated!
         </div>
+      </div>
 
-        <!-- 3. Hotkeys Section -->
-        <div style="border-top: 1px solid var(--border-color); margin: 20px 0; padding-top: 20px">
-          <h3 style="font-size: 0.95rem; color: #aaa; margin: 0 0 15px 0" data-i18n="hotkeys.title">HOTKEYS</h3>
+      <!-- 3. Hotkeys Section -->
+      <div style="border-top: 1px solid var(--border-color); margin: 20px 0; padding-top: 20px">
+        <h3 style="font-size: 0.95rem; color: #aaa; margin: 0 0 15px 0" data-i18n="hotkeys.title">HOTKEYS</h3>
 
-          <!-- Dictate Hotkey -->
-          <div class="setting-group">
-            <label data-i18n="hotkeys.dictate">Dictate Hotkey</label>
-            <span class="sub-label" data-i18n="hotkeys.dictate_sublabel">Press to start/stop dictation (transcribe → clean → type)</span>
-            <div id="hotkey-display" class="hotkey-display-box">Ctrl + Alt + D</div>
-            <div style="text-align: right; margin-top: 5px">
-              <button class="btn btn-secondary" id="reset-hotkey-dictate" data-i18n="hotkeys.reset_default">Reset Default</button>
-            </div>
-          </div>
-
-          <!-- Ask Mode Hotkey -->
-          <div class="setting-group">
-            <label data-i18n="hotkeys.ask">Ask Mode Hotkey</label>
-            <span class="sub-label" data-i18n="hotkeys.ask_sublabel"
-              >Press to ask a question, get AI answer (typed/clipboard/notification)</span
-            >
-            <div id="ask-hotkey-display" class="hotkey-display-box">Ctrl + Alt + A</div>
-            <div style="text-align: right; margin-top: 5px">
-              <button class="btn btn-secondary" id="reset-hotkey-ask" data-i18n="hotkeys.reset_default">Reset Default</button>
-            </div>
-          </div>
-
-          <!-- Translate Hotkey -->
-          <div class="setting-group">
-            <label data-i18n="hotkeys.translate">Translate Hotkey</label>
-            <span class="sub-label" data-i18n="hotkeys.translate_sublabel"
-              >Select text and press to translate to English</span
-            >
-            <div id="translate-hotkey-display" class="hotkey-display-box">Ctrl + Alt + T</div>
-            <div style="text-align: right; margin-top: 5px">
-              <button class="btn btn-secondary" id="reset-hotkey-translate" data-i18n="hotkeys.reset_default">Reset Default</button>
-            </div>
-          </div>
-
-          <!-- Refine Hotkey -->
-          <div class="setting-group">
-            <label data-i18n="hotkeys.refine">Refine Hotkey</label>
-            <span class="sub-label" data-i18n="hotkeys.refine_sublabel">Select text and press to refine/fix grammar in-place</span>
-            <div id="refine-hotkey-display" class="hotkey-display-box">Ctrl + Alt + R</div>
-            <div style="text-align: right; margin-top: 5px">
-              <button class="btn btn-secondary" id="reset-hotkey-refine" data-i18n="hotkeys.reset_default">Reset Default</button>
-            </div>
-          </div>
-
-          <!-- Oops Hotkey -->
-          <div class="setting-group">
-            <label data-i18n="hotkeys.oops">Oops (Re-inject) Hotkey</label>
-            <span class="sub-label" data-i18n="hotkeys.oops_sublabel"
-              >Press to re-process last recording with different mode</span
-            >
-            <div id="oops-hotkey-display" class="hotkey-display-box">Ctrl + Alt + V</div>
-            <div style="text-align: right; margin-top: 5px">
-              <button class="btn btn-secondary" id="reset-hotkey-oops" data-i18n="hotkeys.reset_default">Reset Default</button>
-            </div>
-          </div>
-
-          <!-- Note Hotkey (SPEC_020) -->
-          <div class="setting-group">
-            <label data-i18n="hotkeys.note">Note Hotkey</label>
-            <span class="sub-label" data-i18n="hotkeys.note_sublabel">Press to start/stop recording a note (appends to file)</span>
-            <div id="note-hotkey-display" class="hotkey-display-box">Ctrl + Alt + N</div>
-            <div style="text-align: right; margin-top: 5px">
-              <button class="btn btn-secondary" id="reset-hotkey-note" data-i18n="hotkeys.reset_default">Reset Default</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4. Start at Login -->
+        <!-- Dictate Hotkey -->
         <div class="setting-group">
-          <div class="setting-row">
-            <div>
-              <label data-i18n="system.auto_start">Start at Login</label>
-              <span class="sub-label" data-i18n="system.auto_start_sublabel">Launch dIKtate when Windows starts</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="auto-start" />
-              <span class="slider"></span>
-            </label>
+          <label data-i18n="hotkeys.dictate">Dictate Hotkey</label>
+          <span class="sub-label" data-i18n="hotkeys.dictate_sublabel">Press to start/stop dictation (transcribe → clean
+            → type)</span>
+          <div id="hotkey-display" class="hotkey-display-box">Ctrl + Alt + D</div>
+          <div style="text-align: right; margin-top: 5px">
+            <button class="btn btn-secondary" id="reset-hotkey-dictate" data-i18n="hotkeys.reset_default">Reset
+              Default</button>
+          </div>
+        </div>
+
+        <!-- Ask Mode Hotkey -->
+        <div class="setting-group">
+          <label data-i18n="hotkeys.ask">Ask Mode Hotkey</label>
+          <span class="sub-label" data-i18n="hotkeys.ask_sublabel">Press to ask a question, get AI answer
+            (typed/clipboard/notification)</span>
+          <div id="ask-hotkey-display" class="hotkey-display-box">Ctrl + Alt + A</div>
+          <div style="text-align: right; margin-top: 5px">
+            <button class="btn btn-secondary" id="reset-hotkey-ask" data-i18n="hotkeys.reset_default">Reset
+              Default</button>
+          </div>
+        </div>
+
+        <!-- Translate Hotkey -->
+        <div class="setting-group">
+          <label data-i18n="hotkeys.translate">Translate Hotkey</label>
+          <span class="sub-label" data-i18n="hotkeys.translate_sublabel">Select text and press to translate to
+            English</span>
+          <div id="translate-hotkey-display" class="hotkey-display-box">Ctrl + Alt + T</div>
+          <div style="text-align: right; margin-top: 5px">
+            <button class="btn btn-secondary" id="reset-hotkey-translate" data-i18n="hotkeys.reset_default">Reset
+              Default</button>
+          </div>
+        </div>
+
+        <!-- Refine Hotkey -->
+        <div class="setting-group">
+          <label data-i18n="hotkeys.refine">Refine Hotkey</label>
+          <span class="sub-label" data-i18n="hotkeys.refine_sublabel">Select text and press to refine/fix grammar
+            in-place</span>
+          <div id="refine-hotkey-display" class="hotkey-display-box">Ctrl + Alt + R</div>
+          <div style="text-align: right; margin-top: 5px">
+            <button class="btn btn-secondary" id="reset-hotkey-refine" data-i18n="hotkeys.reset_default">Reset
+              Default</button>
+          </div>
+        </div>
+
+        <!-- Oops Hotkey -->
+        <div class="setting-group">
+          <label data-i18n="hotkeys.oops">Oops (Re-inject) Hotkey</label>
+          <span class="sub-label" data-i18n="hotkeys.oops_sublabel">Press to re-process last recording with different
+            mode</span>
+          <div id="oops-hotkey-display" class="hotkey-display-box">Ctrl + Alt + V</div>
+          <div style="text-align: right; margin-top: 5px">
+            <button class="btn btn-secondary" id="reset-hotkey-oops" data-i18n="hotkeys.reset_default">Reset
+              Default</button>
+          </div>
+        </div>
+
+        <!-- Note Hotkey (SPEC_020) -->
+        <div class="setting-group">
+          <label data-i18n="hotkeys.note">Note Hotkey</label>
+          <span class="sub-label" data-i18n="hotkeys.note_sublabel">Press to start/stop recording a note (appends to
+            file)</span>
+          <div id="note-hotkey-display" class="hotkey-display-box">Ctrl + Alt + N</div>
+          <div style="text-align: right; margin-top: 5px">
+            <button class="btn btn-secondary" id="reset-hotkey-note" data-i18n="hotkeys.reset_default">Reset
+              Default</button>
           </div>
         </div>
       </div>
 
-      <!-- AUDIO TAB -->
-      <div id="audio" class="tab-content">
-        <h2 data-i18n="audio.title">Audio Settings</h2>
-
-        <div class="setting-group">
-          <label data-i18n="audio.input_device">Input Device</label>
-          <select id="audio-device">
-            <option data-i18n="audio.default_microphone">Default Microphone</option>
-          </select>
+      <!-- 4. Start at Login -->
+      <div class="setting-group">
+        <div class="setting-row">
+          <div>
+            <label data-i18n="system.auto_start">Start at Login</label>
+            <span class="sub-label" data-i18n="system.auto_start_sublabel">Launch dIKtate when Windows starts</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="auto-start" />
+            <span class="slider"></span>
+          </label>
         </div>
+      </div>
+    </div>
 
-        <!-- SPEC_041: Whisper Model Selection -->
-        <div class="setting-group">
-          <label data-i18n="audio.transcription_model">Transcription Model (Whisper)</label>
-          <span class="sub-label" data-i18n="audio.transcription_model_sublabel">
-            Larger models = better accuracy but slower. Choose based on your GPU VRAM.
-          </span>
-          <select id="whisper-model-select">
-            <option value="turbo" data-i18n="audio.model_turbo">Turbo (Best Quality, ~6GB VRAM) - Default</option>
-            <option value="medium" data-i18n="audio.model_medium">Medium (Great Quality, ~5GB VRAM)</option>
-            <option value="small" data-i18n="audio.model_small">Small (Good Quality, ~2GB VRAM) - Recommended for 8GB GPUs</option>
-            <option value="base" data-i18n="audio.model_base">Base (OK Quality, ~1GB VRAM)</option>
-            <option value="tiny" data-i18n="audio.model_tiny">Tiny (Fast, <1GB VRAM) - Recovery Mode</option>
-          </select>
-          <div
-            style="
+    <!-- AUDIO TAB -->
+    <div id="audio" class="tab-content">
+      <h2 data-i18n="audio.title">Audio Settings</h2>
+
+      <div class="setting-group">
+        <label data-i18n="audio.input_device">Input Device</label>
+        <select id="audio-device">
+          <option data-i18n="audio.default_microphone">Default Microphone</option>
+        </select>
+      </div>
+
+      <!-- SPEC_041: Whisper Model Selection -->
+      <div class="setting-group">
+        <label data-i18n="audio.transcription_model">Transcription Model (Whisper)</label>
+        <span class="sub-label" data-i18n="audio.transcription_model_sublabel">
+          Larger models = better accuracy but slower. Choose based on your GPU VRAM.
+        </span>
+        <select id="whisper-model-select">
+          <option value="turbo" data-i18n="audio.model_turbo">Turbo (Best Quality, ~6GB VRAM) - Default</option>
+          <option value="medium" data-i18n="audio.model_medium">Medium (Great Quality, ~5GB VRAM)</option>
+          <option value="small" data-i18n="audio.model_small">Small (Good Quality, ~2GB VRAM) - Recommended for 8GB GPUs
+          </option>
+          <option value="base" data-i18n="audio.model_base">Base (OK Quality, ~1GB VRAM)</option>
+          <option value="tiny" data-i18n="audio.model_tiny">Tiny (Fast, <1GB VRAM) - Recovery Mode</option>
+        </select>
+        <div style="
               margin-top: 8px;
               padding: 8px 12px;
               background: #1a3a1a;
@@ -795,276 +833,256 @@
               border-radius: 4px;
               font-size: 0.85em;
               color: #4ade80;
-            "
-          >
-            ℹ️ <strong>Pro Tip:</strong> Use "Small" model to free up 4GB VRAM for local LLMs
-            while maintaining good transcription quality.
-          </div>
+            ">
+          ℹ️ <strong>Pro Tip:</strong> Use "Small" model to free up 4GB VRAM for local LLMs
+          while maintaining good transcription quality.
         </div>
+      </div>
 
-        <div class="setting-group" id="sound-settings-group">
-          <label data-i18n="audio.sound_effects">Sound Effects</label>
-          <span class="sub-label" data-i18n="audio.sound_effects_sublabel">Choose sounds for different recording states</span>
+      <div class="setting-group" id="sound-settings-group">
+        <label data-i18n="audio.sound_effects">Sound Effects</label>
+        <span class="sub-label" data-i18n="audio.sound_effects_sublabel">Choose sounds for different recording
+          states</span>
 
-          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px">
-            <!-- Start Sound -->
-            <div style="display: flex; gap: 10px; align-items: center">
-              <span style="width: 100px; font-size: 0.9em; color: #888" data-i18n="audio.sound_start">🏁 Start Recording Sound</span>
-              <select id="start-sound" style="flex: 1">
-                <option value="none" data-i18n="audio.sound_none">🔇 None (Silent)</option>
-              </select>
-              <button class="btn btn-secondary" style="padding: 4px 10px" id="preview-start-sound" data-i18n="audio.preview_sound">
-                ▶ Preview
-              </button>
-            </div>
-
-            <!-- Stop Sound -->
-            <div style="display: flex; gap: 10px; align-items: center">
-              <span style="width: 100px; font-size: 0.9em; color: #888" data-i18n="audio.sound_stop">🛑 Stop Recording Sound</span>
-              <select id="stop-sound" style="flex: 1">
-                <option value="none" data-i18n="audio.sound_none">🔇 None (Silent)</option>
-              </select>
-              <button class="btn btn-secondary" style="padding: 4px 10px" id="preview-stop-sound" data-i18n="audio.preview_sound">
-                ▶ Preview
-              </button>
-            </div>
-
-            <!-- Ask Sound -->
-            <div style="display: flex; gap: 10px; align-items: center">
-              <span style="width: 100px; font-size: 0.9em; color: #888" data-i18n="audio.sound_ask">❓ Ask Mode Sound</span>
-              <select id="ask-sound" style="flex: 1">
-                <option value="none" data-i18n="audio.sound_none">🔇 None (Silent)</option>
-              </select>
-              <button class="btn btn-secondary" style="padding: 4px 10px" id="preview-ask-sound" data-i18n="audio.preview_sound">
-                ▶ Preview
-              </button>
-            </div>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px">
+          <!-- Start Sound -->
+          <div style="display: flex; gap: 10px; align-items: center">
+            <span style="width: 100px; font-size: 0.9em; color: #888" data-i18n="audio.sound_start">🏁 Start Recording
+              Sound</span>
+            <select id="start-sound" style="flex: 1">
+              <option value="none" data-i18n="audio.sound_none">🔇 None (Silent)</option>
+            </select>
+            <button class="btn btn-secondary" style="padding: 4px 10px" id="preview-start-sound"
+              data-i18n="audio.preview_sound">
+              ▶ Preview
+            </button>
           </div>
-        </div>
 
-        <!-- Signal Quality Monitor (SPEC_021) -->
-        <div class="setting-group">
-          <label data-i18n="audio.signal_monitor">🎤 Signal Quality Monitor</label>
-          <span class="sub-label" data-i18n="audio.signal_monitor_sublabel">Real-time microphone level analysis</span>
+          <!-- Stop Sound -->
+          <div style="display: flex; gap: 10px; align-items: center">
+            <span style="width: 100px; font-size: 0.9em; color: #888" data-i18n="audio.sound_stop">🛑 Stop Recording
+              Sound</span>
+            <select id="stop-sound" style="flex: 1">
+              <option value="none" data-i18n="audio.sound_none">🔇 None (Silent)</option>
+            </select>
+            <button class="btn btn-secondary" style="padding: 4px 10px" id="preview-stop-sound"
+              data-i18n="audio.preview_sound">
+              ▶ Preview
+            </button>
+          </div>
 
-          <div class="signal-monitor">
-            <!-- Meter Container -->
-            <div class="meter-container">
-              <div class="meter-background">
-                <div class="zone zone-silent"></div>
-                <div class="zone zone-low"></div>
-                <div class="zone zone-good"></div>
-                <div class="zone zone-high"></div>
-                <div class="zone zone-clip"></div>
-              </div>
-              <div id="signal-meter" class="meter-fill"></div>
-              <div id="peak-hold" class="peak-indicator"></div>
-            </div>
-
-            <!-- Status Text -->
-            <div id="signal-status" class="status-text" role="status" aria-live="polite">
-              Click "Start Monitoring" to begin
-            </div>
-
-            <!-- Technical Readout -->
-            <div class="technical-readout">
-              <span
-                >Peak: <strong id="peak-db" title="Maximum instantaneous level">--</strong> dB</span
-              >
-              <span
-                >RMS:
-                <strong id="rms-db" title="Root Mean Square - average loudness">--</strong> dB</span
-              >
-            </div>
-
-            <!-- Control Button -->
-            <button
-              id="start-monitoring-btn"
-              class="btn btn-primary"
-              style="margin-top: 12px"
-              aria-label="Start or stop audio monitoring"
-              data-i18n="audio.test_microphone"
-            >
-              🎤 Test Microphone
+          <!-- Ask Sound -->
+          <div style="display: flex; gap: 10px; align-items: center">
+            <span style="width: 100px; font-size: 0.9em; color: #888" data-i18n="audio.sound_ask">❓ Ask Mode
+              Sound</span>
+            <select id="ask-sound" style="flex: 1">
+              <option value="none" data-i18n="audio.sound_none">🔇 None (Silent)</option>
+            </select>
+            <button class="btn btn-secondary" style="padding: 4px 10px" id="preview-ask-sound"
+              data-i18n="audio.preview_sound">
+              ▶ Preview
             </button>
           </div>
         </div>
+      </div>
 
-        <!-- Advanced Diagnostics (SPEC_021) -->
-        <details class="setting-group">
-          <summary style="cursor: pointer; font-weight: 600; padding: 8px 0" data-i18n="audio.advanced_diagnostics">
-            🔧 Advanced Diagnostics
-          </summary>
+      <!-- Signal Quality Monitor (SPEC_021) -->
+      <div class="setting-group">
+        <label data-i18n="audio.signal_monitor">🎤 Signal Quality Monitor</label>
+        <span class="sub-label" data-i18n="audio.signal_monitor_sublabel">Real-time microphone level analysis</span>
 
-          <div class="diagnostic-tools" style="margin-top: 12px">
-            <!-- Complete Microphone Test -->
-            <div class="diagnostic-card">
-              <h4 data-i18n="audio.test_my_microphone">🎤 Test My Microphone</h4>
-              <p data-i18n="audio.test_instructions">
-                Quick test: checks volume, quality, and background noise. Just click and follow the
-                prompts!
-              </p>
-              <button
-                id="complete-test-btn"
-                class="btn btn-primary"
-                aria-label="Run complete microphone test"
-                data-i18n="audio.test_my_microphone"
-              >
-                🎤 Test My Microphone
-              </button>
-              <div id="test-instructions" class="result-text" style="display: none"></div>
-              <div id="test-result" class="result-text" style="display: none"></div>
+        <div class="signal-monitor">
+          <!-- Meter Container -->
+          <div class="meter-container">
+            <div class="meter-background">
+              <div class="zone zone-silent"></div>
+              <div class="zone zone-low"></div>
+              <div class="zone zone-good"></div>
+              <div class="zone zone-high"></div>
+              <div class="zone zone-clip"></div>
             </div>
+            <div id="signal-meter" class="meter-fill"></div>
+            <div id="peak-hold" class="peak-indicator"></div>
           </div>
-        </details>
 
-        <div class="setting-group">
-          <div class="setting-row">
-            <div>
-              <label data-i18n="audio.noise_reduction"
-                >Noise Reduction
-                <span
-                  style="
+          <!-- Status Text -->
+          <div id="signal-status" class="status-text" role="status" aria-live="polite">
+            Click "Start Monitoring" to begin
+          </div>
+
+          <!-- Technical Readout -->
+          <div class="technical-readout">
+            <span>Peak: <strong id="peak-db" title="Maximum instantaneous level">--</strong> dB</span>
+            <span>RMS:
+              <strong id="rms-db" title="Root Mean Square - average loudness">--</strong> dB</span>
+          </div>
+
+          <!-- Control Button -->
+          <button id="start-monitoring-btn" class="btn btn-primary" style="margin-top: 12px"
+            aria-label="Start or stop audio monitoring" data-i18n="audio.test_microphone">
+            🎤 Test Microphone
+          </button>
+        </div>
+      </div>
+
+      <!-- Advanced Diagnostics (SPEC_021) -->
+      <details class="setting-group">
+        <summary style="cursor: pointer; font-weight: 600; padding: 8px 0" data-i18n="audio.advanced_diagnostics">
+          🔧 Advanced Diagnostics
+        </summary>
+
+        <div class="diagnostic-tools" style="margin-top: 12px">
+          <!-- Complete Microphone Test -->
+          <div class="diagnostic-card">
+            <h4 data-i18n="audio.test_my_microphone">🎤 Test My Microphone</h4>
+            <p data-i18n="audio.test_instructions">
+              Quick test: checks volume, quality, and background noise. Just click and follow the
+              prompts!
+            </p>
+            <button id="complete-test-btn" class="btn btn-primary" aria-label="Run complete microphone test"
+              data-i18n="audio.test_my_microphone">
+              🎤 Test My Microphone
+            </button>
+            <div id="test-instructions" class="result-text" style="display: none"></div>
+            <div id="test-result" class="result-text" style="display: none"></div>
+          </div>
+        </div>
+      </details>
+
+      <div class="setting-group">
+        <div class="setting-row">
+          <div>
+            <label data-i18n="audio.noise_reduction">Noise Reduction
+              <span style="
                     font-size: 0.7em;
                     background: #444;
                     padding: 2px 6px;
                     border-radius: 3px;
                     margin-left: 8px;
-                  "
-                  data-i18n="audio.coming_soon"
-                  >Coming Soon</span
-                ></label
-              >
-              <span class="sub-label" data-i18n="audio.noise_filter_sublabel">Filter background noise from recordings</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="noise-reduction" disabled />
-              <span class="slider" style="opacity: 0.5"></span>
-            </label>
+                  " data-i18n="audio.coming_soon">Coming Soon</span></label>
+            <span class="sub-label" data-i18n="audio.noise_filter_sublabel">Filter background noise from
+              recordings</span>
           </div>
-        </div>
-
-        <div class="setting-group">
-          <label data-i18n="audio.max_duration">Maximum Recording Duration</label>
-          <span class="sub-label" data-i18n="audio.max_duration_sublabel"
-            >Auto-stop recording after this duration (prevents runaway recordings)</span
-          >
-          <div style="display: flex; gap: 10px; margin-top: 10px">
-            <label style="flex: 1">
-              <input type="radio" name="max-duration" value="30" />
-              <span style="margin-left: 5px" data-i18n="audio.duration_30s">30 seconds</span>
-            </label>
-            <label style="flex: 1">
-              <input type="radio" name="max-duration" value="60" checked />
-              <span style="margin-left: 5px" data-i18n="audio.duration_60s">1 minute</span>
-            </label>
-            <label style="flex: 1">
-              <input type="radio" name="max-duration" value="120" />
-              <span style="margin-left: 5px" data-i18n="audio.duration_120s">2 minutes</span>
-            </label>
-            <label style="flex: 1">
-              <input type="radio" name="max-duration" value="0" />
-              <span style="margin-left: 5px" data-i18n="audio.duration_unlimited">⚠️ Unlimited</span>
-            </label>
-          </div>
+          <label class="switch">
+            <input type="checkbox" id="noise-reduction" disabled />
+            <span class="slider" style="opacity: 0.5"></span>
+          </label>
         </div>
       </div>
 
-      <!-- OLLAMA TAB -->
-      <div id="ollama" class="tab-content">
-        <h2 data-i18n="ollama.title">🦙 Ollama Management</h2>
+      <div class="setting-group">
+        <label data-i18n="audio.max_duration">Maximum Recording Duration</label>
+        <span class="sub-label" data-i18n="audio.max_duration_sublabel">Auto-stop recording after this duration
+          (prevents runaway recordings)</span>
+        <div style="display: flex; gap: 10px; margin-top: 10px">
+          <label style="flex: 1">
+            <input type="radio" name="max-duration" value="30" />
+            <span style="margin-left: 5px" data-i18n="audio.duration_30s">30 seconds</span>
+          </label>
+          <label style="flex: 1">
+            <input type="radio" name="max-duration" value="60" checked />
+            <span style="margin-left: 5px" data-i18n="audio.duration_60s">1 minute</span>
+          </label>
+          <label style="flex: 1">
+            <input type="radio" name="max-duration" value="120" />
+            <span style="margin-left: 5px" data-i18n="audio.duration_120s">2 minutes</span>
+          </label>
+          <label style="flex: 1">
+            <input type="radio" name="max-duration" value="0" />
+            <span style="margin-left: 5px" data-i18n="audio.duration_unlimited">⚠️ Unlimited</span>
+          </label>
+        </div>
+      </div>
+    </div>
 
-        <!-- Hardware Performance -->
-        <div class="setting-group">
-          <label data-i18n="ollama.hardware_performance">Hardware Performance</label>
-          <span class="sub-label" data-i18n="ollama.hardware_performance_sublabel">Detect your GPU and VRAM to see recommended models</span>
-          <div
-            id="hardware-status-panel"
-            style="
+    <!-- OLLAMA TAB -->
+    <div id="ollama" class="tab-content">
+      <h2 data-i18n="ollama.title">🦙 Ollama Management</h2>
+
+      <!-- Hardware Performance -->
+      <div class="setting-group">
+        <label data-i18n="ollama.hardware_performance">Hardware Performance</label>
+        <span class="sub-label" data-i18n="ollama.hardware_performance_sublabel">Detect your GPU and VRAM to see
+          recommended models</span>
+        <div id="hardware-status-panel" style="
               background: #1a1a1a;
               padding: 12px;
               border-radius: 6px;
               margin: 10px 0;
               border: 1px solid var(--border-color);
-            "
-          >
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px">
-              <span style="color: #888" data-i18n="ollama.gpu_label">GPU:</span>
-              <span id="hw-gpu" data-i18n="ollama.unknown">Unknown</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px">
-              <span style="color: #888" data-i18n="ollama.vram_label">VRAM:</span>
-              <span id="hw-vram" data-i18n="ollama.unknown">Unknown</span>
-            </div>
-            <div style="display: flex; justify-content: space-between">
-              <span style="color: #888" data-i18n="ollama.performance_tier">Performance Tier:</span>
-              <span id="hw-tier" style="font-weight: bold" data-i18n="ollama.unknown">Unknown</span>
-            </div>
+            ">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px">
+            <span style="color: #888" data-i18n="ollama.gpu_label">GPU:</span>
+            <span id="hw-gpu" data-i18n="ollama.unknown">Unknown</span>
           </div>
-          <button id="hardware-test-btn" class="btn btn-secondary" data-i18n="ollama.run_hardware_test">🔬 Run Hardware Test</button>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px">
+            <span style="color: #888" data-i18n="ollama.vram_label">VRAM:</span>
+            <span id="hw-vram" data-i18n="ollama.unknown">Unknown</span>
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span style="color: #888" data-i18n="ollama.performance_tier">Performance Tier:</span>
+            <span id="hw-tier" style="font-weight: bold" data-i18n="ollama.unknown">Unknown</span>
+          </div>
+        </div>
+        <button id="hardware-test-btn" class="btn btn-secondary" data-i18n="ollama.run_hardware_test">🔬 Run Hardware
+          Test</button>
+      </div>
+
+      <!-- Service Status & Control -->
+      <div class="setting-group">
+        <label data-i18n="ollama.service_status">Service Status</label>
+        <span class="sub-label" data-i18n="ollama.service_status_sublabel">Local LLM inference engine</span>
+        <div id="ollama-status-panel" style="background: #1a1a1a; padding: 12px; border-radius: 6px; margin: 10px 0">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px">
+            <span style="color: #888" data-i18n="ollama.status_label">Status:</span>
+            <span id="ollama-service-status" data-i18n="ollama.loading">Checking...</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px">
+            <span style="color: #888" data-i18n="ollama.version_label">Version:</span>
+            <span id="ollama-service-version">--</span>
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span style="color: #888" data-i18n="ollama.models_loaded_label">Models Loaded:</span>
+            <span id="ollama-loaded-models">--</span>
+          </div>
         </div>
 
-        <!-- Service Status & Control -->
-        <div class="setting-group">
-          <label data-i18n="ollama.service_status">Service Status</label>
-          <span class="sub-label" data-i18n="ollama.service_status_sublabel">Local LLM inference engine</span>
-          <div
-            id="ollama-status-panel"
-            style="background: #1a1a1a; padding: 12px; border-radius: 6px; margin: 10px 0"
-          >
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px">
-              <span style="color: #888" data-i18n="ollama.status_label">Status:</span>
-              <span id="ollama-service-status" data-i18n="ollama.loading">Checking...</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px">
-              <span style="color: #888" data-i18n="ollama.version_label">Version:</span>
-              <span id="ollama-service-version">--</span>
-            </div>
-            <div style="display: flex; justify-content: space-between">
-              <span style="color: #888" data-i18n="ollama.models_loaded_label">Models Loaded:</span>
-              <span id="ollama-loaded-models">--</span>
-            </div>
-          </div>
+        <!-- Action Buttons -->
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px">
+          <button id="refresh-ollama-btn" class="btn btn-secondary" data-i18n="ollama.refresh">🔄 Refresh</button>
+          <button id="restart-ollama-btn" class="btn btn-secondary" data-i18n="ollama.restart_service">🔄 Restart
+            Service</button>
+          <button id="warmup-btn" class="btn btn-secondary" data-i18n="ollama.warmup_model">🔥 Warm Up Model</button>
+        </div>
 
-          <!-- Action Buttons -->
-          <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px">
-            <button id="refresh-ollama-btn" class="btn btn-secondary" data-i18n="ollama.refresh">🔄 Refresh</button>
-            <button id="restart-ollama-btn" class="btn btn-secondary" data-i18n="ollama.restart_service">🔄 Restart Service</button>
-            <button id="warmup-btn" class="btn btn-secondary" data-i18n="ollama.warmup_model">🔥 Warm Up Model</button>
-          </div>
-
-          <!-- Action Descriptions -->
-          <div
-            style="
+        <!-- Action Descriptions -->
+        <div style="
               margin-top: 12px;
               font-size: 0.85em;
               color: #888;
               display: grid;
               grid-template-columns: 1fr 1fr;
               gap: 12px;
-            "
-          >
-            <div style="background: rgba(255, 255, 255, 0.03); padding: 8px; border-radius: 4px">
-              <div style="color: #ccc; font-weight: 500; margin-bottom: 2px" data-i18n="ollama.restart_service">Restart Service</div>
-              <span data-i18n="ollama.restart_description">Restart to clear VRAM or fix connection issues.</span>
-            </div>
-            <div style="background: rgba(255, 255, 255, 0.03); padding: 8px; border-radius: 4px">
-              <div style="color: #ccc; font-weight: 500; margin-bottom: 2px" data-i18n="ollama.warmup_model">Warm Up Model</div>
-              <span data-i18n="ollama.warmup_description">Pre-load model into memory for instant first response.</span>
-            </div>
+            ">
+          <div style="background: rgba(255, 255, 255, 0.03); padding: 8px; border-radius: 4px">
+            <div style="color: #ccc; font-weight: 500; margin-bottom: 2px" data-i18n="ollama.restart_service">Restart
+              Service</div>
+            <span data-i18n="ollama.restart_description">Restart to clear VRAM or fix connection issues.</span>
           </div>
-
-          <div
-            id="ollama-restart-status"
-            style="margin-top: 12px; font-size: 0.9em; color: #888"
-          ></div>
+          <div style="background: rgba(255, 255, 255, 0.03); padding: 8px; border-radius: 4px">
+            <div style="color: #ccc; font-weight: 500; margin-bottom: 2px" data-i18n="ollama.warmup_model">Warm Up Model
+            </div>
+            <span data-i18n="ollama.warmup_description">Pre-load model into memory for instant first response.</span>
+          </div>
         </div>
 
-        <!-- Safe Model Library (SPEC_033) -->
-        <div class="setting-group">
-          <label data-i18n="ollama.verified_library">Verified Model Library</label>
-          <div
-            style="
+        <div id="ollama-restart-status" style="margin-top: 12px; font-size: 0.9em; color: #888"></div>
+      </div>
+
+      <!-- Safe Model Library (SPEC_033) -->
+      <div class="setting-group">
+        <label data-i18n="ollama.verified_library">Verified Model Library</label>
+        <div style="
               margin-top: 15px;
               color: #888;
               font-style: italic;
@@ -1072,240 +1090,206 @@
               padding: 15px;
               border-radius: 6px;
               text-align: center;
-            "
-            data-i18n="ollama.coming_soon"
-          >
-            🚧 Coming Soon: A curated library of verified models.
-          </div>
+            " data-i18n="ollama.coming_soon">
+          🚧 Coming Soon: A curated library of verified models.
+        </div>
 
-          <!-- Advanced / Dangerous Mode -->
-          <details style="margin-top: 20px; border-top: 1px solid #333; padding-top: 10px">
-            <summary style="color: #666; cursor: pointer; font-size: 0.85em; user-select: none" data-i18n="ollama.manual_download">
-              Advanced: Manual Download
-            </summary>
-            <div
-              style="
+        <!-- Advanced / Dangerous Mode -->
+        <details style="margin-top: 20px; border-top: 1px solid #333; padding-top: 10px">
+          <summary style="color: #666; cursor: pointer; font-size: 0.85em; user-select: none"
+            data-i18n="ollama.manual_download">
+            Advanced: Manual Download
+          </summary>
+          <div style="
                 margin-top: 10px;
                 background: rgba(0, 0, 0, 0.2);
                 padding: 10px;
                 border-radius: 6px;
-              "
-            >
-              <div style="color: #fbbf24; font-size: 0.8em; margin-bottom: 8px" data-i18n="ollama.warning_incompatible">
-                ⚠️ Warning: You can download incompatible models.
-              </div>
-              <div style="display: flex; gap: 10px">
-                <input
-                  type="text"
-                  id="ollama-pull-model"
-                  placeholder="gemma2:27b"
-                  style="flex: 1"
-                />
-                <button id="pull-model-btn" class="btn btn-secondary" style="opacity: 0.7" data-i18n="ollama.pull_model">
-                  Pull
-                </button>
-              </div>
+              ">
+            <div style="color: #fbbf24; font-size: 0.8em; margin-bottom: 8px" data-i18n="ollama.warning_incompatible">
+              ⚠️ Warning: You can download incompatible models.
             </div>
-          </details>
-          <div
-            id="ollama-pull-status"
-            style="margin-top: 12px; font-size: 0.9em; color: #888"
-          ></div>
-
-          <div style="margin-top: 15px; text-align: right; font-size: 0.8em">
-            <a href="#" id="ollama-help-link" style="color: #666; text-decoration: none" data-i18n="ollama.learn_more"
-              >ℹ️ Learn more about importing models</a
-            >
+            <div style="display: flex; gap: 10px">
+              <input type="text" id="ollama-pull-model" placeholder="gemma2:27b" style="flex: 1" />
+              <button id="pull-model-btn" class="btn btn-secondary" style="opacity: 0.7" data-i18n="ollama.pull_model">
+                Pull
+              </button>
+            </div>
           </div>
-        </div>
+        </details>
+        <div id="ollama-pull-status" style="margin-top: 12px; font-size: 0.9em; color: #888"></div>
 
-        <div class="setting-group">
-          <label data-i18n="ollama.installed_models">Installed Models</label>
-          <span class="sub-label" data-i18n="ollama.installed_models_sublabel">Manage your downloaded models</span>
-          <div
-            id="ollama-models-list"
-            style="
+        <div style="margin-top: 15px; text-align: right; font-size: 0.8em">
+          <a href="#" id="ollama-help-link" style="color: #666; text-decoration: none" data-i18n="ollama.learn_more">ℹ️
+            Learn more about importing models</a>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label data-i18n="ollama.installed_models">Installed Models</label>
+        <span class="sub-label" data-i18n="ollama.installed_models_sublabel">Manage your downloaded models</span>
+        <div id="ollama-models-list" style="
               background: #1a1a1a;
               padding: 12px;
               border-radius: 6px;
               margin: 10px 0;
               max-height: 200px;
               overflow-y: auto;
-            "
-            data-i18n="ollama.loading"
-          >
-            Loading...
-          </div>
-        </div>
-
-        <!-- Performance Settings -->
-        <div class="setting-group">
-          <label data-i18n="ollama.keep_alive">Keep-Alive Duration</label>
-          <span class="sub-label" data-i18n="ollama.keep_alive_sublabel">How long to keep models loaded in memory after use</span>
-          <select id="keep-alive-select">
-            <option value="5m" data-i18n="ollama.keep_alive_5m">5 minutes</option>
-            <option value="10m" selected data-i18n="ollama.keep_alive_10m">10 minutes (default)</option>
-            <option value="30m" data-i18n="ollama.keep_alive_30m">30 minutes</option>
-            <option value="1h" data-i18n="ollama.keep_alive_1h">1 hour</option>
-            <option value="24h" data-i18n="ollama.keep_alive_24h">24 hours (always loaded)</option>
-          </select>
-        </div>
-
-        <!-- Advanced -->
-        <div class="setting-group">
-          <label data-i18n="ollama.server_url">Ollama Server URL</label>
-          <span class="sub-label" data-i18n="ollama.server_url_sublabel">Change if running Ollama on a remote machine</span>
-          <input
-            type="text"
-            id="server-url-input"
-            value="http://localhost:11434"
-            style="width: 100%"
-          />
+            " data-i18n="ollama.loading">
+          Loading...
         </div>
       </div>
 
-      <!-- MODES TAB -->
-      <div id="modes" class="tab-content">
-        <h2 data-i18n="modes.title">Execution Modes</h2>
+      <!-- Performance Settings -->
+      <div class="setting-group">
+        <label data-i18n="ollama.keep_alive">Keep-Alive Duration</label>
+        <span class="sub-label" data-i18n="ollama.keep_alive_sublabel">How long to keep models loaded in memory after
+          use</span>
+        <select id="keep-alive-select">
+          <option value="5m" data-i18n="ollama.keep_alive_5m">5 minutes</option>
+          <option value="10m" selected data-i18n="ollama.keep_alive_10m">10 minutes (default)</option>
+          <option value="30m" data-i18n="ollama.keep_alive_30m">30 minutes</option>
+          <option value="1h" data-i18n="ollama.keep_alive_1h">1 hour</option>
+          <option value="24h" data-i18n="ollama.keep_alive_24h">24 hours (always loaded)</option>
+        </select>
+      </div>
 
-        <div class="setting-group">
-          <label data-i18n="modes.default_mode">Default Mode</label>
-          <span class="sub-label" data-i18n="modes.default_mode_sublabel">Mode used when you start dictating</span>
-          <select id="default-mode-select">
-            <option value="standard" data-i18n="modes.mode_standard">Standard (General Purpose)</option>
-            <option value="prompt" data-i18n="modes.mode_prompt">Prompt (For LLM Prompts)</option>
-            <option value="professional" data-i18n="modes.mode_professional">Professional (Business)</option>
-          </select>
-        </div>
+      <!-- Advanced -->
+      <div class="setting-group">
+        <label data-i18n="ollama.server_url">Ollama Server URL</label>
+        <span class="sub-label" data-i18n="ollama.server_url_sublabel">Change if running Ollama on a remote
+          machine</span>
+        <input type="text" id="server-url-input" value="http://localhost:11434" style="width: 100%" />
+      </div>
+    </div>
 
-        <!-- Ask Mode Output -->
-        <div class="setting-group">
-          <label data-i18n="modes.ask_output">Ask Mode Output</label>
-          <span class="sub-label" data-i18n="modes.ask_output_sublabel">How to deliver answers when using Ask Mode (Ctrl+Alt+A)</span>
-          <select id="ask-output-mode-select">
-            <option value="type" data-i18n="modes.output_type">Type (Inject text)</option>
-            <option value="clipboard" data-i18n="modes.output_clipboard">Clipboard Only</option>
-            <option value="notification" data-i18n="modes.output_notification">Notification Only</option>
-            <option value="clipboard+notify" data-i18n="modes.output_both">Clipboard + Notification Both</option>
-          </select>
-        </div>
+    <!-- MODES TAB -->
+    <div id="modes" class="tab-content">
+      <h2 data-i18n="modes.title">Execution Modes</h2>
 
-        <!-- SPEC_034_EXTRAS: Profile Editor Toggle -->
-        <div
-          class="setting-group"
-          style="
+      <div class="setting-group">
+        <label data-i18n="modes.default_mode">Default Mode</label>
+        <span class="sub-label" data-i18n="modes.default_mode_sublabel">Mode used when you start dictating</span>
+        <select id="default-mode-select">
+          <option value="standard" data-i18n="modes.mode_standard">Standard (General Purpose)</option>
+          <option value="prompt" data-i18n="modes.mode_prompt">Prompt (For LLM Prompts)</option>
+          <option value="professional" data-i18n="modes.mode_professional">Professional (Business)</option>
+        </select>
+      </div>
+
+      <!-- Ask Mode Output -->
+      <div class="setting-group">
+        <label data-i18n="modes.ask_output">Ask Mode Output</label>
+        <span class="sub-label" data-i18n="modes.ask_output_sublabel">How to deliver answers when using Ask Mode
+          (Ctrl+Alt+A)</span>
+        <select id="ask-output-mode-select">
+          <option value="type" data-i18n="modes.output_type">Type (Inject text)</option>
+          <option value="clipboard" data-i18n="modes.output_clipboard">Clipboard Only</option>
+          <option value="notification" data-i18n="modes.output_notification">Notification Only</option>
+          <option value="clipboard+notify" data-i18n="modes.output_both">Clipboard + Notification Both</option>
+        </select>
+      </div>
+
+      <!-- SPEC_034_EXTRAS: Profile Editor Toggle -->
+      <div class="setting-group" style="
             background: #1a1a1a;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 30px;
-          "
-        >
-          <div style="display: flex; justify-content: space-between; align-items: center">
-            <div>
-              <label style="font-size: 1.1em; font-weight: 600; margin-bottom: 8px; display: block" data-i18n="modes.configure_profile"
-                >Configure Profile:</label
-              >
-              <span class="sub-label" data-i18n="modes.configure_profile_sublabel">Switch between editing Local or Cloud settings</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 15px">
-              <span style="font-weight: 500; color: #888" data-i18n="modes.local_label">🏠 Local</span>
-              <label class="switch" style="transform: scale(1.2)">
-                <input type="checkbox" id="global-processing-toggle" />
-                <span class="slider"></span>
-              </label>
-              <span style="font-weight: 500; color: #888" data-i18n="modes.cloud_label">☁️ Cloud</span>
-            </div>
+          ">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <div>
+            <label style="font-size: 1.1em; font-weight: 600; margin-bottom: 8px; display: block"
+              data-i18n="modes.configure_profile">Configure Profile:</label>
+            <span class="sub-label" data-i18n="modes.configure_profile_sublabel">Switch between editing Local or Cloud
+              settings</span>
           </div>
-          <div
-            style="
+          <div style="display: flex; align-items: center; gap: 15px">
+            <span style="font-weight: 500; color: #888" data-i18n="modes.local_label">🏠 Local</span>
+            <label class="switch" style="transform: scale(1.2)">
+              <input type="checkbox" id="global-processing-toggle" />
+              <span class="slider"></span>
+            </label>
+            <span style="font-weight: 500; color: #888" data-i18n="modes.cloud_label">☁️ Cloud</span>
+          </div>
+        </div>
+        <div style="
               margin-top: 12px;
               padding: 10px;
               background: rgba(255, 255, 255, 0.05);
               border-radius: 4px;
               font-size: 0.85em;
               color: #ccc;
-            "
-            data-i18n="modes.profile_info"
-          >
-            ℹ️ Actual processing mode is controlled by the Control Panel toggle.
-          </div>
+            " data-i18n="modes.profile_info">
+          ℹ️ Actual processing mode is controlled by the Control Panel toggle.
         </div>
+      </div>
 
-        <!-- Mode Configuration Section -->
-        <div class="setting-group">
-          <label data-i18n="modes.dual_profile_config">Dual-Profile Mode Configuration</label>
-          <span class="sub-label" data-i18n="modes.dual_profile_sublabel">Configure both Local and Cloud profiles for each mode</span>
+      <!-- Mode Configuration Section -->
+      <div class="setting-group">
+        <label data-i18n="modes.dual_profile_config">Dual-Profile Mode Configuration</label>
+        <span class="sub-label" data-i18n="modes.dual_profile_sublabel">Configure both Local and Cloud profiles for each
+          mode</span>
 
-          <!-- SPEC_038: Model Info (no per-mode selection) -->
-          <div
-            style="
+        <!-- SPEC_038: Model Info (no per-mode selection) -->
+        <div style="
               margin: 12px 0 16px 0;
               padding: 10px 12px;
               background: rgba(59, 130, 246, 0.08);
               border-left: 3px solid #3b82f6;
               border-radius: 4px;
-            "
-            data-i18n="modes.dual_profile_info"
-          >
-            <p style="margin: 0; color: #93c5fd; font-size: 0.88em; line-height: 1.4">
-              ℹ️ <strong>Local modes</strong> share one Ollama model (set in General → Default AI
-              Model) for optimal VRAM usage. <strong>Cloud modes</strong> can use different models
-              per mode.
-            </p>
-          </div>
+            " data-i18n="modes.dual_profile_info">
+          <p style="margin: 0; color: #93c5fd; font-size: 0.88em; line-height: 1.4">
+            ℹ️ <strong>Local modes</strong> share one Ollama model (set in General → Default AI
+            Model) for optimal VRAM usage. <strong>Cloud modes</strong> can use different models
+            per mode.
+          </p>
+        </div>
 
-          <!-- Master-Detail Layout -->
-          <div
-            style="
+        <!-- Master-Detail Layout -->
+        <div style="
               display: grid;
               grid-template-columns: 200px 1fr;
               gap: 20px;
               margin-top: 15px;
               min-height: 500px;
-            "
-          >
-            <!-- LEFT: Mode List -->
-            <div id="mode-list" style="display: flex; flex-direction: column; gap: 8px">
-              <!-- Divider -->
-              <div class="mode-list-divider" data-i18n="modes.dictation_label">Dictation</div>
+            ">
+          <!-- LEFT: Mode List -->
+          <div id="mode-list" style="display: flex; flex-direction: column; gap: 8px">
+            <!-- Divider -->
+            <div class="mode-list-divider" data-i18n="modes.dictation_label">Dictation</div>
 
-              <div class="mode-list-item active" data-mode="standard" data-i18n="modes.mode_standard">Standard</div>
-              <div class="mode-list-item" data-mode="prompt" data-i18n="modes.mode_prompt">Prompt</div>
-              <div class="mode-list-item" data-mode="professional" data-i18n="modes.mode_professional">Professional</div>
-              <div class="mode-list-item" data-mode="raw">Raw</div>
+            <div class="mode-list-item active" data-mode="standard" data-i18n="modes.mode_standard">Standard</div>
+            <div class="mode-list-item" data-mode="prompt" data-i18n="modes.mode_prompt">Prompt</div>
+            <div class="mode-list-item" data-mode="professional" data-i18n="modes.mode_professional">Professional</div>
+            <div class="mode-list-item" data-mode="raw">Raw</div>
 
-              <!-- Divider -->
-              <div class="mode-list-divider" data-i18n="modes.processing_modes_label">Processing Modes</div>
+            <!-- Divider -->
+            <div class="mode-list-divider" data-i18n="modes.processing_modes_label">Processing Modes</div>
 
-              <div class="mode-list-item" data-mode="ask" data-i18n="modes.mode_ask_qa">Ask (Q&A)</div>
-              <div class="mode-list-item" data-mode="refine" data-i18n="modes.mode_refine">Refine</div>
-              <div class="mode-list-item" data-mode="refine_instruction" data-i18n="modes.mode_refine_instruction">Refine (Instruction)</div>
-            </div>
+            <div class="mode-list-item" data-mode="ask" data-i18n="modes.mode_ask_qa">Ask (Q&A)</div>
+            <div class="mode-list-item" data-mode="refine" data-i18n="modes.mode_refine">Refine</div>
+            <div class="mode-list-item" data-mode="refine_instruction" data-i18n="modes.mode_refine_instruction">Refine
+              (Instruction)</div>
+          </div>
 
-            <!-- RIGHT: Dual-Profile Configuration -->
-            <div
-              id="mode-detail-container"
-              style="display: flex; flex-direction: column; gap: 20px"
-            >
-              <h3 id="mode-detail-title" style="margin: 0" data-i18n="modes.mode_standard">Standard Mode</h3>
+          <!-- RIGHT: Dual-Profile Configuration -->
+          <div id="mode-detail-container" style="display: flex; flex-direction: column; gap: 20px">
+            <h3 id="mode-detail-title" style="margin: 0" data-i18n="modes.mode_standard">Standard Mode</h3>
 
-              <!-- Local Profile Section -->
-              <div id="local-profile-section" class="profile-section" style="display: block">
-                <div class="profile-header">
-                  <h4 data-i18n="modes.local_profile">🏠 Local Profile</h4>
-                </div>
+            <!-- Local Profile Section -->
+            <div id="local-profile-section" class="profile-section" style="display: block">
+              <div class="profile-header">
+                <h4 data-i18n="modes.local_profile">🏠 Local Profile</h4>
+              </div>
 
-                <div style="margin-bottom: 16px">
-                  <label style="display: block; margin-bottom: 8px; font-weight: 500" data-i18n="modes.custom_system_prompt"
-                    >Custom System Prompt (Optional)</label
-                  >
-                  <textarea
-                    id="local-prompt-textarea"
-                    rows="6"
-                    placeholder="Leave empty to use default prompt. Must contain {text} placeholder."
-                    data-i18n-placeholder="modes.prompt_placeholder"
-                    style="
+              <div style="margin-bottom: 16px">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500"
+                  data-i18n="modes.custom_system_prompt">Custom System Prompt (Optional)</label>
+                <textarea id="local-prompt-textarea" rows="6"
+                  placeholder="Leave empty to use default prompt. Must contain {text} placeholder."
+                  data-i18n-placeholder="modes.prompt_placeholder" style="
                       width: 100%;
                       padding: 10px;
                       background: #0a0a0a;
@@ -1315,93 +1299,71 @@
                       font-family: 'Courier New', monospace;
                       font-size: 0.9em;
                       resize: vertical;
-                    "
-                  >
+                    ">
                   </textarea>
-                  <span
-                    style="display: block; margin-top: 4px; color: #888; font-size: 0.85em"
-                    id="local-prompt-info"
-                    >No custom prompt</span
-                  >
-                </div>
-
-                <div style="display: flex; gap: 10px">
-                  <button id="save-local-profile" class="btn" style="flex: 1; background: #059669">
-                    Save Local Profile
-                  </button>
-                  <button id="reset-local-profile" class="btn btn-secondary" style="flex: 1">
-                    Reset to Default
-                  </button>
-                </div>
+                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em" id="local-prompt-info">No
+                  custom prompt</span>
               </div>
 
-              <!-- Cloud Profile Section -->
-              <div id="cloud-profile-section" class="profile-section" style="display: none">
-                <div class="profile-header">
-                  <h4>☁️ Cloud Profile</h4>
-                </div>
+              <div style="display: flex; gap: 10px">
+                <button id="save-local-profile" class="btn" style="flex: 1; background: #059669">
+                  Save Local Profile
+                </button>
+                <button id="reset-local-profile" class="btn btn-secondary" style="flex: 1">
+                  Reset to Default
+                </button>
+              </div>
+            </div>
 
-                <div style="margin-bottom: 16px">
-                  <label style="display: block; margin-bottom: 8px; font-weight: 500"
-                    >Cloud Provider</label
-                  >
-                  <select
-                    id="cloud-provider-select"
-                    style="
+            <!-- Cloud Profile Section -->
+            <div id="cloud-profile-section" class="profile-section" style="display: none">
+              <div class="profile-header">
+                <h4>☁️ Cloud Profile</h4>
+              </div>
+
+              <div style="margin-bottom: 16px">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500">Cloud Provider</label>
+                <select id="cloud-provider-select" style="
                       width: 100%;
                       padding: 8px;
                       background: #0a0a0a;
                       border: 1px solid var(--border-color);
                       border-radius: 4px;
                       color: #e0e0e0;
-                    "
-                  >
-                    <option value="">Loading...</option>
-                  </select>
-                  <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em"
-                    >API key must be configured in API Keys tab</span
-                  >
-                </div>
+                    ">
+                  <option value="">Loading...</option>
+                </select>
+                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em">API key must be configured
+                  in API Keys tab</span>
+              </div>
 
-                <div style="margin-bottom: 16px">
-                  <label style="display: block; margin-bottom: 8px; font-weight: 500">Model</label>
-                  <div style="display: flex; gap: 8px">
-                    <select
-                      id="cloud-model-select"
-                      style="
+              <div style="margin-bottom: 16px">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500">Model</label>
+                <div style="display: flex; gap: 8px">
+                  <select id="cloud-model-select" style="
                         flex: 1;
                         padding: 8px;
                         background: #0a0a0a;
                         border: 1px solid var(--border-color);
                         border-radius: 4px;
                         color: #e0e0e0;
-                      "
-                    >
-                      <option value="">Use provider default</option>
-                    </select>
-                    <button
-                      id="cloud-model-refresh"
-                      class="btn btn-secondary"
-                      style="padding: 8px 12px; min-width: auto; flex-shrink: 0"
-                      title="Refresh models"
-                    >
-                      🔄
-                    </button>
-                  </div>
-                  <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em"
-                    >Specific model for this mode</span
-                  >
+                      ">
+                    <option value="">Use provider default</option>
+                  </select>
+                  <button id="cloud-model-refresh" class="btn btn-secondary"
+                    style="padding: 8px 12px; min-width: auto; flex-shrink: 0" title="Refresh models">
+                    🔄
+                  </button>
                 </div>
+                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em">Specific model for this
+                  mode</span>
+              </div>
 
-                <div style="margin-bottom: 16px">
-                  <label style="display: block; margin-bottom: 8px; font-weight: 500"
-                    >Custom System Prompt (Optional)</label
-                  >
-                  <textarea
-                    id="cloud-prompt-textarea"
-                    rows="6"
-                    placeholder="Leave empty to use default prompt. Must contain {text} placeholder."
-                    style="
+              <div style="margin-bottom: 16px">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500">Custom System Prompt
+                  (Optional)</label>
+                <textarea id="cloud-prompt-textarea" rows="6"
+                  placeholder="Leave empty to use default prompt. Must contain {text} placeholder." style="
                       width: 100%;
                       padding: 10px;
                       background: #0a0a0a;
@@ -1411,38 +1373,33 @@
                       font-family: 'Courier New', monospace;
                       font-size: 0.9em;
                       resize: vertical;
-                    "
-                  >
+                    ">
                   </textarea>
-                  <span
-                    style="display: block; margin-top: 4px; color: #888; font-size: 0.85em"
-                    id="cloud-prompt-info"
-                    >No custom prompt</span
-                  >
-                </div>
+                <span style="display: block; margin-top: 4px; color: #888; font-size: 0.85em" id="cloud-prompt-info">No
+                  custom prompt</span>
+              </div>
 
-                <div style="display: flex; gap: 10px">
-                  <button id="save-cloud-profile" class="btn" style="flex: 1; background: #059669">
-                    Save Cloud Profile
-                  </button>
-                  <button id="reset-cloud-profile" class="btn btn-secondary" style="flex: 1">
-                    Reset to Default
-                  </button>
-                </div>
+              <div style="display: flex; gap: 10px">
+                <button id="save-cloud-profile" class="btn" style="flex: 1; background: #059669">
+                  Save Cloud Profile
+                </button>
+                <button id="reset-cloud-profile" class="btn btn-secondary" style="flex: 1">
+                  Reset to Default
+                </button>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Text Injection Configuration (SPEC_006) -->
-        <div class="setting-group">
-          <label>Text Injection Settings</label>
-          <span class="sub-label">Customize how text is injected after dictation</span>
+      <!-- Text Injection Configuration (SPEC_006) -->
+      <div class="setting-group">
+        <label>Text Injection Settings</label>
+        <span class="sub-label">Customize how text is injected after dictation</span>
 
-          <!-- 1. Trailing Space Configuration -->
-          <div style="margin-bottom: 16px">
-            <div
-              style="
+        <!-- 1. Trailing Space Configuration -->
+        <div style="margin-bottom: 16px">
+          <div style="
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -1450,44 +1407,36 @@
                 background: #1a2f1f;
                 border: 1px solid #10b981;
                 border-radius: 6px;
-              "
-            >
-              <div>
-                <label style="font-weight: 500; margin: 0; color: #10b981"
-                  >Add Trailing Space</label
-                >
-                <span style="display: block; color: #a7f3d0; font-size: 0.9em; margin-top: 4px"
-                  >Automatically add a space after dictation for natural spacing</span
-                >
-              </div>
-              <label class="toggle-switch" style="margin: 0">
-                <input type="checkbox" id="trailing-space-toggle" checked />
-                <span class="toggle-slider"></span>
-              </label>
+              ">
+            <div>
+              <label style="font-weight: 500; margin: 0; color: #10b981">Add Trailing Space</label>
+              <span style="display: block; color: #a7f3d0; font-size: 0.9em; margin-top: 4px">Automatically add a space
+                after dictation for natural spacing</span>
             </div>
+            <label class="toggle-switch" style="margin: 0">
+              <input type="checkbox" id="trailing-space-toggle" checked />
+              <span class="toggle-slider"></span>
+            </label>
           </div>
+        </div>
 
-          <!-- 2. Optional Keys Section -->
-          <div
-            style="
+        <!-- 2. Optional Keys Section -->
+        <div style="
               background: linear-gradient(135deg, #1a1a2f 0%, #0f0f1f 100%);
               border: 1px solid #60a5fa;
               border-radius: 8px;
               padding: 14px;
               margin-top: 16px;
-            "
-          >
-            <h3 style="margin: 0 0 12px 0; font-size: 1em; color: #60a5fa">
-              Advanced: Optional Keys After Text
-            </h3>
-            <span style="display: block; color: #888; font-size: 0.9em; margin-bottom: 12px"
-              >Optionally press an additional key (Enter, Tab) after the space for specific use
-              cases</span
-            >
+            ">
+          <h3 style="margin: 0 0 12px 0; font-size: 1em; color: #60a5fa">
+            Advanced: Optional Keys After Text
+          </h3>
+          <span style="display: block; color: #888; font-size: 0.9em; margin-bottom: 12px">Optionally press an
+            additional key (Enter, Tab) after the space for specific use
+            cases</span>
 
-            <!-- Enable/Disable Optional Key Toggle -->
-            <div
-              style="
+          <!-- Enable/Disable Optional Key Toggle -->
+          <div style="
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -1496,388 +1445,325 @@
                 background: #0a0a0a;
                 border: 1px solid var(--border-color);
                 border-radius: 6px;
-              "
-            >
-              <div>
-                <label style="font-weight: 500; margin: 0">Enable Additional Key</label>
-                <span style="display: block; color: #888; font-size: 0.9em; margin-top: 3px"
-                  >Quick toggle for optional Enter/Tab key</span
-                >
-              </div>
-              <label class="toggle-switch" style="margin: 0">
-                <input type="checkbox" id="additional-key-toggle" />
-                <span class="toggle-slider"></span>
-              </label>
+              ">
+            <div>
+              <label style="font-weight: 500; margin: 0">Enable Additional Key</label>
+              <span style="display: block; color: #888; font-size: 0.9em; margin-top: 3px">Quick toggle for optional
+                Enter/Tab key</span>
             </div>
+            <label class="toggle-switch" style="margin: 0">
+              <input type="checkbox" id="additional-key-toggle" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
 
-            <!-- Key Selection Dropdown -->
-            <div style="margin-bottom: 12px">
-              <label style="display: block; margin-bottom: 6px; font-weight: 500"
-                >Select Key to Press</label
-              >
-              <select
-                id="additional-key-select"
-                style="
+          <!-- Key Selection Dropdown -->
+          <div style="margin-bottom: 12px">
+            <label style="display: block; margin-bottom: 6px; font-weight: 500">Select Key to Press</label>
+            <select id="additional-key-select" style="
                   width: 100%;
                   padding: 8px;
                   background: #0a0a0a;
                   border: 1px solid var(--border-color);
                   border-radius: 4px;
                   color: #e0e0e0;
-                "
-              >
-                <option value="none">None (Space Only)</option>
-                <option value="enter">Enter (Auto-Send Messages)</option>
-                <option value="tab">Tab (Move to Next Field)</option>
-              </select>
-            </div>
+                ">
+              <option value="none">None (Space Only)</option>
+              <option value="enter">Enter (Auto-Send Messages)</option>
+              <option value="tab">Tab (Move to Next Field)</option>
+            </select>
+          </div>
 
-            <!-- Use Cases -->
-            <div
-              style="
+          <!-- Use Cases -->
+          <div style="
                 background: #0a1a0a;
                 border-left: 3px solid #10b981;
                 padding: 10px 12px;
                 border-radius: 4px;
                 font-size: 0.9em;
                 margin-bottom: 12px;
-              "
-            >
-              <strong style="color: #10b981">Common Use Cases:</strong>
-              <ul style="margin: 6px 0 0 0; padding-left: 18px; color: #888; line-height: 1.5">
-                <li><strong>Enter key:</strong> Chat apps (Discord, Slack) - auto-send messages</li>
-                <li>
-                  <strong>Tab key:</strong> Forms, search boxes - move to next field or trigger
-                  autocomplete
-                </li>
-                <li>
-                  <strong>Space only:</strong> General writing, documents - natural spacing without
-                  auto-actions
-                </li>
-              </ul>
-            </div>
+              ">
+            <strong style="color: #10b981">Common Use Cases:</strong>
+            <ul style="margin: 6px 0 0 0; padding-left: 18px; color: #888; line-height: 1.5">
+              <li><strong>Enter key:</strong> Chat apps (Discord, Slack) - auto-send messages</li>
+              <li>
+                <strong>Tab key:</strong> Forms, search boxes - move to next field or trigger
+                autocomplete
+              </li>
+              <li>
+                <strong>Space only:</strong> General writing, documents - natural spacing without
+                auto-actions
+              </li>
+            </ul>
+          </div>
 
-            <!-- Safety Warning -->
-            <div
-              style="
+          <!-- Safety Warning -->
+          <div style="
                 background: #1a1410;
                 border: 1px solid #fbbf24;
                 border-radius: 4px;
                 padding: 10px;
                 font-size: 0.9em;
                 color: #aaa;
-              "
-            >
-              <strong style="color: #fbbf24">Important:</strong> The additional key feature is OFF
-              by default. If enabled, verify the key works correctly in your target application
-              before relying on it. Use Enter carefully in chat apps to avoid accidental message
-              sends.
-            </div>
+              ">
+            <strong style="color: #fbbf24">Important:</strong> The additional key feature is OFF
+            by default. If enabled, verify the key works correctly in your target application
+            before relying on it. Use Enter carefully in chat apps to avoid accidental message
+            sends.
           </div>
         </div>
-
-        <!-- Styles for mode list -->
-        <style>
-          .mode-list-item {
-            padding: 10px 12px;
-            background: var(--jet-black);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-            font-weight: 500;
-            user-select: none;
-          }
-
-          .mode-list-item:hover {
-            background: var(--dark-teal);
-            color: white;
-          }
-
-          .mode-list-item.active {
-            background: var(--dark-teal-3);
-            color: white;
-            border-color: var(--dark-teal-3);
-            box-shadow: 0 0 8px rgba(0, 96, 122, 0.5);
-          }
-
-          .mode-list-divider {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #666;
-            margin: 15px 0 5px 0;
-            padding-left: 5px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 5px;
-          }
-
-          /* SPEC_034_EXTRAS: Dual-Profile Styles */
-          .profile-section {
-            background: #1a1a1a;
-            border-radius: 8px;
-            padding: 20px;
-            border: 2px solid var(--border-color);
-            transition: all 0.3s ease;
-          }
-
-          .profile-section[data-active='true'] {
-            border-color: #22c55e;
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
-          }
-
-          .profile-section[data-active='false'] {
-            opacity: 0.6;
-            pointer-events: none;
-          }
-
-          .profile-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border-color);
-          }
-
-          .profile-header h4 {
-            margin: 0;
-            font-size: 1.1em;
-          }
-
-          .profile-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            font-weight: 600;
-          }
-
-          .active-badge {
-            background: #22c55e;
-            color: #000;
-          }
-
-          .inactive-badge {
-            background: #444;
-            color: #888;
-          }
-        </style>
       </div>
 
-      <!-- GOOGLE HUB TAB REMOVED -->
+      <!-- Styles for mode list -->
+      <style>
+        .mode-list-item {
+          padding: 10px 12px;
+          background: var(--jet-black);
+          border: 1px solid var(--border-color);
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.2s;
+          text-align: center;
+          font-weight: 500;
+          user-select: none;
+        }
 
-      <!-- API KEYS TAB -->
-      <div id="apikeys" class="tab-content">
-        <h2 data-i18n="apikeys.title">API Keys</h2>
+        .mode-list-item:hover {
+          background: var(--dark-teal);
+          color: white;
+        }
 
-        <!-- Security Callout -->
-        <div
-          style="
+        .mode-list-item.active {
+          background: var(--dark-teal-3);
+          color: white;
+          border-color: var(--dark-teal-3);
+          box-shadow: 0 0 8px rgba(0, 96, 122, 0.5);
+        }
+
+        .mode-list-divider {
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          color: #666;
+          margin: 15px 0 5px 0;
+          padding-left: 5px;
+          border-bottom: 1px solid var(--border-color);
+          padding-bottom: 5px;
+        }
+
+        /* SPEC_034_EXTRAS: Dual-Profile Styles */
+        .profile-section {
+          background: #1a1a1a;
+          border-radius: 8px;
+          padding: 20px;
+          border: 2px solid var(--border-color);
+          transition: all 0.3s ease;
+        }
+
+        .profile-section[data-active='true'] {
+          border-color: #22c55e;
+          box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+        }
+
+        .profile-section[data-active='false'] {
+          opacity: 0.6;
+          pointer-events: none;
+        }
+
+        .profile-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid var(--border-color);
+        }
+
+        .profile-header h4 {
+          margin: 0;
+          font-size: 1.1em;
+        }
+
+        .profile-badge {
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 0.85em;
+          font-weight: 600;
+        }
+
+        .active-badge {
+          background: #22c55e;
+          color: #000;
+        }
+
+        .inactive-badge {
+          background: #444;
+          color: #888;
+        }
+      </style>
+    </div>
+
+    <!-- GOOGLE HUB TAB REMOVED -->
+
+    <!-- API KEYS TAB -->
+    <div id="apikeys" class="tab-content">
+      <h2 data-i18n="apikeys.title">API Keys</h2>
+
+      <!-- Security Callout -->
+      <div style="
             background: linear-gradient(135deg, #1a2f1a 0%, #0f1f0f 100%);
             border: 1px solid #22c55e;
             border-radius: 8px;
             padding: 16px;
             margin-bottom: 24px;
-          "
-        >
-          <div style="display: flex; align-items: flex-start; gap: 12px">
-            <span style="font-size: 2em">🔐</span>
-            <div>
-              <h3 style="margin: 0 0 8px 0; color: #4ade80; font-size: 1.1em" data-i18n="apikeys.security_callout">
-                Your Keys Are Secure
-              </h3>
-              <ul
-                style="
+          ">
+        <div style="display: flex; align-items: flex-start; gap: 12px">
+          <span style="font-size: 2em">🔐</span>
+          <div>
+            <h3 style="margin: 0 0 8px 0; color: #4ade80; font-size: 1.1em" data-i18n="apikeys.security_callout">
+              Your Keys Are Secure
+            </h3>
+            <ul style="
                   margin: 0;
                   padding-left: 18px;
                   color: #a3e635;
                   font-size: 0.9em;
                   line-height: 1.6;
-                "
-              >
-                <li data-i18n="apikeys.security_encryption">
-                  <strong>OS-Level Encryption</strong> - Keys are encrypted using Windows Credential
-                  Manager (DPAPI)
-                </li>
-                <li data-i18n="apikeys.security_local">
-                  <strong>Stored Locally</strong> - Never uploaded to any server or cloud service
-                </li>
-                <li data-i18n="apikeys.security_app_specific"><strong>App-Specific</strong> - Only dIKtate can decrypt your keys</li>
-                <li data-i18n="apikeys.security_deletable">
-                  <strong>Deletable Anytime</strong> - Remove keys instantly with the delete button
-                </li>
-              </ul>
-            </div>
+                ">
+              <li data-i18n="apikeys.security_encryption">
+                <strong>OS-Level Encryption</strong> - Keys are encrypted using Windows Credential
+                Manager (DPAPI)
+              </li>
+              <li data-i18n="apikeys.security_local">
+                <strong>Stored Locally</strong> - Never uploaded to any server or cloud service
+              </li>
+              <li data-i18n="apikeys.security_app_specific"><strong>App-Specific</strong> - Only dIKtate can decrypt
+                your keys</li>
+              <li data-i18n="apikeys.security_deletable">
+                <strong>Deletable Anytime</strong> - Remove keys instantly with the delete button
+              </li>
+            </ul>
           </div>
-        </div>
-
-        <!-- Gemini -->
-        <div class="setting-group" id="gemini-key-group">
-          <div style="display: flex; justify-content: space-between; align-items: center">
-            <label>Gemini API Key</label>
-            <span id="gemini-status" class="key-status"></span>
-          </div>
-          <div id="gemini-input-row" style="display: flex; gap: 10px">
-            <input
-              type="password"
-              id="gemini-api-key"
-              placeholder="Enter Gemini API key"
-              style="flex: 1"
-            />
-            <button id="test-gemini-btn" class="btn btn-secondary">Test</button>
-            <button id="save-gemini-btn" class="btn btn-secondary">Save</button>
-          </div>
-          <div
-            id="gemini-saved-row"
-            style="
-              display: none;
-              padding: 10px;
-              background: #1a3a1a;
-              border: 1px solid #22c55e;
-              border-radius: 6px;
-            "
-          >
-            <div style="display: flex; justify-content: space-between; align-items: center">
-              <span style="color: #4ade80">✓ API Key Saved</span>
-              <div style="display: flex; gap: 8px">
-                <button id="test-gemini-saved-btn" class="btn btn-secondary">Test</button>
-                <button id="delete-gemini-btn" class="btn btn-danger">🗑️ Delete</button>
-              </div>
-            </div>
-          </div>
-          <span class="sub-label"
-            >Get your key from
-            <a
-              href="#"
-              id="gemini-docs-link"
-              data-external-link="https://aistudio.google.com/apikey"
-              >Google AI Studio</a
-            ></span
-          >
-        </div>
-
-        <!-- Anthropic -->
-        <div class="setting-group" id="anthropic-key-group">
-          <div style="display: flex; justify-content: space-between; align-items: center">
-            <label>Anthropic API Key</label>
-            <span id="anthropic-status" class="key-status"></span>
-          </div>
-          <div id="anthropic-input-row" style="display: flex; gap: 10px">
-            <input
-              type="password"
-              id="anthropic-api-key"
-              placeholder="Enter Anthropic API key"
-              style="flex: 1"
-            />
-            <button id="test-anthropic-btn" class="btn btn-secondary">Test</button>
-            <button id="save-anthropic-btn" class="btn btn-secondary">Save</button>
-          </div>
-          <div
-            id="anthropic-saved-row"
-            style="
-              display: none;
-              padding: 10px;
-              background: #1a3a1a;
-              border: 1px solid #22c55e;
-              border-radius: 6px;
-            "
-          >
-            <div style="display: flex; justify-content: space-between; align-items: center">
-              <span style="color: #4ade80">✓ API Key Saved</span>
-              <div style="display: flex; gap: 8px">
-                <button id="test-anthropic-saved-btn" class="btn btn-secondary">Test</button>
-                <button id="delete-anthropic-btn" class="btn btn-danger">🗑️ Delete</button>
-              </div>
-            </div>
-          </div>
-          <span class="sub-label"
-            >Get your key from
-            <a href="#" id="anthropic-docs-link" data-external-link="https://console.anthropic.com/"
-              >Anthropic Console</a
-            ></span
-          >
-        </div>
-
-        <!-- OpenAI -->
-        <div class="setting-group" id="openai-key-group">
-          <div style="display: flex; justify-content: space-between; align-items: center">
-            <label>OpenAI API Key</label>
-            <span id="openai-status" class="key-status"></span>
-          </div>
-          <div id="openai-input-row" style="display: flex; gap: 10px">
-            <input
-              type="password"
-              id="openai-api-key"
-              placeholder="Enter OpenAI API key"
-              style="flex: 1"
-            />
-            <button id="test-openai-btn" class="btn btn-secondary">Test</button>
-            <button id="save-openai-btn" class="btn btn-secondary">Save</button>
-          </div>
-          <div
-            id="openai-saved-row"
-            style="
-              display: none;
-              padding: 10px;
-              background: #1a3a1a;
-              border: 1px solid #22c55e;
-              border-radius: 6px;
-            "
-          >
-            <div style="display: flex; justify-content: space-between; align-items: center">
-              <span style="color: #4ade80">✓ API Key Saved</span>
-              <div style="display: flex; gap: 8px">
-                <button id="test-openai-saved-btn" class="btn btn-secondary">Test</button>
-                <button id="delete-openai-btn" class="btn btn-danger">🗑️ Delete</button>
-              </div>
-            </div>
-          </div>
-          <span class="sub-label"
-            >Get your key from
-            <a
-              href="#"
-              id="openai-docs-link"
-              data-external-link="https://platform.openai.com/api-keys"
-              >OpenAI Platform</a
-            ></span
-          >
         </div>
       </div>
 
-      <!-- PRIVACY & DIAGNOSTICS TAB -->
-      <div id="privacy" class="tab-content">
-        <h2 data-i18n="privacy.title">Privacy & Diagnostics</h2>
+      <!-- Gemini -->
+      <div class="setting-group" id="gemini-key-group">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <label>Gemini API Key</label>
+          <span id="gemini-status" class="key-status"></span>
+        </div>
+        <div id="gemini-input-row" style="display: flex; gap: 10px">
+          <input type="password" id="gemini-api-key" placeholder="Enter Gemini API key" style="flex: 1" />
+          <button id="test-gemini-btn" class="btn btn-secondary">Test</button>
+          <button id="save-gemini-btn" class="btn btn-secondary">Save</button>
+        </div>
+        <div id="gemini-saved-row" style="
+              display: none;
+              padding: 10px;
+              background: #1a3a1a;
+              border: 1px solid #22c55e;
+              border-radius: 6px;
+            ">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <span style="color: #4ade80">✓ API Key Saved</span>
+            <div style="display: flex; gap: 8px">
+              <button id="test-gemini-saved-btn" class="btn btn-secondary">Test</button>
+              <button id="delete-gemini-btn" class="btn btn-danger">🗑️ Delete</button>
+            </div>
+          </div>
+        </div>
+        <span class="sub-label">Get your key from
+          <a href="#" id="gemini-docs-link" data-external-link="https://aistudio.google.com/apikey">Google AI
+            Studio</a></span>
+      </div>
 
-        <!-- 1. Logging Intensity -->
-        <div class="setting-group">
-          <label data-i18n="privacy.logging_intensity">Logging Intensity</label>
-          <span class="sub-label" data-i18n="privacy.logging_intensity_sublabel"
-            >Control how much information is saved locally to your device.</span
-          >
-          <div style="margin-top: 15px">
-            <div
-              style="
+      <!-- Anthropic -->
+      <div class="setting-group" id="anthropic-key-group">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <label>Anthropic API Key</label>
+          <span id="anthropic-status" class="key-status"></span>
+        </div>
+        <div id="anthropic-input-row" style="display: flex; gap: 10px">
+          <input type="password" id="anthropic-api-key" placeholder="Enter Anthropic API key" style="flex: 1" />
+          <button id="test-anthropic-btn" class="btn btn-secondary">Test</button>
+          <button id="save-anthropic-btn" class="btn btn-secondary">Save</button>
+        </div>
+        <div id="anthropic-saved-row" style="
+              display: none;
+              padding: 10px;
+              background: #1a3a1a;
+              border: 1px solid #22c55e;
+              border-radius: 6px;
+            ">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <span style="color: #4ade80">✓ API Key Saved</span>
+            <div style="display: flex; gap: 8px">
+              <button id="test-anthropic-saved-btn" class="btn btn-secondary">Test</button>
+              <button id="delete-anthropic-btn" class="btn btn-danger">🗑️ Delete</button>
+            </div>
+          </div>
+        </div>
+        <span class="sub-label">Get your key from
+          <a href="#" id="anthropic-docs-link" data-external-link="https://console.anthropic.com/">Anthropic
+            Console</a></span>
+      </div>
+
+      <!-- OpenAI -->
+      <div class="setting-group" id="openai-key-group">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <label>OpenAI API Key</label>
+          <span id="openai-status" class="key-status"></span>
+        </div>
+        <div id="openai-input-row" style="display: flex; gap: 10px">
+          <input type="password" id="openai-api-key" placeholder="Enter OpenAI API key" style="flex: 1" />
+          <button id="test-openai-btn" class="btn btn-secondary">Test</button>
+          <button id="save-openai-btn" class="btn btn-secondary">Save</button>
+        </div>
+        <div id="openai-saved-row" style="
+              display: none;
+              padding: 10px;
+              background: #1a3a1a;
+              border: 1px solid #22c55e;
+              border-radius: 6px;
+            ">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <span style="color: #4ade80">✓ API Key Saved</span>
+            <div style="display: flex; gap: 8px">
+              <button id="test-openai-saved-btn" class="btn btn-secondary">Test</button>
+              <button id="delete-openai-btn" class="btn btn-danger">🗑️ Delete</button>
+            </div>
+          </div>
+        </div>
+        <span class="sub-label">Get your key from
+          <a href="#" id="openai-docs-link" data-external-link="https://platform.openai.com/api-keys">OpenAI
+            Platform</a></span>
+      </div>
+    </div>
+
+    <!-- PRIVACY & DIAGNOSTICS TAB -->
+    <div id="privacy" class="tab-content">
+      <h2 data-i18n="privacy.title">Privacy & Diagnostics</h2>
+
+      <!-- 1. Logging Intensity -->
+      <div class="setting-group">
+        <label data-i18n="privacy.logging_intensity">Logging Intensity</label>
+        <span class="sub-label" data-i18n="privacy.logging_intensity_sublabel">Control how much information is saved
+          locally to your device.</span>
+        <div style="margin-top: 15px">
+          <div style="
                 display: flex;
                 justify-content: space-between;
                 margin-bottom: 8px;
                 font-size: 0.8em;
                 color: #888;
-              "
-            >
-              <span data-i18n="privacy.logging_ghost">Ghost</span>
-              <span data-i18n="privacy.logging_stats">Stats</span>
-              <span data-i18n="privacy.logging_balanced">Balanced</span>
-              <span data-i18n="privacy.logging_full">Full</span>
-            </div>
-            <input
-              type="range"
-              id="logging-intensity"
-              min="0"
-              max="3"
-              step="1"
-              value="2"
-              style="
+              ">
+            <span data-i18n="privacy.logging_ghost">Ghost</span>
+            <span data-i18n="privacy.logging_stats">Stats</span>
+            <span data-i18n="privacy.logging_balanced">Balanced</span>
+            <span data-i18n="privacy.logging_full">Full</span>
+          </div>
+          <input type="range" id="logging-intensity" min="0" max="3" step="1" value="2" style="
                 width: 100%;
                 accent-color: var(--accent-color);
                 height: 6px;
@@ -1885,191 +1771,152 @@
                 background: #333;
                 appearance: none;
                 cursor: pointer;
-              "
-            />
-            <div
-              id="intensity-desc"
-              style="
+              " />
+          <div id="intensity-desc" style="
                 margin-top: 12px;
                 padding: 12px;
                 background: rgba(0, 0, 0, 0.2);
                 border-left: 3px solid var(--accent-color);
                 font-size: 0.9em;
                 color: #ccc;
-              "
-              data-i18n="privacy.logging_description"
-            >
-              <strong>Balanced</strong>: Saves processed text and performance metrics. Redacts
-              sensitive info if scrubber is on.
-            </div>
+              " data-i18n="privacy.logging_description">
+            <strong>Balanced</strong>: Saves processed text and performance metrics. Redacts
+            sensitive info if scrubber is on.
           </div>
         </div>
+      </div>
 
-        <!-- 2. PII Scrubber -->
-        <div class="setting-group">
-          <div class="setting-row">
-            <div>
-              <label data-i18n="privacy.auto_redact">Auto-Redact Privacy Info (PII)</label>
-              <span class="sub-label" data-i18n="privacy.auto_redact_sublabel"
-                >Mask emails, phone numbers, and API keys in your local history logs.</span
-              >
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="privacy-pii-scrubber" checked />
-              <span class="slider"></span>
-            </label>
+      <!-- 2. PII Scrubber -->
+      <div class="setting-group">
+        <div class="setting-row">
+          <div>
+            <label data-i18n="privacy.auto_redact">Auto-Redact Privacy Info (PII)</label>
+            <span class="sub-label" data-i18n="privacy.auto_redact_sublabel">Mask emails, phone numbers, and API keys in
+              your local history logs.</span>
           </div>
+          <label class="switch">
+            <input type="checkbox" id="privacy-pii-scrubber" checked />
+            <span class="slider"></span>
+          </label>
         </div>
+      </div>
 
-        <!-- 3. Data Cleanup -->
-        <div
-          class="setting-group"
-          style="border-top: 1px solid var(--border-color); padding-top: 20px"
-        >
-          <label data-i18n="privacy.data_cleanup">Local Data Cleanup</label>
-          <span class="sub-label" data-i18n="privacy.data_cleanup_sublabel"
-            >Permanently delete all locally stored history and metrics. This cannot be undone.</span
-          >
-          <div style="margin-top: 10px">
-            <button id="wipe-history-btn" class="btn btn-danger" data-i18n="privacy.wipe_local_data">🗑️ Wipe All Local Data</button>
-            <span
-              id="wipe-status"
-              style="margin-left: 10px; font-size: 0.9em; color: #4ade80; display: none"
-              data-i18n="privacy.wipe_status"
-              >✓ History cleared!</span
-            >
-          </div>
+      <!-- 3. Data Cleanup -->
+      <div class="setting-group" style="border-top: 1px solid var(--border-color); padding-top: 20px">
+        <label data-i18n="privacy.data_cleanup">Local Data Cleanup</label>
+        <span class="sub-label" data-i18n="privacy.data_cleanup_sublabel">Permanently delete all locally stored history
+          and metrics. This cannot be undone.</span>
+        <div style="margin-top: 10px">
+          <button id="wipe-history-btn" class="btn btn-danger" data-i18n="privacy.wipe_local_data">🗑️ Wipe All Local
+            Data</button>
+          <span id="wipe-status" style="margin-left: 10px; font-size: 0.9em; color: #4ade80; display: none"
+            data-i18n="privacy.wipe_status">✓ History cleared!</span>
         </div>
+      </div>
 
-        <div
-          style="
+      <div style="
             margin-top: 30px;
             padding: 15px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-          "
-        >
-          <h3
-            style="
+          ">
+        <h3 style="
               font-size: 0.85rem;
               color: #aaa;
               margin-bottom: 10px;
               display: flex;
               align-items: center;
               gap: 8px;
-            "
-            data-i18n="privacy.understanding_data"
-          >
-            ℹ️ Understanding Local Data
-          </h3>
-          <div style="font-size: 0.8rem; line-height: 1.5; color: #bbb">
-            <p style="margin-bottom: 8px" data-i18n="privacy.local_history">
-              <strong>Local History (Database)</strong>: Managed data for your own use. Powers the
-              "Stats" tab and history search.
-            </p>
-            <p data-i18n="privacy.system_logs">
-              <strong>System Logs (Files)</strong>: Raw technical traces used for troubleshooting
-              and bug reports.
-            </p>
-            <p
-              style="
+            " data-i18n="privacy.understanding_data">
+          ℹ️ Understanding Local Data
+        </h3>
+        <div style="font-size: 0.8rem; line-height: 1.5; color: #bbb">
+          <p style="margin-bottom: 8px" data-i18n="privacy.local_history">
+            <strong>Local History (Database)</strong>: Managed data for your own use. Powers the
+            "Stats" tab and history search.
+          </p>
+          <p data-i18n="privacy.system_logs">
+            <strong>System Logs (Files)</strong>: Raw technical traces used for troubleshooting
+            and bug reports.
+          </p>
+          <p style="
                 margin-top: 8px;
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
                 padding-top: 8px;
                 font-style: italic;
-              "
-              data-i18n="privacy.both_managed"
-            >
-              Both are managed by the "Wipe" command and "Ghost Mode" setting.
-            </p>
-          </div>
-        </div>
-
-        <div style="margin-top: 20px; font-size: 0.85em; color: #666; font-style: italic" data-i18n="privacy.audio_policy">
-          🛡️ Audio Policy: Dictation audio is never saved to disk long-term. Temporary fragments are
-          deleted automatically when you exit the app.
+              " data-i18n="privacy.both_managed">
+            Both are managed by the "Wipe" command and "Ghost Mode" setting.
+          </p>
         </div>
       </div>
 
-      <!-- NOTES TAB (SPEC_020) -->
-      <div id="notes" class="tab-content">
-        <h2 data-i18n="notes.title">Post-It Notes Settings</h2>
+      <div style="margin-top: 20px; font-size: 0.85em; color: #666; font-style: italic"
+        data-i18n="privacy.audio_policy">
+        🛡️ Audio Policy: Dictation audio is never saved to disk long-term. Temporary fragments are
+        deleted automatically when you exit the app.
+      </div>
+    </div>
 
-        <div class="setting-group">
-          <label data-i18n="notes.note_file">Note File Path</label>
-          <span class="sub-label" data-i18n="notes.note_file_sublabel">Choose where your notes are saved (.md or .txt)</span>
-          <div style="display: flex; gap: 10px">
-            <input
-              type="text"
-              id="note-file-path"
-              placeholder="C:\Users\...\.diktate\notes.md"
-              style="flex: 1"
-            />
-            <button class="btn btn-secondary" id="browse-note-file" data-i18n="notes.browse">Browse</button>
+    <!-- NOTES TAB (SPEC_020) -->
+    <div id="notes" class="tab-content">
+      <h2 data-i18n="notes.title">Post-It Notes Settings</h2>
+
+      <div class="setting-group">
+        <label data-i18n="notes.note_file">Note File Path</label>
+        <span class="sub-label" data-i18n="notes.note_file_sublabel">Choose where your notes are saved (.md or
+          .txt)</span>
+        <div style="display: flex; gap: 10px">
+          <input type="text" id="note-file-path" placeholder="C:\Users\...\.diktate\notes.md" style="flex: 1" />
+          <button class="btn btn-secondary" id="browse-note-file" data-i18n="notes.browse">Browse</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-row">
+          <div>
+            <label data-i18n="notes.llm_processing">LLM Processing</label>
+            <span class="sub-label" data-i18n="notes.llm_processing_sublabel">Clean up transcription into a professional
+              note</span>
           </div>
+          <label class="switch">
+            <input type="checkbox" id="note-use-processor" />
+            <span class="slider"></span>
+          </label>
         </div>
+      </div>
 
-        <div class="setting-group">
-          <div class="setting-row">
-            <div>
-              <label data-i18n="notes.llm_processing">LLM Processing</label>
-              <span class="sub-label" data-i18n="notes.llm_processing_sublabel">Clean up transcription into a professional note</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="note-use-processor" />
-              <span class="slider"></span>
-            </label>
-          </div>
-        </div>
+      <div class="setting-group">
+        <label data-i18n="notes.timestamp_format">Timestamp Format</label>
+        <span class="sub-label" data-i18n="notes.timestamp_format_sublabel">How dates appear in your notes (e.g.,
+          %Y-%m-%d %H:%M:%S)</span>
+        <input type="text" id="note-timestamp-format" placeholder="%Y-%m-%d %H:%M:%S" />
+      </div>
 
-        <div class="setting-group">
-          <label data-i18n="notes.timestamp_format">Timestamp Format</label>
-          <span class="sub-label" data-i18n="notes.timestamp_format_sublabel">How dates appear in your notes (e.g., %Y-%m-%d %H:%M:%S)</span>
-          <input type="text" id="note-timestamp-format" placeholder="%Y-%m-%d %H:%M:%S" />
-        </div>
-
-        <!-- Future Configuration Placeholders -->
-        <div
-          style="
+      <!-- Future Configuration Placeholders -->
+      <div style="
             border-top: 1px solid var(--border-color);
             margin: 20px 0;
             padding-top: 20px;
             opacity: 0.6;
-          "
-        >
-          <h3 style="font-size: 0.9rem; color: #aaa; margin-bottom: 15px">
-            ADVANCED (COMING SOON)
-          </h3>
-          <div class="setting-group">
-            <label>Default Folder</label>
-            <input
-              type="text"
-              id="note-default-folder"
-              placeholder="/december-notes/"
-              value=""
-              disabled
-            />
-          </div>
-          <div class="setting-group">
-            <label>File Name Template</label>
-            <input
-              type="text"
-              id="note-filename-template"
-              placeholder="note-{{date}}.md"
-              value=""
-              disabled
-            />
-          </div>
-        </div>
-
+          ">
+        <h3 style="font-size: 0.9rem; color: #aaa; margin-bottom: 15px">
+          ADVANCED (COMING SOON)
+        </h3>
         <div class="setting-group">
-          <label>Note System Prompt</label>
-          <span class="sub-label">This prompt guides the AI in formatting your voice notes.</span>
-          <textarea
-            id="note-prompt"
-            rows="4"
-            style="
+          <label>Default Folder</label>
+          <input type="text" id="note-default-folder" placeholder="/december-notes/" value="" disabled />
+        </div>
+        <div class="setting-group">
+          <label>File Name Template</label>
+          <input type="text" id="note-filename-template" placeholder="note-{{date}}.md" value="" disabled />
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label>Note System Prompt</label>
+        <span class="sub-label">This prompt guides the AI in formatting your voice notes.</span>
+        <textarea id="note-prompt" rows="4" style="
               width: 100%;
               background: #111;
               color: #fff;
@@ -2078,20 +1925,17 @@
               border-radius: 4px;
               font-family: inherit;
               margin-bottom: 8px;
-            "
-          ></textarea>
-          <div style="text-align: right; display: flex; justify-content: flex-end; gap: 8px">
-            <button class="btn btn-primary" id="save-note-prompt">Save Note Prompt</button>
-            <button class="btn btn-secondary" id="reset-note-prompt">Reset to Default</button>
-          </div>
+            "></textarea>
+        <div style="text-align: right; display: flex; justify-content: flex-end; gap: 8px">
+          <button class="btn btn-primary" id="save-note-prompt">Save Note Prompt</button>
+          <button class="btn btn-secondary" id="reset-note-prompt">Reset to Default</button>
         </div>
+      </div>
 
-        <!-- Live Preview -->
-        <div class="setting-group">
-          <label>Live Preview</label>
-          <div
-            id="note-preview"
-            style="
+      <!-- Live Preview -->
+      <div class="setting-group">
+        <label>Live Preview</label>
+        <div id="note-preview" style="
               background: #111;
               padding: 15px;
               border-radius: 6px;
@@ -2100,53 +1944,52 @@
               white-space: pre-wrap;
               border: 1px solid #333;
               color: #4ade80;
-            "
-          >
-            --- [2026-01-29 10:50:00] Sample transcription... ---
-          </div>
-        </div>
-      </div>
-
-      <!-- ABOUT TAB -->
-      <div id="about" class="tab-content">
-        <h2 data-i18n="about.title">About dIKtate</h2>
-        <p><strong data-i18n="about.version">Version:</strong> <span id="app-version" data-i18n="about.version_number">0.1.0-mvp</span></p>
-        <p data-i18n="about.description">dIKtate is a privacy-first, local voice dictation tool designed for professionals.</p>
-
-        <div style="margin-top: 20px; padding: 15px; background: #252526; border-radius: 5px">
-          <p><strong data-i18n="about.license">License:</strong> <span data-i18n="about.license_mit">MIT</span></p>
-          <p><strong data-i18n="about.copyright">Copyright:</strong> <span data-i18n="about.copyright_notice">© 2026 dIKtate Contributors</span></p>
-        </div>
-
-        <div style="margin-top: 20px">
-          <button id="website-link" class="btn" data-i18n="about.visit_website">Visit Website</button>
-          <button id="github-link" class="btn btn-secondary" data-i18n="about.github">GitHub</button>
+            ">
+          --- [2026-01-29 10:50:00] Sample transcription... ---
         </div>
       </div>
     </div>
 
-    <!-- Restart Required Modal -->
-    <div id="restart-modal" class="modal-overlay">
-      <div class="modal">
-        <h3 data-i18n="about.restart_required">🔄 Restart Required</h3>
-        <p data-i18n="about.restart_message">
-          Changing models requires a full application restart to ensure the new model is loaded
-          correctly and cleanly into memory.
-        </p>
-        <div class="modal-buttons">
-          <button id="modal-cancel-btn" class="btn btn-secondary" data-i18n="about.restart_later">Later</button>
-          <button
-            id="modal-restart-btn"
-            class="btn"
-            style="background: #fca311; color: black; font-weight: bold"
-            data-i18n="about.restart_now"
-          >
-            Restart Now
-          </button>
-        </div>
+    <!-- ABOUT TAB -->
+    <div id="about" class="tab-content">
+      <h2 data-i18n="about.title">About dIKtate</h2>
+      <p><strong data-i18n="about.version">Version:</strong> <span id="app-version"
+          data-i18n="about.version_number">0.1.0-mvp</span></p>
+      <p data-i18n="about.description">dIKtate is a privacy-first, local voice dictation tool designed for
+        professionals.</p>
+
+      <div style="margin-top: 20px; padding: 15px; background: #252526; border-radius: 5px">
+        <p><strong data-i18n="about.license">License:</strong> <span data-i18n="about.license_mit">MIT</span></p>
+        <p><strong data-i18n="about.copyright">Copyright:</strong> <span data-i18n="about.copyright_notice">© 2026
+            dIKtate Contributors</span></p>
+      </div>
+
+      <div style="margin-top: 20px">
+        <button id="website-link" class="btn" data-i18n="about.visit_website">Visit Website</button>
+        <button id="github-link" class="btn btn-secondary" data-i18n="about.github">GitHub</button>
       </div>
     </div>
+  </div>
 
-    <script type="module" src="./renderers/settings/index.js"></script>
-  </body>
+  <!-- Restart Required Modal -->
+  <div id="restart-modal" class="modal-overlay">
+    <div class="modal">
+      <h3 data-i18n="about.restart_required">🔄 Restart Required</h3>
+      <p data-i18n="about.restart_message">
+        Changing models requires a full application restart to ensure the new model is loaded
+        correctly and cleanly into memory.
+      </p>
+      <div class="modal-buttons">
+        <button id="modal-cancel-btn" class="btn btn-secondary" data-i18n="about.restart_later">Later</button>
+        <button id="modal-restart-btn" class="btn" style="background: #fca311; color: black; font-weight: bold"
+          data-i18n="about.restart_now">
+          Restart Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./renderers/settings/index.js"></script>
+</body>
+
 </html>

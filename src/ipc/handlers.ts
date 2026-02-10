@@ -109,6 +109,11 @@ export function registerCoreIpcHandlers(deps: CoreIpcHandlerDependencies): void 
       additionalKeyEnabled: store.get('additionalKeyEnabled', false),
       additionalKey: store.get('additionalKey', 'none'),
       trailingSpaceEnabled: store.get('trailingSpaceEnabled', true),
+      // SPEC_043: Control Panel UI Visibility
+      uiShowModes: store.get('uiShowModes', true),
+      uiShowActions: store.get('uiShowActions', true),
+      uiShowSessionStats: store.get('uiShowSessionStats', true),
+      uiShowPerfStats: store.get('uiShowPerfStats', true),
     };
   });
 
@@ -598,6 +603,20 @@ export function registerI18nHandlers(deps: CoreIpcHandlerDependencies): void {
     } catch (error) {
       logger.error('I18N_IPC', 'Failed to get current language', error);
       return 'en'; // Fallback to English
+    }
+  });
+
+  // Window Resize Handler (SPEC_043 Auto-Adjust)
+  ipcMain.on('window:resize', (_event, height: number) => {
+    const win = BrowserWindow.fromWebContents(_event.sender);
+    if (win) {
+      const { width, height: currentHeight } = win.getBounds();
+      if (currentHeight !== height) {
+        // Force resize by temporarily enabling resizable
+        win.setResizable(true);
+        win.setSize(width, height);
+        win.setResizable(false);
+      }
     }
   });
 

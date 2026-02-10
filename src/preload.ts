@@ -50,6 +50,8 @@ const electronAPI = {
   onSettingChange: (callback: (key: string, value: unknown) => void) => {
     ipcRenderer.on('setting-changed', (_, { key, value }) => callback(key, value));
   },
+  // SPEC_043: Auto-Adjust Window Height
+  resizeWindow: (height: number) => ipcRenderer.send('window:resize', height),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);
