@@ -926,6 +926,20 @@ class IpcServer:
             if model_size:
                 current_size = getattr(self.transcriber, "model_size", "")
                 if not self.transcriber or model_size != current_size:
+                    # HOTFIX: Explicitly cleanup old model before loading new one
+                    # This prevents multiple Whisper models from staying in VRAM
+                    if self.transcriber:
+                        logger.info(f"[CONFIG] Unloading old transcriber model ({current_size})...")
+                        old_transcriber = self.transcriber
+                        self.transcriber = None
+                        del old_transcriber
+
+                        # Force garbage collection to free VRAM immediately
+                        import gc
+
+                        gc.collect()
+                        logger.info("[CONFIG] Old model unloaded, VRAM freed")
+
                     self.transcriber = Transcriber(model_size=model_size, device="auto")
                     updates.append(f"Model: {model_size}")
                 else:
@@ -1720,6 +1734,33 @@ class IpcServer:
                             pass
                     self._set_state(State.IDLE)
                     conn.sendall(b"OK")
+
+                elif command == "RELOAD_WHISPER":
+                    # Force reload Whisper model to clear VRAM
+                    logger.warning(
+                        "[CMD] RELOAD_WHISPER - forcing transcriber reload to clear VRAM"
+                    )
+                    try:
+                        import gc
+
+                        # Get current model size
+                        current_model = getattr(self.transcriber, "model_size", "medium")
+
+                        # Explicitly cleanup
+                        if self.transcriber:
+                            old_transcriber = self.transcriber
+                            self.transcriber = None
+                            del old_transcriber
+                            gc.collect()
+                            logger.info("[CMD] Old transcriber unloaded, VRAM freed")
+
+                        # Reload with same model
+                        self.transcriber = Transcriber(model_size=current_model, device="auto")
+                        logger.info(f"[CMD] Transcriber reloaded: {current_model}")
+                        conn.sendall(b"OK")
+                    except Exception as e:
+                        logger.error(f"[CMD] RELOAD_WHISPER failed: {e}")
+                        conn.sendall(f"FAIL: {str(e)}".encode())
 
                 else:
                     logger.warning(f"[CMD] Unknown TCP command: {command}")
