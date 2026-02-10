@@ -3,7 +3,7 @@
  * Handles system tray, Python subprocess, and global hotkey
  */
 
-import { app, clipboard } from 'electron';
+import { app, clipboard, shell } from 'electron';
 import * as dotenv from 'dotenv';
 // Fix for Windows Notifications (missing AUMID causes silent failure)
 if (process.platform === 'win32') {
@@ -52,6 +52,13 @@ import {
 import { registerCoreIpcHandlers, registerI18nHandlers } from './ipc/handlers';
 import { registerApiKeyHandlers } from './ipc/apiKeyHandlers';
 import { registerOllamaHandlers } from './ipc/ollamaHandlers';
+import { registerTrialHandlers, handleAuthDeeplink } from './ipc/trialHandlers';
+
+// ============================================
+// SPEC_042: Register diktate:// deep-link protocol
+// Must be set before app.requestSingleInstanceLock()
+// ============================================
+app.setAsDefaultProtocolClient('diktate');
 
 // ============================================
 // Single Instance Lock - Prevent multiple instances
@@ -502,7 +509,33 @@ function setupPythonEventHandlers(): void {
   // Handle API errors from Python (OAuth, rate limits, network)
   pythonManager.on('api-error', (data: ApiErrorEvent) => {
     logger.error('MAIN', 'API error received from Python', { ...data });
-    // Simple notification for generic API errors
+
+    if (data.error_type === 'trial_quota_exceeded') {
+      showNotification(
+        'Trial Credits Used Up',
+        'Your free trial words have run out. Visit dikta.me to upgrade.',
+        true,
+        trayManager.getIcon.bind(trayManager)
+      );
+      shell.openExternal('https://dikta.me/dashboard').catch(() => {});
+      return;
+    }
+
+    if (data.error_type === 'oauth_token_invalid' && data.provider === 'trial') {
+      showNotification(
+        'Trial Session Expired',
+        'Your dikta.me session has expired. Please sign in again.',
+        true,
+        trayManager.getIcon.bind(trayManager)
+      );
+      // Clear the stale token
+      store.delete('encryptedTrialSessionToken' as keyof UserSettings);
+      const sw = windowManager.getSettingsWindow();
+      if (sw && !sw.isDestroyed()) sw.webContents.send('trial:status-updated');
+      return;
+    }
+
+    // Generic API error fallback
     showNotification(
       'API Error',
       `Error: ${data.error_message || data.message || 'Unknown error'}`,
@@ -645,6 +678,34 @@ function setupPythonEventHandlers(): void {
   });
 }
 
+// SPEC_042: Handle diktate:// deeplink URL (auth callback)
+function handleDeeplink(url: string): void {
+  logger.info('MAIN', `Deeplink received: ${url.replace(/token=[^&]+/, 'token=REDACTED')}`);
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === 'auth') {
+      const token = parsed.searchParams.get('token');
+      if (token) {
+        const trialDeps = {
+          store,
+          notifySettingsWindow: (event: string, data?: unknown) => {
+            const sw = windowManager.getSettingsWindow();
+            if (sw && !sw.isDestroyed()) {
+              sw.webContents.send(event, data);
+            }
+          },
+          syncPythonConfig,
+        };
+        handleAuthDeeplink(token, store, trialDeps).catch((err) =>
+          logger.error('MAIN', 'Deeplink auth handling failed', err)
+        );
+      }
+    }
+  } catch (err) {
+    logger.error('MAIN', 'Failed to parse deeplink URL', err);
+  }
+}
+
 // Config sync functions moved to src/services/configSync.ts
 
 /** Convenience wrapper that provides current dependencies to syncPythonConfig */
@@ -746,6 +807,16 @@ async function initialize(): Promise<void> {
       getPythonManager: () => pythonManager,
     });
     registerOllamaHandlers({ store });
+    registerTrialHandlers({
+      store,
+      notifySettingsWindow: (event: string, data?: unknown) => {
+        const sw = windowManager.getSettingsWindow();
+        if (sw && !sw.isDestroyed()) {
+          sw.webContents.send(event, data);
+        }
+      },
+      syncPythonConfig,
+    });
     registerI18nHandlers({
       store,
       getPythonManager: () => pythonManager,
@@ -846,8 +917,16 @@ app.on('ready', () => {
   });
 
   // Handle when user tries to open a second instance
-  app.on('second-instance', () => {
-    // Show a notification that app is already running
+  // On Windows, deeplinks (diktate://...) arrive here as a second-instance launch
+  app.on('second-instance', (_event, argv) => {
+    // Check if this is a deeplink callback (SPEC_042)
+    const deeplink = argv.find((arg) => arg.startsWith('diktate://'));
+    if (deeplink) {
+      handleDeeplink(deeplink);
+      return;
+    }
+
+    // Not a deeplink — show already-running notification
     showNotification(
       'dIKtate Already Running',
       'One instance is already running. Check your system tray.',
@@ -860,6 +939,14 @@ app.on('ready', () => {
     if (sw && !sw.isDestroyed()) {
       if (sw.isMinimized()) sw.restore();
       sw.focus();
+    }
+  });
+
+  // macOS / Linux: deeplink arrives via open-url event (SPEC_042)
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    if (url.startsWith('diktate://')) {
+      handleDeeplink(url);
     }
   });
   // SPEC_035: Show loading window first

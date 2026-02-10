@@ -175,6 +175,10 @@ class IpcServer:
         }
         self.api_keys = {}  # provider_name -> api_key
 
+        # SPEC_042: Trial account (dikta.me managed Gemini credits)
+        self.trial_session_token = ""  # Supabase JWT
+        self.supabase_edge_function_url = ""  # dikta.me Edge Function URL
+
         # SPEC_034_EXTRAS: Dual-profile system
         self.local_profiles = {}  # mode -> {prompt}
         self.cloud_profiles = {}  # mode -> {provider, model, prompt}
@@ -1108,6 +1112,15 @@ class IpcServer:
                 if key:
                     self.api_keys[p] = key
 
+            # SPEC_042: Store trial session token and Edge Function URL
+            trial_token = config.get("trialSessionToken")
+            edge_url = config.get("supabaseEdgeFunctionUrl")
+            if trial_token:
+                self.trial_session_token = trial_token
+                logger.info("[TRIAL] Session token updated in config")
+            if edge_url:
+                self.supabase_edge_function_url = edge_url
+
             # 7. Audio Device
             if device_label and self.mute_detector:
                 self.mute_detector.update_device_label(device_label)
@@ -1173,8 +1186,24 @@ class IpcServer:
             model = profile.get("model") or mode_defaults["cloud"]["model"]
             custom_prompt = profile.get("prompt") or ""
 
-            # Fallback if no API key for the selected provider
-            if provider != "local" and not self.api_keys.get(provider):
+            # SPEC_042: Trial provider — check for session token first
+            if provider == "trial":
+                if not self.trial_session_token or not self.supabase_edge_function_url:
+                    logger.warning(
+                        "[ROUTING] Trial provider selected but no session token, falling back to local"
+                    )
+                    provider = "local"
+                    model = self.local_global_model
+                    if not model:
+                        raise ValueError(
+                            "Trial account not configured. Please sign in at dikta.me or set a local model."
+                        )
+                    profile = self.local_profiles.get(mode_name, {})
+                    custom_prompt = profile.get("prompt") or ""
+                else:
+                    logger.info(f"[ROUTING] Mode '{mode_name}' -> TRIAL (managed Gemini proxy)")
+            elif provider != "local" and not self.api_keys.get(provider):
+                # Fallback if no API key for the selected cloud provider
                 logger.warning(
                     f"[ROUTING] No key for {provider}, falling back to local for {mode_name}"
                 )
@@ -1209,7 +1238,16 @@ class IpcServer:
         if cache_key not in self.processors:
             try:
                 key = self.api_keys.get(provider)
-                self.processors[cache_key] = create_processor(provider, key, model)
+                # SPEC_042: Pass trial credentials for the trial provider
+                if provider == "trial":
+                    self.processors[cache_key] = create_processor(
+                        provider,
+                        model=model,
+                        session_token=self.trial_session_token,
+                        edge_function_url=self.supabase_edge_function_url,
+                    )
+                else:
+                    self.processors[cache_key] = create_processor(provider, key, model)
                 logger.info(f"[ROUTING] Created processor: {cache_key}")
             except Exception as e:
                 logger.error(f"[ROUTING] Failed to init {provider}: {e}")
@@ -1586,9 +1624,19 @@ class IpcServer:
             logger.debug("[SystemMonitor] Parallel monitoring thread stopped")
 
     def _handle_processor_error(self, e: Exception) -> None:
-        """Handle LLM processor errors, detecting OAuth issues (SPEC_016)."""
+        """Handle LLM processor errors, detecting OAuth issues (SPEC_016) and trial quota (SPEC_042)."""
         err_msg = str(e)
-        if "oauth_token_invalid" in err_msg:
+        if "trial_quota_exceeded" in err_msg:
+            logger.error("[TRIAL] Quota exceeded, notifying Electron")
+            self._emit_event(
+                "api-error",
+                {
+                    "error_type": "trial_quota_exceeded",
+                    "error_message": err_msg,
+                    "provider": "trial",
+                },
+            )
+        elif "oauth_token_invalid" in err_msg:
             logger.error("[OAUTH] Token invalid detected, notifying Electron for refresh")
             # Emit api-error event that main.ts listens for
             self._emit_event(

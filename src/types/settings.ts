@@ -120,6 +120,16 @@ export interface UserSettings {
   encryptedGeminiApiKey?: string;
   encryptedAnthropicApiKey?: string;
   encryptedOpenaiApiKey?: string;
+
+  // SPEC_042: Trial account (dikta.me managed Gemini credits)
+  encryptedTrialSessionToken?: string; // Supabase JWT, encrypted via safeStorage
+  trialEmail?: string; // display only, not sensitive
+  trialWordsUsed?: number;
+  trialWordsQuota?: number;
+  trialDaysRemaining?: number;
+  trialExpiresAt?: string; // ISO date string
+  trialActive?: boolean;
+  trialLastSynced?: string; // ISO date string
 }
 
 /**
@@ -169,6 +179,9 @@ export interface PythonConfig {
   // Legacy fields
   apiKey?: string;
   authType?: string;
+  // SPEC_042: Trial account token and Edge Function URL
+  trialSessionToken?: string;
+  supabaseEdgeFunctionUrl?: string;
   // Dynamic provider-specific keys
   [key: string]: unknown;
   openaiApiKey?: string;
@@ -363,4 +376,13 @@ export const USER_SETTINGS_DEFAULTS = {
 
   privacyLoggingIntensity: 2, // Balanced
   privacyPiiScrubber: true,
+
+  // SPEC_042: Trial account defaults (all cleared/zero)
+  trialEmail: '',
+  trialWordsUsed: 0,
+  trialWordsQuota: 15000,
+  trialDaysRemaining: 0,
+  trialExpiresAt: '',
+  trialActive: false,
+  trialLastSynced: '',
 };

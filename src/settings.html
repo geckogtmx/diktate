@@ -509,6 +509,79 @@
       <div class="tab-btn" data-tab="apikeys" data-i18n="tabs.apikeys">API Keys</div>
       <div class="tab-btn" data-tab="privacy" data-i18n="tabs.privacy">Privacy</div>
       <div class="tab-btn" data-tab="about" data-i18n="tabs.about">About</div>
+
+      <!-- SPEC_042: Trial account panel (pinned to bottom of sidebar) -->
+      <div style="flex-grow: 1"></div>
+      <div
+        id="trial-account-panel"
+        style="
+          border-top: 1px solid var(--border-color);
+          padding: 10px 12px;
+          font-size: 0.75em;
+          color: #888;
+        "
+      >
+        <!-- Logged-out state -->
+        <div id="trial-logged-out">
+          <div style="margin-bottom: 6px; font-weight: 500; color: #aaa">dikta.me Trial</div>
+          <button
+            id="trial-login-btn"
+            class="btn btn-primary"
+            style="width: 100%; padding: 5px 8px; font-size: 0.85em"
+          >
+            Sign in for free trial
+          </button>
+        </div>
+
+        <!-- Logged-in state (hidden by default) -->
+        <div id="trial-logged-in" style="display: none">
+          <div
+            id="trial-email"
+            style="
+              margin-bottom: 6px;
+              color: #4ade80;
+              font-size: 0.8em;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            "
+          >
+          </div>
+          <!-- Usage progress bar -->
+          <div
+            style="
+              background: #333;
+              border-radius: 3px;
+              height: 4px;
+              margin-bottom: 4px;
+              overflow: hidden;
+            "
+          >
+            <div
+              id="trial-progress-bar"
+              style="background: #4ade80; height: 100%; width: 0%; transition: width 0.3s"
+            ></div>
+          </div>
+          <div id="trial-words" style="margin-bottom: 2px; color: #aaa"></div>
+          <div id="trial-days" style="margin-bottom: 8px; color: #aaa"></div>
+          <div style="display: flex; gap: 4px">
+            <button
+              id="trial-dashboard-btn"
+              class="btn"
+              style="flex: 1; padding: 4px 6px; font-size: 0.75em; background: #1e3a5f; color: #93c5fd"
+            >
+              Dashboard ↗
+            </button>
+            <button
+              id="trial-logout-btn"
+              class="btn"
+              style="padding: 4px 6px; font-size: 0.75em; background: #3f1a1a; color: #f87171"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="content">

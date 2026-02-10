@@ -88,6 +88,16 @@ const settingsAPI = {
   // Backend Interaction (SPEC_030)
   invokeBackend: (command: string, args: unknown) =>
     ipcRenderer.invoke('settings:invoke-backend', command, args),
+
+  // SPEC_042: Trial account (dikta.me managed Gemini credits)
+  trial: {
+    getStatus: () => ipcRenderer.invoke('trial:get-status'),
+    login: () => ipcRenderer.invoke('trial:login'),
+    logout: () => ipcRenderer.invoke('trial:logout'),
+    refresh: () => ipcRenderer.invoke('trial:refresh'),
+    onStatusUpdated: (callback: () => void) =>
+      ipcRenderer.on('trial:status-updated', () => callback()),
+  },
 };
 
 contextBridge.exposeInMainWorld('settingsAPI', settingsAPI);

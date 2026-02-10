@@ -38,6 +38,7 @@ import {
 import { initializeNotesSettings } from './notes.js';
 import { initializePrivacySettings } from './privacy.js';
 import { initializeI18n } from './i18n.js';
+import { initTrialAccountPanel } from './trialAccount.js';
 
 // Dynamic window property assignment for HTML onclick handlers (SPEC_032)
 // These are necessary for HTML-based UI fragments to access functions at runtime
@@ -259,6 +260,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializePrivacySettings();
   } catch (e) {
     console.error('Privacy init failed:', e);
+  }
+
+  // SPEC_042: Trial account panel (sidebar bottom)
+  try {
+    initTrialAccountPanel();
+  } catch (e) {
+    console.error('Trial panel init failed:', e);
   }
 
   // 6. Bind Remaining Interactive Components

@@ -16,6 +16,7 @@ import {
 } from '../types/settings';
 import { PythonManager } from './pythonManager';
 import { logger } from '../utils/logger';
+import { SUPABASE_EDGE_FUNCTION_URL } from '../ipc/trialHandlers';
 
 export interface ConfigSyncDependencies {
   store: Store<UserSettings>;
@@ -174,6 +175,21 @@ export async function syncPythonConfig(deps: ConfigSyncDependencies): Promise<vo
     }
   } catch (e) {
     logger.error('MAIN', 'Failed to retrieve API credentials for sync', e);
+  }
+
+  // SPEC_042: Trial session token — decrypt and pass to Python if present
+  try {
+    const encryptedTrialToken = store.get('encryptedTrialSessionToken') as string | undefined;
+    if (encryptedTrialToken && safeStorage.isEncryptionAvailable()) {
+      const trialToken = safeStorage.decryptString(Buffer.from(encryptedTrialToken, 'base64'));
+      if (trialToken) {
+        config.trialSessionToken = trialToken;
+        config.supabaseEdgeFunctionUrl = SUPABASE_EDGE_FUNCTION_URL;
+        logger.debug('SYNC', 'Trial session token included in config sync');
+      }
+    }
+  } catch (err) {
+    logger.error('SYNC', 'Failed to decrypt trial session token for config sync', err);
   }
 
   try {

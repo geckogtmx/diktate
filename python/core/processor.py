@@ -652,21 +652,164 @@ class OpenAIProcessor:
         raise Exception(f"OpenAI API processing failed after {max_retries} retries")
 
 
+class TrialCloudProcessor:
+    """Processes text via dikta.me managed Gemini proxy (SPEC_042 trial credits).
+
+    Uses a Supabase JWT session token instead of a direct Gemini API key.
+    Requests are routed through the dikta.me Edge Function which enforces
+    trial quota and tracks usage.
+    """
+
+    def __init__(
+        self,
+        session_token: str,
+        edge_function_url: str,
+        prompt: str | None = None,
+        model: str | None = None,
+    ):
+        if not session_token:
+            raise ValueError("Trial session token is required")
+        if not edge_function_url:
+            raise ValueError("Edge function URL is required")
+
+        self.session_token = session_token
+        self.edge_function_url = edge_function_url
+        self.model = model or "gemini-2.0-flash"
+
+        # Validate model ID format (security)
+        if not re.match(r"^[a-zA-Z0-9.\-]+$", self.model.replace("models/", "")):
+            logger.warning(f"Invalid model ID format: {self.model}, using default")
+            self.model = "gemini-2.0-flash"
+
+        self.prompt = prompt or get_prompt("standard", self.model)
+        self.mode = "standard"
+        logger.info(
+            f"Trial cloud processor initialized (model={self.model}, edge={edge_function_url})"
+        )
+
+    def set_mode(self, mode: str) -> None:
+        """Update processing mode."""
+        self.mode = mode
+        self.prompt = get_prompt(mode, self.model)
+
+    def set_custom_prompt(self, custom_prompt: str) -> None:
+        """Set a custom system prompt."""
+        if not custom_prompt or "{text}" not in custom_prompt:
+            return
+        self.prompt = custom_prompt
+
+    def _sanitize_for_prompt(self, text: str) -> str:
+        text = text.replace("```", "'''")
+        text = text.replace("{text}", "[text]")
+        return text
+
+    def _parse_response(self, response: requests.Response) -> str | None:
+        """Parse Edge Function response. Returns text on success, None to retry.
+        Raises Exception on fatal errors (401, 403)."""
+        if response.status_code == 200:
+            result = response.json()
+            candidates = result.get("candidates", [])
+            if candidates:
+                content = candidates[0].get("content", {})
+                parts = content.get("parts", [])
+                if parts:
+                    processed_text = parts[0].get("text", "").strip()
+                    logger.info("[TRIAL] Text processed successfully via Edge Function")
+                    return processed_text
+            logger.warning("[TRIAL] Empty response from Edge Function")
+            return None
+        if response.status_code == 401:
+            logger.error("[TRIAL] Session token invalid or expired (401)")
+            raise Exception("oauth_token_invalid")
+        if response.status_code == 403:
+            logger.error("[TRIAL] Trial quota exceeded (403)")
+            raise Exception("trial_quota_exceeded")
+        if response.status_code == 429:
+            logger.warning("[TRIAL] Rate limit (429)")
+        else:
+            logger.warning(
+                f"[TRIAL] Edge Function returned {response.status_code}: {response.text[:200]}"
+            )
+        return None
+
+    def process(self, text: str, max_retries: int = 3, prompt_override: str | None = None) -> str:
+        """Process text via dikta.me Gemini proxy Edge Function."""
+        safe_text = self._sanitize_for_prompt(text)
+        active_prompt = prompt_override if prompt_override is not None else self.prompt
+        prompt = active_prompt.replace("{text}", safe_text)
+
+        model_path = self.model
+        if not model_path.startswith("models/") and not model_path.startswith("tunedModels/"):
+            model_path = f"models/{model_path}"
+
+        for attempt in range(max_retries):
+            try:
+                logger.info(
+                    f"[TRIAL] Processing via Edge Function (attempt {attempt + 1}/{max_retries})..."
+                )
+                response = requests.post(
+                    self.edge_function_url,
+                    json={
+                        "model": model_path,
+                        "contents": [{"parts": [{"text": prompt}]}],
+                        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 1024},
+                    },
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {self.session_token}",
+                    },
+                    timeout=30,
+                )
+                result = self._parse_response(response)
+                if result is not None:
+                    return result
+            except requests.Timeout:
+                logger.warning(f"[TRIAL] Request timed out (attempt {attempt + 1}/{max_retries})")
+            except requests.ConnectionError as e:
+                logger.warning(
+                    f"[TRIAL] Connection error (attempt {attempt + 1}/{max_retries}): {e}"
+                )
+            except Exception as e:
+                err_str = str(e)
+                if "oauth_token_invalid" in err_str or "trial_quota_exceeded" in err_str:
+                    raise
+                logger.error(f"[TRIAL] Error: {e}")
+
+            if attempt < max_retries - 1:
+                backoff_delay = 2**attempt
+                logger.info(f"[TRIAL] Retrying in {backoff_delay}s...")
+                time.sleep(backoff_delay)
+
+        logger.error(f"[TRIAL] Failed after {max_retries} retries")
+        raise Exception(f"Trial cloud processing failed after {max_retries} retries")
+
+
 # Factory function to create the right processor based on environment or explicit provider
 def create_processor(
-    provider_name: str | None = None, api_key: str | None = None, model: str | None = None
+    provider_name: str | None = None,
+    api_key: str | None = None,
+    model: str | None = None,
+    session_token: str | None = None,
+    edge_function_url: str | None = None,
 ):
     """Create processor based on provider name or PROCESSING_MODE env var.
 
     Args:
-        provider_name: Explicit provider ('local', 'gemini', 'anthropic', 'openai')
+        provider_name: Explicit provider ('local', 'gemini', 'anthropic', 'openai', 'trial')
         api_key: Optional API key to use (overrides env var)
         model: Optional model ID to use (SPEC_034: Granular Model Control)
+        session_token: Supabase JWT for trial provider (SPEC_042)
+        edge_function_url: dikta.me Edge Function URL for trial provider (SPEC_042)
     """
     mode = provider_name or os.environ.get("PROCESSING_MODE", "local")
     mode = mode.lower()
 
-    if mode in ("gemini", "cloud"):
+    if mode == "trial" and session_token and edge_function_url:
+        logger.info("[TRIAL] Using managed trial cloud processor")
+        return TrialCloudProcessor(
+            session_token=session_token, edge_function_url=edge_function_url, model=model
+        )
+    elif mode in ("gemini", "cloud"):
         logger.info(f"Using GEMINI processing mode {'(custom key)' if api_key else ''}")
         return CloudProcessor(api_key=api_key, model=model)
     elif mode == "anthropic":

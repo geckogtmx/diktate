@@ -134,10 +134,10 @@ export interface MicStatusEvent {
  * API error from cloud processor (OAuth, rate limit, etc.)
  */
 export interface ApiErrorEvent {
-  error_type: 'oauth_token_invalid' | 'rate_limit' | 'api_error';
+  error_type: 'oauth_token_invalid' | 'rate_limit' | 'api_error' | 'trial_quota_exceeded';
   message: string;
   error_message?: string;
-  provider?: 'gemini' | 'anthropic' | 'openai';
+  provider?: 'gemini' | 'anthropic' | 'openai' | 'trial';
 }
 
 /**

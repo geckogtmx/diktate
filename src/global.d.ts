@@ -93,6 +93,34 @@ declare global {
 
     // Backend Interaction (SPEC_030)
     invokeBackend: (command: string, args: unknown) => Promise<unknown>;
+
+    // SPEC_042: Trial account (dikta.me managed Gemini credits)
+    trial: {
+      getStatus: () => Promise<{
+        loggedIn: boolean;
+        email: string;
+        wordsUsed: number;
+        wordsQuota: number;
+        daysRemaining: number;
+        expiresAt: string;
+        trialActive: boolean;
+      }>;
+      login: () => Promise<{ started: boolean }>;
+      logout: () => Promise<{ success: boolean }>;
+      refresh: () => Promise<
+        | {
+            loggedIn: boolean;
+            email: string;
+            wordsUsed: number;
+            wordsQuota: number;
+            daysRemaining: number;
+            expiresAt: string;
+            trialActive: boolean;
+          }
+        | { error: string }
+      >;
+      onStatusUpdated: (callback: () => void) => void;
+    };
   }
 
   // i18n API exposed from preload

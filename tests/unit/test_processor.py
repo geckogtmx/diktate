@@ -5,17 +5,15 @@ Tests all processor classes: LocalProcessor, CloudProcessor, AnthropicProcessor,
 OpenAIProcessor, and the create_processor() factory function.
 """
 
-import time
 import unittest
-from unittest.mock import Mock, patch, call
+from unittest.mock import Mock, call, patch
 
 import pytest
 import requests
-
 from core.processor import (
-    LocalProcessor,
-    CloudProcessor,
     AnthropicProcessor,
+    CloudProcessor,
+    LocalProcessor,
     OpenAIProcessor,
     create_processor,
     validate_api_key,
@@ -284,15 +282,17 @@ class TestCloudProcessor(unittest.TestCase):
 
     @patch("core.processor.get_prompt")
     @patch.dict("os.environ", {}, clear=True)
-    def test_init_adds_models_prefix(self, mock_get_prompt):
-        """__init__ should add 'models/' prefix to model ID if missing"""
+    def test_init_keeps_model_id_clean(self, mock_get_prompt):
+        """__init__ should store model ID without 'models/' prefix (SPEC_042: UI stays clean)"""
         mock_get_prompt.return_value = "Test prompt with {text}"
 
         processor = CloudProcessor(
             api_key="AIzaSyDaGmRU-Fk9Xk1234567890abcdef12345", model="gemini-2.0-flash-exp"
         )
 
-        assert processor.model == "models/gemini-2.0-flash-exp"
+        assert processor.model == "gemini-2.0-flash-exp"
+        # The 'models/' prefix is applied to the URL, not stored on self.model
+        assert "models/gemini-2.0-flash-exp" in processor.api_url
 
     @patch("core.processor.get_prompt")
     @patch.dict("os.environ", {}, clear=True)
@@ -490,9 +490,7 @@ class TestOpenAIProcessor(unittest.TestCase):
 
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "choices": [{"message": {"content": "Processed text"}}]
-        }
+        mock_response.json.return_value = {"choices": [{"message": {"content": "Processed text"}}]}
 
         with patch("requests.post", return_value=mock_response) as mock_post:
             result = processor.process("raw text")
