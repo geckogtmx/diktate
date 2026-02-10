@@ -54,8 +54,12 @@ export class WindowManager {
    */
   createDebugWindow(): void {
     if (this.debugWindow) {
-      this.debugWindow.show();
-      return;
+      if (this.debugWindow.isDestroyed()) {
+        this.debugWindow = null;
+      } else {
+        this.debugWindow.show();
+        return;
+      }
     }
 
     this.debugWindow = new BrowserWindow({
@@ -88,6 +92,10 @@ export class WindowManager {
       // Just hide instead of closing
       e.preventDefault();
       this.debugWindow?.hide();
+    });
+
+    this.debugWindow.on('closed', () => {
+      this.debugWindow = null;
     });
   }
 
