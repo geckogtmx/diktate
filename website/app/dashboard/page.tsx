@@ -89,7 +89,7 @@ export default async function DashboardPage() {
                     </a>
                     <a href="/docs" className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-gray-700 hover:border-blue-500 transition-colors">
                         <h3 className="font-semibold mb-2">📚 Documentation</h3>
-                        <p className="text-sm text-gray-400">Learn how to use dIKtate</p>
+                        <p className="text-sm text-gray-400">Learn how to use dIKta.me</p>
                     </a>
                     <a href="/dashboard/profile" className="bg-gray-800/50 backdrop-blur-xl rounded-xl p-6 border border-gray-700 hover:border-blue-500 transition-colors">
                         <h3 className="font-semibold mb-2">⚙️ Settings</h3>

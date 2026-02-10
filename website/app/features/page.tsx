@@ -5,8 +5,8 @@ import { GlassCard } from '../components/GlassCard';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Features - dIKtate',
-  description: 'Explore all 45+ features that make dIKtate the most powerful voice dictation tool for Windows.',
+  title: 'Features - dIKta.me',
+  description: 'Explore all 45+ features that make dIKta.me the most powerful voice dictation tool for Windows.',
 };
 
 const featureCategories = [
@@ -106,7 +106,7 @@ export default function FeaturesPage() {
               Ready to transform your workflow?
             </h2>
             <p className="text-lg text-gray-400 mb-8">
-              Download dIKtate today and experience the difference that local AI makes.
+              Download dIKta.me today and experience the difference that local AI makes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a

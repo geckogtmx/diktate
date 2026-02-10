@@ -29,7 +29,7 @@ export default function ComingSoonPage() {
           color: '#f8fafc',
         }}
       >
-        dIKtate
+        dIKta.me
       </h1>
       <p
         style={{

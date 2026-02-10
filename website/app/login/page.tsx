@@ -47,7 +47,7 @@ export default function LoginPage() {
         <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">dIKtate</h1>
+                    <h1 className="text-4xl font-bold text-white mb-2">dIKta.me</h1>
                     <p className="text-gray-400">Sign in to access your trial credits</p>
                 </div>
 

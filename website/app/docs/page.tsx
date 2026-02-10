@@ -5,14 +5,14 @@ import { GlassCard } from '../components/GlassCard';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Documentation - dIKtate',
-  description: 'Getting started with dIKtate. Installation, configuration, and troubleshooting guides.',
+  title: 'Documentation - dIKta.me',
+  description: 'Getting started with dIKta.me. Installation, configuration, and troubleshooting guides.',
 };
 
 const docs = [
   {
     title: 'Getting Started',
-    description: 'Learn how to download, install, and activate dIKtate',
+    description: 'Learn how to download, install, and activate dIKta.me',
     sections: [
       'System Requirements',
       'Download & Installation',
@@ -22,7 +22,7 @@ const docs = [
   },
   {
     title: 'Core Features',
-    description: 'Master the four core modes of dIKtate',
+    description: 'Master the four core modes of dIKta.me',
     sections: [
       'Dictate Mode',
       'Ask Mode (LLM)',
@@ -32,7 +32,7 @@ const docs = [
   },
   {
     title: 'Configuration',
-    description: 'Customize dIKtate to match your workflow',
+    description: 'Customize dIKta.me to match your workflow',
     sections: [
       'Hotkey Configuration',
       'Model Selection',
@@ -69,7 +69,7 @@ export default function DocsPage() {
               Documentation
             </h1>
             <p className="text-xl text-gray-400">
-              Complete guides to get the most out of dIKtate.
+              Complete guides to get the most out of dIKta.me.
             </p>
           </div>
         </Container>
@@ -107,7 +107,7 @@ export default function DocsPage() {
                     1
                   </span>
                   <div>
-                    <h4 className="font-semibold text-white mb-1">Download dIKtate</h4>
+                    <h4 className="font-semibold text-white mb-1">Download dIKta.me</h4>
                     <p className="text-gray-400">
                       Get the latest version from the download page. Supports Windows 10+.
                     </p>

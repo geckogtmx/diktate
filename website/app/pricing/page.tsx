@@ -4,7 +4,7 @@ import { PricingSection } from '../components/PricingSection';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Pricing - dIKtate',
+  title: 'Pricing - dIKta.me',
   description: 'Simple, transparent pricing. One-time purchase, no subscriptions, no hidden fees.',
 };
 

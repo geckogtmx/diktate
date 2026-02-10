@@ -18,7 +18,7 @@ export function TokensSection() {
             </h2>
             <p className="text-xl text-muted mb-8">
               Use local, use API Keys, its your choice, not theirs. Anthropic, Google, Deepseek, or local Ollama —
-              dIKtate unifies them all.
+              dIKta.me unifies them all.
             </p>
             <ul className="space-y-4 text-muted">
               <li className="flex items-center gap-3">

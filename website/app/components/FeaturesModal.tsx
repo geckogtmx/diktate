@@ -29,7 +29,7 @@ export function FeaturesModal({ isOpen, onClose }: FeaturesModalProps) {
         <div className="p-6 border-b border-white/5 flex justify-between items-center bg-black/20">
           <div>
             <h3 className="text-2xl font-bold text-white">The Comprehensive Arsenal</h3>
-            <p className="text-sm text-[#94a3b8]">A deep dive into everything dIKtate can do.</p>
+            <p className="text-sm text-[#94a3b8]">A deep dive into everything dIKta.me can do.</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors group">
             <svg

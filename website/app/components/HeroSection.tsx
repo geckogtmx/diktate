@@ -22,22 +22,32 @@ export function HeroSection() {
           </div>
 
           {/* Title with Word Carousel */}
-          <h1 className="text-5xl md:text-8xl font-bold tracking-tight mb-6 leading-[0.9] text-white">
-            STOP TYPING. <br />
-            START{' '}
-            <div className="inline-grid h-[0.9em] overflow-hidden align-bottom translate-y-[0.05em] text-left">
-              <div
-                id="hero-words"
-                className="text-[#2563eb] will-change-transform flex flex-col"
-                style={{ transform: `translateY(${translateY}em)` }}
-              >
-                <div className="h-[0.9em] mb-[1em] flex items-center">TALKING.</div>
-                <div className="h-[0.9em] mb-[1em] flex items-center">THINKING.</div>
-                <div className="h-[0.9em] mb-[1em] flex items-center">WORKING.</div>
-                <div className="h-[0.9em] mb-[1em] flex items-center">WINNING.</div>
+          <div className="w-full mb-6">
+            <h1 className="flex flex-col items-center text-5xl md:text-8xl font-bold tracking-tight leading-[0.9] text-white text-center">
+              {/* Row 1 */}
+              <div>STOP TYPING.</div>
+
+              {/* Row 2 */}
+              <div className="flex justify-center gap-[0.2em] relative left-[29px]">
+                {/* START text */}
+                <span>START</span>
+
+                {/* Word Carousel */}
+                <div className="h-[0.9em] overflow-hidden text-[#2563eb]">
+                  <div
+                    id="hero-words"
+                    className="will-change-transform flex flex-col"
+                    style={{ transform: `translateY(${translateY}em)` }}
+                  >
+                    <div className="h-[0.9em] mb-[1em] flex items-center whitespace-nowrap">TALKING.</div>
+                    <div className="h-[0.9em] mb-[1em] flex items-center whitespace-nowrap">THINKING.</div>
+                    <div className="h-[0.9em] mb-[1em] flex items-center whitespace-nowrap">WORKING.</div>
+                    <div className="h-[0.9em] mb-[1em] flex items-center whitespace-nowrap">WINNING.</div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </h1>
+            </h1>
+          </div>
 
           {/* Subtitle */}
           <p className="text-xl text-[#94a3b8] max-w-2xl mx-auto mb-10 leading-relaxed italic">

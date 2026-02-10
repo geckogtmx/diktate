@@ -18,11 +18,10 @@ export function Navbar() {
 
   return (
     <nav
-      className={`fixed top-0 w-full z-[60] h-16 flex items-center transition-all duration-300 ${
-        isScrolled
+      className={`fixed top-0 w-full z-[60] h-16 flex items-center transition-all duration-300 ${isScrolled
           ? 'bg-[#020617]/90 backdrop-blur-xl shadow-lg border-b border-white/5'
           : 'bg-[#020617] border-b border-white/5'
-      }`}
+        }`}
     >
       <div className="section-container w-full flex justify-between items-center px-8">
         {/* Logo */}
@@ -37,7 +36,7 @@ export function Navbar() {
               />
             </svg>
           </div>
-          dIKtate
+          dIKta.me
         </Link>
 
         {/* Desktop Links & CTA */}
@@ -73,9 +72,8 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       <div
-        className={`${
-          isMobileMenuOpen ? 'block' : 'hidden'
-        } md:hidden absolute top-full left-0 w-full bg-[#0f172a] border-b border-white/10 p-4 flex flex-col gap-4`}
+        className={`${isMobileMenuOpen ? 'block' : 'hidden'
+          } md:hidden absolute top-full left-0 w-full bg-[#0f172a] border-b border-white/10 p-4 flex flex-col gap-4`}
       >
         <a href="#core-track" className="text-white hover:text-[#2563eb]" onClick={() => setIsMobileMenuOpen(false)}>
           Features
