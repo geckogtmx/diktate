@@ -1,0 +1,14 @@
+# Packages auditable in CI (excludes GPU/hardware deps that require CUDA or system libs)
+# Omitted: torch, torchvision, faster-whisper (CUDA/heavy), pyaudio (PortAudio headers),
+#          pycaw (Windows Core Audio COM), nvidia-cublas-cu12, nvidia-cudnn-cu12 (CUDA only)
+requests>=2.32.0
+pynput==1.7.6
+fastapi>=0.115.6
+uvicorn==0.30.0
+websockets==12.0
+python-dotenv==1.0.0
+pytest==7.4.4
+pytest-asyncio==0.23.2
+pyperclip==1.8.2
+psutil==5.9.8
+tabulate==0.9.0
